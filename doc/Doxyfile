@@ -1,0 +1,22 @@
+PROJECT_NAME           = lightmetrica-v3-proto
+INPUT                  = ../lm/include/lm/ 
+RECURSIVE              = YES
+EXAMPLE_PATH           = ../lm/
+
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+XML_OUTPUT             = _build/doxygenxml
+XML_PROGRAMLISTING     = YES
+
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = LM_INLINE
+
+ALIASES                = "rst=\verbatim embed:rst"
+ALIASES               += "endrst=\endverbatim"
+
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
