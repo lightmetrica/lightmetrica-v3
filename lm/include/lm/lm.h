@@ -5,5 +5,6 @@
 
 #pragma once
 
+#include "component.h"
 #include "api.h"
 

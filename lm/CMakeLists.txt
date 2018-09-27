@@ -24,6 +24,12 @@ add_subdirectory(external/doctest)
 # pybind11
 add_subdirectory(external/pybind11)
 
+# spdlog
+add_subdirectory(external/spdlog)
+
+# fmt
+add_subdirectory(external/fmt)
+
 # -----------------------------------------------------------------------------
 
 # Main library
@@ -36,14 +42,18 @@ add_library(${_PROJECT_NAME} SHARED
     "${_INCLUDE_DIR}/api.h"
     "${_INCLUDE_DIR}/common.h"
 	"${_INCLUDE_DIR}/component.h"
+	"${_INCLUDE_DIR}/logger.h"
 
 	# Sources
+    "${_SOURCE_DIR}/component.cpp"
+    "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/api.cpp"
 )
 
-target_link_libraries(${_PROJECT_NAME} PUBLIC nlohmann_json glm)
+target_link_libraries(${_PROJECT_NAME} PUBLIC nlohmann_json glm fmt-header-only PRIVATE spdlog)
 target_include_directories(${_PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
+target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 
 # -----------------------------------------------------------------------------
 
@@ -57,5 +67,9 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX
 
 # Unit test
 set(_PROJECT_NAME lm_test)
-add_executable(${_PROJECT_NAME} "test/main.cpp")
+add_executable(${_PROJECT_NAME}
+    "test/main.cpp"
+    "test/test_common.h"
+    "test/test_api.cpp"
+    "test/test_component.cpp")
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest)

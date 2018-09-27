@@ -49,6 +49,8 @@ $ git clone --depth 1 git@github.com:pybind/pybind11.git
 $ git clone --depth 1 git@github.com:nlohmann/json.git
 $ git clone --depth 1 git@github.com:g-truc/glm.git
 $ git clone --depth 1 git@github.com:onqtam/doctest.git
+$ git clone --depth 1 git@github.com:gabime/spdlog.git
+$ git clone --depth 1 git@github.com:fmtlib/fmt.git
 ```
 
 Build library

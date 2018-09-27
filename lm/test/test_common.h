@@ -3,5 +3,9 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#pragma once
+
+#include <lm/lm.h>
 #include <doctest.h>
+
+#define LM_TEST_NAMESPACE test

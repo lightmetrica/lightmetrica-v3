@@ -242,7 +242,9 @@
 #include <tuple>
 #include <numeric>
 #include <condition_variable>
+#include <filesystem>
 #include <glm/glm.hpp>
+#include <fmt/format.h>
 #include <nlohmann/json.hpp>
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 using json = nlohmann::json;
