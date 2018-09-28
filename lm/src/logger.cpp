@@ -11,6 +11,8 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::log::detail)
 
 // ----------------------------------------------------------------------------
 
+// Logger implementation
+// - Ignores message when the logger is not initialized.
 class Impl_ {
 public:
 
@@ -22,18 +24,17 @@ public:
 public:
 
     void init() {
-        if (init_) { shutdown(); }
+        if (stdoutLogger_) { shutdown(); }
         stdoutLogger_ = spdlog::stdout_color_mt("lm_stdout");
-        init_ = true;
     }
 
     void shutdown() {
         stdoutLogger_ = nullptr;
         spdlog::shutdown();
-        init_ = false;
     }
 
     void log(LogLevel level, const char* filename, int line, const char* message) {
+        if (!stdoutLogger_) { return; }
         stdoutLogger_->log(spdlog::level::level_enum(level), indentationString_ + message);
     }
 
@@ -50,7 +51,6 @@ public:
 
 private:
 
-    bool init_ = false;
     int indentation_ = 0;
     std::string indentationString_;
     std::shared_ptr<spdlog::logger> stdoutLogger_;

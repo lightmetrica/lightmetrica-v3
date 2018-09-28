@@ -50,8 +50,11 @@ add_library(${_PROJECT_NAME} SHARED
     "${_SOURCE_DIR}/api.cpp"
 )
 
-target_link_libraries(${_PROJECT_NAME} PUBLIC nlohmann_json glm fmt-header-only PRIVATE spdlog)
-target_include_directories(${_PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
+target_link_libraries(${_PROJECT_NAME}
+    PUBLIC nlohmann_json glm fmt-header-only
+    PRIVATE spdlog)
+target_include_directories(${_PROJECT_NAME}
+    PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 
@@ -61,15 +64,44 @@ target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 set(_PROJECT_NAME pylm)
 add_library(${_PROJECT_NAME} MODULE "src/pylm.cpp")
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
-set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
+set_target_properties(${_PROJECT_NAME} PROPERTIES
+    PREFIX "${PYTHON_MODULE_PREFIX}"
+    SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 # -----------------------------------------------------------------------------
+
+# Add a plugin
+function(lm_add_plugin)
+    cmake_parse_arguments(_ARG "" "NAME;INCLUDE_DIR" "SOURCE" ${ARGN})
+
+    # INTERFACE library for headers
+    add_library(${_ARG_NAME}_interface INTERFACE)
+    add_library(${_ARG_NAME}::interface ALIAS ${_ARG_NAME}_interface)
+    target_include_directories(${_ARG_NAME}_interface
+        INTERFACE "$<BUILD_INTERFACE:${_ARG_INCLUDE_DIR}>")
+
+    # MODULE library for the dynamic loaded library
+    add_library(${_ARG_NAME} MODULE ${_ARG_SOURCE})
+    target_link_libraries(${_ARG_NAME}
+        PRIVATE liblm ${_ARG_NAME}_interface)
+endfunction()
+
+# -----------------------------------------------------------------------------
+
+# Plugin for unit test
+lm_add_plugin(
+    NAME lm_test_plugin
+    INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+    SOURCE
+        "test/test_interface.h"
+        "test/test_interface_impl.cpp")
 
 # Unit test
 set(_PROJECT_NAME lm_test)
 add_executable(${_PROJECT_NAME}
     "test/main.cpp"
     "test/test_common.h"
+    "test/test_common.cpp"
     "test/test_api.cpp"
-    "test/test_component.cpp")
-target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest)
+    "test/test_comp.cpp")
+target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest lm_test_plugin::interface)

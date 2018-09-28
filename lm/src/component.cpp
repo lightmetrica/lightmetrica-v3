@@ -165,32 +165,35 @@ public:
         return it == funcMap_.end() ? nullptr : it->second.releaseFunc;
     }
 
-    void loadPlugins(const char* directory) {
+    bool loadPlugin(const char* p) {
         namespace fs = std::filesystem;
 
-        // Function to load single plugin
-        const auto loadPlugin = [&](const fs::path& path) -> bool {
-            LM_LOG_INFO("Loading '{}'", path.filename().string());
-            LM_LOG_INDENTER();
+        fs::path path(p);
 
-            // Load plugin
-            std::unique_ptr<SharedLibrary> plugin(new SharedLibrary);
-            #if LM_PLATFORM_WINDOWS
-            const auto parent = path.parent_path().string();
-            SetDllDirectory(parent.c_str());
-            #endif
-            if (!plugin->load(path.string())) {
-                LM_LOG_WARN("Failed to load library: {}", path.string());
-                return false;
-            }
-            #if LM_PLATFORM_WINDOWS
-            SetDllDirectory(nullptr);
-            #endif
+        LM_LOG_INFO("Loading '{}'", path.filename().string());
+        LM_LOG_INDENTER();
 
-            plugins_.push_back(std::move(plugin));
-            LM_LOG_INFO("Successfully loaded");
-            return true;
-        };
+        // Load plugin
+        std::unique_ptr<SharedLibrary> plugin(new SharedLibrary);
+        #if LM_PLATFORM_WINDOWS
+        const auto parent = path.parent_path().string();
+        SetDllDirectory(parent.c_str());
+        #endif
+        if (!plugin->load(path.string())) {
+            LM_LOG_WARN("Failed to load library: {}", path.string());
+            return false;
+        }
+        #if LM_PLATFORM_WINDOWS
+        SetDllDirectory(nullptr);
+        #endif
+
+        plugins_.push_back(std::move(plugin));
+        LM_LOG_INFO("Successfully loaded");
+        return true;
+    }
+
+    void loadPlugins(const char* directory) {
+        namespace fs = std::filesystem;
 
         // Skip if directory does not exist
         if (!fs::is_directory(fs::path(directory))) {
@@ -218,7 +221,7 @@ public:
             if (!std::regex_match(filename.c_str(), match, pluginNameExp)) {
                 continue;
             }
-            if (!loadPlugin(it->path().stem())) {
+            if (!loadPlugin(it->path().stem().string().c_str())) {
                 continue;
             }
         }
@@ -263,6 +266,10 @@ LM_PUBLIC_API void detail::unreg(const char* key) {
 
 LM_PUBLIC_API Component::ReleaseFunction detail::releaseFunc(const char* key) {
     return Impl_::instance().releaseFunc(key);
+}
+
+LM_PUBLIC_API bool detail::loadPlugin(const char* path) {
+    return Impl_::instance().loadPlugin(path);
 }
 
 LM_PUBLIC_API void detail::loadPlugins(const char* directory) {

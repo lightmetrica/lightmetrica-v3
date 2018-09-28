@@ -46,17 +46,20 @@ public:
 
 LM_NAMESPACE_BEGIN(comp)
 
-///! Create component with specific interface type.
-template <typename InterfaceT>
-std::unique_ptr<InterfaceT, Component::ReleaseFunction> create(const char* key) {
-    auto* p = static_cast<InterfaceT*>(create(key));
-    if (!p) { return nullptr; }
-    using ReturnT = std::unique_ptr<InterfaceT, Component::ReleaseFunction>;
-    return ReturnT(p, detail::releaseFunc(key));
-}
-
 ///! Create a new component.
 LM_PUBLIC_API Component* create(const char* key);
+
+///! Unique pointer type of component interfaces.
+template <typename InterfaceT>
+using UniquePtr = std::unique_ptr<InterfaceT, Component::ReleaseFunction>;
+
+///! Create component with specific interface type.
+template <typename InterfaceT>
+UniquePtr<InterfaceT> create(const char* key) {
+    auto* p = static_cast<InterfaceT*>(create(key));
+    if (!p) { return UniquePtr<InterfaceT>(nullptr, nullptr); }
+    return UniquePtr<InterfaceT>(p, detail::releaseFunc(key));
+}
 
 LM_NAMESPACE_END(comp)
 
@@ -76,6 +79,9 @@ LM_PUBLIC_API void unreg(const char* key);
 ///! Get release function
 LM_PUBLIC_API Component::ReleaseFunction releaseFunc(const char* key);
 
+///! Load a plugin
+LM_PUBLIC_API bool loadPlugin(const char* path);
+
 ///! Load plugins inside a given directory
 LM_PUBLIC_API void loadPlugins(const char* directory);
 
@@ -90,13 +96,14 @@ class ImplEntry_ {
 private:
     std::string key_;
 public:
-    static ImplEntry_<ImplType>& instance(const std::string& key) {
-        static ImplEntry<ImplType> instance(key);
+    static ImplEntry_<ImplType>& instance(const char* key) {
+        static ImplEntry_<ImplType> instance(key);
         return instance;
     }
 private:
     ImplEntry_(const char* key) : key_(key) {
-        reg(key, []() -> Component* { return new ImplType; },
+        reg(key,
+            []() -> Component* { return new ImplType; },
             [](Component* p) -> void {
                 auto* p2 = static_cast<ImplType*>(p);
                 LM_SAFE_DELETE(p2); p = nullptr;
@@ -110,12 +117,13 @@ LM_NAMESPACE_END(comp::detail)
 // ----------------------------------------------------------------------------
 
 ///! Register implementation
-#define LM_COMPONENT_REGISTER_IMPL(ImplType, Key) \
+#define LM_COMP_REG_IMPL(ImplType, Key) \
 	namespace { \
 		template <typename T> class ImplEntry_Init_; \
-		template <> class ImplEntry_Init_<ImplType> { static const ImplEntry_<ImplType>& reg_; }; \
+		template <> class ImplEntry_Init_<ImplType> { \
+            static const LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>& reg_; }; \
         const LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>& ImplEntry_Init_<ImplType>::reg_ = \
-              LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>::instance(Key); \
+            LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>::instance(Key); \
     }
 
 // ----------------------------------------------------------------------------
