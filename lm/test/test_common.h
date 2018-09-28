@@ -8,4 +8,4 @@
 #include <lm/lm.h>
 #include <doctest.h>
 
-#define LM_TEST_NAMESPACE test
+#define LM_TEST_NAMESPACE lmtest

@@ -12,7 +12,7 @@
 #include <dlfcn.h>
 #endif
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::component)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::comp)
 
 // ----------------------------------------------------------------------------
 
@@ -33,14 +33,14 @@ public:
         #if LM_PLATFORM_WINDOWS
         handle = LoadLibraryA(p.c_str());
         if (!handle) {
-            std::cerr << "Failed to load library or its dependencies : " << p << std::endl;
+            std::cerr << fmt::format("Failed to load library or its dependencies: {}", p) << std::endl;
             std::cerr << getLastErrorAsString() << std::endl;
             return false;
         }
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
         handle = dlopen(p.c_str(), RTLD_LAZY | RTLD_LOCAL);
         if (!handle) {
-            std::cerr << "Failed to load library or its dependencies : " << p << std::endl;
+            std::cerr << fmt::format("Failed to load library or its dependencies: {}", p) << std::endl;
             std::cerr << dlerror() << std::endl;
             return false;
         }
@@ -73,14 +73,14 @@ public:
         #if LM_PLATFORM_WINDOWS
         void* address = (void*)GetProcAddress(handle, symbol.c_str());
         if (address == nullptr) {
-            std::cerr << "Failed to get address of '" << symbol << "'" << std::endl;
+            std::cerr << fmt::format("Failed to get address of '{}'", symbol) << std::endl;
             std::cerr << getLastErrorAsString() << std::endl;
             return nullptr;
         }
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
         void* address = dlsym(handle, symbol.c_str());
         if (address == nullptr) {
-            std::cerr << "Failed to get address of '" << symbol << "'" << std::endl;
+            std::cerr << fmt::format("Failed to get address of '{}'", symbol) << std::endl;
             std::cerr << dlerror() << std::endl;
             return nullptr;
         }
@@ -151,7 +151,7 @@ public:
         const Component::CreateFunction& createFunc,
         const Component::ReleaseFunction& releaseFunc) {
         if (funcMap_.find(key) != funcMap_.end()) {
-            std::cerr << "Failed to register [ " << key << " ]. Already registered." << std::endl;
+            std::cerr << fmt::format("Failed to register [ {} ]. Already registered.", key) << std::endl;
         }
         funcMap_[key] = CreateAndReleaseFunctions{ createFunc, releaseFunc };
     }
@@ -170,7 +170,7 @@ public:
 
         // Function to load single plugin
         const auto loadPlugin = [&](const fs::path& path) -> bool {
-            LM_LOG_INFO("Loading '" + path.filename().string() + "'");
+            LM_LOG_INFO("Loading '{}'", path.filename().string());
             LM_LOG_INDENTER();
 
             // Load plugin
@@ -180,7 +180,7 @@ public:
             SetDllDirectory(parent.c_str());
             #endif
             if (!plugin->load(path.string())) {
-                LM_LOG_WARN("Failed to load library: " + path);
+                LM_LOG_WARN("Failed to load library: {}", path.string());
                 return false;
             }
             #if LM_PLATFORM_WINDOWS
@@ -194,7 +194,7 @@ public:
 
         // Skip if directory does not exist
         if (!fs::is_directory(fs::path(directory))) {
-            LM_LOG_WARN("Missing plugin directory '" + directory + "'. Skipping.");
+            LM_LOG_WARN("Missing plugin directory '{}'. Skipping.", directory);
             return;
         }
 
@@ -218,7 +218,7 @@ public:
             if (!std::regex_match(filename.c_str(), match, pluginNameExp)) {
                 continue;
             }
-            if (!loadPlugin(fs::change_extension(it->path(), "").string())) {
+            if (!loadPlugin(it->path().stem())) {
                 continue;
             }
         }
@@ -275,4 +275,4 @@ LM_PUBLIC_API void detail::unloadPlugins() {
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_END(LM_NAMESPACE::component)
+LM_NAMESPACE_END(LM_NAMESPACE::comp)

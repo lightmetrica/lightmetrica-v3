@@ -33,7 +33,7 @@ LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const cha
 
 ///! Write log message with formatting
 template <typename... Args>
-void log(LogLevel level, const char* filename, int line, const char* message, const Args&... args) {
+void log(LogLevel level, const char* filename, int line, const std::string& message, const Args&... args) {
     log(level, fmt::format(message, args).c_str());
 }
 
@@ -52,7 +52,7 @@ struct LogIndenter {
 #define LM_LOG_WARN(message, ...)  LM_NAMESPACE::log::detail::log(LM_NAMESPACE::log::detail::LogLevel::Warn,  __FILE__, __LINE__, message)
 #define LM_LOG_INFO(message, ...)  LM_NAMESPACE::log::detail::log(LM_NAMESPACE::log::detail::LogLevel::Err,   __FILE__, __LINE__, message)
 #define LM_LOG_DEBUG(message, ...) LM_NAMESPACE::log::detail::log(LM_NAMESPACE::log::detail::LogLevel::Debug, __FILE__, __LINE__, message)
-#define LM_LOG_INDENTER()          LM_NAMESPACE::logger::detail::LogIndenter LM_TOKENPASTE2(logIndenter_, __LINE__)
+#define LM_LOG_INDENTER()          LM_NAMESPACE::log::detail::LogIndenter LM_TOKENPASTE2(logIndenter_, __LINE__)
 
 // ----------------------------------------------------------------------------
 
