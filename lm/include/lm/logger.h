@@ -7,11 +7,15 @@
 
 #include "common.h"
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::log::detail)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+LM_NAMESPACE_BEGIN(log)
+LM_NAMESPACE_BEGIN(detail)
 
 // ----------------------------------------------------------------------------
 
-///! Log level.
+/*!
+    \brief Log level.
+*/
 enum class LogLevel {
     Trace    = 0,
     Debug    = 1,
@@ -22,25 +26,37 @@ enum class LogLevel {
     Off      = 6,
 };
 
-///! Initialize logger
+/*!
+    \brief Initialize logger.
+*/
 LM_PUBLIC_API void init();
 
-///! Shutdown logger
+/*!
+    \brief Shutdown logger.
+*/
 LM_PUBLIC_API void shutdown();
 
-///! Write log message
+/*!
+    \brief Write log message.
+*/
 LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const char* message);
 
-///! Write log message with formatting
+/*!
+    \brief Write log message with formatting.
+*/
 template <typename... Args>
 void log(LogLevel level, const char* filename, int line, const std::string& message, const Args&... args) {
     log(level, fmt::format(message, args).c_str());
 }
 
-///! Update indentation
+/*!
+    \brief Update indentation.
+*/
 LM_PUBLIC_API void updateIndentation(int n);
 
-///! Log indent contol.
+/*!
+    \brief Log indent contol.
+*/
 struct LogIndenter {
     LogIndenter()  { updateIndentation(1); }
     ~LogIndenter() { updateIndentation(-1); }
@@ -48,12 +64,33 @@ struct LogIndenter {
 
 // ----------------------------------------------------------------------------
 
+/*!
+    \brief Log error message.
+*/
 #define LM_LOG_ERROR(message, ...) LM_NAMESPACE::log::detail::log(LM_NAMESPACE::log::detail::LogLevel::Err,   __FILE__, __LINE__, message)
+
+/*!
+    \brief Log warning message.
+*/
 #define LM_LOG_WARN(message, ...)  LM_NAMESPACE::log::detail::log(LM_NAMESPACE::log::detail::LogLevel::Warn,  __FILE__, __LINE__, message)
+
+/*!
+    \brief Log info message.
+*/
 #define LM_LOG_INFO(message, ...)  LM_NAMESPACE::log::detail::log(LM_NAMESPACE::log::detail::LogLevel::Err,   __FILE__, __LINE__, message)
+
+/*!
+    \brief Log debug message.
+*/
 #define LM_LOG_DEBUG(message, ...) LM_NAMESPACE::log::detail::log(LM_NAMESPACE::log::detail::LogLevel::Debug, __FILE__, __LINE__, message)
+
+/*!
+    \brief Adds an indentation in the current scope.
+*/
 #define LM_LOG_INDENTER()          LM_NAMESPACE::log::detail::LogIndenter LM_TOKENPASTE2(logIndenter_, __LINE__)
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_END(LM_NAMESPACE::log::detail)
+LM_NAMESPACE_END(detail)
+LM_NAMESPACE_END(log)
+LM_NAMESPACE_END(LM_NAMESPACE)

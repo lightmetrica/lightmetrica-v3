@@ -10,6 +10,7 @@ LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
 // ----------------------------------------------------------------------------
 
+// _begin_snippet: A
 struct A : public lm::Component {
     virtual int f1() = 0;
     virtual int f2(int a, int b) = 0;
@@ -21,6 +22,7 @@ struct A1 final : public A {
 };
 
 LM_COMP_REG_IMPL(A1, "test::comp::a1");
+// _end_snippet: A
 
 // ----------------------------------------------------------------------------
 
@@ -55,10 +57,12 @@ LM_COMP_REG_IMPL(C1, "test::comp::c1");
 TEST_CASE("Component")
 {
     SUBCASE("Simple interface") {
+        // _begin_snippet: A_impl
         const auto p = lm::comp::create<A>("test::comp::a1");
         REQUIRE(p);
         CHECK(p->f1() == 42);
         CHECK(p->f2(1, 2) == 3);
+        // _end_snippet: A_impl
     }
     SUBCASE("Inherited interface") {
         const auto p = lm::comp::create<B>("test::comp::b1");

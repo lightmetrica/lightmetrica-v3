@@ -3,16 +3,19 @@ INPUT                  = ../lm/include/lm/
 RECURSIVE              = YES
 EXAMPLE_PATH           = ../lm/
 
-GENERATE_HTML          = NO
+GENERATE_HTML          = YES
 GENERATE_LATEX         = NO
 GENERATE_XML           = YES
+HTML_OUTPUT            = _build/doxygenhtml
 XML_OUTPUT             = _build/doxygenxml
 XML_PROGRAMLISTING     = YES
 
+EXTRACT_ALL            = YES
 ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
-EXPAND_ONLY_PREDEF     = YES
-PREDEFINED             = LM_INLINE
+#EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = LM_PUBLIC_API=
+#EXPAND_AS_DEFINED      = LM_NAMESPACE_BEGIN
 
 ALIASES                = "rst=\verbatim embed:rst"
 ALIASES               += "endrst=\endverbatim"

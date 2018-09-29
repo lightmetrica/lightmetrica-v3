@@ -8,45 +8,44 @@
 #include "common.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+LM_NAMESPACE_BEGIN(api)
 
 /*!
-    Initializes the renderer.
+    \brief Initializes the renderer.
 */
 LM_PUBLIC_API void init();
 
 /*!
-    Gracefully finalizes the renderer.
+    \brief Gracefully finalizes the renderer.
 */
 LM_PUBLIC_API void shutdown();
 
 // ----------------------------------------------------------------------------
 
 /*!
-    Render image based on current configuration.
+    \brief Render image based on current configuration.
 
-    Example
-    =======
-
+    Example:
 */
 LM_PUBLIC_API int render();
 
 // ----------------------------------------------------------------------------
 
 /*!
-    Creates a new primitive and add it to the scene.
-    Returns the ID of the primitive.
+    \brief Creates a new primitive and add it to the scene.
+           Returns the ID of the primitive.
 
-    Example
-    =======
+    Example:
 
     This example queries the ID of the primitive named as `test`.
 
-    \snippet test/main.cpp primitive example
+    \snippet test/test_api.cpp primitive example
 
     \param name Name of the primitive.
     \return     ID of the primitive.
 */
 LM_PUBLIC_API int primitive(const std::string& name);
 
-LM_NAMESPACE_END(LM_NAMESPACE)
+LM_NAMESPACE_END(api)
+LM_NAMESPACE_END(LM_NAMESPACE::api)
 

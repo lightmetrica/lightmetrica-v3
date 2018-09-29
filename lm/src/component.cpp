@@ -134,7 +134,7 @@ public:
 
 public:
 
-    Component* create(const char* key) {
+    Component* createComp(const char* key) {
         auto it = funcMap_.find(key);
         if (it == funcMap_.end()) {
             return nullptr;
@@ -249,8 +249,8 @@ private:
 
 // ----------------------------------------------------------------------------
 
-LM_PUBLIC_API Component* create(const char* key) {
-    return Impl_::instance().create(key);
+LM_PUBLIC_API Component* detail::createComp(const char* key) {
+    return Impl_::instance().createComp(key);
 }
 
 LM_PUBLIC_API void detail::reg(

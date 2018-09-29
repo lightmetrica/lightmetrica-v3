@@ -46,7 +46,8 @@ extensions = [
     'breathe',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'sphinx.ext.doctest'
+    'sphinx.ext.doctest',
+    'sphinx_tabs.tabs'
 ]
 
 breathe_projects = {'lightmetrica-v3': '_build/doxygenxml/'}

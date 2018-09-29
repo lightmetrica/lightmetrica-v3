@@ -4,42 +4,22 @@
    contain the root `toctree` directive.
 
 Lightmetrica Version 3
-####################
+======================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   component
+   log
+   api
+
 Indices and tables
-====================
+-------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
 
-API Documentation
-====================
 
-.. testsetup:: *
-
-   import pylm
-
-Scene manipulation
---------------------
-
---------------------
-
-primitive
-^^^^^^^^^
-``c++``
-"""""""
-    .. doxygenfunction:: primitive
-``python``
-""""""""""
-    .. autofunction:: pylm.primitive
-
---------------------
-
-Rendering
---------------------
 

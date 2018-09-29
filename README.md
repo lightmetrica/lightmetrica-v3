@@ -21,7 +21,7 @@ $ conda create -n lm3 python=3.6
 ```bash
 $ source activate lm3
 $ conda install sphinx 
-$ pip install sphinx-autobuild sphinx_rtd_theme breathe
+$ pip install sphinx-autobuild sphinx_rtd_theme breathe sphinx_tabs
 ```
 
 ### Display and edit documentation
@@ -45,12 +45,12 @@ Install external libraries
 
 ```bash
 $ cd external
-$ git clone --depth 1 git@github.com:pybind/pybind11.git
-$ git clone --depth 1 git@github.com:nlohmann/json.git
-$ git clone --depth 1 git@github.com:g-truc/glm.git
-$ git clone --depth 1 git@github.com:onqtam/doctest.git
-$ git clone --depth 1 git@github.com:gabime/spdlog.git
-$ git clone --depth 1 git@github.com:fmtlib/fmt.git
+$ git clone --depth 1 git@github.com:pybind/pybind11.git && \
+  git clone --depth 1 git@github.com:nlohmann/json.git && \
+  git clone --depth 1 git@github.com:g-truc/glm.git && \
+  git clone --depth 1 git@github.com:onqtam/doctest.git && \
+  git clone --depth 1 git@github.com:gabime/spdlog.git && \
+  git clone --depth 1 git@github.com:fmtlib/fmt.git
 ```
 
 Build library

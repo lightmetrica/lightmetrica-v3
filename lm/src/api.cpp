@@ -5,7 +5,7 @@
 
 #include <lm/api.h>
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::api)
 
 // ----------------------------------------------------------------------------
 
@@ -37,4 +37,4 @@ LM_PUBLIC_API int primitive(const std::string& name)
     return 42;
 }
 
-LM_NAMESPACE_END(LM_NAMESPACE)
+LM_NAMESPACE_END(LM_NAMESPACE::api)

@@ -18,8 +18,10 @@ LM_NAMESPACE_END(comp)
 // ----------------------------------------------------------------------------
 
 /*!
-    Base component.
-    Base class of extendable components.
+    \brief Base component.
+
+    Base class of all components in Lightmetrica.
+    All components interfaces and implementations must inherit this class.
 */
 class Component {
 private:
@@ -46,51 +48,72 @@ public:
 
 LM_NAMESPACE_BEGIN(comp)
 
-///! Create a new component.
-LM_PUBLIC_API Component* create(const char* key);
-
-///! Unique pointer type of component interfaces.
+/*!
+    \brief Unique pointer type of component interfaces.
+*/
 template <typename InterfaceT>
 using UniquePtr = std::unique_ptr<InterfaceT, Component::ReleaseFunction>;
 
-///! Create component with specific interface type.
+/*!
+    \brief Create component with specific interface type.
+    \tparam InterfaceT Component interface type.
+    \param key Name of the implementation.
+*/
 template <typename InterfaceT>
 UniquePtr<InterfaceT> create(const char* key) {
-    auto* p = static_cast<InterfaceT*>(create(key));
+    auto* p = static_cast<InterfaceT*>(detail::createComp(key));
     if (!p) { return UniquePtr<InterfaceT>(nullptr, nullptr); }
     return UniquePtr<InterfaceT>(p, detail::releaseFunc(key));
 }
 
-LM_NAMESPACE_END(comp)
-
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(comp::detail)
+LM_NAMESPACE_BEGIN(detail)
 
-///! Register a component
+/*!
+    \brief Create a new component.
+    \param key Name of the implementation.
+*/
+LM_PUBLIC_API Component* createComp(const char* key);
+
+/*!
+    \brief Register a component.
+*/
 LM_PUBLIC_API void reg(
     const char* key,
     const Component::CreateFunction& createFunc,
     const Component::ReleaseFunction& releaseFunc);
 
-///! Unregister a component
+/*!
+    \brief Unregister a component.
+*/
 LM_PUBLIC_API void unreg(const char* key);
 
-///! Get release function
+/*!
+    \brief Get release function.
+*/
 LM_PUBLIC_API Component::ReleaseFunction releaseFunc(const char* key);
 
-///! Load a plugin
+/*!
+    \brief Load a plugin.
+*/
 LM_PUBLIC_API bool loadPlugin(const char* path);
 
-///! Load plugins inside a given directory
+/*!
+    \brief Load plugins inside a given directory.
+*/
 LM_PUBLIC_API void loadPlugins(const char* directory);
 
-///! Unload loaded plugins
+/*!
+    \brief Unload loaded plugins.
+*/
 LM_PUBLIC_API void unloadPlugins();
 
 // ----------------------------------------------------------------------------
 
-///! Helps registration of an implementation
+/*!
+    \brief Helps registration of an implementation.
+*/
 template <typename ImplType>
 class ImplEntry_ {
 private:
@@ -112,11 +135,16 @@ private:
     ~ImplEntry_() { unreg(key_.c_str()); }
 };
 
-LM_NAMESPACE_END(comp::detail)
+LM_NAMESPACE_END(detail)
+LM_NAMESPACE_END(comp)
 
 // ----------------------------------------------------------------------------
 
-///! Register implementation
+/*!
+    \brief Register implementation.
+    \param ImplType Component implemenation type.
+    \param Key Name of the implementation.
+*/
 #define LM_COMP_REG_IMPL(ImplType, Key) \
 	namespace { \
 		template <typename T> class ImplEntry_Init_; \

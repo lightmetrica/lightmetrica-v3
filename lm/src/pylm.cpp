@@ -17,10 +17,9 @@ PYBIND11_MODULE(pylm, m)
         pylm: Python binding of Lightmetrica.
     )x";
 
-    m.def("primitive", &primitive, R"x(
+    m.def("primitive", &lm::api::primitive, R"x(
 
-        Example
-        =======
+        Example:
 
         >>> pylm.primitive('test')
         42
