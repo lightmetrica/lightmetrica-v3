@@ -29,6 +29,14 @@ API
 .. doxygenfunction:: lm::comp::create
 .. doxygendefine:: LM_COMP_REG_IMPL
 
+Notes
+-------------
+
+Component instance and module boundary
+"""""""""""""""""""""""""""""""""""""""""
+
+A component instance might be instantiated inside another module boundary (e.g., dynamic link library, shared library). ``lm::comp::create`` returns unique_ptr so the user do not need to care about where the component is instantiated [] as long as ``lm::comp::create`` is used. A problem, however, arises when you want to manage raw pointers of components, because the deletion of the instance must happen in the same module. For this purpose, we provide ``lm::comp::detail::releaseFunc`` to get implementation-specific deleter function.
+
 Examples
 -------------
 

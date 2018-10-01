@@ -18,6 +18,12 @@ LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
 // _begin_snippet: A
 struct A : public lm::Component {
+    A() {
+        std::cout << "A" << std::endl;
+    }
+    ~A() {
+        std::cout << "~A" << std::endl;
+    }
     virtual int f1() = 0;
     virtual int f2(int a, int b) = 0;
 };
@@ -86,7 +92,7 @@ TEST_CASE("Component")
 
     SUBCASE("Cast to parent interface") {
         auto b = lm::comp::create<B>("test::comp::b1");
-        const auto a = lm::comp::UniquePtr<A>(std::move(b));
+        const auto a = std::unique_ptr<A>(std::move(b));
         REQUIRE(a);
         CHECK(a->f1() == 42);
         CHECK(a->f2(1, 2) == 3);
@@ -101,7 +107,8 @@ TEST_CASE("Component")
     }
 
     SUBCASE("Plugin") {
-        REQUIRE(lm::comp::detail::loadPlugin("lm_test_plugin"));
+        lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
+        REQUIRE(pluginGuard.valid());
         SUBCASE("Simple") {
             auto p = lm::comp::create<lm::TestPlugin>("testplugin::default");
             REQUIRE(p);
@@ -114,7 +121,6 @@ TEST_CASE("Component")
             });
             CHECK(out == "AB~B~A");
         }
-        lm::comp::detail::unloadPlugins();
     }
 
     SUBCASE("Failed to load plugin") {
@@ -124,13 +130,15 @@ TEST_CASE("Component")
 
 // ----------------------------------------------------------------------------
 
-struct Component_Py : public lm::Component {
-    Component_Py() = default;
-};
-
 // Define a trampoline class (see ref) for the interface A
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
 struct A_Py final : public A {
+    A_Py() {
+        std::cout << "A_Py" << std::endl;
+    }
+    ~A_Py() {
+        std::cout << "~A_Py" << std::endl;
+    }
     virtual int f1() override {
         PYBIND11_OVERLOAD_PURE(int, A, f1);
     }
@@ -139,49 +147,44 @@ struct A_Py final : public A {
     }
 };
 
-namespace {
-    void deleterA(A* p) {
-        LM_SAFE_DELETE(p);
+struct TestPlugin_Py final : public lm::TestPlugin {
+    virtual int f() override {
+        PYBIND11_OVERLOAD_PURE(int, lm::TestPlugin, f);
     }
-}
-
-
-template <typename T>
-using UniquePtr = std::unique_ptr<T, void(*)(void*)>;
+};
 
 PYBIND11_EMBEDDED_MODULE(test_comp, m) {
-    py::class_<lm::Component, Component_Py>(m, "Component")
-        .def(py::init<>());
-
     py::class_<A, A_Py>(m, "A")
         .def(py::init<>())
         .def("f1", &A::f1)
         .def("f2", &A::f2);
 
-    // Bind a factory function that returns a unique_ptr<A>
-    //m.def("createA1", []() {
-    //    // Use decltype(deleter) as a type of the deleter. Otherwise runtime error occurs.
-    //    //const auto deleter = [](A* p) { LM_SAFE_DELETE(p); };
-    //    return std::unique_ptr<A, decltype(&deleterA)>(new A1, &deleterA);
-    //});
+    py::class_<lm::TestPlugin, TestPlugin_Py>(m, "TestPlugin")
+        .def(py::init<>())
+        .def("f", &lm::TestPlugin::f);
 
     m.def("createA1", []() {
-        const auto deleter = [](A* p) {
-            LM_SAFE_DELETE(p);
-        };
-        return std::unique_ptr<A, decltype(deleter)>(new A1, deleter);
-        //return UniquePtr<A>(new A1, deleter);
+        return lm::comp::create<A>("test::comp::a1");
     });
 
-    //m.def("createA1", []() {
-    //    return lm_unique_ptr<A>(new A1, [](A* p) { LM_SAFE_DELETE(p); });
-    //});
+    m.def("createTestPlugin", []() {
+        return lm::comp::create<lm::TestPlugin>("testplugin::default");
+    });
 
-    //m.def("createTestPlugin", []() {
-    //    const auto deleter = [](TestPlugin*) {
-    //        LM_SAFE_DELETE(p);
-    //    }
-    //}):
+    m.def("useA", [](A* a) -> int {
+        return a->f1() * 2;
+    });
+}
+
+// unique_ptr with custom deleter
+template <typename T>
+using UniquePtr = std::unique_ptr<T, std::function<void(T*)>>;
+
+// Wraps dereferencing of python object in the deleter
+template <typename T, typename... Args>
+UniquePtr<T> create(const char* name, Args... opt) {
+    const auto instPy = py::globals()[name](opt...);
+    return UniquePtr<T>(instPy.cast<T*>(), [p = py::reinterpret_borrow<py::object>(instPy)](T*){});
 }
 
 TEST_CASE("Python component plugin")
@@ -190,10 +193,14 @@ TEST_CASE("Python component plugin")
     py::scoped_interpreter guard{};
   
     try {
+        // Import test module
+        py::exec(R"(
+            import test_comp
+        )", py::globals());
+
         SUBCASE("Create and use component inside python script") {
             auto locals = py::dict();
             py::exec(R"(
-                import test_comp
                 p = test_comp.createA1()
                 r1 = p.f1()
                 r2 = p.f2(1, 2)
@@ -201,17 +208,90 @@ TEST_CASE("Python component plugin")
             CHECK(locals["r1"].cast<int>() == 42);
             CHECK(locals["r2"].cast<int>() == 3);
         }
+
+        SUBCASE("Use component inside native plugin") {
+            lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
+            REQUIRE(pluginGuard.valid());
+            auto locals = py::dict();
+            py::exec(R"(
+                p = test_comp.createTestPlugin()
+                r1 = p.f()
+            )", py::globals(), locals);
+            CHECK(locals["r1"].cast<int>() == 42);
+        }
+
+        SUBCASE("Extend component from python") {
+            py::exec(R"(
+                class A2(test_comp.A):
+                    def f1(self):
+                        return 43
+                    def f2(self, a, b):
+                        return a * b
+
+                class A3(test_comp.A):
+                    def __init__(self, v):
+                        self.v = v
+                    def f1(self):
+                        return v
+                    def f2(self, a, b):
+                        return v * v
+            )", py::globals());
+
+            SUBCASE("Instantiate inside python script and use it in python") {
+                auto locals = py::dict();
+                py::exec(R"(
+                    p = A2()
+                    r1 = p.f1()
+                    r2 = p.f2(2, 3)
+                )", py::globals(), locals);
+                CHECK(locals["r1"].cast<int>() == 43);
+                CHECK(locals["r2"].cast<int>() == 6);
+            }
+
+            SUBCASE("Instantiate inside python script and use it in C++") {
+                auto locals = py::dict();
+                py::exec(R"(
+                    p = A2()
+                    r1 = test_comp.useA(p)
+                )", py::globals(), locals);
+                CHECK(locals["r1"].cast<int>() == 86);
+            }
+
+            SUBCASE("Instantiate in C++ and use it in C++") {
+                // Extract A2
+                auto A2 = py::globals()["A2"];
+                // Create instance of A2 (python object)
+                auto p_py = A2();
+                // Cast to A*
+                auto p = p_py.cast<A*>();
+                // Call function
+                const auto result = p->f1();
+                CHECK(result == 43);
+            }
+
+            SUBCASE("Manage instances in C++") {
+                auto p = create<A>("A2");
+                REQUIRE(p);
+                CHECK(p->f1() == 43);
+            }
+
+            SUBCASE("Manage instances in C++ vector") {
+                std::vector<UniquePtr<A>> v;
+                for (int i = 0; i < 10; i++) {
+                    v.push_back(create<A>("A3", int(i)));
+                    REQUIRE(v.back());
+                }
+                for (int i = 0; i < 10; i++) {
+                    std::cout << v[i]->f1() << std::endl;
+                    //CHECK(v[i]->f1() == i);
+                }
+            }
+        }
     }
     catch (const std::runtime_error& e) {
-        std::cout << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
+        REQUIRE(false);
     }
-
-    //SUBCASE("Use component inside plugin") {
-    //    auto locals = py::dict();
-    //    py::exec(R"(
-    //        
-    //    )", py::globals(), locals);
-    //}
 }
 
 // ----------------------------------------------------------------------------

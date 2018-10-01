@@ -42,6 +42,7 @@ public:
     Component() = default;
     virtual ~Component() = default;
     LM_DISABLE_COPY_AND_MOVE(Component);
+
 };
 
 // ----------------------------------------------------------------------------
@@ -49,21 +50,15 @@ public:
 LM_NAMESPACE_BEGIN(comp)
 
 /*!
-    \brief Unique pointer type of component interfaces.
-*/
-template <typename InterfaceT>
-using UniquePtr = std::unique_ptr<InterfaceT, Component::ReleaseFunction>;
-
-/*!
     \brief Create component with specific interface type.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
 */
 template <typename InterfaceT>
-UniquePtr<InterfaceT> create(const char* key) {
+std::unique_ptr<InterfaceT> create(const char* key) {
     auto* p = static_cast<InterfaceT*>(detail::createComp(key));
-    if (!p) { return UniquePtr<InterfaceT>(nullptr, nullptr); }
-    return UniquePtr<InterfaceT>(p, detail::releaseFunc(key));
+    if (!p) { return nullptr; }
+    return std::unique_ptr<InterfaceT>(p);
 }
 
 // ----------------------------------------------------------------------------
@@ -112,17 +107,43 @@ LM_PUBLIC_API void unloadPlugins();
 // ----------------------------------------------------------------------------
 
 /*!
+    \brief Scope guard of `loadPlugins` and `loadPlugins`.
+*/
+class ScopedLoadPlugin {
+private:
+    bool valid_ = true;
+
+public:
+    ScopedLoadPlugin(const char* path) : ScopedLoadPlugin({ path }) {}
+    ScopedLoadPlugin(std::initializer_list<const char*> paths) {
+        for (auto path : paths) {
+            valid_ |= loadPlugin(path);
+            if (!valid_) { break; }
+        }
+    }
+    ~ScopedLoadPlugin() { unloadPlugins(); }
+    LM_DISABLE_COPY_AND_MOVE(ScopedLoadPlugin);
+
+public:
+    bool valid() const { return valid_; }
+};
+
+// ----------------------------------------------------------------------------
+
+/*!
     \brief Helps registration of an implementation.
 */
 template <typename ImplType>
 class ImplEntry_ {
 private:
     std::string key_;
+
 public:
     static ImplEntry_<ImplType>& instance(const char* key) {
         static ImplEntry_<ImplType> instance(key);
         return instance;
     }
+
 private:
     ImplEntry_(const char* key) : key_(key) {
         reg(key,
