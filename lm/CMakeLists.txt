@@ -96,6 +96,13 @@ lm_add_plugin(
         "test/test_interface.h"
         "test/test_interface_impl.cpp")
 
+# Get python root directory
+find_package(Python REQUIRED COMPONENTS Development)
+get_filename_component(_PYTHON_ROOT ${Python_INCLUDE_DIRS} DIRECTORY)
+
+# Generate header included from lm_test project
+configure_file("test/test_python.h.in" "${CMAKE_CURRENT_BINARY_DIR}/generated/test_python.h" @ONLY)
+
 # Unit test
 set(_PROJECT_NAME lm_test)
 add_executable(${_PROJECT_NAME}
@@ -103,5 +110,7 @@ add_executable(${_PROJECT_NAME}
     "test/test_common.h"
     "test/test_common.cpp"
     "test/test_api.cpp"
-    "test/test_comp.cpp")
-target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest lm_test_plugin::interface)
+    "test/test_comp.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/test_python.h")
+target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest pybind11::embed lm_test_plugin::interface)
+target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

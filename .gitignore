@@ -18,4 +18,4 @@ example
 dist*/
 .idea/
 doc/_*
-jupyter/
+jupyter

@@ -8,7 +8,7 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct TestPlugin_ final : public TestPlugin {
-    virtual int f() {
+    virtual int f() override {
         return 42;
     }
 };

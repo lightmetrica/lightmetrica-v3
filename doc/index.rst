@@ -7,12 +7,13 @@ Lightmetrica Version 3
 ======================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 3
+   :caption: Contents
 
    component
    log
    api
+   note
 
 Indices and tables
 -------------------

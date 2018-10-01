@@ -137,6 +137,7 @@ private:
 
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(comp)
+LM_NAMESPACE_END(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
 
@@ -153,7 +154,3 @@ LM_NAMESPACE_END(comp)
         const LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>& ImplEntry_Init_<ImplType>::reg_ = \
             LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>::instance(Key); \
     }
-
-// ----------------------------------------------------------------------------
-
-LM_NAMESPACE_END(LM_NAMESPACE)

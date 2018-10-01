@@ -54,3 +54,14 @@ Having registered the implementation, we can instantiate the component using ``l
    :linenos:
    :lines: 1,3-4
    :dedent: 8
+
+
+Native plugin 
+"""""""""""""
+
+.. note:: Unlike Lightmetrica Version 2, ``Component`` does not support ABI-compatible plugins.
+   Native component plugins must be compiled with the ABI-compatible compilers to the main library.
+
+Python plugin
+"""""""""""""
+
