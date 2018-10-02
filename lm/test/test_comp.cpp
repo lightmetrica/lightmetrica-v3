@@ -141,11 +141,20 @@ struct TestPlugin_Py final : public lm::TestPlugin {
     }
 };
 
+// Factory function for component instances
+template <typename ComponentT>
+std::unique_ptr<ComponentT> createComponentInstance{
+    
+};
+
 PYBIND11_EMBEDDED_MODULE(test_comp, m) {
     py::class_<A, A_Py>(m, "A")
         .def(py::init<>())
         .def("f1", &A::f1)
-        .def("f2", &A::f2);
+        .def("f2", &A::f2)
+        .def_static("create", [](const char* name) -> std::unique_ptr<A> {
+            return lm::comp::create<A>(name);
+        }, py::return_value_policy::take_ownership);
 
     py::class_<lm::TestPlugin, TestPlugin_Py>(m, "TestPlugin")
         .def(py::init<>())
@@ -163,17 +172,17 @@ PYBIND11_EMBEDDED_MODULE(test_comp, m) {
         return a->f1() * 2;
     });
 
-    m.def("createComp", [](const char* name) -> py::object {
-        // Create component instance
-        const auto inst = lm::comp::detail::createComp(name);
-        // Cast it to python object
-        // It fails because there is no matching registration for lm::Component
-        auto instPy = py::cast(inst);
-        // Check reference
-        std::cout << instPy.ref_count() << std::endl;
-        // Return it to python
-        return instPy;
-    });
+    //m.def("createComp", [](py::object iface, const char* name) -> py::object {
+    //    // Create component instance
+    //    const auto inst = lm::comp::detail::createComp(name);
+    //    // Cast it to python object
+    //    // It fails because there is no matching registration for lm::Component
+    //    auto instPy = py::cast(inst);
+    //    // Check reference
+    //    std::cout << instPy.ref_count() << std::endl;
+    //    // Return it to python
+    //    return instPy;
+    //});
 }
 
 // unique_ptr with custom deleter
@@ -296,14 +305,37 @@ TEST_CASE("Python component plugin")
             }
         }
 
-        SUBCASE("Create component factory") {
-            auto locals = py::dict();
+        SUBCASE("Python component factory") {
+            // Define and register component implementation
             py::exec(R"(
-                p = test_comp.createComp('test::comp::a1')
-                
-            )", py::globals(), locals);
-            CHECK(locals["r1"].cast<int>() == 43);
-            CHECK(locals["r2"].cast<int>() == 6);
+                class A4(test_comp.A):
+                    def f1(self):
+                        return 44
+                    def f2(self, a, b):
+                        return a - b
+            )", py::globals());
+
+            SUBCASE("Native embeded plugin") {
+                auto locals = py::dict();
+                py::exec(R"(
+                    p = test_comp.A.create('test::comp::a1')
+                    r1 = p.f1()
+                    r2 = p.f2(2, 3)
+                )", py::globals(), locals);
+                CHECK(locals["r1"].cast<int>() == 42);
+                CHECK(locals["r2"].cast<int>() == 5);
+            }
+
+            SUBCASE("Native external plugin") {
+                lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
+                REQUIRE(pluginGuard.valid());
+                auto locals = py::dict();
+                py::exec(R"(
+                    p = test_comp.createTestPlugin.create('testplugin::default')
+                    r1 = p.f()
+                )", py::globals(), locals);
+                CHECK(locals["r1"].cast<int>() == 42);
+            }
         }
     }
     catch (const std::runtime_error& e) {
