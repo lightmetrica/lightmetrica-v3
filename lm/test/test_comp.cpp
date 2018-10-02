@@ -18,12 +18,6 @@ LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
 // _begin_snippet: A
 struct A : public lm::Component {
-    A() {
-        std::cout << "A" << std::endl;
-    }
-    ~A() {
-        std::cout << "~A" << std::endl;
-    }
     virtual int f1() = 0;
     virtual int f2(int a, int b) = 0;
 };
@@ -133,12 +127,6 @@ TEST_CASE("Component")
 // Define a trampoline class (see ref) for the interface A
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
 struct A_Py final : public A {
-    A_Py() {
-        std::cout << "A_Py" << std::endl;
-    }
-    ~A_Py() {
-        std::cout << "~A_Py" << std::endl;
-    }
     virtual int f1() override {
         PYBIND11_OVERLOAD_PURE(int, A, f1);
     }
@@ -173,6 +161,18 @@ PYBIND11_EMBEDDED_MODULE(test_comp, m) {
 
     m.def("useA", [](A* a) -> int {
         return a->f1() * 2;
+    });
+
+    m.def("createComp", [](const char* name) -> py::object {
+        // Create component instance
+        const auto inst = lm::comp::detail::createComp(name);
+        // Cast it to python object
+        // It fails because there is no matching registration for lm::Component
+        auto instPy = py::cast(inst);
+        // Check reference
+        std::cout << instPy.ref_count() << std::endl;
+        // Return it to python
+        return instPy;
     });
 }
 
@@ -230,11 +230,14 @@ TEST_CASE("Python component plugin")
 
                 class A3(test_comp.A):
                     def __init__(self, v):
+                        # We need explicit initialization (not super()) of the base class
+                        # See https://pybind11.readthedocs.io/en/stable/advanced/classes.html
+                        test_comp.A.__init__(self)
                         self.v = v
                     def f1(self):
-                        return v
+                        return self.v
                     def f2(self, a, b):
-                        return v * v
+                        return self.v * self.v
             )", py::globals());
 
             SUBCASE("Instantiate inside python script and use it in python") {
@@ -270,22 +273,37 @@ TEST_CASE("Python component plugin")
             }
 
             SUBCASE("Manage instances in C++") {
-                auto p = create<A>("A2");
-                REQUIRE(p);
-                CHECK(p->f1() == 43);
+                SUBCASE("Without constructor") {
+                    auto p = create<A>("A2");
+                    REQUIRE(p);
+                    CHECK(p->f1() == 43);
+                }
+                SUBCASE("With constructor") {
+                    auto p = create<A>("A3", 1);
+                    REQUIRE(p);
+                    CHECK(p->f1() == 1);
+                }
+                SUBCASE("In C++ vector") {
+                    std::vector<UniquePtr<A>> v;
+                    for (int i = 0; i < 10; i++) {
+                        v.push_back(create<A>("A3", i));
+                        REQUIRE(v.back());
+                    }
+                    for (int i = 0; i < 10; i++) {
+                        CHECK(v[i]->f1() == i);
+                    }
+                }
             }
+        }
 
-            SUBCASE("Manage instances in C++ vector") {
-                std::vector<UniquePtr<A>> v;
-                for (int i = 0; i < 10; i++) {
-                    v.push_back(create<A>("A3", int(i)));
-                    REQUIRE(v.back());
-                }
-                for (int i = 0; i < 10; i++) {
-                    std::cout << v[i]->f1() << std::endl;
-                    //CHECK(v[i]->f1() == i);
-                }
-            }
+        SUBCASE("Create component factory") {
+            auto locals = py::dict();
+            py::exec(R"(
+                p = test_comp.createComp('test::comp::a1')
+                
+            )", py::globals(), locals);
+            CHECK(locals["r1"].cast<int>() == 43);
+            CHECK(locals["r2"].cast<int>() == 6);
         }
     }
     catch (const std::runtime_error& e) {
