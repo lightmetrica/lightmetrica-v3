@@ -143,8 +143,8 @@ struct TestPlugin_Py final : public lm::TestPlugin {
 
 // Factory function for component instances
 template <typename ComponentT>
-std::unique_ptr<ComponentT> createComponentInstance{
-    
+std::unique_ptr<ComponentT> createComponentInstance(const char* name) {
+    return lm::comp::create<A>(name);
 };
 
 PYBIND11_EMBEDDED_MODULE(test_comp, m) {
@@ -152,13 +152,30 @@ PYBIND11_EMBEDDED_MODULE(test_comp, m) {
         .def(py::init<>())
         .def("f1", &A::f1)
         .def("f2", &A::f2)
-        .def_static("create", [](const char* name) -> std::unique_ptr<A> {
-            return lm::comp::create<A>(name);
-        }, py::return_value_policy::take_ownership);
+        .def_static(
+            "create",
+            [](const char* name) -> A {
+                // Find native component plugin
+                auto inst = lm::comp::create<A>(name);
+                // Sucess -> extract pointer without delete and
+                // delegate ownership to the python side
+                if (inst) {
+                    auto* instRaw = inst.release();
+                    return instRaw;
+                }
+                // Find python component plugin
+                auto instPy = py::globals()[name]();
+                return instPy.cast<T*>();
+            },
+            py::return_value_policy::take_ownership);
 
     py::class_<lm::TestPlugin, TestPlugin_Py>(m, "TestPlugin")
         .def(py::init<>())
-        .def("f", &lm::TestPlugin::f);
+        .def("f", &lm::TestPlugin::f)
+        .def_static(
+            "create",
+            &createComponentInstance<lm::TestPlugin>,
+            py::return_value_policy::take_ownership);
 
     m.def("createA1", []() {
         return lm::comp::create<A>("test::comp::a1");
