@@ -189,24 +189,20 @@ py::object createCompWrap(const char* name) {
     return py::cast(instT, py::return_value_policy::take_ownership);
 }
 
-void unregWrap(const char* name) {
-    lm::comp::detail::unreg(name);
-}
-
 PYBIND11_EMBEDDED_MODULE(test_comp, m) {
     py::class_<A, A_Py>(m, "A")
         .def(py::init<>())
         .def("f1", &A::f1)
         .def("f2", &A::f2)
         .def_static("reg", &regCompWrap<A>)
-        .def_static("unreg", &unregWrap)
+        .def_static("unreg", &lm::comp::detail::unreg)
         .def_static("create", &createCompWrap<A>);
 
     py::class_<lm::TestPlugin, TestPlugin_Py>(m, "TestPlugin")
         .def(py::init<>())
         .def("f", &lm::TestPlugin::f)
         .def_static("reg", &regCompWrap<lm::TestPlugin>)
-        .def_static("unreg", &unregWrap)
+        .def_static("unreg", &lm::comp::detail::unreg)
         .def_static("create", &createCompWrap<lm::TestPlugin>);
 
     m.def("createA1", []() {
