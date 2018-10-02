@@ -11,12 +11,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(comp)
-class Impl_;
-LM_NAMESPACE_END(comp)
-
-// ----------------------------------------------------------------------------
-
 /*!
     \brief Base component.
 
@@ -24,19 +18,19 @@ LM_NAMESPACE_END(comp)
     All components interfaces and implementations must inherit this class.
 */
 class Component {
-private:
-    friend class comp::Impl_;
-
 public:
     // Create and release function types
-    using CreateFunction = Component* (*)();
-    using ReleaseFunction = void(*)(Component*);
+    using CreateFunction  = std::function<Component*()>;
+    using ReleaseFunction = std::function<void(Component*)>;
 
-private:
+public:
     // Create and release functions
     std::string key_;
     CreateFunction  createFunc_ = nullptr;
     ReleaseFunction releaseFunc_ = nullptr;
+
+    // Underlying reference to owner object (if any)
+    std::any ownerRef_;
 
 public:
     Component() = default;
@@ -50,15 +44,21 @@ public:
 LM_NAMESPACE_BEGIN(comp)
 
 /*!
+    \brief Unique pointer for component instances.
+*/
+template <typename InterfaceT>
+using UniquePtr = std::unique_ptr<InterfaceT, Component::ReleaseFunction>;
+
+/*!
     \brief Create component with specific interface type.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
 */
 template <typename InterfaceT>
-std::unique_ptr<InterfaceT> create(const char* key) {
-    auto* p = static_cast<InterfaceT*>(detail::createComp(key));
-    if (!p) { return nullptr; }
-    return std::unique_ptr<InterfaceT>(p);
+UniquePtr<InterfaceT> create(const char* key) {
+    auto* inst = detail::createComp(key);
+    if (!inst) { return UniquePtr<InterfaceT>(nullptr, nullptr); }
+    return UniquePtr<InterfaceT>(dynamic_cast<InterfaceT*>(inst), inst->releaseFunc_);
 }
 
 // ----------------------------------------------------------------------------
@@ -66,7 +66,7 @@ std::unique_ptr<InterfaceT> create(const char* key) {
 LM_NAMESPACE_BEGIN(detail)
 
 /*!
-    \brief Create a new component.
+    \brief Create a component and its deleter.
     \param key Name of the implementation.
 */
 LM_PUBLIC_API Component* createComp(const char* key);
@@ -83,11 +83,6 @@ LM_PUBLIC_API void reg(
     \brief Unregister a component.
 */
 LM_PUBLIC_API void unreg(const char* key);
-
-/*!
-    \brief Get release function.
-*/
-LM_PUBLIC_API Component::ReleaseFunction releaseFunc(const char* key);
 
 /*!
     \brief Load a plugin.
@@ -146,12 +141,10 @@ public:
 
 private:
     ImplEntry_(const char* key) : key_(key) {
+        // Register factory function
         reg(key,
             []() -> Component* { return new ImplType; },
-            [](Component* p) -> void {
-                auto* p2 = static_cast<ImplType*>(p);
-                LM_SAFE_DELETE(p2); p = nullptr;
-            });
+            [](Component* p) { LM_SAFE_DELETE(p); });
     }
     ~ImplEntry_() { unreg(key_.c_str()); }
 };
@@ -171,7 +164,8 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 	namespace { \
 		template <typename T> class ImplEntry_Init_; \
 		template <> class ImplEntry_Init_<ImplType> { \
-            static const LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>& reg_; }; \
-        const LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>& ImplEntry_Init_<ImplType>::reg_ = \
-            LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>::instance(Key); \
+            static const LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>& reg_; \
+        }; \
+        const LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>& \
+            ImplEntry_Init_<ImplType>::reg_ = LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>::instance(Key); \
     }

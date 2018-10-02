@@ -86,7 +86,7 @@ TEST_CASE("Component")
 
     SUBCASE("Cast to parent interface") {
         auto b = lm::comp::create<B>("test::comp::b1");
-        const auto a = std::unique_ptr<A>(std::move(b));
+        const auto a = lm::comp::UniquePtr<A>(b.release(), b.get_deleter());
         REQUIRE(a);
         CHECK(a->f1() == 42);
         CHECK(a->f2(1, 2) == 3);
@@ -141,65 +141,85 @@ struct TestPlugin_Py final : public lm::TestPlugin {
     }
 };
 
-// Factory function for component instances
-template <typename ComponentT>
-std::unique_ptr<ComponentT> createComponentInstance(const char* name) {
-    return lm::comp::create<A>(name);
-};
+template <typename T>
+void regCompWrap(py::object implClass, const char* name) {
+    lm::comp::detail::reg(name,
+        [implClass = implClass]() -> lm::Component* {
+            // Create instance of python class
+            auto instPy = implClass();
+            // We need to keep track of the python object
+            // to manage lifetime of the instance
+            auto instCpp = instPy.cast<T*>();
+            // Assignment to std::any increments ref counter.
+            instCpp->ownerRef_ = instPy;
+            // Destruction of instPy decreases ref counter.
+            return instCpp;
+        },
+        [](lm::Component* p) -> void {
+            // Automatic deref of instPy causes invocation of GC.
+            // Note we need one extra deref because one reference is still hold by ownerRef_.
+            // The pointer of component is associated with instPy
+            // and it will be destructed when it is deallocated by GC.
+            auto instPy = std::any_cast<py::object>(p->ownerRef_);
+            instPy.dec_ref();
+        });
+}
+
+template <typename T>
+py::object createCompWrap(const char* name) {
+    // We cannot bind lm::comp::create directly because 
+    // pybind does not support the cast of unique_ptr with custom deleter.
+    // Pybind internally requires the construction of holder_type from T*.
+    // Create instance
+    auto inst = lm::comp::detail::createComp(name);
+    if (!inst) {
+        return py::object();
+    }
+    // Extract owner if available
+    if (inst->ownerRef_.has_value()) {
+        // Returning instantiated pointer incurs another wrapper for the pointer inside pybind.
+        // To avoid this, if the instance was created inside python, extract the underlying
+        // python object and directly return it.
+        auto instPy = std::any_cast<py::object>(inst->ownerRef_);
+        return instPy;
+    }
+    // Otherwise inst is C++ instance so return with standard pointer
+    // It should work without registered deleter, underlying unique_ptr will take care of it.
+    auto* instT = dynamic_cast<T*>(inst);
+    return py::cast(instT, py::return_value_policy::take_ownership);
+}
+
+void unregWrap(const char* name) {
+    lm::comp::detail::unreg(name);
+}
 
 PYBIND11_EMBEDDED_MODULE(test_comp, m) {
     py::class_<A, A_Py>(m, "A")
         .def(py::init<>())
         .def("f1", &A::f1)
         .def("f2", &A::f2)
-        .def_static(
-            "create",
-            [](const char* name) -> A {
-                // Find native component plugin
-                auto inst = lm::comp::create<A>(name);
-                // Sucess -> extract pointer without delete and
-                // delegate ownership to the python side
-                if (inst) {
-                    auto* instRaw = inst.release();
-                    return instRaw;
-                }
-                // Find python component plugin
-                auto instPy = py::globals()[name]();
-                return instPy.cast<T*>();
-            },
-            py::return_value_policy::take_ownership);
+        .def_static("reg", &regCompWrap<A>)
+        .def_static("unreg", &unregWrap)
+        .def_static("create", &createCompWrap<A>);
 
     py::class_<lm::TestPlugin, TestPlugin_Py>(m, "TestPlugin")
         .def(py::init<>())
         .def("f", &lm::TestPlugin::f)
-        .def_static(
-            "create",
-            &createComponentInstance<lm::TestPlugin>,
-            py::return_value_policy::take_ownership);
+        .def_static("reg", &regCompWrap<lm::TestPlugin>)
+        .def_static("unreg", &unregWrap)
+        .def_static("create", &createCompWrap<lm::TestPlugin>);
 
     m.def("createA1", []() {
-        return lm::comp::create<A>("test::comp::a1");
+        return dynamic_cast<A*>(lm::comp::detail::createComp("test::comp::a1"));
     });
 
     m.def("createTestPlugin", []() {
-        return lm::comp::create<lm::TestPlugin>("testplugin::default");
+        return dynamic_cast<lm::TestPlugin*>(lm::comp::detail::createComp("testplugin::default"));
     });
 
     m.def("useA", [](A* a) -> int {
         return a->f1() * 2;
     });
-
-    //m.def("createComp", [](py::object iface, const char* name) -> py::object {
-    //    // Create component instance
-    //    const auto inst = lm::comp::detail::createComp(name);
-    //    // Cast it to python object
-    //    // It fails because there is no matching registration for lm::Component
-    //    auto instPy = py::cast(inst);
-    //    // Check reference
-    //    std::cout << instPy.ref_count() << std::endl;
-    //    // Return it to python
-    //    return instPy;
-    //});
 }
 
 // unique_ptr with custom deleter
@@ -325,11 +345,15 @@ TEST_CASE("Python component plugin")
         SUBCASE("Python component factory") {
             // Define and register component implementation
             py::exec(R"(
+                # Implement component A
                 class A4(test_comp.A):
                     def f1(self):
                         return 44
                     def f2(self, a, b):
                         return a - b
+
+                # Register
+                test_comp.A.reg(A4, 'test::comp::a4')
             )", py::globals());
 
             SUBCASE("Native embeded plugin") {
@@ -348,11 +372,32 @@ TEST_CASE("Python component plugin")
                 REQUIRE(pluginGuard.valid());
                 auto locals = py::dict();
                 py::exec(R"(
-                    p = test_comp.createTestPlugin.create('testplugin::default')
+                    p = test_comp.TestPlugin.create('testplugin::default')
                     r1 = p.f()
                 )", py::globals(), locals);
                 CHECK(locals["r1"].cast<int>() == 42);
             }
+
+            SUBCASE("Python plugin") {
+                auto locals = py::dict();
+                py::exec(R"(
+                    p = test_comp.A.create('test::comp::a4')
+                    r1 = p.f1()
+                    r2 = p.f2(2, 3)
+                )", py::globals(), locals);
+                CHECK(locals["r1"].cast<int>() == 44);
+                CHECK(locals["r2"].cast<int>() == -1);
+            }
+
+            SUBCASE("Python plugin instantiate from C++") {
+                auto p = lm::comp::create<A>("test::comp::a4");
+                CHECK(p->f1() == 44);
+                CHECK(p->f2(2, 3) == -1);
+            }
+
+            py::exec(R"(
+                test_comp.A.unreg('test::comp::a4')
+            )", py::globals());
         }
     }
     catch (const std::runtime_error& e) {
