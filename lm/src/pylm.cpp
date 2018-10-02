@@ -4,10 +4,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <lm/lm.h>
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
+#include <lm/pylm.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -24,7 +21,7 @@ PYBIND11_MODULE(pylm, m)
         >>> pylm.primitive('test')
         42
 
-    )x", py::arg("name"));
+    )x", pybind11::arg("name"));
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

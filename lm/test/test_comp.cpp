@@ -8,6 +8,7 @@
 #include <generated/test_python.h>
 #include <pybind11/embed.h>
 #include <pybind11/functional.h>
+#include <lm/pylm.h>
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -141,69 +142,17 @@ struct TestPlugin_Py final : public lm::TestPlugin {
     }
 };
 
-template <typename T>
-void regCompWrap(py::object implClass, const char* name) {
-    lm::comp::detail::reg(name,
-        [implClass = implClass]() -> lm::Component* {
-            // Create instance of python class
-            auto instPy = implClass();
-            // We need to keep track of the python object
-            // to manage lifetime of the instance
-            auto instCpp = instPy.cast<T*>();
-            // Assignment to std::any increments ref counter.
-            instCpp->ownerRef_ = instPy;
-            // Destruction of instPy decreases ref counter.
-            return instCpp;
-        },
-        [](lm::Component* p) -> void {
-            // Automatic deref of instPy causes invocation of GC.
-            // Note we need one extra deref because one reference is still hold by ownerRef_.
-            // The pointer of component is associated with instPy
-            // and it will be destructed when it is deallocated by GC.
-            auto instPy = std::any_cast<py::object>(p->ownerRef_);
-            instPy.dec_ref();
-        });
-}
-
-template <typename T>
-py::object createCompWrap(const char* name) {
-    // We cannot bind lm::comp::create directly because 
-    // pybind does not support the cast of unique_ptr with custom deleter.
-    // Pybind internally requires the construction of holder_type from T*.
-    // Create instance
-    auto inst = lm::comp::detail::createComp(name);
-    if (!inst) {
-        return py::object();
-    }
-    // Extract owner if available
-    if (inst->ownerRef_.has_value()) {
-        // Returning instantiated pointer incurs another wrapper for the pointer inside pybind.
-        // To avoid this, if the instance was created inside python, extract the underlying
-        // python object and directly return it.
-        auto instPy = std::any_cast<py::object>(inst->ownerRef_);
-        return instPy;
-    }
-    // Otherwise inst is C++ instance so return with standard pointer
-    // It should work without registered deleter, underlying unique_ptr will take care of it.
-    auto* instT = dynamic_cast<T*>(inst);
-    return py::cast(instT, py::return_value_policy::take_ownership);
-}
-
 PYBIND11_EMBEDDED_MODULE(test_comp, m) {
     py::class_<A, A_Py>(m, "A")
         .def(py::init<>())
         .def("f1", &A::f1)
         .def("f2", &A::f2)
-        .def_static("reg", &regCompWrap<A>)
-        .def_static("unreg", &lm::comp::detail::unreg)
-        .def_static("create", &createCompWrap<A>);
+        .PYLM_DEF_COMP_BIND(A);
 
     py::class_<lm::TestPlugin, TestPlugin_Py>(m, "TestPlugin")
         .def(py::init<>())
         .def("f", &lm::TestPlugin::f)
-        .def_static("reg", &regCompWrap<lm::TestPlugin>)
-        .def_static("unreg", &lm::comp::detail::unreg)
-        .def_static("create", &createCompWrap<lm::TestPlugin>);
+        .PYLM_DEF_COMP_BIND(lm::TestPlugin);
 
     m.def("createA1", []() {
         return dynamic_cast<A*>(lm::comp::detail::createComp("test::comp::a1"));

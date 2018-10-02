@@ -36,20 +36,17 @@ add_subdirectory(external/fmt)
 set(_PROJECT_NAME liblm)
 set(_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/lm")
 set(_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-add_library(${_PROJECT_NAME} SHARED
-	# Headers
+set(_HEADER_FILES
     "${_INCLUDE_DIR}/lm.h"
     "${_INCLUDE_DIR}/api.h"
     "${_INCLUDE_DIR}/common.h"
-	"${_INCLUDE_DIR}/component.h"
-	"${_INCLUDE_DIR}/logger.h"
-
-	# Sources
+    "${_INCLUDE_DIR}/component.h"
+    "${_INCLUDE_DIR}/logger.h")
+set(_SOURCE_FILES
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/logger.cpp"
-    "${_SOURCE_DIR}/api.cpp"
-)
-
+    "${_SOURCE_DIR}/api.cpp")    
+add_library(${_PROJECT_NAME} SHARED ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only
     PRIVATE spdlog)
@@ -57,22 +54,31 @@ target_include_directories(${_PROJECT_NAME}
     PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
+source_group("Header Files" ${_HEADER_FILES})
+source_group("Source Files" ${_SOURCE_FILES})
 
 # -----------------------------------------------------------------------------
 
 # Python binding
 set(_PROJECT_NAME pylm)
-add_library(${_PROJECT_NAME} MODULE "src/pylm.cpp")
+set(_HEADER_FILES
+    "${_INCLUDE_DIR}/pylm.h")
+set(_SOURCE_FILES
+    "${_SOURCE_DIR}/pylm.cpp")
+add_library(${_PROJECT_NAME} MODULE ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
 set_target_properties(${_PROJECT_NAME} PROPERTIES
     PREFIX "${PYTHON_MODULE_PREFIX}"
     SUFFIX "${PYTHON_MODULE_EXTENSION}")
+source_group("Header Files" ${_HEADER_FILES})
+source_group("Source Files" ${_SOURCE_FILES})
 
 # -----------------------------------------------------------------------------
 
 # Add a plugin
 function(lm_add_plugin)
-    cmake_parse_arguments(_ARG "" "NAME;INCLUDE_DIR" "SOURCE" ${ARGN})
+    # Parse arguments
+    cmake_parse_arguments(_ARG "" "NAME;INCLUDE_DIR" "HEADERS;SOURCES" ${ARGN})
 
     # INTERFACE library for headers
     add_library(${_ARG_NAME}_interface INTERFACE)
@@ -81,9 +87,10 @@ function(lm_add_plugin)
         INTERFACE "$<BUILD_INTERFACE:${_ARG_INCLUDE_DIR}>")
 
     # MODULE library for the dynamic loaded library
-    add_library(${_ARG_NAME} MODULE ${_ARG_SOURCE})
-    target_link_libraries(${_ARG_NAME}
-        PRIVATE liblm ${_ARG_NAME}_interface)
+    add_library(${_ARG_NAME} MODULE ${_ARG_SOURCES})
+    target_link_libraries(${_ARG_NAME} PRIVATE liblm ${_ARG_NAME}_interface)
+    source_group("Header Files" ${_ARG_HEADERS})
+    source_group("Source Files" ${_ARG_SOURCES})
 endfunction()
 
 # -----------------------------------------------------------------------------
@@ -92,8 +99,9 @@ endfunction()
 lm_add_plugin(
     NAME lm_test_plugin
     INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
-    SOURCE
+    HEADERS
         "test/test_interface.h"
+    SOURCES
         "test/test_interface_impl.cpp")
 
 # Get python root directory
@@ -105,12 +113,16 @@ configure_file("test/test_python.h.in" "${CMAKE_CURRENT_BINARY_DIR}/generated/te
 
 # Unit test
 set(_PROJECT_NAME lm_test)
-add_executable(${_PROJECT_NAME}
-    "test/main.cpp"
+set(_HEADER_FILES
     "test/test_common.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/test_python.h")
+set(_SOURCE_FILES
+    "test/main.cpp"
     "test/test_common.cpp"
     "test/test_api.cpp"
-    "test/test_comp.cpp"
-    "${CMAKE_CURRENT_BINARY_DIR}/generated/test_python.h")
+    "test/test_comp.cpp")
+add_executable(${_PROJECT_NAME} ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest pybind11::embed lm_test_plugin::interface)
 target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+source_group("Header Files" ${_HEADER_FILES})
+source_group("Source Files" ${_SOURCE_FILES})
