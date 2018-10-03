@@ -5,15 +5,15 @@
 
 #include <lm/detail/comp.h>
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+LM_NAMESPACE_BEGIN(lmtest)
 
-struct TestPlugin : public Component {
+struct TestPlugin : public lm::Component {
     virtual int f() = 0;
 };
 
-struct TestPluginWithCtorAndDtor : public Component {
+struct TestPluginWithCtorAndDtor : public lm::Component {
     TestPluginWithCtorAndDtor()  { std::cout << "A"; }
     ~TestPluginWithCtorAndDtor() { std::cout << "~A"; }
 };
 
-LM_NAMESPACE_END(LM_NAMESPACE)
+LM_NAMESPACE_END(lmtest)

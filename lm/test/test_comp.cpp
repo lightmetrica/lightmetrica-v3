@@ -61,8 +61,7 @@ LM_COMP_REG_IMPL(C1, "test::comp::c1");
 
 // ----------------------------------------------------------------------------
 
-TEST_CASE("Component")
-{
+TEST_CASE("Component") {
     SUBCASE("Simple interface") {
         // _begin_snippet: A_impl
         const auto p = lm::comp::create<A>("test::comp::a1");
@@ -87,7 +86,7 @@ TEST_CASE("Component")
 
     SUBCASE("Cast to parent interface") {
         auto b = lm::comp::create<B>("test::comp::b1");
-        const auto a = lm::comp::UniquePtr<A>(b.release(), b.get_deleter());
+        const auto a = lm::Component::UniquePtr<A>(b.release(), b.get_deleter());
         REQUIRE(a);
         CHECK(a->f1() == 42);
         CHECK(a->f2(1, 2) == 3);
@@ -105,13 +104,13 @@ TEST_CASE("Component")
         lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
         REQUIRE(pluginGuard.valid());
         SUBCASE("Simple") {
-            auto p = lm::comp::create<lm::TestPlugin>("testplugin::default");
+            auto p = lm::comp::create<TestPlugin>("testplugin::default");
             REQUIRE(p);
             CHECK(p->f() == 42);
         }
         SUBCASE("Plugin constructor and destructor") {
             const auto out = captureStdout([]() {
-                const auto p = lm::comp::create<lm::TestPluginWithCtorAndDtor>("testpluginxtor::default");
+                const auto p = lm::comp::create<TestPluginWithCtorAndDtor>("testpluginxtor::default");
                 REQUIRE(p);
             });
             CHECK(out == "AB~B~A");
@@ -143,15 +142,15 @@ struct A_Py final : public A {
     }
 };
 
-struct TestPlugin_Py final : public lm::TestPlugin {
+struct TestPlugin_Py final : public TestPlugin {
     virtual int f() override {
-        PYBIND11_OVERLOAD_PURE(int, lm::TestPlugin, f);
+        PYBIND11_OVERLOAD_PURE(int, TestPlugin, f);
     }
     static void bind(py::module& m) {
-        py::class_<lm::TestPlugin, TestPlugin_Py>(m, "TestPlugin")
+        py::class_<TestPlugin, TestPlugin_Py>(m, "TestPlugin")
             .def(py::init<>())
-            .def("f", &lm::TestPlugin::f)
-            .PYLM_DEF_COMP_BIND(lm::TestPlugin);
+            .def("f", &TestPlugin::f)
+            .PYLM_DEF_COMP_BIND(TestPlugin);
     }
 };
 
@@ -164,7 +163,7 @@ PYBIND11_EMBEDDED_MODULE(test_comp, m) {
     });
 
     m.def("createTestPlugin", []() {
-        return dynamic_cast<lm::TestPlugin*>(lm::comp::detail::createComp("testplugin::default"));
+        return dynamic_cast<TestPlugin*>(lm::comp::detail::createComp("testplugin::default"));
     });
 
     m.def("useA", [](A* a) -> int {
@@ -183,8 +182,7 @@ UniquePtr<T> create(const char* name, Args... opt) {
     return UniquePtr<T>(instPy.cast<T*>(), [p = py::reinterpret_borrow<py::object>(instPy)](T*){});
 }
 
-TEST_CASE("Python component plugin")
-{
+TEST_CASE("Python component plugin") {
     Py_SetPythonHome(LM_TEST_PYTHON_ROOT);
     py::scoped_interpreter guard{};
   
@@ -353,6 +351,47 @@ TEST_CASE("Python component plugin")
     catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
         REQUIRE(false);
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+struct D : public lm::Component {
+    virtual int f() = 0;
+};
+
+struct D1 final : public D {
+    int v1;
+    int v2;
+    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+        v1 = prop["v1"].get<int>();
+        v2 = prop["v2"].get<int>();
+        return true;
+    }
+    virtual int f() override {
+        return v1 + v2;
+    }
+};
+
+LM_COMP_REG_IMPL(D1, "test::comp::d1");
+
+TEST_CASE("Construction and serialization") {
+    SUBCASE("Construction") {
+        auto p = lm::comp::create<D>("test::comp::d1", {{"v1", 42}, {"v2", 43}});
+        REQUIRE(p);
+        CHECK(p->f() == 85);
+    }
+
+    SUBCASE("Construction (native plugin)") {
+        lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
+        REQUIRE(pluginGuard.valid());
+        auto p = lm::comp::create<TestPlugin>("testplugin::construct", { {"v1", 42}, {"v2", 43} });
+        REQUIRE(p);
+        CHECK(p->f() == -1);
+    }
+
+    SUBCASE("Construction with parent component") {
+        
     }
 }
 

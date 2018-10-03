@@ -13,11 +13,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::log::detail)
 
 // Logger implementation
 // - Ignores message when the logger is not initialized.
-class Impl_ {
+class Impl {
 public:
 
-    static Impl_& instance() {
-        static Impl_ instance;
+    static Impl& instance() {
+        static Impl instance;
         return instance;
     }
 
@@ -60,19 +60,19 @@ private:
 // ----------------------------------------------------------------------------
 
 LM_PUBLIC_API void init() {
-    Impl_::instance().init();
+    Impl::instance().init();
 }
 
 LM_PUBLIC_API void shutdown() {
-    Impl_::instance().shutdown();
+    Impl::instance().shutdown();
 }
 
 LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const char* message) {
-    Impl_::instance().log(level, filename, line, message);
+    Impl::instance().log(level, filename, line, message);
 }
 
 LM_PUBLIC_API void updateIndentation(int n) {
-    Impl_::instance().updateIndentation(n);
+    Impl::instance().updateIndentation(n);
 }
 
 // ----------------------------------------------------------------------------

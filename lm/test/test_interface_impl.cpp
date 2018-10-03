@@ -5,7 +5,9 @@
 
 #include "test_interface.h"
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+LM_NAMESPACE_BEGIN(lmtest)
+
+// ----------------------------------------------------------------------------
 
 struct TestPlugin_ final : public TestPlugin {
     virtual int f() override {
@@ -15,6 +17,25 @@ struct TestPlugin_ final : public TestPlugin {
 
 LM_COMP_REG_IMPL(TestPlugin_, "testplugin::default");
 
+// ----------------------------------------------------------------------------
+
+struct TestPlugin_WithConstruct : public TestPlugin {
+    int v1;
+    int v2;
+    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+        v1 = prop["v1"].get<int>();
+        v2 = prop["v2"].get<int>();
+        return true;
+    }
+    virtual int f() override {
+        return v1 - v2;
+    }
+};
+
+LM_COMP_REG_IMPL(TestPlugin_WithConstruct, "testplugin::construct");
+
+// ----------------------------------------------------------------------------
+
 struct TestPluginWithCtorAndDtor_ final : public TestPluginWithCtorAndDtor {
     TestPluginWithCtorAndDtor_()  { std::cout << "B"; }
     ~TestPluginWithCtorAndDtor_() { std::cout << "~B"; }
@@ -22,4 +43,6 @@ struct TestPluginWithCtorAndDtor_ final : public TestPluginWithCtorAndDtor {
 
 LM_COMP_REG_IMPL(TestPluginWithCtorAndDtor_, "testpluginxtor::default");
 
-LM_NAMESPACE_END(LM_NAMESPACE)
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_END(lmtest)

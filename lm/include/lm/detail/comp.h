@@ -11,6 +11,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
 
+LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, class Impl);
+LM_FORWARD_DECLARE_WITH_NAMESPACE(py::detail, class Impl);
+
+// ----------------------------------------------------------------------------
+
 /*!
     \brief Base component.
 
@@ -18,13 +23,20 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     All components interfaces and implementations must inherit this class.
 */
 class Component {
+private:
+    friend class comp::detail::Impl;
+    friend class py::detail::Impl;
+
 public:
     //! Factory function type
     using CreateFunction  = std::function<Component*()>;
     //! Release function type
     using ReleaseFunction = std::function<void(Component*)>;
+    //! Unique pointer for component instances.
+    template <typename InterfaceT>
+    using UniquePtr = std::unique_ptr<InterfaceT, ReleaseFunction>;
 
-public:
+private:
     //! Name of the component instance.
     std::string key_;
     //! Factory function of the component instance.
@@ -41,15 +53,41 @@ public:
 
 public:
     /*!
-        \brief 
+        \brief Make UniquePtr from an component instance.
     */
-    virtual void construct() = 0;
+    template <typename InterfaceT>
+    static UniquePtr<InterfaceT> makeUnique(Component* inst) {
+        return UniquePtr<InterfaceT>(dynamic_cast<InterfaceT*>(inst), inst->releaseFunc_);
+    }
+
+public:
+    /*!
+        \brief Construct a component.
+    */
+    virtual bool construct(const json& prop, Component* parent = nullptr) { return false; }
     
     /*!
-        \brief 
+        \brief Deserialize a component.
     */
-    virtual void save() = 0;
+    virtual void load(std::istream& stream, Component* parent = nullptr) const {}
 
+    /*!
+        \brief Serialize a component.
+    */
+    virtual void save(std::ostream& stream) const {}
+
+    /*!
+        \brief Get underlying component instance.
+    */
+    virtual Component* underlying(const char* name) const { return nullptr; }
+
+    /*!
+        \brief Get underlying component instance with specific interface type.
+    */
+    template <typename UnderlyingInterfaceT>
+    UnderlyingInterfaceT* underlying(const char* name) const {
+        return dynamic_cast<UnderlyingInterfaceT*>(underlying(name));
+    }
 };
 
 // ----------------------------------------------------------------------------
@@ -57,21 +95,29 @@ public:
 LM_NAMESPACE_BEGIN(comp)
 
 /*!
-    \brief Unique pointer for component instances.
-*/
-template <typename InterfaceT>
-using UniquePtr = std::unique_ptr<InterfaceT, Component::ReleaseFunction>;
-
-/*!
     \brief Create component with specific interface type.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
 */
 template <typename InterfaceT>
-UniquePtr<InterfaceT> create(const char* key) {
+Component::UniquePtr<InterfaceT> create(const char* key) {
     auto* inst = detail::createComp(key);
-    if (!inst) { return UniquePtr<InterfaceT>(nullptr, nullptr); }
-    return UniquePtr<InterfaceT>(dynamic_cast<InterfaceT*>(inst), inst->releaseFunc_);
+    if (!inst) {
+        return Component::UniquePtr<InterfaceT>(nullptr, nullptr);
+    }
+    return Component::makeUnique<InterfaceT>(inst);
+}
+
+/*!
+    \brief Create component with construction with given properties.
+*/
+template <typename InterfaceT>
+Component::UniquePtr<InterfaceT> create(const char* key, const json& prop, Component* parent = nullptr) {
+    auto inst = create<InterfaceT>(key);
+    if (!inst || !inst->construct(prop, parent)) {
+        return Component::UniquePtr<InterfaceT>(nullptr, nullptr);
+    }
+    return inst;
 }
 
 // ----------------------------------------------------------------------------

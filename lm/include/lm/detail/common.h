@@ -205,6 +205,12 @@
 #ifndef LM_NAMESPACE_END
     #define LM_NAMESPACE_END(name) }
 #endif
+#ifndef LM_FORWARD_DECLARE_WITH_NAMESPACE
+    #define LM_FORWARD_DECLARE_WITH_NAMESPACE(name, declaration) \
+        LM_NAMESPACE_BEGIN(name) \
+        declaration; \
+        LM_NAMESPACE_END(name)
+#endif
 #ifndef LM_NAMESPACE
 #define LM_NAMESPACE lm
 #endif

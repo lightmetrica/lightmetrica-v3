@@ -12,7 +12,7 @@
 #include <dlfcn.h>
 #endif
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::comp)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::comp::detail)
 
 // ----------------------------------------------------------------------------
 
@@ -124,11 +124,11 @@ private:
 
 // ----------------------------------------------------------------------------
 
-class Impl_ {
+class Impl {
 public:
 
-    static Impl_& instance() {
-        static Impl_ instance;
+    static Impl& instance() {
+        static Impl instance;
         return instance;
     }
 
@@ -244,33 +244,33 @@ private:
 
 // ----------------------------------------------------------------------------
 
-LM_PUBLIC_API Component* detail::createComp(const char* key) {
-    return Impl_::instance().createComp(key);
+LM_PUBLIC_API Component* createComp(const char* key) {
+    return Impl::instance().createComp(key);
 }
 
-LM_PUBLIC_API void detail::reg(
+LM_PUBLIC_API void reg(
     const char* key,
     const Component::CreateFunction& createFunc,
     const Component::ReleaseFunction& releaseFunc) {
-    Impl_::instance().reg(key, createFunc, releaseFunc);
+    Impl::instance().reg(key, createFunc, releaseFunc);
 }
 
-LM_PUBLIC_API void detail::unreg(const char* key) {
-    Impl_::instance().unreg(key);
+LM_PUBLIC_API void unreg(const char* key) {
+    Impl::instance().unreg(key);
 }
 
-LM_PUBLIC_API bool detail::loadPlugin(const char* path) {
-    return Impl_::instance().loadPlugin(path);
+LM_PUBLIC_API bool loadPlugin(const char* path) {
+    return Impl::instance().loadPlugin(path);
 }
 
-LM_PUBLIC_API void detail::loadPlugins(const char* directory) {
-    Impl_::instance().loadPlugins(directory);
+LM_PUBLIC_API void loadPlugins(const char* directory) {
+    Impl::instance().loadPlugins(directory);
 }
 
-LM_PUBLIC_API void detail::unloadPlugins() {
-    Impl_::instance().unloadPlugins();
+LM_PUBLIC_API void unloadPlugins() {
+    Impl::instance().unloadPlugins();
 }
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_END(LM_NAMESPACE::comp)
+LM_NAMESPACE_END(LM_NAMESPACE::comp::detail)
