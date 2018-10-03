@@ -19,23 +19,36 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Component {
 public:
-    // Create and release function types
+    //! Factory function type
     using CreateFunction  = std::function<Component*()>;
+    //! Release function type
     using ReleaseFunction = std::function<void(Component*)>;
 
 public:
-    // Create and release functions
+    //! Name of the component instance.
     std::string key_;
+    //! Factory function of the component instance.
     CreateFunction  createFunc_ = nullptr;
+    //! Release function of the component instance.
     ReleaseFunction releaseFunc_ = nullptr;
-
-    // Underlying reference to owner object (if any)
+    //! Underlying reference to owner object (if any)
     std::any ownerRef_;
 
 public:
     Component() = default;
     virtual ~Component() = default;
     LM_DISABLE_COPY_AND_MOVE(Component);
+
+public:
+    /*!
+        \brief 
+    */
+    virtual void construct() = 0;
+    
+    /*!
+        \brief 
+    */
+    virtual void save() = 0;
 
 };
 

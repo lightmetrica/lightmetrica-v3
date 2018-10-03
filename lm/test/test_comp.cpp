@@ -8,7 +8,7 @@
 #include <generated/test_python.h>
 #include <pybind11/embed.h>
 #include <pybind11/functional.h>
-#include <lm/pylm.h>
+#include <lm/detail/pylm.h>
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -134,25 +134,30 @@ struct A_Py final : public A {
     virtual int f2(int a, int b) override {
         PYBIND11_OVERLOAD_PURE(int, A, f2, a, b);
     }
+    static void bind(py::module& m) {
+        py::class_<A, A_Py>(m, "A")
+            .def(py::init<>())
+            .def("f1", &A::f1)
+            .def("f2", &A::f2)
+            .PYLM_DEF_COMP_BIND(A);
+    }
 };
 
 struct TestPlugin_Py final : public lm::TestPlugin {
     virtual int f() override {
         PYBIND11_OVERLOAD_PURE(int, lm::TestPlugin, f);
     }
+    static void bind(py::module& m) {
+        py::class_<lm::TestPlugin, TestPlugin_Py>(m, "TestPlugin")
+            .def(py::init<>())
+            .def("f", &lm::TestPlugin::f)
+            .PYLM_DEF_COMP_BIND(lm::TestPlugin);
+    }
 };
 
 PYBIND11_EMBEDDED_MODULE(test_comp, m) {
-    py::class_<A, A_Py>(m, "A")
-        .def(py::init<>())
-        .def("f1", &A::f1)
-        .def("f2", &A::f2)
-        .PYLM_DEF_COMP_BIND(A);
-
-    py::class_<lm::TestPlugin, TestPlugin_Py>(m, "TestPlugin")
-        .def(py::init<>())
-        .def("f", &lm::TestPlugin::f)
-        .PYLM_DEF_COMP_BIND(lm::TestPlugin);
+    A_Py::bind(m);
+    TestPlugin_Py::bind(m);
 
     m.def("createA1", []() {
         return dynamic_cast<A*>(lm::comp::detail::createComp("test::comp::a1"));

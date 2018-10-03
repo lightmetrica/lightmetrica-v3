@@ -3,7 +3,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <lm/component.h>
+#include <lm/detail/comp.h>
 #include <lm/logger.h>
 
 #if LM_PLATFORM_WINDOWS
@@ -160,11 +160,6 @@ public:
         funcMap_.erase(key);
     }
 
-    //Component::ReleaseFunction releaseFunc(const char* key) {
-    //    auto it = funcMap_.find(key);
-    //    return it == funcMap_.end() ? nullptr : it->second.releaseFunc;
-    //}
-
     bool loadPlugin(const char* p) {
         namespace fs = std::filesystem;
 
@@ -263,10 +258,6 @@ LM_PUBLIC_API void detail::reg(
 LM_PUBLIC_API void detail::unreg(const char* key) {
     Impl_::instance().unreg(key);
 }
-//
-//LM_PUBLIC_API Component::ReleaseFunction detail::releaseFunc(const char* key) {
-//    return Impl_::instance().releaseFunc(key);
-//}
 
 LM_PUBLIC_API bool detail::loadPlugin(const char* path) {
     return Impl_::instance().loadPlugin(path);

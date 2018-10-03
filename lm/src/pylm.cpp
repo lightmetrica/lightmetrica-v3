@@ -4,7 +4,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <lm/pylm.h>
+#include <lm/detail/pylm.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

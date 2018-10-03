@@ -3,7 +3,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <lm/component.h>
+#include <lm/detail/comp.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

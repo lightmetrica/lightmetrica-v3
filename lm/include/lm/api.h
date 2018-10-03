@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "common.h"
+#include "detail/common.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(api)
