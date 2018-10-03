@@ -60,6 +60,18 @@ public:
         return UniquePtr<InterfaceT>(dynamic_cast<InterfaceT*>(inst), inst->releaseFunc_);
     }
 
+    /*!
+        \brief Cast to specific component interface type.
+    */
+    template <typename InterfaceT>
+    const InterfaceT* cast() const { return dynamic_cast<InterfaceT*>(this); }
+    
+    /*!
+        \brief Cast to specific component interface type.
+    */
+    template <typename InterfaceT>
+    InterfaceT* cast() { return dynamic_cast<InterfaceT*>(this); }
+
 public:
     /*!
         \brief Construct a component.
@@ -79,7 +91,7 @@ public:
     /*!
         \brief Get underlying component instance.
     */
-    virtual Component* underlying(const char* name) const { return nullptr; }
+    virtual Component* underlying(const char* name = nullptr) const { return nullptr; }
 
     /*!
         \brief Get underlying component instance with specific interface type.

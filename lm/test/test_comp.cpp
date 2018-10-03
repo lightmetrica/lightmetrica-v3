@@ -375,9 +375,45 @@ struct D1 final : public D {
 
 LM_COMP_REG_IMPL(D1, "test::comp::d1");
 
-TEST_CASE("Construction and serialization") {
-    SUBCASE("Construction") {
-        auto p = lm::comp::create<D>("test::comp::d1", {{"v1", 42}, {"v2", 43}});
+// ----------------------------------------------------------------------------
+
+struct E : public lm::Component {
+    virtual int f() = 0;
+};
+
+struct E1 final : public E {
+    D* d;
+    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+        d = parent->cast<D>();
+        return true;
+    }
+    virtual int f() override {
+        return d->f() + 1;
+    }
+    virtual Component* underlying(const char* name) const {
+        return d;
+    }
+};
+
+struct E2 final : public E {
+    D* d;
+    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+        d = parent->underlying()->cast<D>();
+        return true;
+    }
+    virtual int f() override {
+        return d->f() + 2;
+    }
+};
+
+LM_COMP_REG_IMPL(E1, "test::comp::e1");
+LM_COMP_REG_IMPL(E2, "test::comp::e2");
+
+// ----------------------------------------------------------------------------
+
+TEST_CASE("Construction") {
+    SUBCASE("Simple") {
+        auto p = lm::comp::create<D>("test::comp::d1", { {"v1", 42}, {"v2", 43} });
         REQUIRE(p);
         CHECK(p->f() == 85);
     }
@@ -391,9 +427,38 @@ TEST_CASE("Construction and serialization") {
     }
 
     SUBCASE("Construction with parent component") {
-        
+        auto d = lm::comp::create<D>("test::comp::d1", { {"v1", 42}, {"v2", 43} });
+        REQUIRE(d);
+        auto e = lm::comp::create<E>("test::comp::e1", {}, d.get());
+        REQUIRE(e);
+        CHECK(e->f() == 86);
+    }
+
+    SUBCASE("Construction with underlying component of the parent") {
+        auto d = lm::comp::create<D>("test::comp::d1", { {"v1", 42}, {"v2", 43} });
+        REQUIRE(d);
+        auto e1 = lm::comp::create<E>("test::comp::e1", {}, d.get());
+        REQUIRE(e1);
+        auto e2 = lm::comp::create<E>("test::comp::e2", {}, e1.get());
+        REQUIRE(e2);
+        CHECK(e2->f() == 87);
     }
 }
+
+TEST_CASE("Construction (python)") {
+
+}
+
+// ----------------------------------------------------------------------------
+
+TEST_CASE("Serialization") {
+
+}
+
+TEST_CASE("Serialization (python)") {
+
+}
+
 
 // ----------------------------------------------------------------------------
 
