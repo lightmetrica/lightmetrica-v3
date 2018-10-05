@@ -26,7 +26,8 @@ API
 -------------
 
 .. doxygenclass:: lm::Component
-.. doxygenfunction:: lm::comp::create
+.. doxygenfunction:: lm::comp::create(const char *)
+.. doxygenfunction:: lm::comp::create(const char *, const json&, Component *)
 .. doxygendefine:: LM_COMP_REG_IMPL
 
 Notes

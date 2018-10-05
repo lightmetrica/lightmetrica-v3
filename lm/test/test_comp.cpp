@@ -445,8 +445,38 @@ TEST_CASE("Construction") {
     }
 }
 
-TEST_CASE("Construction (python)") {
+// ----------------------------------------------------------------------------
 
+struct D_Py final : public D {
+    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+        PYBIND11_OVERLOAD_PURE(bool, D, prop, parent);
+    }
+    virtual int f() override {
+        PYBIND11_OVERLOAD_PURE(int, D, f);
+    }
+};
+
+PYBIND11_EMBEDDED_MODULE(test_comp_1, m) {
+    
+}
+
+TEST_CASE("Construction (python)") {
+    Py_SetPythonHome(LM_TEST_PYTHON_ROOT);
+    py::scoped_interpreter guard{};
+
+    try {
+        py::exec(R"(
+            import test_comp_2 as test
+        )", py::globals());
+
+        SUBCASE("Casting lm::json") {
+            
+        }
+    }
+    catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+        REQUIRE(false);
+    }
 }
 
 // ----------------------------------------------------------------------------

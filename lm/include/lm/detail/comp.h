@@ -30,8 +30,10 @@ private:
 public:
     //! Factory function type
     using CreateFunction  = std::function<Component*()>;
+
     //! Release function type
     using ReleaseFunction = std::function<void(Component*)>;
+
     //! Unique pointer for component instances.
     template <typename InterfaceT>
     using UniquePtr = std::unique_ptr<InterfaceT, ReleaseFunction>;
@@ -39,10 +41,13 @@ public:
 private:
     //! Name of the component instance.
     std::string key_;
+
     //! Factory function of the component instance.
     CreateFunction  createFunc_ = nullptr;
+
     //! Release function of the component instance.
     ReleaseFunction releaseFunc_ = nullptr;
+
     //! Underlying reference to owner object (if any)
     std::any ownerRef_;
 
@@ -122,6 +127,10 @@ Component::UniquePtr<InterfaceT> create(const char* key) {
 
 /*!
     \brief Create component with construction with given properties.
+    \tparam InterfaceT Component interface type.
+    \param key Name of the implementation.
+    \param prop Properties.
+    \param parent Parent component instance.
 */
 template <typename InterfaceT>
 Component::UniquePtr<InterfaceT> create(const char* key, const json& prop, Component* parent = nullptr) {
