@@ -9,6 +9,70 @@
 #include <lm/lm.h>
 #include <pybind11/pybind11.h>
 
+// ----------------------------------------------------------------------------
+
+// Type caster for json type
+namespace pybind11::detail {
+
+template <>
+struct type_caster<lm::json> {
+public:
+    // Register this class as type caster
+    PYBIND11_TYPE_CASTER(lm::json, _("json"));
+
+
+    // Python -> C++
+    bool load(handle src, bool convert) {
+        using namespace nlohmann::detail;
+
+    }
+    
+    // C++ -> Python
+    // policy and parent are used only for casting return values
+    template <typename T>
+    static handle cast(T&& src, return_value_policy policy, handle parent) {
+        using namespace nlohmann::detail;
+        
+        // Converted Python dict
+        dict d;
+
+        // Check types
+        switch (src.type()) {
+            case value_t::boolean:
+                auto p = return_value_policy_override<int>::policy(policy);
+                auto v = reinterpret_steal<object>(make_caster<int>::cast(forward_like<T, int>(), p, parent));
+                
+                bool_ value;
+                
+
+                break;
+            case value_t::number_float:
+                break;
+            case value_t::number_integer:
+                break;
+            case value_t::number_unsigned:
+                break;
+            case value_t::string:
+                break;
+            case value_t::object:
+                break;
+            case value_t::array:
+                break;
+            case value_t::null:
+                break;
+            case value_t::discarded:
+                break;
+        }
+
+        // For each element in the map
+        for (auto&& element : src) {
+
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(py)
 LM_NAMESPACE_BEGIN(detail)
