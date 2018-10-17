@@ -54,50 +54,59 @@ public:
         using namespace nlohmann::detail;
         // Check types
         switch (src.type()) {
-            case value_t::boolean:
+            case value_t::boolean: {
                 auto p = return_value_policy_override<bool>::policy(policy);
-                auto value = reinterpret_steal<object>(
+                auto v = reinterpret_steal<object>(
                     make_caster<bool>::cast(forward_like<T, int>(src.get<int>()), p, parent));
-                if (!value) {
+                if (!v) {
                     return handle();
                 }
-                return value.release();
-            case value_t::number_float:
+                return v.release();
+            }
+            case value_t::number_float: {
                 LM_TBA_RUNTIME();
                 break;
-            case value_t::number_integer:
+            }
+            case value_t::number_integer: {
                 LM_TBA_RUNTIME();
                 break;
-            case value_t::number_unsigned:
+            }
+            case value_t::number_unsigned: {
                 LM_TBA_RUNTIME();
                 break;
-            case value_t::string:
+            }
+            case value_t::string: {
                 LM_TBA_RUNTIME();
                 break;
-            case value_t::object:
+            }
+            case value_t::object: {
                 auto policy_key = return_value_policy_override<std::string>::policy(policy);
                 auto policy_value = return_value_policy_override<lm::json>::policy(policy);
                 dict d;
-                for (auto&& element : src) {
-                    auto key = reinterpret_steal<object>(
-                        make_caster<std::string>::cast(forward_like<T>(element.key()), policy_key, parent));
-                    auto value = reinterpret_steal<object>(
-                        make_caster<lm::json>::cast(forward_like<T>(element.value()), policy_value, parent));
-                    if (!key || !value) {
+                for (lm::json::iterator it = src.begin(); it != src.end(); it++) {
+                    auto k = reinterpret_steal<object>(
+                        make_caster<std::string>::cast(forward_like<T>(it.key()), policy_key, parent));
+                    auto v = reinterpret_steal<object>(
+                        make_caster<lm::json>::cast(forward_like<T>(it.value()), policy_value, parent));
+                    if (!k || !v) {
                         return handle();
                     }
-                    d[key] = value;
+                    d[k] = v;
                 }
                 return d.release();
-            case value_t::array:
+            }
+            case value_t::array: {
                 LM_TBA_RUNTIME();
                 break;
-            case value_t::null:
+            }
+            case value_t::null: {
                 LM_TBA_RUNTIME();
                 break;
-            case value_t::discarded:
+            }
+            case value_t::discarded: {
                 LM_TBA_RUNTIME();
                 break;
+            }
         }
 
         LM_UNREACHABLE();
