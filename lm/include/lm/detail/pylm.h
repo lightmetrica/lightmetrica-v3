@@ -13,7 +13,6 @@
 
 // Type caster for json type
 namespace pybind11::detail {
-
 template <>
 struct type_caster<lm::json> {
 public:
@@ -25,6 +24,27 @@ public:
     bool load(handle src, bool convert) {
         using namespace nlohmann::detail;
 
+        if (!isinstance<bool_>(src)) {
+            value = static_cast<bool>(src);
+            return true;
+        }
+        else if (!isinstance<dict>(src)) {
+            auto d = reinterpret_borrow<dict>(src);
+            for (auto it : d) {
+                make_caster<std::string> kconv;
+                make_caster<lm::json> vconv;
+                if (!kconv.load(it.first.ptr(), convert) || !vconv.load(it.second.ptr(), convert)) {
+                    return false;
+                }
+                value.emplace(
+                    cast_op<std::string&&>(std::move(kconv)),
+                    cast_op<lm::json&&>(std::move(vconv)));
+            }
+            return true;
+        }
+
+        LM_UNREACHABLE();
+        return false;
     }
     
     // C++ -> Python
@@ -32,43 +52,58 @@ public:
     template <typename T>
     static handle cast(T&& src, return_value_policy policy, handle parent) {
         using namespace nlohmann::detail;
-        
-        // Converted Python dict
-        dict d;
-
         // Check types
         switch (src.type()) {
             case value_t::boolean:
-                auto p = return_value_policy_override<int>::policy(policy);
-                auto v = reinterpret_steal<object>(make_caster<int>::cast(forward_like<T, int>(), p, parent));
-                
-                bool_ value;
-                
-
-                break;
+                auto p = return_value_policy_override<bool>::policy(policy);
+                auto value = reinterpret_steal<object>(
+                    make_caster<bool>::cast(forward_like<T, int>(src.get<int>()), p, parent));
+                if (!value) {
+                    return handle();
+                }
+                return value.release();
             case value_t::number_float:
+                LM_TBA_RUNTIME();
                 break;
             case value_t::number_integer:
+                LM_TBA_RUNTIME();
                 break;
             case value_t::number_unsigned:
+                LM_TBA_RUNTIME();
                 break;
             case value_t::string:
+                LM_TBA_RUNTIME();
                 break;
             case value_t::object:
-                break;
+                auto policy_key = return_value_policy_override<std::string>::policy(policy);
+                auto policy_value = return_value_policy_override<lm::json>::policy(policy);
+                dict d;
+                for (auto&& element : src) {
+                    auto key = reinterpret_steal<object>(
+                        make_caster<std::string>::cast(forward_like<T>(element.key()), policy_key, parent));
+                    auto value = reinterpret_steal<object>(
+                        make_caster<lm::json>::cast(forward_like<T>(element.value()), policy_value, parent));
+                    if (!key || !value) {
+                        return handle();
+                    }
+                    d[key] = value;
+                }
+                return d.release();
             case value_t::array:
+                LM_TBA_RUNTIME();
                 break;
             case value_t::null:
+                LM_TBA_RUNTIME();
                 break;
             case value_t::discarded:
+                LM_TBA_RUNTIME();
                 break;
         }
 
-        // For each element in the map
-        for (auto&& element : src) {
-
-        }
+        LM_UNREACHABLE();
+        return handle();
     }
+};
 }
 
 // ----------------------------------------------------------------------------
