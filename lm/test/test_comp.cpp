@@ -469,7 +469,7 @@ TEST_CASE("Construction (python)") {
             import test_comp_2 as test
         )", py::globals());
 
-        SUBCASE("Casting lm::json") {
+        SUBCASE("Casting json type") {
             
         }
     }

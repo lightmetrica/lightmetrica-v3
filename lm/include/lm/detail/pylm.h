@@ -19,16 +19,15 @@ public:
     // Register this class as type caster
     PYBIND11_TYPE_CASTER(lm::json, _("json"));
 
-
     // Python -> C++
     bool load(handle src, bool convert) {
         using namespace nlohmann::detail;
 
-        if (!isinstance<bool_>(src)) {
-            value = static_cast<bool>(src);
+        if (isinstance<bool_>(src)) {
+            value = src.cast<bool>();
             return true;
         }
-        else if (!isinstance<dict>(src)) {
+        else if (isinstance<dict>(src)) {
             auto d = reinterpret_borrow<dict>(src);
             for (auto it : d) {
                 make_caster<std::string> kconv;
