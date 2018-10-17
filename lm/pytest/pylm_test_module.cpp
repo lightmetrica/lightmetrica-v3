@@ -10,7 +10,7 @@ LM_NAMESPACE_BEGIN(lmtest)
 
 PYBIND11_MODULE(pylm_test_module, m) {
     // Round trip
-    m.def([](lm::json v) -> lm::json {
+    m.def("roundtrip", [](lm::json v) -> lm::json {
         return v;
     });
 }
