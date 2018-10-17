@@ -456,7 +456,7 @@ struct D_Py final : public D {
     }
 };
 
-PYBIND11_EMBEDDED_MODULE(test_comp_1, m) {
+PYBIND11_EMBEDDED_MODULE(test_comp_2, m) {
     
 }
 
@@ -488,7 +488,6 @@ TEST_CASE("Serialization") {
 TEST_CASE("Serialization (python)") {
 
 }
-
 
 // ----------------------------------------------------------------------------
 
