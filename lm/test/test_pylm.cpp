@@ -48,15 +48,6 @@ TEST_CASE("Casting JSON type") {
                 });
                 CHECK(out == "false");
             }
-            SUBCASE("integer 1") {
-                const auto out = captureStdout([]() {
-                    py::exec(R"(
-                        test_pylm.dump(42)
-                    )", py::globals());
-                });
-                CHECK(out == "42");
-            }
-            
         }
     }
     catch (const std::runtime_error& e) {

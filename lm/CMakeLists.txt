@@ -70,9 +70,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/pylm.cpp")
 add_library(${_PROJECT_NAME} MODULE ${_DETAIL_HEADER_FILES} ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
-set_target_properties(${_PROJECT_NAME} PROPERTIES
-    PREFIX "${PYTHON_MODULE_PREFIX}"
-    SUFFIX "${PYTHON_MODULE_EXTENSION}")
+set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 source_group("Header Files\\detail" FILES ${_DETAIL_HEADER_FILES})
 source_group("Source Files" FILES ${_SOURCE_FILES})
 
@@ -129,4 +127,15 @@ add_executable(${_PROJECT_NAME} ${_HEADER_FILES} ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest pybind11::embed lm_test_plugin::interface)
 target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 source_group("Header Files" FILES ${_HEADER_FILES})
+source_group("Source Files" FILES ${_SOURCE_FILES})
+
+# -----------------------------------------------------------------------------
+
+# Python module for unit test in python
+set(_PROJECT_NAME pylm_test_module)
+set(_SOURCE_FILES
+    "pytest/pylm_test_module.cpp")
+add_library(${_PROJECT_NAME} MODULE ${_SOURCE_FILES})
+target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
+set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 source_group("Source Files" FILES ${_SOURCE_FILES})
