@@ -1,0 +1,18 @@
+{
+    "python.pythonPath": "C:\\Users\\hotsu\\AppData\\Local\\Continuum\\miniconda3\\envs\\lm3\\python.exe",
+    "python.linting.pylintPath": "C:\\Users\\hotsu\\AppData\\Local\\Continuum\\miniconda3\\envs\\lm3\\Scripts\\pylint.exe",
+
+    "python.unitTest.unittestEnabled": false,
+    "python.unitTest.pyTestEnabled": true,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.pyTestArgs": [
+      "--lm",
+      "build/lm/Debug",
+      "lm/pytest"
+    ],
+    "cSpell.enabledLanguageIds": [
+      "plaintext",
+      "text",
+      "yml",
+    ]
+  }
