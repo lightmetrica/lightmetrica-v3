@@ -20,8 +20,8 @@ $ conda create -n lm3 python=3.6
 
 ```bash
 $ source activate lm3
-$ conda install sphinx pytest
-$ pip install sphinx-autobuild sphinx_rtd_theme breathe sphinx_tabs
+$ conda install sphinx
+$ pip install sphinx-autobuild sphinx_rtd_theme breathe sphinx_tabs pytest
 ```
 
 ### Display and edit documentation
@@ -66,11 +66,12 @@ $ start lightmetrica-v3.sln
 Execute following commands after build:
 
 ```bash
-$ pytest --lm <Binary directory of lightmetrica> lm/pytest
+$ python -m pytest --lm <Binary directory of lightmetrica> lm/pytest
 ```
 
 For instance, if you want to use Debug build, run
 
 ```bash
-$ pytest --lm build/lm/Debug lm/pytest
+$ python -m pytest --lm build/lm/Debug lm/pytest
 ```
+
