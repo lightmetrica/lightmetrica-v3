@@ -9,13 +9,14 @@
 LM_NAMESPACE_BEGIN(lmtest)
 
 PYBIND11_MODULE(pylm_test_module, m) {
+    // Simple function
+    m.def("test", []() -> int {
+        return 42;
+    });
+
     // Round trip
     m.def("round_trip", [](lm::json v) -> lm::json {
         return v;
-    });
-
-    m.def("test", []() -> int {
-        return 42;
     });
 }
 

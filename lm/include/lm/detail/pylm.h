@@ -26,7 +26,15 @@ public:
 
         if (isinstance<bool_>(src)) {
             value = src.cast<bool>();
-            return true;
+        }
+        else if (isinstance<float_>(src)) {
+            value = src.cast<double>();
+        }
+        else if (isinstance<int_>(src)) {
+            value = src.cast<int>();
+        }
+        else if (isinstance<str>(src)) {
+            value = src.cast<std::string>();
         }
         else if (isinstance<dict>(src)) {
             auto d = reinterpret_borrow<dict>(src);
@@ -40,11 +48,12 @@ public:
                     cast_op<std::string&&>(std::move(kconv)),
                     cast_op<lm::json&&>(std::move(vconv)));
             }
-            return true;
         }
-
-        LM_UNREACHABLE();
-        return false;
+        else {
+            LM_UNREACHABLE();
+            return false;
+        }
+        return true;
     }
     
     // C++ -> Python
@@ -55,29 +64,17 @@ public:
         // Check types
         switch (src.type()) {
             case value_t::boolean: {
-                auto p = return_value_policy_override<bool>::policy(policy);
-                auto v = reinterpret_steal<object>(
-                    make_caster<bool>::cast(forward_like<T, int>(src.get<int>()), p, parent));
-                if (!v) {
-                    return handle();
-                }
-                return v.release();
+                return castToPythonObject<bool>(std::forward<T>(src), policy, std::move(parent));
             }
             case value_t::number_float: {
-                LM_TBA_RUNTIME();
-                break;
+                return castToPythonObject<double>(std::forward<T>(src), policy, std::move(parent));
             }
-            case value_t::number_integer: {
-                LM_TBA_RUNTIME();
-                break;
-            }
+            case value_t::number_integer: { [[fallthrough]]; }
             case value_t::number_unsigned: {
-                LM_TBA_RUNTIME();
-                break;
+                return castToPythonObject<int>(std::forward<T>(src), policy, std::move(parent));
             }
             case value_t::string: {
-                LM_TBA_RUNTIME();
-                break;
+                return castToPythonObject<std::string>(std::forward<T>(src), policy, std::move(parent));
             }
             case value_t::object: {
                 auto policy_key = return_value_policy_override<std::string>::policy(policy);
@@ -112,6 +109,18 @@ public:
         LM_UNREACHABLE();
         return handle();
     }
+
+private:
+    template <typename U, typename T>
+    static handle castToPythonObject(T&& src, return_value_policy policy, handle&& parent) {
+        auto p = return_value_policy_override<U>::policy(policy);
+        auto v = reinterpret_steal<object>(make_caster<U>::cast(forward_like<T>(src.get<U>()), p, parent));
+        if (!v) {
+            return handle();
+        }
+        return v.release();
+    }
+
 };
 }
 
