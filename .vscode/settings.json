@@ -1,6 +1,6 @@
 {
-    "python.pythonPath": "C:\\Users\\hotsu\\AppData\\Local\\Continuum\\miniconda3\\envs\\lm3\\python.exe",
-    "python.linting.pylintPath": "C:\\Users\\hotsu\\AppData\\Local\\Continuum\\miniconda3\\envs\\lm3\\Scripts\\pylint.exe",
+    //"python.pythonPath": "C:\\Users\\hotsu\\AppData\\Local\\Continuum\\miniconda3\\envs\\lm3\\python.exe",
+    //"python.linting.pylintPath": "C:\\Users\\hotsu\\AppData\\Local\\Continuum\\miniconda3\\envs\\lm3\\Scripts\\pylint.exe",
 
     "python.unitTest.unittestEnabled": false,
     "python.unitTest.pyTestEnabled": true,
