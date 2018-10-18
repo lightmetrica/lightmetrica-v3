@@ -17,9 +17,6 @@ PYBIND11_EMBEDDED_MODULE(test_pylm, m) {
     m.def("dump", [](lm::json v) -> void {
         std::cout << v.dump();
     });
-    m.def("round_trip", [](lm::json v) -> lm::json {
-        return v;
-    });
 }
 
 TEST_CASE("Casting JSON type") {
