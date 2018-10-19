@@ -42,10 +42,10 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/logger.h")
 set(_DETAIL_HEADER_FILES
     "${_INCLUDE_DIR}/detail/common.h"
-    "${_INCLUDE_DIR}/detail/comp.h"
+    "${_INCLUDE_DIR}/detail/component.h"
     "${_INCLUDE_DIR}/detail/serial.h")
 set(_SOURCE_FILES
-    "${_SOURCE_DIR}/comp.cpp"
+    "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/api.cpp")    
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_DETAIL_HEADER_FILES} ${_SOURCE_FILES})
@@ -64,13 +64,17 @@ source_group("Source Files" FILES ${_SOURCE_FILES})
 
 # Python binding
 set(_PROJECT_NAME pylm)
+set(_HEADER_FILES
+    "${_INCLUDE_DIR}/pylm.h")
 set(_DETAIL_HEADER_FILES
-    "${_INCLUDE_DIR}/detail/pylm.h")
+    "${_INCLUDE_DIR}/detail/pylm_component.h"
+    "${_INCLUDE_DIR}/detail/pylm_json.h")
 set(_SOURCE_FILES
     "${_SOURCE_DIR}/pylm.cpp")
-add_library(${_PROJECT_NAME} MODULE ${_DETAIL_HEADER_FILES} ${_SOURCE_FILES})
+add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_DETAIL_HEADER_FILES} ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
+source_group("Header Files" FILES ${_HEADER_FILES})
 source_group("Header Files\\detail" FILES ${_DETAIL_HEADER_FILES})
 source_group("Source Files" FILES ${_SOURCE_FILES})
 
@@ -121,7 +125,7 @@ set(_SOURCE_FILES
     "test/main.cpp"
     "test/test_common.cpp"
     "test/test_api.cpp"
-    "test/test_comp.cpp"
+    "test/test_component.cpp"
     "test/test_pylm.cpp")
 add_executable(${_PROJECT_NAME} ${_HEADER_FILES} ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest pybind11::embed lm_test_plugin::interface)

@@ -6,7 +6,7 @@
 #include "test_common.h"
 #include <generated/test_python.h>
 #include <pybind11/embed.h>
-#include <lm/detail/pylm.h>
+#include <lm/pylm.h>
 
 namespace py = pybind11;
 using namespace py::literals;

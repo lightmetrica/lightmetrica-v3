@@ -1,10 +1,10 @@
 /*
-    Lightmetrica V3 Prototype
-    Copyright (c) 2018 Hisanari Otsu
+    Lightmetrica - Copyright (c) 2018 Hisanari Otsu
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <lm/detail/pylm.h>
+#include <lm/lm.h>
+#include <lm/pylm.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

@@ -47,5 +47,5 @@ LM_PUBLIC_API int render();
 LM_PUBLIC_API int primitive(const std::string& name);
 
 LM_NAMESPACE_END(api)
-LM_NAMESPACE_END(LM_NAMESPACE::api)
+LM_NAMESPACE_END(LM_NAMESPACE)
 

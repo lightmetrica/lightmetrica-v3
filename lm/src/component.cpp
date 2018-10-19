@@ -3,7 +3,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <lm/detail/comp.h>
+#include <lm/detail/component.h>
 #include <lm/logger.h>
 
 #if LM_PLATFORM_WINDOWS

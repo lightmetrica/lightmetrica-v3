@@ -5,6 +5,5 @@
 
 #pragma once
 
-#include "detail/component.h"
-#include "api.h"
-
+#include "detail/pylm_component.h"
+#include "detail/pylm_json.h"
