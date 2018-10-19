@@ -143,12 +143,16 @@ struct A_Py final : public A {
 };
 
 struct TestPlugin_Py final : public TestPlugin {
+    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+        PYBIND11_OVERLOAD_PURE(bool, TestPlugin, prop, parent);
+    }
     virtual int f() override {
         PYBIND11_OVERLOAD_PURE(int, TestPlugin, f);
     }
     static void bind(py::module& m) {
         py::class_<TestPlugin, TestPlugin_Py>(m, "TestPlugin")
             .def(py::init<>())
+            .def("construct", &TestPlugin::construct)
             .def("f", &TestPlugin::f)
             .PYLM_DEF_COMP_BIND(TestPlugin);
     }
@@ -455,7 +459,7 @@ struct D_Py final : public D {
         PYBIND11_OVERLOAD_PURE(int, D, f);
     }
     static void bind(py::module& m) {
-        py::class_<D, D_Py>(m, "D")
+        py::class_<D, D_Py, lm::Component>(m, "D")
             .def(py::init<>())
             .def("construct", &D::construct)
             .def("f", &D::f)
@@ -463,8 +467,27 @@ struct D_Py final : public D {
     }
 };
 
+struct E_Py final : public E {
+    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+        PYBIND11_OVERLOAD_PURE(bool, E, prop, parent);
+    }
+    virtual int f() override {
+        PYBIND11_OVERLOAD_PURE(int, E, f);
+    }
+    static void bind(py::module& m) {
+        py::class_<E, E_Py, lm::Component>(m, "E")
+            .def(py::init<>())
+            .def("construct", &E::construct)
+            .def("f", &E::f)
+            .PYLM_DEF_COMP_BIND(E);
+    }
+};
+
 PYBIND11_EMBEDDED_MODULE(test_comp_2, m) {
+    lm::py::bindInterfaces(m);
     D_Py::bind(m);
+    E_Py::bind(m);
+    TestPlugin_Py::bind(m);
 }
 
 TEST_CASE("Construction (python)") {
@@ -477,42 +500,50 @@ TEST_CASE("Construction (python)") {
         )", py::globals());
 
         SUBCASE("Simple") {
-            // Create instance of D1 inside Python script
             auto locals = py::dict();
             py::exec(R"(
-                p = test.D.create('test::comp::d1')
-                p.construct({'v1':42, 'v2':43}, None)
+                p = test.D.create('test::comp::d1', {'v1':42, 'v2':43}, None)
                 r = p.f()
             )", py::globals(), locals);
-            //CHECK(locals["r"].cast<int>() == 85);
+            CHECK(locals["r"].cast<int>() == 85);
         }
 
         SUBCASE("Construction (native plugin)") {
-
+            lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
+            REQUIRE(pluginGuard.valid());
+            auto locals = py::dict();
+            py::exec(R"(
+                p = test.TestPlugin.create('testplugin::construct', {'v1':42, 'v2':43}, None)
+                r = p.f()
+            )", py::globals(), locals);
+            CHECK(locals["r"].cast<int>() == -1);
         }
 
         SUBCASE("Construction with parent component") {
-
+            auto locals = py::dict();
+            py::exec(R"(
+                d = test.D.create('test::comp::d1', {'v1':42, 'v2':43}, None)
+                e = test.E.create('test::comp::e1', None, d)
+                r = e.f()
+            )", py::globals(), locals);
+            CHECK(locals["r"].cast<int>() == 86);
         }
 
         SUBCASE("Construction with underlying component of the parent") {
-
+            auto locals = py::dict();
+            py::exec(R"(
+                d  = test.D.create('test::comp::d1', {'v1':42, 'v2':43}, None)
+                e1 = test.E.create('test::comp::e1', None, d)
+                e2 = test.E.create('test::comp::e2', None, e1)
+                r = e2.f()
+            )", py::globals(), locals);
+            CHECK(locals["r"].cast<int>() == 87);
         }
     }
     catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
         REQUIRE(false);
     }
-}
-
-// ----------------------------------------------------------------------------
-
-TEST_CASE("Serialization") {
-
-}
-
-TEST_CASE("Serialization (python)") {
-
 }
 
 // ----------------------------------------------------------------------------

@@ -30,6 +30,10 @@ add_subdirectory(external/spdlog)
 # fmt
 add_subdirectory(external/fmt)
 
+# cereal
+option(JUST_INSTALL_CEREAL "" ON)
+add_subdirectory(external/cereal)
+
 # -----------------------------------------------------------------------------
 
 # Main library
@@ -51,7 +55,7 @@ set(_SOURCE_FILES
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_DETAIL_HEADER_FILES} ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only
-    PRIVATE spdlog)
+    PRIVATE spdlog cereal)
 target_include_directories(${_PROJECT_NAME}
     PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
@@ -125,7 +129,8 @@ set(_SOURCE_FILES
     "test/main.cpp"
     "test/test_common.cpp"
     "test/test_api.cpp"
-    "test/test_component.cpp")
+    "test/test_component.cpp"
+    "test/test_serial.cpp")
 add_executable(${_PROJECT_NAME} ${_HEADER_FILES} ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest pybind11::embed lm_test_plugin::interface)
 target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

@@ -81,12 +81,12 @@ public:
     /*!
         \brief Construct a component.
     */
-    virtual bool construct(const json& prop, Component* parent = nullptr) { return false; }
+    virtual bool construct(const json& prop, Component* parent = nullptr) { return true; }
     
     /*!
         \brief Deserialize a component.
     */
-    virtual void load(std::istream& stream, Component* parent = nullptr) const {}
+    virtual void load(std::istream& stream, Component* parent = nullptr) {}
 
     /*!
         \brief Serialize a component.
