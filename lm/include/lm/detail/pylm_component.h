@@ -6,6 +6,7 @@
 #pragma once
 
 #include "common.h"
+#include "component.h"
 #include <pybind11/pybind11.h>
 
 // ----------------------------------------------------------------------------
@@ -91,3 +92,18 @@ LM_NAMESPACE_END(LM_NAMESPACE)
      def_static("reg", &LM_NAMESPACE::py::detail::Impl::regCompWrap<InterfaceT>) \
     .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg) \
     .def_static("create", &LM_NAMESPACE::py::detail::Impl::createCompWrap<InterfaceT>)
+
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+LM_NAMESPACE_BEGIN(py)
+LM_NAMESPACE_BEGIN(detail)
+
+// Trampoline class for lm::Component
+class Component_Py final : public Component {
+    
+};
+
+LM_NAMESPACE_END(detail)
+LM_NAMESPACE_END(py)
+LM_NAMESPACE_END(LM_NAMESPACE)
