@@ -101,7 +101,9 @@ LM_NAMESPACE_BEGIN(detail)
 
 // Trampoline class for lm::Component
 class Component_Py final : public Component {
-    
+    virtual bool construct(const json& prop, Component* parent) override {
+        PYBIND11_OVERLOAD_PURE(bool, Component, prop, parent);
+    }  
 };
 
 LM_NAMESPACE_END(detail)

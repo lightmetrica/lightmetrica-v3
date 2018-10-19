@@ -454,10 +454,17 @@ struct D_Py final : public D {
     virtual int f() override {
         PYBIND11_OVERLOAD_PURE(int, D, f);
     }
+    static void bind(py::module& m) {
+        py::class_<D, D_Py>(m, "D")
+            .def(py::init<>())
+            .def("construct", &D::construct)
+            .def("f", &D::f)
+            .PYLM_DEF_COMP_BIND(D);
+    }
 };
 
 PYBIND11_EMBEDDED_MODULE(test_comp_2, m) {
-    
+    D_Py::bind(m);
 }
 
 TEST_CASE("Construction (python)") {
@@ -469,8 +476,27 @@ TEST_CASE("Construction (python)") {
             import test_comp_2 as test
         )", py::globals());
 
-        SUBCASE("Casting json type") {
-            
+        SUBCASE("Simple") {
+            // Create instance of D1 inside Python script
+            auto locals = py::dict();
+            py::exec(R"(
+                p = test.D.create('test::comp::d1')
+                p.construct({'v1':42, 'v2':43}, None)
+                r = p.f()
+            )", py::globals(), locals);
+            //CHECK(locals["r"].cast<int>() == 85);
+        }
+
+        SUBCASE("Construction (native plugin)") {
+
+        }
+
+        SUBCASE("Construction with parent component") {
+
+        }
+
+        SUBCASE("Construction with underlying component of the parent") {
+
         }
     }
     catch (const std::runtime_error& e) {
