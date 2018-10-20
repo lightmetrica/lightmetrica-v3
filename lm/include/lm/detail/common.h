@@ -237,6 +237,7 @@
 #include <condition_variable>
 #include <filesystem>
 #include <any>
+#include <variant>
 #include <glm/glm.hpp>
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>

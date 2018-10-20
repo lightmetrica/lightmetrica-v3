@@ -46,16 +46,15 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/logger.h")
 set(_DETAIL_HEADER_FILES
     "${_INCLUDE_DIR}/detail/common.h"
-    "${_INCLUDE_DIR}/detail/component.h"
-    "${_INCLUDE_DIR}/detail/serial.h")
+    "${_INCLUDE_DIR}/detail/component.h")
 set(_SOURCE_FILES
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/api.cpp")    
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_DETAIL_HEADER_FILES} ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME}
-    PUBLIC nlohmann_json glm fmt-header-only
-    PRIVATE spdlog cereal)
+    PUBLIC nlohmann_json glm fmt-header-only cereal
+    PRIVATE spdlog)
 target_include_directories(${_PROJECT_NAME}
     PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
