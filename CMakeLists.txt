@@ -8,4 +8,9 @@ project(lightmetrica-v3)
 
 # -----------------------------------------------------------------------------
 
+# CMake module path
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+# -----------------------------------------------------------------------------
+
 add_subdirectory(lm)

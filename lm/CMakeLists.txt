@@ -8,6 +8,11 @@ project(lm)
 
 # -----------------------------------------------------------------------------
 
+# PCH support
+include(PrecompiledHeader)
+
+# -----------------------------------------------------------------------------
+
 # nlohmann-json
 option(JSON_BuildTests "" OFF)
 add_subdirectory(external/json)
@@ -46,12 +51,16 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/logger.h")
 set(_DETAIL_HEADER_FILES
     "${_INCLUDE_DIR}/detail/common.h"
-    "${_INCLUDE_DIR}/detail/component.h")
+    "${_INCLUDE_DIR}/detail/component.h"
+    "${_INCLUDE_DIR}/detail/json.h")
 set(_SOURCE_FILES
+    "${_SOURCE_DIR}/pch.h"
+    "${_SOURCE_DIR}/pch.cpp"
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/api.cpp")    
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_DETAIL_HEADER_FILES} ${_SOURCE_FILES})
+add_precompiled_header(${_PROJECT_NAME} "${_SOURCE_DIR}/pch.h" SOURCE_CXX "${_SOURCE_DIR}/pch.cpp")
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only cereal
     PRIVATE spdlog)
@@ -125,12 +134,15 @@ set(_HEADER_FILES
     "test/test_common.h"
     "${CMAKE_CURRENT_BINARY_DIR}/generated/test_python.h")
 set(_SOURCE_FILES
+    "test/pch_test.h"
+    "test/pch_test.cpp"
     "test/main.cpp"
     "test/test_common.cpp"
     "test/test_api.cpp"
     "test/test_component.cpp"
     "test/test_serial.cpp")
 add_executable(${_PROJECT_NAME} ${_HEADER_FILES} ${_SOURCE_FILES})
+add_precompiled_header(${_PROJECT_NAME} "test/pch_test.h" SOURCE_CXX "test/pch_test.cpp")
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest pybind11::embed lm_test_plugin::interface)
 target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 source_group("Header Files" FILES ${_HEADER_FILES})

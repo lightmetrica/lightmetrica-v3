@@ -3,6 +3,4 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include "pch_test.h"
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include <doctest.h>
+#include "pch.h"

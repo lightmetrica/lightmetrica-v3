@@ -215,33 +215,3 @@
 #define LM_NAMESPACE lm
 #endif
 #pragma endregion
-
-// ----------------------------------------------------------------------------
-
-#pragma region Includes
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <functional>
-#include <thread>
-#include <string>
-#include <atomic>
-#include <mutex>
-#include <random>
-#include <unordered_map>
-#include <unordered_set>
-#include <chrono>
-#include <regex>
-#include <tuple>
-#include <numeric>
-#include <condition_variable>
-#include <filesystem>
-#include <any>
-#include <variant>
-#include <glm/glm.hpp>
-#include <fmt/format.h>
-#include <nlohmann/json.hpp>
-LM_NAMESPACE_BEGIN(LM_NAMESPACE)
-using json = nlohmann::json;
-LM_NAMESPACE_END(LM_NAMESPACE)
-#pragma endregion

@@ -6,8 +6,17 @@
 #pragma once
 
 #include "common.h"
+#include <any>
+#include <memory>
+#include <string>
+#include <nlohmann/json.hpp>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+// ----------------------------------------------------------------------------
+
+// JSON type
+using json = nlohmann::json;
 
 // ----------------------------------------------------------------------------
 

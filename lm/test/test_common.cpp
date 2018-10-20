@@ -3,7 +3,10 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
+#include "pch_test.h"
 #include "test_common.h"
+#include <iostream>
+#include <sstream>
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 

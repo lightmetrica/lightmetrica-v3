@@ -3,7 +3,9 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
+#include "pch_test.h"
 #include "test_common.h"
+#include <lm/api.h>
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 

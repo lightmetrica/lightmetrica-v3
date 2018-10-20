@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include <lm/lm.h>
+#include <lm/detail/common.h>
+#include <functional>
 #include <doctest.h>
 
 #define LM_TEST_NAMESPACE lmtest

@@ -3,6 +3,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
+#include "pch_test.h"
 #include "test_common.h"
 #include "test_interface.h"
 #include <generated/test_python.h>
