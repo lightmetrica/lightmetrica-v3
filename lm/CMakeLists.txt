@@ -8,8 +8,14 @@ project(lm)
 
 # -----------------------------------------------------------------------------
 
+# CMake module path
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 # PCH support
 include(PrecompiledHeader)
+
+# Use project filters in Visual Studio
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # -----------------------------------------------------------------------------
 
@@ -41,25 +47,37 @@ add_subdirectory(external/cereal)
 
 # -----------------------------------------------------------------------------
 
-# Main library
-set(_PROJECT_NAME liblm)
+# Include and source directories
 set(_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/lm")
 set(_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(_HEADER_FILES
+
+# -----------------------------------------------------------------------------
+
+# Main library
+set(_PROJECT_NAME liblm)
+set(_HEADER_FILES 
     "${_INCLUDE_DIR}/lm.h"
     "${_INCLUDE_DIR}/api.h"
-    "${_INCLUDE_DIR}/logger.h")
-set(_DETAIL_HEADER_FILES
+    "${_INCLUDE_DIR}/logger.h"
+    "${_INCLUDE_DIR}/scene.h"
+    "${_INCLUDE_DIR}/accel.h"
+    "${_INCLUDE_DIR}/renderer.h"
     "${_INCLUDE_DIR}/detail/common.h"
-    "${_INCLUDE_DIR}/detail/component.h"
-    "${_INCLUDE_DIR}/detail/json.h")
-set(_SOURCE_FILES
+    "${_INCLUDE_DIR}/detail/forward.h"
+    "${_INCLUDE_DIR}/detail/component.h")
+set(_SOURCE_FILES 
     "${_SOURCE_DIR}/pch.h"
     "${_SOURCE_DIR}/pch.cpp"
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/logger.cpp"
-    "${_SOURCE_DIR}/api.cpp")    
-add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_DETAIL_HEADER_FILES} ${_SOURCE_FILES})
+    "${_SOURCE_DIR}/api.cpp"
+    "${_SOURCE_DIR}/scene.cpp"
+    "${_SOURCE_DIR}/accel/accel_sahbvh.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_pt.cpp")
+add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES})
+source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
+source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
 add_precompiled_header(${_PROJECT_NAME} "${_SOURCE_DIR}/pch.h" SOURCE_CXX "${_SOURCE_DIR}/pch.cpp")
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only cereal
@@ -68,93 +86,27 @@ target_include_directories(${_PROJECT_NAME}
     PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
-source_group("Header Files" FILES ${_HEADER_FILES})
-source_group("Header Files\\detail" FILES ${_DETAIL_HEADER_FILES})
-source_group("Source Files" FILES ${_SOURCE_FILES})
+set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm")
 
 # -----------------------------------------------------------------------------
 
 # Python binding
 set(_PROJECT_NAME pylm)
-set(_HEADER_FILES
-    "${_INCLUDE_DIR}/pylm.h")
-set(_DETAIL_HEADER_FILES
+set(_HEADER_FILES 
+    "${_INCLUDE_DIR}/pylm.h"
     "${_INCLUDE_DIR}/detail/pylm_component.h"
     "${_INCLUDE_DIR}/detail/pylm_json.h")
-set(_SOURCE_FILES
+set(_SOURCE_FILES 
     "${_SOURCE_DIR}/pylm.cpp")
-add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_DETAIL_HEADER_FILES} ${_SOURCE_FILES})
+add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES})
+source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
+source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
-source_group("Header Files" FILES ${_HEADER_FILES})
-source_group("Header Files\\detail" FILES ${_DETAIL_HEADER_FILES})
-source_group("Source Files" FILES ${_SOURCE_FILES})
+set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm")
 
 # -----------------------------------------------------------------------------
 
-# Add a plugin
-function(lm_add_plugin)
-    # Parse arguments
-    cmake_parse_arguments(_ARG "" "NAME;INCLUDE_DIR" "HEADERS;SOURCES" ${ARGN})
-
-    # INTERFACE library for headers
-    add_library(${_ARG_NAME}_interface INTERFACE)
-    add_library(${_ARG_NAME}::interface ALIAS ${_ARG_NAME}_interface)
-    target_include_directories(${_ARG_NAME}_interface
-        INTERFACE "$<BUILD_INTERFACE:${_ARG_INCLUDE_DIR}>")
-
-    # MODULE library for the dynamic loaded library
-    add_library(${_ARG_NAME} MODULE ${_ARG_HEADERS} ${_ARG_SOURCES})
-    target_link_libraries(${_ARG_NAME} PRIVATE liblm ${_ARG_NAME}_interface)
-    source_group("Header Files" FILES ${_ARG_HEADERS})
-    source_group("Source Files" FILES ${_ARG_SOURCES})
-endfunction()
-
-# -----------------------------------------------------------------------------
-
-# Plugin for unit test
-lm_add_plugin(
-    NAME lm_test_plugin
-    INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
-    HEADERS
-        "test/test_interface.h"
-    SOURCES
-        "test/test_interface_impl.cpp")
-
-# Get python root directory
-find_package(Python REQUIRED COMPONENTS Development)
-get_filename_component(_PYTHON_ROOT ${Python_INCLUDE_DIRS} DIRECTORY)
-
-# Generate header included from lm_test project
-configure_file("test/test_python.h.in" "${CMAKE_CURRENT_BINARY_DIR}/generated/test_python.h" @ONLY)
-
-# Unit test
-set(_PROJECT_NAME lm_test)
-set(_HEADER_FILES
-    "test/test_common.h"
-    "${CMAKE_CURRENT_BINARY_DIR}/generated/test_python.h")
-set(_SOURCE_FILES
-    "test/pch_test.h"
-    "test/pch_test.cpp"
-    "test/main.cpp"
-    "test/test_common.cpp"
-    "test/test_api.cpp"
-    "test/test_component.cpp"
-    "test/test_serial.cpp")
-add_executable(${_PROJECT_NAME} ${_HEADER_FILES} ${_SOURCE_FILES})
-add_precompiled_header(${_PROJECT_NAME} "test/pch_test.h" SOURCE_CXX "test/pch_test.cpp")
-target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest pybind11::embed lm_test_plugin::interface)
-target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-source_group("Header Files" FILES ${_HEADER_FILES})
-source_group("Source Files" FILES ${_SOURCE_FILES})
-
-# -----------------------------------------------------------------------------
-
-# Python module for unit test in python
-set(_PROJECT_NAME pylm_test_module)
-set(_SOURCE_FILES
-    "pytest/pylm_test_module.cpp")
-add_library(${_PROJECT_NAME} MODULE ${_SOURCE_FILES})
-target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
-set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
-source_group("Source Files" FILES ${_SOURCE_FILES})
+# Tests
+add_subdirectory(test)
+add_subdirectory(pytest)
