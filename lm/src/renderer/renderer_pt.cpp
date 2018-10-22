@@ -5,17 +5,16 @@
 
 #include "../pch.h"
 #include <lm/renderer.h>
+#include <lm/detail/parallel.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_PT final : public Renderer {
 public:
     virtual void render(const Scene& scene) const override {
-        Distribute::for () {
-            Parallel::for () {
-                
-            }
-        }
+        parallel::process([&](long long index, int threadId, bool init) -> void {
+            
+        });
     }
 };
 
