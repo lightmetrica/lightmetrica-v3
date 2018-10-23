@@ -14,5 +14,8 @@
       "plaintext",
       "text",
       "yml",
-    ]
+    ],
+    "files.associations": {
+      "unordered_map": "cpp"
+    }
   }

@@ -21,6 +21,18 @@ private:
 
 public:
 
+    /*!
+        \brief Hit information.
+    */
+    struct Hit {
+        
+    };
+
+    /*!
+        \brief Obtains nearest intersection point along with the ray.
+    */
+    //std::optional<Hit> intersect(const Ray<F>& ray, Float mint, Float maxt) const;
+
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

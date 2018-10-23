@@ -7,3 +7,4 @@
 
 class Renderer;
 class Scene;
+struct Ray;

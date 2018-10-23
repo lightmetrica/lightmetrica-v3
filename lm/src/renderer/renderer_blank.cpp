@@ -3,7 +3,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include "../pch.h"
+#include <pch.h>
 #include <lm/renderer.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

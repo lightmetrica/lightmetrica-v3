@@ -51,6 +51,12 @@ add_subdirectory(external/cereal)
 set(_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/lm")
 set(_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
+# PCH related
+set(_PCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/pch")
+set(_PCH_FILES
+    "${_PCH_DIR}/pch.h"
+    "${_PCH_DIR}/pch.cpp")
+
 # -----------------------------------------------------------------------------
 
 # Main library
@@ -59,6 +65,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/lm.h"
     "${_INCLUDE_DIR}/api.h"
     "${_INCLUDE_DIR}/logger.h"
+    "${_INCLUDE_DIR}/math.h"
     "${_INCLUDE_DIR}/scene.h"
     "${_INCLUDE_DIR}/accel.h"
     "${_INCLUDE_DIR}/renderer.h"
@@ -67,8 +74,6 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/detail/component.h"
     "${_INCLUDE_DIR}/detail/parallel.h")
 set(_SOURCE_FILES 
-    "${_SOURCE_DIR}/pch.h"
-    "${_SOURCE_DIR}/pch.cpp"
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/api.cpp"
@@ -76,15 +81,16 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/accel/accel_sahbvh.cpp"
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp")
-add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES})
+add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
-add_precompiled_header(${_PROJECT_NAME} "${_SOURCE_DIR}/pch.h" SOURCE_CXX "${_SOURCE_DIR}/pch.cpp")
+add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only cereal
     PRIVATE spdlog)
 target_include_directories(${_PROJECT_NAME}
-    PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
+    PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    PRIVATE "${_PCH_DIR}")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm")

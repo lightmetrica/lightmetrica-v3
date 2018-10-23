@@ -3,7 +3,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include "pch.h"
+#include <pch.h>
 #include <lm/detail/component.h>
 #include <lm/logger.h>
 

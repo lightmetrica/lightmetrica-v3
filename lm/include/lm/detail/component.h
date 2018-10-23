@@ -9,6 +9,7 @@
 #include <any>
 #include <memory>
 #include <string>
+#include <optional>
 #include <nlohmann/json.hpp>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

@@ -11,8 +11,8 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(parallel)
 
-using ParallelProcessFunc = std::function<void(long long index, int threadId, bool init)>;
-LM_PUBLIC_API void process(const ParallelProcessFunc& processFunc);
+//using ParallelProcessFunc = std::function<void(long long index, int threadId, bool init)>;
+//LM_PUBLIC_API void process(const ParallelProcessFunc& processFunc);
 
 LM_NAMESPACE_END(parallel)
 LM_NAMESPACE_END(LM_NAMESPACE)
