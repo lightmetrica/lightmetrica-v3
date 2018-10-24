@@ -45,4 +45,22 @@ LM_COMP_REG_IMPL(TestPluginWithCtorAndDtor_, "testpluginxtor::default");
 
 // ----------------------------------------------------------------------------
 
+template <typename T>
+struct TestPluginWithTemplate_ final : public TestPluginWithTemplate<T> {
+    virtual T f() const override {
+        if constexpr (std::is_same_v<T, int>) {
+            return 1;
+        }
+        if constexpr (std::is_same_v<T, double>) {
+            return 2;
+        }
+        LM_UNREACHABLE_RETURN();
+    }
+};
+
+LM_COMP_REG_IMPL(TestPluginWithTemplate_<int>, "testplugin::template");
+LM_COMP_REG_IMPL(TestPluginWithTemplate_<double>, "testplugin::template");
+
+// ----------------------------------------------------------------------------
+
 LM_NAMESPACE_END(lmtest)

@@ -120,6 +120,31 @@ public:
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(comp)
+LM_NAMESPACE_BEGIN(detail)
+
+// Type holder
+template <typename... Ts>
+struct TypeHolder {};
+
+// Makes key for create function
+template <typename T>
+struct KeyGen {
+    static std::string gen(std::string s) {
+        // For ordinary type, use the given key as it is.
+        return s;
+    }
+};
+template <template <typename...> class T, typename... Ts>
+struct KeyGen<T<Ts...>> {
+    static std::string gen(std::string s) {
+        // For template type, decorate the type with type list.
+        return s + "<" + std::string(typeid(TypeHolder<Ts...>).name()) + ">";
+    }
+};
+
+LM_NAMESPACE_END(detail)
+
+// ----------------------------------------------------------------------------
 
 /*!
     \brief Create component with specific interface type.
@@ -127,8 +152,8 @@ LM_NAMESPACE_BEGIN(comp)
     \param key Name of the implementation.
 */
 template <typename InterfaceT>
-Component::UniquePtr<InterfaceT> create(const char* key) {
-    auto* inst = detail::createComp(key);
+Component::UniquePtr<InterfaceT> create(std::string key) {
+    auto* inst = detail::createComp(detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str());
     if (!inst) {
         return Component::UniquePtr<InterfaceT>(nullptr, nullptr);
     }
@@ -143,7 +168,7 @@ Component::UniquePtr<InterfaceT> create(const char* key) {
     \param parent Parent component instance.
 */
 template <typename InterfaceT>
-Component::UniquePtr<InterfaceT> create(const char* key, const json& prop, Component* parent = nullptr) {
+Component::UniquePtr<InterfaceT> create(std::string key, const json& prop, Component* parent = nullptr) {
     auto inst = create<InterfaceT>(key);
     if (!inst || !inst->construct(prop, parent)) {
         return Component::UniquePtr<InterfaceT>(nullptr, nullptr);
@@ -161,39 +186,27 @@ LM_NAMESPACE_BEGIN(detail)
 */
 LM_PUBLIC_API Component* createComp(const char* key);
 
-/*!
-    \brief Register a component.
-*/
+// Register a component.
 LM_PUBLIC_API void reg(
     const char* key,
     const Component::CreateFunction& createFunc,
     const Component::ReleaseFunction& releaseFunc);
 
-/*!
-    \brief Unregister a component.
-*/
+// Unregister a component.
 LM_PUBLIC_API void unreg(const char* key);
 
-/*!
-    \brief Load a plugin.
-*/
+// Load a plugin.
 LM_PUBLIC_API bool loadPlugin(const char* path);
 
-/*!
-    \brief Load plugins inside a given directory.
-*/
+// Load plugins inside a given directory.
 LM_PUBLIC_API void loadPlugins(const char* directory);
 
-/*!
-    \brief Unload loaded plugins.
-*/
+// Unload loaded plugins.
 LM_PUBLIC_API void unloadPlugins();
 
 // ----------------------------------------------------------------------------
 
-/*!
-    \brief Scope guard of `loadPlugins` and `loadPlugins`.
-*/
+// Scope guard of `loadPlugins` and `loadPlugins`.
 class ScopedLoadPlugin {
 private:
     bool valid_ = true;
@@ -215,29 +228,31 @@ public:
 
 // ----------------------------------------------------------------------------
 
-/*!
-    \brief Helps registration of an implementation.
-*/
+// Helps registration of a component implementation.
 template <typename ImplType>
-class ImplEntry_ {
+class RegEntry {
 private:
     std::string key_;
 
 public:
-    static ImplEntry_<ImplType>& instance(const char* key) {
-        static ImplEntry_<ImplType> instance(key);
+    static RegEntry<ImplType>& instance(std::string key) {
+        static RegEntry<ImplType> instance(KeyGen<ImplType>::gen(std::move(key)));
         return instance;
     }
 
-private:
-    ImplEntry_(const char* key) : key_(key) {
+public:
+    RegEntry(std::string key) : key_(std::move(key)) {
         // Register factory function
-        reg(key,
+        reg(key_.c_str(),
             []() -> Component* { return new ImplType; },
-            [](Component* p) { LM_SAFE_DELETE(p); });
+            [](Component* p)   { LM_SAFE_DELETE(p); });
     }
-    ~ImplEntry_() { unreg(key_.c_str()); }
+    ~RegEntry() {
+        // Unregister factory function
+        unreg(key_.c_str());
+    }
 };
+
 
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(comp)
@@ -252,10 +267,11 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 #define LM_COMP_REG_IMPL(ImplType, Key) \
 	namespace { \
-		template <typename T> class ImplEntry_Init_; \
-		template <> class ImplEntry_Init_<ImplType> { \
-            static const LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>& reg_; \
+		template <typename T> class RegEntry_Init_; \
+		template <> class RegEntry_Init_<ImplType> { \
+            static const LM_NAMESPACE::comp::detail::RegEntry<ImplType>& reg_; \
         }; \
-        const LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>& \
-            ImplEntry_Init_<ImplType>::reg_ = LM_NAMESPACE::comp::detail::ImplEntry_<ImplType>::instance(Key); \
+        const LM_NAMESPACE::comp::detail::RegEntry<ImplType>& \
+            RegEntry_Init_<ImplType>::reg_ = \
+                LM_NAMESPACE::comp::detail::RegEntry<ImplType>::instance(Key); \
     }

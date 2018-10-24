@@ -17,4 +17,9 @@ struct TestPluginWithCtorAndDtor : public lm::Component {
     ~TestPluginWithCtorAndDtor() { std::cout << "~A"; }
 };
 
+template <typename T>
+struct TestPluginWithTemplate : public lm::Component {
+    virtual T f() const = 0;
+};
+
 LM_NAMESPACE_END(lmtest)

@@ -654,17 +654,34 @@ struct G1 final : public G<T> {
     }
 };
 
-// Register implementation for instantiated types
-LM_COMP_REG_IMPL(G1<int>, "test::comp::g1_int");
-LM_COMP_REG_IMPL(G1<double>, "test::comp::g1_double");
+// We can register templated components with the same key
+LM_COMP_REG_IMPL(G1<int>, "test::comp::g1");
+LM_COMP_REG_IMPL(G1<double>, "test::comp::g1");
 
 // ----------------------------------------------------------------------------
 
-TEST_CASE("Templated component") {
-    const auto g1_int = lm::comp::create<G<int>>("test::comp::g1_int");
-    CHECK(g1_int->f() == 1);
-    const auto g1_double = lm::comp::create<G<double>>("test::comp::g1_double");
-    CHECK(g1_double->f() == 2);
+TEST_CASE_TEMPLATE("Templated component", T, int, double) {
+    SUBCASE("Simple") {
+        const auto p = lm::comp::create<G<T>>("test::comp::g1");
+        REQUIRE(p);
+        if constexpr (std::is_same_v<T, int>) {
+            CHECK(p->f() == 1);
+        }
+        if constexpr (std::is_same_v<T, double>) {
+            CHECK(p->f() == 2);
+        }
+    }
+    SUBCASE("Plugin") {
+        lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
+        REQUIRE(pluginGuard.valid());
+        const auto p = lm::comp::create<TestPluginWithTemplate<T>>("testplugin::template");
+        if constexpr (std::is_same_v<T, int>) {
+            CHECK(p->f() == 1);
+        }
+        if constexpr (std::is_same_v<T, double>) {
+            CHECK(p->f() == 2);
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
