@@ -36,5 +36,6 @@ add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_D
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest pybind11::embed lm_test_plugin::interface)
 target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${_PCH_DIR}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/test")
+set_target_properties(${_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 source_group("Header Files" FILES ${_HEADER_FILES})
 source_group("Source Files" FILES ${_SOURCE_FILES})
