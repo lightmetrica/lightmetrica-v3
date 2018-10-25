@@ -15,11 +15,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Scene : public Component {
 public:
-    Scene() = default;
-    virtual ~Scene() = default;
-    LM_DISABLE_COPY_AND_MOVE(Scene);
-
-public:
 
     /*!
         \brief Hit information.

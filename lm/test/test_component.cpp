@@ -89,7 +89,7 @@ TEST_CASE("Component") {
 
     SUBCASE("Cast to parent interface") {
         auto b = lm::comp::create<B>("test::comp::b1");
-        const auto a = lm::Component::UniquePtr<A>(b.release(), b.get_deleter());
+        const auto a = lm::Component::Ptr<A>(b.release(), b.get_deleter());
         REQUIRE(a);
         CHECK(a->f1() == 42);
         CHECK(a->f2(1, 2) == 3);
@@ -180,13 +180,13 @@ PYBIND11_EMBEDDED_MODULE(test_comp, m) {
 
 // unique_ptr with custom deleter
 template <typename T>
-using UniquePtr = std::unique_ptr<T, std::function<void(T*)>>;
+using Ptr = std::unique_ptr<T, std::function<void(T*)>>;
 
 // Wraps dereferencing of python object in the deleter
 template <typename T, typename... Args>
-UniquePtr<T> create(const char* name, Args... opt) {
+Ptr<T> create(const char* name, Args... opt) {
     const auto instPy = py::globals()[name](opt...);
-    return UniquePtr<T>(instPy.cast<T*>(), [p = py::reinterpret_borrow<py::object>(instPy)](T*){});
+    return Ptr<T>(instPy.cast<T*>(), [p = py::reinterpret_borrow<py::object>(instPy)](T*){});
 }
 
 TEST_CASE("Python component plugin") {
@@ -285,7 +285,7 @@ TEST_CASE("Python component plugin") {
                     CHECK(p->f1() == 1);
                 }
                 SUBCASE("In C++ vector") {
-                    std::vector<UniquePtr<A>> v;
+                    std::vector<Ptr<A>> v;
                     for (int i = 0; i < 10; i++) {
                         v.push_back(create<A>("A3", i));
                         REQUIRE(v.back());

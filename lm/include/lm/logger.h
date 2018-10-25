@@ -28,12 +28,12 @@ enum class LogLevel {
 };
 
 /*!
-    \brief Initialize logger.
+    \brief Initialize logger system.
 */
 LM_PUBLIC_API void init();
 
 /*!
-    \brief Shutdown logger.
+    \brief Shutdown logger system.
 */
 LM_PUBLIC_API void shutdown();
 
@@ -74,29 +74,29 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 /*!
     \brief Log error message.
 */
-#define LM_LOG_ERROR(message, ...) LM_NAMESPACE::log::detail::log( \
+#define LM_ERROR(message, ...) LM_NAMESPACE::log::detail::log( \
     LM_NAMESPACE::log::detail::LogLevel::Err, __FILE__, __LINE__, message)
 
 /*!
     \brief Log warning message.
 */
-#define LM_LOG_WARN(message, ...) LM_NAMESPACE::log::detail::log( \
+#define LM_WARN(message, ...) LM_NAMESPACE::log::detail::log( \
     LM_NAMESPACE::log::detail::LogLevel::Warn, __FILE__, __LINE__, message)
 
 /*!
     \brief Log info message.
 */
-#define LM_LOG_INFO(message, ...) LM_NAMESPACE::log::detail::log( \
+#define LM_INFO(message, ...) LM_NAMESPACE::log::detail::log( \
     LM_NAMESPACE::log::detail::LogLevel::Err, __FILE__, __LINE__, message)
 
 /*!
     \brief Log debug message.
 */
-#define LM_LOG_DEBUG(message, ...) LM_NAMESPACE::log::detail::log( \
+#define LM_DEBUG(message, ...) LM_NAMESPACE::log::detail::log( \
     LM_NAMESPACE::log::detail::LogLevel::Debug, __FILE__, __LINE__, message)
 
 /*!
     \brief Adds an indentation in the current scope.
 */
-#define LM_LOG_INDENTER() LM_NAMESPACE::log::detail::LogIndenter \
+#define LM_INDENTER() LM_NAMESPACE::log::detail::LogIndenter \
     LM_TOKENPASTE2(logIndenter_, __LINE__)

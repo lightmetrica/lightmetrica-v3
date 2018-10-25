@@ -14,13 +14,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Assets : public Component {
 public:
-    Assets() = default;
-    virtual ~Assets() = default;
-    LM_DISABLE_COPY_AND_MOVE(Assets);
-
-public:
-
-
+    /*!
+        \brief Load asset.
+    */
+    virtual bool loadAsset(const std::string& name,
+        const std::string& implKey, const json& prop) = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

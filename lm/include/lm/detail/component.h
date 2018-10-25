@@ -46,7 +46,7 @@ public:
 
     //! Unique pointer for component instances.
     template <typename InterfaceT>
-    using UniquePtr = std::unique_ptr<InterfaceT, ReleaseFunction>;
+    using Ptr = std::unique_ptr<InterfaceT, ReleaseFunction>;
 
 private:
     //! Name of the component instance.
@@ -71,8 +71,8 @@ public:
         \brief Make UniquePtr from an component instance.
     */
     template <typename InterfaceT>
-    static UniquePtr<InterfaceT> makeUnique(Component* inst) {
-        return UniquePtr<InterfaceT>(dynamic_cast<InterfaceT*>(inst), inst->releaseFunc_);
+    static Ptr<InterfaceT> makeUnique(Component* inst) {
+        return Ptr<InterfaceT>(dynamic_cast<InterfaceT*>(inst), inst->releaseFunc_);
     }
 
     /*!
@@ -152,10 +152,10 @@ LM_NAMESPACE_END(detail)
     \param key Name of the implementation.
 */
 template <typename InterfaceT>
-Component::UniquePtr<InterfaceT> create(std::string key) {
+Component::Ptr<InterfaceT> create(std::string key) {
     auto* inst = detail::createComp(detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str());
     if (!inst) {
-        return Component::UniquePtr<InterfaceT>(nullptr, nullptr);
+        return Component::Ptr<InterfaceT>(nullptr, nullptr);
     }
     return Component::makeUnique<InterfaceT>(inst);
 }
@@ -168,10 +168,10 @@ Component::UniquePtr<InterfaceT> create(std::string key) {
     \param parent Parent component instance.
 */
 template <typename InterfaceT>
-Component::UniquePtr<InterfaceT> create(std::string key, const json& prop, Component* parent = nullptr) {
+Component::Ptr<InterfaceT> create(std::string key, const json& prop, Component* parent = nullptr) {
     auto inst = create<InterfaceT>(key);
     if (!inst || !inst->construct(prop, parent)) {
-        return Component::UniquePtr<InterfaceT>(nullptr, nullptr);
+        return Component::Ptr<InterfaceT>(nullptr, nullptr);
     }
     return inst;
 }
@@ -259,16 +259,6 @@ LM_NAMESPACE_END(comp)
 LM_NAMESPACE_END(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
-
-/*!
-    \brief Marks component interface.
-*/
-#define LM_COMP_INTERFACE_CLASS(InterfaceT, NameStr) \
-    using UniquePtr = Component::UniquePtr<InterfaceT>; \
-    static constexpr std::string_view Name = NameStr; \
-    InterfaceT() = default; \
-    virtual ~InterfaceT() = default; \
-    LM_DISABLE_COPY_AND_MOVE(InterfaceT);
 
 /*!
     \brief Register implementation.
