@@ -66,6 +66,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/api.h"
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/math.h"
+    "${_INCLUDE_DIR}/assets.h"
     "${_INCLUDE_DIR}/scene.h"
     "${_INCLUDE_DIR}/accel.h"
     "${_INCLUDE_DIR}/renderer.h"
@@ -77,6 +78,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/api.cpp"
+    "${_SOURCE_DIR}/assets.cpp"
     "${_SOURCE_DIR}/scene.cpp"
     "${_SOURCE_DIR}/accel/accel_sahbvh.cpp"
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
@@ -118,6 +120,9 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # -----------------------------------------------------------------------------
+
+# Examples
+add_subdirectory(example)
 
 # Tests
 add_subdirectory(test)
