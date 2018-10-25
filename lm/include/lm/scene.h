@@ -11,10 +11,10 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
-    \brief Scene component interface.
+    \brief Scene.
 */
 class Scene : public Component {
-private:
+public:
     Scene() = default;
     virtual ~Scene() = default;
     LM_DISABLE_COPY_AND_MOVE(Scene);

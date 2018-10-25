@@ -261,17 +261,27 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 // ----------------------------------------------------------------------------
 
 /*!
+    \brief Marks component interface.
+*/
+#define LM_COMP_INTERFACE_CLASS(InterfaceT, NameStr) \
+    using UniquePtr = Component::UniquePtr<InterfaceT>; \
+    static constexpr std::string_view Name = NameStr; \
+    InterfaceT() = default; \
+    virtual ~InterfaceT() = default; \
+    LM_DISABLE_COPY_AND_MOVE(InterfaceT);
+
+/*!
     \brief Register implementation.
     \param ImplType Component implemenation type.
     \param Key Name of the implementation.
 */
-#define LM_COMP_REG_IMPL(ImplType, Key) \
+#define LM_COMP_REG_IMPL(ImplT, Key) \
 	namespace { \
 		template <typename T> class RegEntry_Init_; \
-		template <> class RegEntry_Init_<ImplType> { \
-            static const LM_NAMESPACE::comp::detail::RegEntry<ImplType>& reg_; \
+		template <> class RegEntry_Init_<ImplT> { \
+            static const LM_NAMESPACE::comp::detail::RegEntry<ImplT>& reg_; \
         }; \
-        const LM_NAMESPACE::comp::detail::RegEntry<ImplType>& \
-            RegEntry_Init_<ImplType>::reg_ = \
-                LM_NAMESPACE::comp::detail::RegEntry<ImplType>::instance(Key); \
+        const LM_NAMESPACE::comp::detail::RegEntry<ImplT>& \
+            RegEntry_Init_<ImplT>::reg_ = \
+                LM_NAMESPACE::comp::detail::RegEntry<ImplT>::instance(Key); \
     }

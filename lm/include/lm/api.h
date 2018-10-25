@@ -5,10 +5,9 @@
 
 #pragma once
 
-#include "detail/common.h"
+#include "detail/component.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
-LM_NAMESPACE_BEGIN(api)
 
 /*!
     \brief Initializes the renderer.
@@ -16,20 +15,14 @@ LM_NAMESPACE_BEGIN(api)
 LM_PUBLIC_API void init();
 
 /*!
-    \brief Gracefully finalizes the renderer.
+    \brief Shutdown the renderer.
 */
 LM_PUBLIC_API void shutdown();
 
-// ----------------------------------------------------------------------------
-
 /*!
-    \brief Render image based on current configuration.
-
-    Example:
+    \brief Create an asset.
 */
-LM_PUBLIC_API int render();
-
-// ----------------------------------------------------------------------------
+LM_PUBLIC_API void asset(const std::string& name);
 
 /*!
     \brief Creates a new primitive and add it to the scene.
@@ -44,8 +37,12 @@ LM_PUBLIC_API int render();
     \param name Name of the primitive.
     \return     ID of the primitive.
 */
-LM_PUBLIC_API int primitive(const std::string& name);
+LM_PUBLIC_API void primitive(const std::string& name);
 
-LM_NAMESPACE_END(api)
+/*!
+    \brief Render image based on current configuration.
+*/
+LM_PUBLIC_API void render();
+
 LM_NAMESPACE_END(LM_NAMESPACE)
 

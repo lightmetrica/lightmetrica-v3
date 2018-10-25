@@ -12,18 +12,18 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::log::detail)
 
 // ----------------------------------------------------------------------------
 
+namespace {
+
 // Logger implementation
 // - Ignores message when the logger is not initialized.
-class Impl {
+class LoggerImpl {
 public:
-
-    static Impl& instance() {
-        static Impl instance;
+    static LoggerImpl& instance() {
+        static LoggerImpl instance;
         return instance;
     }
 
 public:
-
     void init() {
         if (stdoutLogger_) { shutdown(); }
         stdoutLogger_ = spdlog::stdout_color_mt("lm_stdout");
@@ -51,29 +51,29 @@ public:
     }
 
 private:
-
     int indentation_ = 0;
     std::string indentationString_;
     std::shared_ptr<spdlog::logger> stdoutLogger_;
-
 };
+
+}
 
 // ----------------------------------------------------------------------------
 
 LM_PUBLIC_API void init() {
-    Impl::instance().init();
+    LoggerImpl::instance().init();
 }
 
 LM_PUBLIC_API void shutdown() {
-    Impl::instance().shutdown();
+    LoggerImpl::instance().shutdown();
 }
 
 LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const char* message) {
-    Impl::instance().log(level, filename, line, message);
+    LoggerImpl::instance().log(level, filename, line, message);
 }
 
 LM_PUBLIC_API void updateIndentation(int n) {
-    Impl::instance().updateIndentation(n);
+    LoggerImpl::instance().updateIndentation(n);
 }
 
 // ----------------------------------------------------------------------------
