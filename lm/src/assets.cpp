@@ -9,7 +9,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-class Assets_ : public Assets {
+class Assets_ final : public Assets {
 public:
     virtual Component* underlying(const char* name) const override {
         // Finds underlying asset
@@ -43,8 +43,8 @@ public:
         }
 
         // Register created asset
+        assetIndexMap_[name] = assets_.size();
         assets_.push_back(std::move(p));
-        assetIndexMap_[name] = assets_.size()-1;
 
         return true;
     }

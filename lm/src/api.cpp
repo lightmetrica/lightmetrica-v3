@@ -28,20 +28,18 @@ public:
     
 public:
     void init() {
-        // Initialize logger system
         log::init();
     }
 
     void shutdown() {
-        // Shutdown logger system
         log::shutdown();
     }
 
-    void asset(const std::string& name, const json& params) {
-
+    void asset(const std::string& name, const std::string& implKey, const json& prop) {
+        assets_->loadAsset(name, implKey, prop);
     }
 
-    void primitive(const std::string& name) {
+    void primitive(const std::string& name, mat4 transform, const json& prop) {
 
     }
 
@@ -66,12 +64,12 @@ LM_PUBLIC_API void shutdown() {
     Context::instance().shutdown();
 }
 
-LM_PUBLIC_API void asset(const std::string& name, const json& params) {
-    Context::instance().asset(name, params);
+LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const json& prop) {
+    Context::instance().asset(name, implKey, prop);
 }
 
-LM_PUBLIC_API void primitive(const std::string& name) {
-    Context::instance().primitive(name);
+LM_PUBLIC_API void primitive(const std::string& name, glm::mat4 transform, const Component* mesh, const Component* material) {
+    Context::instance().primitive(name, transform, mesh, material);
 }
 
 LM_PUBLIC_API void render() {

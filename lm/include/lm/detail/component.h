@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "common.h"
+#include "forward.h"
 #include <any>
 #include <memory>
 #include <string>

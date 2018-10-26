@@ -7,27 +7,37 @@
 
 #include "detail/component.h"
 #include "detail/forward.h"
+#include "math.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+/*!
+    \brief Primitive.
+    A single object in the scene.
+*/
+struct Primitive {
+    mat4 transform;
+    const Component* mesh = nullptr;
+    const Component* material = nullptr;
+    const Component* sensor = nullptr;
+    const Component* light = nullptr;
+};
 
 /*!
     \brief Scene.
 */
 class Scene : public Component {
 public:
+    /*!
+        \brief Loads a primitive.
+    */
+    virtual bool loadPrimitive(const std::string& name, const Assets& assets,
+        mat4 transform, const json& prop) = 0;
 
     /*!
-        \brief Hit information.
+        \brief Get primitive by index.
     */
-    struct Hit {
-        
-    };
-
-    /*!
-        \brief Obtains nearest intersection point along with the ray.
-    */
-    //std::optional<Hit> intersect(const Ray<F>& ray, Float mint, Float maxt) const;
-
+    virtual Primitive* primitiveByName(const std::string& name) = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

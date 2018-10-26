@@ -5,6 +5,12 @@
 
 #pragma once
 
+#include "common.h"
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
 class Renderer;
 class Scene;
-struct Ray;
+class Assets;
+
+LM_NAMESPACE_END(LM_NAMESPACE)
