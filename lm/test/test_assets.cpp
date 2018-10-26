@@ -9,9 +9,9 @@
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
-struct Asset1 : public lm::Component {
+struct Asset1 final : public lm::Component {
     int v = -1;
-    virtual bool construct(const lm::json& prop, lm::Component* parent) {
+    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
         if (prop) {
             v = prop["v"];
         }
@@ -28,14 +28,15 @@ TEST_CASE("Assets") {
     REQUIRE(assets);
 
     SUBCASE("w/o properties") {
-        CHECK(assets->loadAsset("asset1", "test::asset::asset_1", {}));
+        bool result = assets->loadAsset("asset1", "test::asset::asset_1", {});
+        CHECK(result);
         auto* a1 = assets->underlying<Asset1>("asset1");
         REQUIRE(a1);
         CHECK(a1->v == -1);
     }
 
     SUBCASE("w/ properties") {
-        CHECK(assets->loadAsset("asset1", "test::asset::asset_1", { {"v": 42} }));
+        CHECK(assets->loadAsset("asset1", "test::asset::asset_1", { {"v", 42} }));
         auto* a1 = assets->underlying<Asset1>("asset1");
         REQUIRE(a1);
         CHECK(a1->v == 42);

@@ -166,8 +166,8 @@ public:
 
         fs::path path(p);
 
-        LM_LOG_INFO("Loading '{}'", path.filename().string());
-        LM_LOG_INDENTER();
+        LM_INFO("Loading '{}'", path.filename().string());
+        LM_INDENTER();
 
         // Load plugin
         std::unique_ptr<SharedLibrary> plugin(new SharedLibrary);
@@ -176,7 +176,7 @@ public:
         SetDllDirectory(parent.c_str());
         #endif
         if (!plugin->load(path.string())) {
-            LM_LOG_WARN("Failed to load library: {}", path.string());
+            LM_WARN("Failed to load library: {}", path.string());
             return false;
         }
         #if LM_PLATFORM_WINDOWS
@@ -184,7 +184,7 @@ public:
         #endif
 
         plugins_.push_back(std::move(plugin));
-        LM_LOG_INFO("Successfully loaded");
+        LM_INFO("Successfully loaded");
         return true;
     }
 
@@ -193,7 +193,7 @@ public:
 
         // Skip if directory does not exist
         if (!fs::is_directory(fs::path(directory))) {
-            LM_LOG_WARN("Missing plugin directory '{}'. Skipping.", directory);
+            LM_WARN("Missing plugin directory '{}'. Skipping.", directory);
             return;
         }
 

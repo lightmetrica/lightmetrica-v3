@@ -122,7 +122,7 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CM
 # -----------------------------------------------------------------------------
 
 # Examples
-#add_subdirectory(example)
+add_subdirectory(example)
 
 # Tests
 add_subdirectory(test)

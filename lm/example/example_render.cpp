@@ -6,21 +6,21 @@
 #include <lm/lm.h>
 
 int main(int argc, char** argv) {
-    // Initialize
-    lm::init();
+    //// Initialize
+    //lm::init();
 
-    // Assets
-    lm::light();
-    lm::camera();
-    lm::mesh();
+    //// Assets
+    //lm::light();
+    //lm::camera();
+    //lm::mesh();
 
-    // Primitives
-    lm::primitive("", glm::mat4(1), lm::mesh(""), lm::material(""));
-    lm::primitive("", glm::mat4(1), lm::mesh(""), lm::material(""));
+    //// Primitives
+    //lm::primitive("", glm::mat4(1), lm::mesh(""), lm::material(""));
+    //lm::primitive("", glm::mat4(1), lm::mesh(""), lm::material(""));
 
-    // Rendering
-    lm::render();
+    //// Rendering
+    //lm::render();
 
-    // Finalize
-    lm::shutdown();
+    //// Finalize
+    //lm::shutdown();
 }

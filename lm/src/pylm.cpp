@@ -14,14 +14,14 @@ PYBIND11_MODULE(pylm, m)
         pylm: Python binding of Lightmetrica.
     )x";
 
-    m.def("primitive", &lm::api::primitive, R"x(
+    //m.def("primitive", &lm::api::primitive, R"x(
 
-        Example:
+    //    Example:
 
-        >>> pylm.primitive('test')
-        42
+    //    >>> pylm.primitive('test')
+    //    42
 
-    )x", pybind11::arg("name"));
+    //)x", pybind11::arg("name"));
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)
