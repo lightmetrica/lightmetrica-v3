@@ -29,12 +29,12 @@ public:
 public:
     void init() {
         // Initialize logger system
-        log::detail::init();
+        log::init();
     }
 
     void shutdown() {
         // Shutdown logger system
-        log::detail::shutdown();
+        log::shutdown();
     }
 
     void asset(const std::string& name, const json& params) {

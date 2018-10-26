@@ -14,8 +14,8 @@ public:
     virtual Component* underlying(const char* name) const override {
         // Finds underlying asset
         auto it = assetIndexMap_.find(name);
-        if (it != assetIndexMap_.end()) {
-            LM_ERROR("Asset [name = '{}'] is not found.", name);
+        if (it == assetIndexMap_.end()) {
+            LM_ERROR("Asset [name = '{}'] is not found", name);
             return nullptr;
         }
         return assets_.at(it->second).get();
@@ -27,18 +27,18 @@ public:
 
         // Check if the asset with given name has been already loaded
         if (assetIndexMap_.find(name) != assetIndexMap_.end()) {
-            LM_ERROR("Asset [name='{}'] has been already loaded.", name);
+            LM_ERROR("Asset [name='{}'] has been already loaded", name);
             return false;
         }
 
         // Create an instance of the asset
         auto p = comp::create<Component>(implKey);
         if (!p) {
-            LM_ERROR("Failed to create asset [name='{}']. Component [key={}] is not found.", name, implKey);
+            LM_ERROR("Failed to create asset [name='{}']. Component [key={}] is not found", name, implKey);
             return false;
         }
         if (!p->construct(prop, this)) {
-            LM_ERROR("Failed to create asset [name='{}']. Failed to initialize component [key={}].", name, implKey);
+            LM_ERROR("Failed to create asset [name='{}']. Failed to initialize component [key={}]", name, implKey);
             return false;
         }
 

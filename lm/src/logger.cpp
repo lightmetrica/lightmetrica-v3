@@ -8,7 +8,7 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::log::detail)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::log)
 
 // ----------------------------------------------------------------------------
 
@@ -78,4 +78,4 @@ LM_PUBLIC_API void updateIndentation(int n) {
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_END(LM_NAMESPACE::log::detail)
+LM_NAMESPACE_END(LM_NAMESPACE::log)

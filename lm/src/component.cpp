@@ -34,15 +34,17 @@ public:
         #if LM_PLATFORM_WINDOWS
         handle = LoadLibraryA(p.c_str());
         if (!handle) {
-            std::cerr << fmt::format("Failed to load library or its dependencies: {}", p) << std::endl;
-            std::cerr << getLastErrorAsString() << std::endl;
+            LM_ERROR("Failed to load library or its dependencies: {}", p);
+            LM_INDENTER();
+            LM_ERROR(getLastErrorAsString());
             return false;
         }
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
         handle = dlopen(p.c_str(), RTLD_LAZY | RTLD_LOCAL);
         if (!handle) {
-            std::cerr << fmt::format("Failed to load library or its dependencies: {}", p) << std::endl;
-            std::cerr << dlerror() << std::endl;
+            LM_ERROR("Failed to load library or its dependencies: {}", p);
+            LM_INDENTER();
+            LM_ERROR(dlerror());
             return false;
         }
         #endif
@@ -54,14 +56,16 @@ public:
     bool unload() {
         #if LM_PLATFORM_WINDOWS
         if (!FreeLibrary(handle)) {
-            std::cerr << "Failed to free library" << std::endl;
-            std::cerr << getLastErrorAsString() << std::endl;
+            LM_ERROR("Failed to free library");
+            LM_INDENTER();
+            LM_ERROR(getLastErrorAsString());
             return false;
         }
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
         if (dlclose(handle) != 0) {
-            std::cerr << "Failed to free library" << std::endl;
-            std::cerr << dlerror() << std::endl;
+            LM_ERROR("Failed to free library");
+            LM_INDENTER();
+            LM_ERROR(dlerror());
             return false;
         }
         #endif
@@ -74,15 +78,17 @@ public:
         #if LM_PLATFORM_WINDOWS
         void* address = (void*)GetProcAddress(handle, symbol.c_str());
         if (address == nullptr) {
-            std::cerr << fmt::format("Failed to get address of '{}'", symbol) << std::endl;
-            std::cerr << getLastErrorAsString() << std::endl;
+            LM_ERROR("Failed to get address of '{}'", symbol);
+            LM_INDENTER();
+            LM_ERROR(getLastErrorAsString());
             return nullptr;
         }
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
         void* address = dlsym(handle, symbol.c_str());
         if (address == nullptr) {
-            std::cerr << fmt::format("Failed to get address of '{}'", symbol) << std::endl;
-            std::cerr << dlerror() << std::endl;
+            LM_ERROR("Failed to get address of '{}'", symbol);
+            LM_INDENTER();
+            LM_ERROR(dlerror());
             return nullptr;
         }
         #endif
