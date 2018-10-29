@@ -71,6 +71,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/texture.h"
     "${_INCLUDE_DIR}/scene.h"
     "${_INCLUDE_DIR}/accel.h"
+    "${_INCLUDE_DIR}/film.h"
     "${_INCLUDE_DIR}/renderer.h"
     "${_INCLUDE_DIR}/detail/common.h"
     "${_INCLUDE_DIR}/detail/forward.h"

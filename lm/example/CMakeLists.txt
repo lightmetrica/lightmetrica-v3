@@ -19,3 +19,4 @@ endfunction()
 # -----------------------------------------------------------------------------
 
 lm_add_example(NAME 001_blank_image SOURCES "001_blank_image.cpp")
+lm_add_example(NAME 002_render_square SOURCES "002_render_square.cpp")

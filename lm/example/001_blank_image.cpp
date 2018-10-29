@@ -9,17 +9,19 @@ int main(int argc, char** argv) {
     // Initialize the framework
     lm::init();
 
-    // Asset
+    // Define assets
+    // Film for the rendered image
     lm::asset("film", "film::bitmap", {
-        {"output", "result.pfm"},
+        {"path", "result.pfm"},
         {"w", 1920},
         {"h", 1080}
     });
-    
-    // Render
-    lm::render("renderer::blank", {
-        { "output_film", "film" },
-        { "color", { 1,0,0 } }
+
+    // Render an image
+    // We don't need acceleration structure so we keep second argument blank.
+    lm::render("renderer::blank", "", {
+        { "output", "film" },
+        { "color", { 1, 0, 0 } }
     });
 
     // Save rendered image
@@ -27,4 +29,6 @@ int main(int argc, char** argv) {
 
     // Finalize the framework
     lm::shutdown();
+
+    return 0;
 }

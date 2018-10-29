@@ -38,8 +38,12 @@ LM_PUBLIC_API const ScenePrimitive* primitive(const std::string& name);
 /*!
     \brief Render image based on current configuration.
 */
-LM_PUBLIC_API void render(const std::string& rendererName,
-    const std::string& accelName, const json& prop);
+LM_PUBLIC_API void render(const std::string& rendererName, const std::string& accelName, const json& prop);
+
+/*!
+    \brief Save an image.
+*/
+LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath);
 
 // ----------------------------------------------------------------------------
 

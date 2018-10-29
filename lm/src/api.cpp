@@ -9,6 +9,7 @@
 #include <lm/scene.h>
 #include <lm/renderer.h>
 #include <lm/logger.h>
+#include <lm/film.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::api)
 
@@ -69,6 +70,17 @@ public:
         renderer_->render(*scene_.get());
     }
 
+    void save(const std::string& filmName, const std::string& outpath) {
+        if (!checkInitialized()) { return; }
+        const auto* film = assets_->underlying<Film>(filmName);
+        if (!film) {
+            return;
+        }
+        if (!film->save(outpath)) {
+            return;
+        }
+    }
+
 private:
     bool checkInitialized() {
         if (!init_) {
@@ -111,6 +123,10 @@ LM_PUBLIC_API const ScenePrimitive* primitive(const std::string& name) {
 
 LM_PUBLIC_API void render(const std::string& rendererName, const std::string& accelName, const json& prop) {
     Context::instance().render(rendererName, accelName, prop);
+}
+
+LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath) {
+    Context::instance().save(filmName, outpath);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::api)

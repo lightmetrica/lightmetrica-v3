@@ -107,7 +107,7 @@ public:
         \brief Get underlying component instance with specific interface type.
     */
     template <typename UnderlyingInterfaceT>
-    UnderlyingInterfaceT* underlying(const char* name) const {
+    UnderlyingInterfaceT* underlying(const std::string& name = "") const {
         return dynamic_cast<UnderlyingInterfaceT*>(underlying(name));
     }
 };
