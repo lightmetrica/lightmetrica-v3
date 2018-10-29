@@ -15,11 +15,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Renderer : public Component {
 public:
-    Renderer() = default;
-    virtual ~Renderer() = default;
-    LM_DISABLE_COPY_AND_MOVE(Renderer);
-
-public:
     /*!
         \brief Process rendering.
     */

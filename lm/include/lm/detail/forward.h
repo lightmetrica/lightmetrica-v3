@@ -9,8 +9,18 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-class Renderer;
-class Scene;
+// assets.h
 class Assets;
+
+// scene.h
+struct ScenePrimitive;
+class Scene;
+
+// renderer.h
+class Renderer;
+
+// Some detailed classes
+LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, class Impl)
+LM_FORWARD_DECLARE_WITH_NAMESPACE(py::detail, class Impl)
 
 LM_NAMESPACE_END(LM_NAMESPACE)

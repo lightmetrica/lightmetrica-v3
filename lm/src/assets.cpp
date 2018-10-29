@@ -11,7 +11,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Assets_ final : public Assets {
 public:
-    virtual Component* underlying(const char* name) const override {
+    virtual Component* underlying(const std::string& name) const override {
         // Finds underlying asset
         auto it = assetIndexMap_.find(name);
         if (it == assetIndexMap_.end()) {

@@ -19,11 +19,6 @@ public:
     */
     virtual bool loadAsset(const std::string& name, const std::string& implKey, const json& prop) = 0;
 
-    /*!
-        \brief Finds an asset by name.
-    */
-    virtual Component* findByName(const std::string& name) const = 0;
-
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

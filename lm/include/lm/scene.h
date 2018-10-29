@@ -15,7 +15,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \brief Primitive.
     A single object in the scene.
 */
-struct Primitive {
+struct ScenePrimitive : public Component {
     mat4 transform;
     const Component* mesh = nullptr;
     const Component* material = nullptr;
@@ -29,15 +29,15 @@ struct Primitive {
 class Scene : public Component {
 public:
     /*!
-        \brief Loads a primitive.
+        \brief Loads a scene primitive.
     */
     virtual bool loadPrimitive(const std::string& name, const Assets& assets,
         mat4 transform, const json& prop) = 0;
 
     /*!
-        \brief Get primitive by index.
+        \brief Build acceleration structure.
     */
-    virtual Primitive* primitiveByName(const std::string& name) = 0;
+    virtual void build(const std::string& name) = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

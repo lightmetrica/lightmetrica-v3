@@ -67,6 +67,8 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/math.h"
     "${_INCLUDE_DIR}/assets.h"
+    "${_INCLUDE_DIR}/mesh.h"
+    "${_INCLUDE_DIR}/texture.h"
     "${_INCLUDE_DIR}/scene.h"
     "${_INCLUDE_DIR}/accel.h"
     "${_INCLUDE_DIR}/renderer.h"
@@ -80,6 +82,8 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/api.cpp"
     "${_SOURCE_DIR}/assets.cpp"
     "${_SOURCE_DIR}/scene.cpp"
+    "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
+    "${_SOURCE_DIR}/texture/texture_bitmap.cpp"
     "${_SOURCE_DIR}/accel/accel_sahbvh.cpp"
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp")

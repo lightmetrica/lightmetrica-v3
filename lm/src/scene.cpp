@@ -28,12 +28,12 @@ public:
                 return nullptr;
             }
             // Obtain the referenced asset
-            return assets.findByName(it.value());
+            return assets.underlying(it.value().get<std::string>().c_str());
         };
 
         // Add a primitive
         primitiveIndexMap_[name] = primitives_.size();
-        primitives_.push_back(Primitive{
+        primitives_.emplace_back(new ScenePrimitive{
             transform,
             getAssetRefBy("mesh"),
             getAssetRefBy("material"),
@@ -45,7 +45,7 @@ public:
     }
 
 private:
-    std::vector<Primitive> primitives_;
+    std::vector<std::unique_ptr<ScenePrimitive>> primitives_;
     std::unordered_map<std::string, size_t> primitiveIndexMap_;
 };
 

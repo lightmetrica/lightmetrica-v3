@@ -21,11 +21,6 @@ using json = nlohmann::json;
 
 // ----------------------------------------------------------------------------
 
-LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, class Impl);
-LM_FORWARD_DECLARE_WITH_NAMESPACE(py::detail, class Impl);
-
-// ----------------------------------------------------------------------------
-
 /*!
     \brief Base component.
 
@@ -64,7 +59,7 @@ private:
 public:
     Component() = default;
     virtual ~Component() = default;
-    LM_DISABLE_COPY_AND_MOVE(Component);
+    LM_DISABLE_COPY_AND_MOVE(Component)
 
 public:
     /*!
@@ -106,7 +101,7 @@ public:
     /*!
         \brief Get underlying component instance.
     */
-    virtual Component* underlying(const char* name = nullptr) const { return nullptr; }
+    virtual Component* underlying(const std::string& name = "") const { return nullptr; }
 
     /*!
         \brief Get underlying component instance with specific interface type.
@@ -145,6 +140,15 @@ struct KeyGen<T<Ts...>> {
 LM_NAMESPACE_END(detail)
 
 // ----------------------------------------------------------------------------
+
+/*!
+    \brief Upcast/downcast of component types. 
+    Use this class if the component instance can be nullptr.
+*/
+template <typename InterfaceT>
+InterfaceT* cast(Component* p) {
+    return p ? p->cast<InterfaceT>() : nullptr;
+}
 
 /*!
     \brief Create component with specific interface type.
@@ -220,7 +224,7 @@ public:
         }
     }
     ~ScopedLoadPlugin() { unloadPlugins(); }
-    LM_DISABLE_COPY_AND_MOVE(ScopedLoadPlugin);
+    LM_DISABLE_COPY_AND_MOVE(ScopedLoadPlugin)
 
 public:
     bool valid() const { return valid_; }

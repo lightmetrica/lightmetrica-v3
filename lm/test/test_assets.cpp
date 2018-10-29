@@ -46,7 +46,7 @@ LM_COMP_REG_IMPL(TestAsset2, "test::testasset2");
 // ----------------------------------------------------------------------------
 
 TEST_CASE("Assets") {
-    lm::log::init();
+    lm::log::ScopedInit init;
 
     auto assets = lm::comp::create<lm::Assets>("assets::default");
     REQUIRE(assets);
@@ -73,8 +73,6 @@ TEST_CASE("Assets") {
         REQUIRE(a2);
         CHECK(a2->f() == 43);
     }
-
-    lm::log::shutdown();
 }
 
 LM_NAMESPACE_END(LM_TEST_NAMESPACE)

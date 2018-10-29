@@ -62,6 +62,16 @@ struct LogIndenter {
     ~LogIndenter() { updateIndentation(-1); }
 };
 
+/*!
+    Scoped guard of `init` and `shutdown` functions.
+*/
+class ScopedInit {
+public:
+    ScopedInit() { init(); }
+    ~ScopedInit() { shutdown(); }
+    LM_DISABLE_COPY_AND_MOVE(ScopedInit)
+};
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(log)
