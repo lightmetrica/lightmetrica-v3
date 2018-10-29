@@ -6,21 +6,25 @@
 #include <lm/lm.h>
 
 int main(int argc, char** argv) {
-    // Initialize
+    // Initialize the framework
     lm::init();
 
-    // Assets
-    lm::light();
-    lm::camera();
-    lm::mesh();
+    // Asset
+    lm::asset("film", "film::bitmap", {
+        {"output", "result.pfm"},
+        {"w", 1920},
+        {"h", 1080}
+    });
+    
+    // Render
+    lm::render("renderer::blank", {
+        { "output_film", "film" },
+        { "color", { 1,0,0 } }
+    });
 
-    // Primitives
-    lm::primitive("", glm::mat4(1), lm::mesh(""), lm::material(""));
-    lm::primitive("", glm::mat4(1), lm::mesh(""), lm::material(""));
+    // Save rendered image
+    lm::save("film");
 
-    // Rendering
-    lm::render();
-
-    // Finalize
+    // Finalize the framework
     lm::shutdown();
 }
