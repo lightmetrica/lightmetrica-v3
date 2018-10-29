@@ -18,4 +18,4 @@ endfunction()
 
 # -----------------------------------------------------------------------------
 
-lm_add_example(NAME example_render SOURCES "example_render.cpp")
+lm_add_example(NAME 001_blank_image SOURCES "001_blank_image.cpp")
