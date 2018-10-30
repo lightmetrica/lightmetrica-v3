@@ -29,6 +29,9 @@ public:
     }
     
 public:
+    
+
+public:
     void init() {
         log::init();
         if (init_) {

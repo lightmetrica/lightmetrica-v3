@@ -5,6 +5,8 @@
 
 #include <pch.h>
 #include <lm/renderer.h>
+#include <lm/scene.h>
+#include <lm/film.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -15,11 +17,17 @@ private:
 
 public:
     virtual bool construct(const json& prop, Component* parent) override {
-        color_ = ;
+        color_ = lm::castFromJson<vec3>(prop["color"]);
     }
 
-    virtual void render(const Scene& scene) const override {
-        
+    virtual void render(Component* ctx) const override {
+        auto* film = ctx->underlying<Film>("assets.film");
+        const auto [w, h] = film->size();
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                film->setPixel(x, y, color_);
+            }
+        }
     }
 };
 

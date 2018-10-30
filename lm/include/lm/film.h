@@ -25,6 +25,11 @@ public:
     virtual FilmSize size() const = 0;
 
     /*!
+        \brief Set pixel value.
+    */
+    virtual void setPixel(int x, int y, vec3 v) = 0;
+
+    /*!
         \brief Save rendered film.
     */
     virtual bool save(const std::string& outpath) const = 0;

@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "math.h"
+#include "../logger.h"
 #include <nlohmann/json.hpp>
 #include <array>
 
@@ -17,8 +18,13 @@ using json = nlohmann::json;
 
 // Conversion to JSON type
 template <typename T>
-json jsonCast(T&& v) {
-    return detail::JsonCastImpl<T>::cast(std::forward(v));
+json castToJson(T&& v) {
+    return detail::JsonCastImpl<T>::castToJson(std::forward(v));
+}
+
+template <typename T>
+T castFromJson(const json& j) {
+    return detail::JsonCastImpl<T>::castFromJson(j);
 }
 
 LM_NAMESPACE_BEGIN(detail)
@@ -29,9 +35,23 @@ struct JsonCastImpl;
 template <int N, typename T, glm::qualifier Q>
 struct JsonCastImpl<glm::vec<N, T, Q>> {
     using ValueT = glm::vec3<N, T, Q>;
-    static json cast(ValueT&& v) {
-        std::array<T, N> a(&v[0], &v[0] + N);
+    static json castToJson(ValueT&& v) {
+        std::array<T, N> a;
+        for (int i = 0; i < N; i++) {
+            a[i] = static_cast<json::number_float_t>(v[i]);
+        }
         return json(a);
+    }
+    static ValueT castFromJson(const json& j) {
+        if (!j.is_array()) {
+            LM_ERROR("Invalid cast: Array type is required.");
+            return {};
+        }
+        ValueT v;
+        for (int i = 0; i < N; i++) {
+            v[i] = static_cast<T>(j[i]);
+        }
+        return v;
     }
 };
 
