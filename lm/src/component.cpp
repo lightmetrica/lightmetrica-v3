@@ -20,7 +20,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::comp::detail)
 // Platform-independent abstruction of shared library.
 class SharedLibrary {
 public:
-
     // Load library.
     bool load(const std::string& path) {
         #if LM_PLATFORM_WINDOWS
@@ -133,14 +132,12 @@ private:
 
 class Impl {
 public:
-
     static Impl& instance() {
         static Impl instance;
         return instance;
     }
 
 public:
-
     Component* createComp(const std::string& key) {
         auto it = funcMap_.find(key);
         if (it == funcMap_.end()) {
@@ -235,7 +232,6 @@ public:
     }
 
 private:
-
     // Registered implementations
     struct CreateAndReleaseFunctions
     {
@@ -246,7 +242,6 @@ private:
 
     // Loaded plugins
     std::vector<std::unique_ptr<SharedLibrary>> plugins_;
-
 };
 
 // ----------------------------------------------------------------------------
