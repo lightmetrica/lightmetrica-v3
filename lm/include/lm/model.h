@@ -9,7 +9,10 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-class Mesh : public Component {
+class Model : public Component {
+public:
+
+
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)
