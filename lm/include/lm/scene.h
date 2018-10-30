@@ -15,7 +15,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \brief Primitive.
     A single object in the scene.
 */
-struct ScenePrimitive : public Component {
+struct ScenePrimitive {
     mat4 transform;
     const Component* mesh = nullptr;
     const Component* material = nullptr;

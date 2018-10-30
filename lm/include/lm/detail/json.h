@@ -6,7 +6,7 @@
 #pragma once
 
 #include "common.h"
-#include "math.h"
+#include "../math.h"
 #include "../logger.h"
 #include <nlohmann/json.hpp>
 #include <array>
@@ -19,7 +19,7 @@ using json = nlohmann::json;
 // Conversion to JSON type
 template <typename T>
 json castToJson(T&& v) {
-    return detail::JsonCastImpl<T>::castToJson(std::forward(v));
+    return detail::JsonCastImpl<T>::castToJson(std::forward<T>(v));
 }
 
 template <typename T>
@@ -34,11 +34,14 @@ struct JsonCastImpl;
 
 template <int N, typename T, glm::qualifier Q>
 struct JsonCastImpl<glm::vec<N, T, Q>> {
-    using ValueT = glm::vec3<N, T, Q>;
+    using ValueT = glm::vec<N, T, Q>;
     static json castToJson(ValueT&& v) {
         std::array<T, N> a;
         for (int i = 0; i < N; i++) {
+            #pragma warning (push)
+            #pragma warning (disable:4244)
             a[i] = static_cast<json::number_float_t>(v[i]);
+            #pragma warning (pop)
         }
         return json(a);
     }

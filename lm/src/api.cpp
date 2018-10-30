@@ -11,7 +11,7 @@
 #include <lm/logger.h>
 #include <lm/film.h>
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::api)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
 
@@ -30,14 +30,14 @@ public:
     
 public:
     virtual Component* underlying(const std::string& name) const {
-        
-        if (name == "assets") {
-            return assets_.get();
+        const auto [s, r] = comp::splitFirst(name);
+        if (s == "assets") {
+            return comp::getCurrentOrUnderlying(r, assets_.get());
         }
-        else if (name == "scene") {
-            return scene_.get();
+        else if (s == "scene") {
+            return comp::getCurrentOrUnderlying(r, scene_.get());
         }
-        else if (name == "renderer") {
+        else if (s == "renderer") {
             return renderer_.get();
         }
         return nullptr;
@@ -75,7 +75,12 @@ public:
 
     const ScenePrimitive* primitive(const std::string& name) {
         if (!checkInitialized()) { return nullptr; }
-        return cast<ScenePrimitive>(scene_->underlying(name));
+        return comp::cast<ScenePrimitive>(scene_->underlying(name));
+    }
+
+    void primitives(const std::string& modelName) {
+        if (!checkInitialized()) { return; }
+        LM_TBA_RUNTIME();
     }
 
     void render(const std::string& rendererName, const std::string& accelName, const json& prop) {
@@ -107,9 +112,9 @@ private:
 
 private:
     bool init_ = false;
-    Component::Ptr<Assets> assets_;
-    Component::Ptr<Scene> scene_;
-    Component::Ptr<Renderer> renderer_;
+    Ptr<Assets> assets_;
+    Ptr<Scene> scene_;
+    Ptr<Renderer> renderer_;
 };
 
 }
@@ -136,6 +141,10 @@ LM_PUBLIC_API const ScenePrimitive* primitive(const std::string& name) {
     return Context::instance().primitive(name);
 }
 
+LM_PUBLIC_API void primitives(const std::string& modelName) {
+    Context::instance().primitives(modelName);
+}
+
 LM_PUBLIC_API void render(const std::string& rendererName, const std::string& accelName, const json& prop) {
     Context::instance().render(rendererName, accelName, prop);
 }
@@ -144,4 +153,4 @@ LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath)
     Context::instance().save(filmName, outpath);
 }
 
-LM_NAMESPACE_END(LM_NAMESPACE::api)
+LM_NAMESPACE_END(LM_NAMESPACE)

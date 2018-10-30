@@ -141,7 +141,7 @@ public:
 
 public:
 
-    Component* createComp(const char* key) {
+    Component* createComp(const std::string& key) {
         auto it = funcMap_.find(key);
         if (it == funcMap_.end()) {
             return nullptr;
@@ -154,7 +154,7 @@ public:
     }
 
     void reg(
-        const char* key,
+        const std::string& key,
         const Component::CreateFunction& createFunc,
         const Component::ReleaseFunction& releaseFunc) {
         if (funcMap_.find(key) != funcMap_.end()) {
@@ -163,11 +163,11 @@ public:
         funcMap_[key] = CreateAndReleaseFunctions{ createFunc, releaseFunc };
     }
 
-    void unreg(const char* key) {
+    void unreg(const std::string& key) {
         funcMap_.erase(key);
     }
 
-    bool loadPlugin(const char* p) {
+    bool loadPlugin(const std::string& p) {
         namespace fs = std::filesystem;
 
         fs::path path(p);
@@ -194,7 +194,7 @@ public:
         return true;
     }
 
-    void loadPlugins(const char* directory) {
+    void loadPlugins(const std::string& directory) {
         namespace fs = std::filesystem;
 
         // Skip if directory does not exist
@@ -251,26 +251,26 @@ private:
 
 // ----------------------------------------------------------------------------
 
-LM_PUBLIC_API Component* createComp(const char* key) {
+LM_PUBLIC_API Component* createComp(const std::string& key) {
     return Impl::instance().createComp(key);
 }
 
 LM_PUBLIC_API void reg(
-    const char* key,
+    const std::string& key,
     const Component::CreateFunction& createFunc,
     const Component::ReleaseFunction& releaseFunc) {
     Impl::instance().reg(key, createFunc, releaseFunc);
 }
 
-LM_PUBLIC_API void unreg(const char* key) {
+LM_PUBLIC_API void unreg(const std::string& key) {
     Impl::instance().unreg(key);
 }
 
-LM_PUBLIC_API bool loadPlugin(const char* path) {
+LM_PUBLIC_API bool loadPlugin(const std::string& path) {
     return Impl::instance().loadPlugin(path);
 }
 
-LM_PUBLIC_API void loadPlugins(const char* directory) {
+LM_PUBLIC_API void loadPlugins(const std::string& directory) {
     Impl::instance().loadPlugins(directory);
 }
 

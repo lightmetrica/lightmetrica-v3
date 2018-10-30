@@ -86,6 +86,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/scene.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
     "${_SOURCE_DIR}/texture/texture_bitmap.cpp"
+    "${_SOURCE_DIR}/film/film_bitmap.cpp"
     "${_SOURCE_DIR}/accel/accel_sahbvh.cpp"
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp")

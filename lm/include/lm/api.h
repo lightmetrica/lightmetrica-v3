@@ -6,7 +6,6 @@
 #pragma once
 
 #include "detail/component.h"
-#include "math.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -34,6 +33,11 @@ LM_PUBLIC_API void primitive(const std::string& name, mat4 transform, const json
     \brief Gets a primitive pointer.
 */
 LM_PUBLIC_API const ScenePrimitive* primitive(const std::string& name);
+
+/*!
+    \brief Constructs primitives from a model.
+*/
+LM_PUBLIC_API void primitives(const std::string& modelName);
 
 /*!
     \brief Render image based on current configuration.

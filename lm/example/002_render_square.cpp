@@ -1,9 +1,9 @@
-///*
-//    Lightmetrica - Copyright (c) 2018 Hisanari Otsu
-//    Distributed under MIT license. See LICENSE file for details.
-//*/
-//
-//#include <lm/lm.h>
+/*
+    Lightmetrica - Copyright (c) 2018 Hisanari Otsu
+    Distributed under MIT license. See LICENSE file for details.
+*/
+
+#include <lm/lm.h>
 //
 //int main(int argc, char** argv) {
 //    // Initialize the framework
@@ -29,3 +29,7 @@
 //
 //    return 0;
 //}
+
+int main(int argc, char** argv) {
+    return 0;
+}

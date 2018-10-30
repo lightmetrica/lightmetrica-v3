@@ -12,20 +12,25 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_Blank final : public Renderer {
 private:
-    // Background color
     vec3 color_;
+    Film* film_;
 
 public:
     virtual bool construct(const json& prop, Component* parent) override {
         color_ = lm::castFromJson<vec3>(prop["color"]);
+        film_= parent->underlying<Film>(
+            fmt::format("assets.{}", prop["output"].get<std::string>()));
+        if (!film_) {
+            return false;
+        }
+        return true;
     }
 
-    virtual void render(Component* ctx) const override {
-        auto* film = ctx->underlying<Film>("assets.film");
-        const auto [w, h] = film->size();
+    virtual void render(const Scene& scene) const override {
+        const auto [w, h] = film_->size();
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                film->setPixel(x, y, color_);
+                film_->setPixel(x, y, color_);
             }
         }
     }

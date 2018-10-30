@@ -175,6 +175,24 @@ Component::Ptr<InterfaceT> create(std::string key, const json& prop, Component* 
     return inst;
 }
 
+/*
+    \brief Given 'xxx.yyy.zzz', returns the pair of 'xxx' and 'yyy.zzz'.
+*/
+static std::tuple<std::string, std::string> splitFirst(const std::string& s) {
+    const auto i = s.find_first_of('.', 0);
+    if (i == std::string::npos) {
+        return { s, "" };
+    }
+    return { s.substr(0, i), s.substr(i + 1) };
+}
+
+/*!
+    \brief Get a given component or its underlying component based on name.
+*/
+static Component* getCurrentOrUnderlying(const std::string& r, Component* p) {
+    return r.empty() ? p : p->underlying(r);
+}
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
@@ -183,34 +201,25 @@ LM_NAMESPACE_BEGIN(detail)
     \brief Create a component and its deleter.
     \param key Name of the implementation.
 */
-LM_PUBLIC_API Component* createComp(const char* key);
+LM_PUBLIC_API Component* createComp(const std::string& key);
 
 // Register a component.
 LM_PUBLIC_API void reg(
-    const char* key,
+    const std::string& key,
     const Component::CreateFunction& createFunc,
     const Component::ReleaseFunction& releaseFunc);
 
 // Unregister a component.
-LM_PUBLIC_API void unreg(const char* key);
+LM_PUBLIC_API void unreg(const std::string& key);
 
 // Load a plugin.
-LM_PUBLIC_API bool loadPlugin(const char* path);
+LM_PUBLIC_API bool loadPlugin(const std::string& path);
 
 // Load plugins inside a given directory.
-LM_PUBLIC_API void loadPlugins(const char* directory);
+LM_PUBLIC_API void loadPlugins(const std::string& directory);
 
 // Unload loaded plugins.
 LM_PUBLIC_API void unloadPlugins();
-
-// ----------------------------------------------------------------------------
-
-// Given 'xxx.yyy.zzz', returns the pair of 'xxx' and 'yyy.zzz'.
-static std::tuple<std::string, std::string> splitFirst(const std::string& s) {
-    // Find first non-delimiter
-    const auto i = s.find_first_of('.', 0);
-    str.substr(lastPos, pos - lastPos);
-}
 
 // ----------------------------------------------------------------------------
 
@@ -220,8 +229,8 @@ private:
     bool valid_ = true;
 
 public:
-    ScopedLoadPlugin(const char* path) : ScopedLoadPlugin({ path }) {}
-    ScopedLoadPlugin(std::initializer_list<const char*> paths) {
+    ScopedLoadPlugin(const std::string& path) : ScopedLoadPlugin({ path }) {}
+    ScopedLoadPlugin(std::initializer_list<std::string> paths) {
         for (auto path : paths) {
             valid_ |= loadPlugin(path);
             if (!valid_) { break; }

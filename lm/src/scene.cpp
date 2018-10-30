@@ -33,7 +33,7 @@ public:
 
         // Add a primitive
         primitiveIndexMap_[name] = primitives_.size();
-        primitives_.emplace_back(new ScenePrimitive{
+        primitives_.push_back(ScenePrimitive{
             transform,
             getAssetRefBy("mesh"),
             getAssetRefBy("material"),
@@ -44,8 +44,12 @@ public:
         return true;
     }
 
+    virtual void build(const std::string& name) override {
+        
+    }
+
 private:
-    std::vector<std::unique_ptr<ScenePrimitive>> primitives_;
+    std::vector<ScenePrimitive> primitives_;
     std::unordered_map<std::string, size_t> primitiveIndexMap_;
 };
 

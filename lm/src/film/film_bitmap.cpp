@@ -1,0 +1,58 @@
+/*
+    Lightmetrica - Copyright (c) 2018 Hisanari Otsu
+    Distributed under MIT license. See LICENSE file for details.
+*/
+
+#include <pch.h>
+#include <lm/film.h>
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+class Film_Bitmap final : public Film {
+private:
+    int w_;
+    int h_;
+    std::vector<vec3> data_;
+
+public:
+    virtual bool construct(const json& prop, Component* parent) override {
+        w_ = prop["w"];
+        h_ = prop["h"];
+        data_.assign(w_ * h_, vec3());
+        return true;
+    }
+
+    virtual FilmSize size() const override {
+        return { w_, h_ };
+    }
+
+    virtual void setPixel(int x, int y, vec3 v) override {
+        data_[y*w_ + x] = v;
+    }
+
+    virtual bool save(const std::string& outpath) const override {
+        LM_INFO("Saving image [file = '{}']", outpath);
+        FILE *f;
+        errno_t err;
+        if ((err = fopen_s(&f, outpath.c_str(), "wb")) != 0) {
+            LM_ERROR("Failed to open [file = '{}', errorno = '{}']", outpath, err);
+            return false;
+        }
+        fprintf(f, "PF\n%d %d\n-1\n", w_, h_);
+        std::vector<float> d(w_*h_*3);
+        for (int y = 0; y < h_; y++) {
+            for (int x = 0; x < w_; x++) {
+                for (int i = 0; i < 3; i++) {
+                    d[3*(y*w_+x)+i] = float(data_[(h_-1-y)*w_+(w_-1-x)][i]);
+                }
+            }
+        }
+        fwrite(d.data(), 4, d.size(), f);
+        fclose(f);
+        return true;
+    }
+};
+
+LM_COMP_REG_IMPL(Film_Bitmap, "film::bitmap");
+
+LM_NAMESPACE_END(LM_NAMESPACE)

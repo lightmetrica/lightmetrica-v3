@@ -107,7 +107,7 @@
 #pragma endregion
 
 // ----------------------------------------------------------------------------
-                                  
+
 #pragma region Dynamic library import and export
 #if LM_COMPILER_MSVC
 	#ifdef LM_EXPORTS

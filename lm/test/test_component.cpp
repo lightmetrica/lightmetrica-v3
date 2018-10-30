@@ -397,7 +397,7 @@ struct E1 final : public E {
     virtual int f() override {
         return d->f() + 1;
     }
-    virtual Component* underlying(const char* name) const {
+    virtual Component* underlying(const std::string& name) const {
         return d;
     }
 };
