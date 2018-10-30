@@ -9,11 +9,21 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+struct FilmSize {
+    int w;
+    int h;
+};
+
 /*!
     \brief Film.
 */
 class Film : public Component {
 public:
+    /*!
+        \brief Get size of the film.
+    */
+    virtual FilmSize size() const = 0;
+
     /*!
         \brief Save rendered film.
     */

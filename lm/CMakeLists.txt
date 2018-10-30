@@ -75,6 +75,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/renderer.h"
     "${_INCLUDE_DIR}/detail/common.h"
     "${_INCLUDE_DIR}/detail/forward.h"
+    "${_INCLUDE_DIR}/detail/json.h"
     "${_INCLUDE_DIR}/detail/component.h"
     "${_INCLUDE_DIR}/detail/parallel.h")
 set(_SOURCE_FILES 

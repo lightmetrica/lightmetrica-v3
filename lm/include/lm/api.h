@@ -49,7 +49,9 @@ LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath)
 
 LM_NAMESPACE_BEGIN(detail)
 
-// Scoped guard of `init` and `shutdown` functions.
+/*!
+    \brief Scoped guard of `init` and `shutdown` functions.
+*/
 class ScopedInit {
 public:
     ScopedInit() { init(); }

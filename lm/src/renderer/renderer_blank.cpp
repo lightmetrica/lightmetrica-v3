@@ -9,7 +9,15 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_Blank final : public Renderer {
+private:
+    // Background color
+    vec3 color_;
+
 public:
+    virtual bool construct(const json& prop, Component* parent) override {
+        color_ = ;
+    }
+
     virtual void render(const Scene& scene) const override {
         
     }
