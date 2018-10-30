@@ -205,6 +205,15 @@ LM_PUBLIC_API void unloadPlugins();
 
 // ----------------------------------------------------------------------------
 
+// Given 'xxx.yyy.zzz', returns the pair of 'xxx' and 'yyy.zzz'.
+static std::tuple<std::string, std::string> splitFirst(const std::string& s) {
+    // Find first non-delimiter
+    const auto i = s.find_first_of('.', 0);
+    str.substr(lastPos, pos - lastPos);
+}
+
+// ----------------------------------------------------------------------------
+
 // Scope guard of `loadPlugins` and `loadPlugins`.
 class ScopedLoadPlugin {
 private:

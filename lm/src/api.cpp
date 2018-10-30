@@ -29,7 +29,19 @@ public:
     }
     
 public:
-    
+    virtual Component* underlying(const std::string& name) const {
+        
+        if (name == "assets") {
+            return assets_.get();
+        }
+        else if (name == "scene") {
+            return scene_.get();
+        }
+        else if (name == "renderer") {
+            return renderer_.get();
+        }
+        return nullptr;
+    }
 
 public:
     void init() {
