@@ -17,7 +17,7 @@ public:
     /*!
         \brief Build acceleration structure.
     */
-    virtual void build(const Scene& scene) const = 0;
+    virtual void build(const Scene& scene) = 0;
 
     /*!
         \brief Hit information.

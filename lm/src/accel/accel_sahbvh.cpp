@@ -6,20 +6,20 @@
 #include <pch.h>
 #include <lm/accel.h>
 #include <lm/scene.h>
+#include <lm/mesh.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct Tri {
-    Vec3 p1;       // One vertex of the triangle
-    Vec3 e1, e2;   // Two edges indident to p1
-    Vec3 n;        // Normal
-    Bound b;       // Bound of the triangle
-    Vec3 c;        // Center of the bound
-    int oi;        // Object index
-    int fi;        // Face index
+    Vec3 p1;                    // One vertex of the triangle
+    Vec3 e1, e2;                // Two edges indident to p1
+    Vec3 n;                     // Normal
+    Bound b;                    // Bound of the triangle
+    Vec3 c;                     // Center of the bound
+    const Primitive* primitive; // Reference to primitive associted with the surface
 
-    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int oi, int fi)
-        : p1(p1), oi(oi), fi(fi) {
+    Tri(Vec3 p1, Vec3 p2, Vec3 p3, const Primitive* primitive)
+        : p1(p1), primitive(primitive) {
         e1 = p2 - p1;
         e2 = p3 - p1;
         n = glm::normalize(glm::cross(p2 - p1, p3 - p1));
@@ -65,15 +65,19 @@ private:
         int s, e;       // Range of triangle indices (valid only in leaf nodes)
         int c1, c2;     // Index to the child nodes
     };
-    std::vector<Node> ns;  // Nodes
-    std::vector<Tri> trs;  // Triangles
-    std::vector<int> ti;   // Triangle indices
-
+    std::vector<Node> nodes_;   // Nodes
+    std::vector<Tri> trs_;      // Triangles
+    std::vector<int> indices_;  // Triangle indices
+    
 public:
-    virtual void build(const Scene& scene) const override {
+    virtual void build(const Scene& scene) override {
         // Setup triangle list
+        trs_.clear();
         scene.foreachUnderlying<Primitive>([&](Primitive* p) {
-
+            const auto* mesh = p->mesh->cast<Mesh>();
+            mesh->foreachTriangle([&](Vec3 p1, Vec3 p2, Vec3 p3) {
+                
+            });
         });
 
 
