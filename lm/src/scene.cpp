@@ -10,55 +10,104 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-class Scene_ final : public Scene {
+// ----------------------------------------------------------------------------
+
+class Primitive_ final : public Primitive {
 public:
-    virtual bool loadPrimitive(const std::string& name, const Assets& assets, mat4 transform, const Json& prop) override {
-        // Check if already loaded
-        if (primitiveIndexMap_.find(name) != primitiveIndexMap_.end()) {
+    virtual bool construct(const Json& prop) {
+        if (!prop.is_object()) {
+            LM_ERROR("Invalid construction parameters");
             return false;
         }
-        
-        // Function to find and obtain an asset by name
-        const auto getAssetRefBy = [&](const std::string& propName) -> const Component* {
-            if (propName.empty()) {
-                return nullptr;
+        for (auto it = prop.begin(); it != prop.end(); ++it) {
+            if (!it.value().is_string()) {
+                LM_ERROR("Referenced component name must be string");
+                return false;
             }
-            // Find reference to an asset
-            const auto it = prop.find(propName);
-            if (it == prop.end()) {
-                return nullptr;
+            // Find referenced asset
+            const std::string name = it.value();
+            auto* comp = context()->underlying(fmt::format("assets.{}", name));
+            if (!comp) {
+                return false;
             }
-            // Obtain the referenced asset
-            return assets.underlying(it.value().get<std::string>().c_str());
-        };
+            compIndexMap_[it.key()] = comps_.size();
+            comps_.push_back(comp);
+        }
+        return true;
+    }
+
+    virtual Component* underlying(const std::string& name) const override {
+        return comps_[compIndexMap_.at(name)];
+    }
+
+    virtual Mat4 transform() const override {
+        return transform_;
+    }
+
+private:
+    Mat4 transform_;                    // Transform
+    std::vector<Component*> comps_;     // Underlying component references
+    std::unordered_map<std::string, size_t> compIndexMap_;
+};
+
+LM_COMP_REG_IMPL(Primitive_, "primitive::default");
+
+// ----------------------------------------------------------------------------
+
+class Scene_ final : public Scene {
+public:
+    virtual Component* underlying(const std::string& name) const override {
+        return primitives_[primitiveIndexMap_.at(name)].get();
+    }
+
+    virtual bool loadPrimitive(const std::string& name, Mat4 transform, const Json& prop) override {
+        // Check if already loaded
+        if (primitiveIndexMap_.find(name) != primitiveIndexMap_.end()) {
+            LM_ERROR("Already loaded [name = '{}']", name);
+            return false;
+        }
 
         // Add a primitive
         primitiveIndexMap_[name] = primitives_.size();
-        primitives_.push_back(ScenePrimitive{
-            transform,
-            getAssetRefBy("mesh"),
-            getAssetRefBy("material"),
-            getAssetRefBy("sensor"),
-            getAssetRefBy("light")
-        });
+        auto primitive = comp::create<Primitive>("primitive::default", this, prop);
+        if (!primitive) {
+            LM_ERROR("Failed to create primitive [name = '{}']", name);
+            return false;
+        }
+        primitives_.push_back(std::move(primitive));
 
         return true;
     }
 
     virtual void build(const std::string& name) override {
-        accel_ = comp::create<Accel>(name);
+        accel_ = comp::create<Accel>(name, this);
         if (!accel_) {
             return;
         }
         accel_->build(*this);
     }
 
+    virtual std::optional<Hit> intersect(const Ray& ray, Float tmin, Float tmax) const override {
+        const auto hit = accel_->intersect(ray, tmin, tmax);
+        if (!hit) {
+            return {};
+        }
+        const auto [t, uv, pid, fid] = *hit;
+        // TODO: replace this
+        const auto* mesh = primitives_.at(pid)->underlying("mesh");
+        return Hit{
+            mesh->;
+        };
+    }
+
 private:
-    std::vector<ScenePrimitive> primitives_;
+    std::vector<Ptr<Primitive>> primitives_;
     std::unordered_map<std::string, size_t> primitiveIndexMap_;
     Ptr<Accel> accel_;
 };
 
 LM_COMP_REG_IMPL(Scene_, "scene::default");
+
+// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(LM_NAMESPACE)

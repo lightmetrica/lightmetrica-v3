@@ -14,7 +14,7 @@ struct MeshFaceIndex {
     int n = -1;   // Reference to normal
 };
 
-class Mesh_Raw : public Mesh {
+class Mesh_Raw final : public Mesh {
 private:
     std::vector<Vec3> ps_;           // Positions
     std::vector<Vec3> ns_;           // Normals

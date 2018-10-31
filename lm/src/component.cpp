@@ -138,7 +138,7 @@ public:
     }
 
 public:
-    Component* createComp(const std::string& key) {
+    Component* createComp(const std::string& key, Component* parent) {
         auto it = funcMap_.find(key);
         if (it == funcMap_.end()) {
             return nullptr;
@@ -147,6 +147,10 @@ public:
         p->key_ = key;
         p->createFunc_ = it->second.createFunc;
         p->releaseFunc_ = it->second.releaseFunc;
+        if (parent) {
+            p->parent_ = parent;
+            p->context_ = parent->context_;
+        }
         return p;
     }
 
@@ -246,8 +250,8 @@ private:
 
 // ----------------------------------------------------------------------------
 
-LM_PUBLIC_API Component* createComp(const std::string& key) {
-    return Impl::instance().createComp(key);
+LM_PUBLIC_API Component* createComp(const std::string& key, Component* parent) {
+    return Impl::instance().createComp(key, parent);
 }
 
 LM_PUBLIC_API void reg(

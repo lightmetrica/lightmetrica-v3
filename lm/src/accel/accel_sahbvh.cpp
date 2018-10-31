@@ -11,15 +11,16 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct Tri {
-    Vec3 p1;                    // One vertex of the triangle
-    Vec3 e1, e2;                // Two edges indident to p1
-    Vec3 n;                     // Normal
-    Bound b;                    // Bound of the triangle
-    Vec3 c;                     // Center of the bound
-    const Primitive* primitive; // Reference to primitive associted with the surface
+    Vec3 p1;        // One vertex of the triangle
+    Vec3 e1, e2;    // Two edges indident to p1
+    Vec3 n;         // Normal
+    Bound b;        // Bound of the triangle
+    Vec3 c;         // Center of the bound
+    int primitive;  // Primitive index associted to the triangle
+    int face;       // Face index of the mesh associated to the triangle
 
-    Tri(Vec3 p1, Vec3 p2, Vec3 p3, const Primitive* primitive)
-        : p1(p1), primitive(primitive) {
+    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int primitive, int face)
+        : p1(p1), primitive(primitive), face(face) {
         e1 = p2 - p1;
         e2 = p3 - p1;
         n = glm::normalize(glm::cross(p2 - p1, p3 - p1));
@@ -56,7 +57,7 @@ struct Tri {
     }
 };
 
-class Accel_SAHBVH : public Accel {
+class Accel_SAHBVH final : public Accel {
 private:
     // BVH node
     struct Node {
@@ -73,16 +74,14 @@ public:
     virtual void build(const Scene& scene) override {
         // Setup triangle list
         trs_.clear();
-        scene.foreachUnderlying<Primitive>([&](Primitive* p) {
-            const auto* mesh = p->mesh->cast<Mesh>();
-            mesh->foreachTriangle([&](Vec3 p1, Vec3 p2, Vec3 p3) {
-                
+        scene.foreachUnderlying<Primitive>([&](Primitive* primitive) {
+            const auto* mesh = primitive->underlying<Mesh>("mesh");
+            mesh->foreachTriangle(primitive->transform(), [&](Vec3 p1, Vec3 p2, Vec3 p3) {
+                trs_.emplace_back(p1, p2, p3, primitive->index());
             });
         });
 
-
-        trs = trs_;
-        const int nt = int(trs.size()); // Number of triangles
+        const int nt = int(trs_.size()); // Number of triangles
         struct Entry {
             int index;
             int start;
@@ -90,9 +89,9 @@ public:
         };
         std::queue<Entry> q;            // Queue for traversal (node index, start, end)
         q.push({0, 0, nt});             // Initialize the queue with root node
-        ns.assign(2 * nt - 1, {});      // Maximum number of nodes: 2*nt-1
-        ti.assign(nt, 0);
-        std::iota(ti.begin(), ti.end(), 0);
+        nodes_.assign(2*nt-1, {});      // Maximum number of nodes: 2*nt-1
+        indices_.assign(nt, 0);
+        std::iota(indices_.begin(), indices_.end(), 0);
         std::mutex mu;                  // For concurrent queue
         std::condition_variable cv;     // For concurrent queue
         std::atomic<int> pr = 0;        // Processed triangles
@@ -103,13 +102,14 @@ public:
         auto process = [&]() {
             while (!done) {
                 // Each step construct a node for the triangles ranges in [s,e)
-                auto [ni, s, e] = [&]() -> std::tuple<int, int, int> {
+                auto [ni, s, e] = [&]() -> Entry {
                     std::unique_lock<std::mutex> lk(mu);
                     if (q.empty()) {
                         cv.wait(lk, [&]() { return done || !q.empty(); });
                     }
-                    if (done)
+                    if (done) {
                         return {};
+                    }
                     auto v = q.front();
                     q.pop();
                     return v;
@@ -117,50 +117,55 @@ public:
                 if (done) {
                     break;
                 }
+
                 // Calculate the bound for the node
-                Node& n = ns[ni];
+                Node& n = nodes_[ni];
                 for (int i = s; i < e; i++) {
-                    n.b = merge(n.b, trs[ti[i]].b);
+                    n.b = merge(n.b, trs_[indices_[i]].b);
                 }
+
                 // Function to sort the triangles according to the given axis
                 auto st = [&, s = s, e = e](int ax) {
                     auto cmp = [&](int i1, int i2) {
-                        return trs[i1].c[ax] < trs[i2].c[ax];
+                        return trs_[i1].c[ax] < trs_[i2].c[ax];
                     };
-                    std::sort(&ti[s], &ti[e - 1] + 1, cmp);
+                    std::sort(&indices_[s], &indices_[e-1]+1, cmp);
                 };
+
                 // Function to create a leaf node
-                auto lf = [&, s = s, e = e]() {
+                auto makeLeaf = [&, s = s, e = e]() {
                     n.leaf = 1;
                     n.s = s;
                     n.e = e;
                     pr += e - s;
-                    if (pr == int(trs.size())) {
+                    if (pr == int(trs_.size())) {
                         done = 1;
                         cv.notify_all();
                     }
                 };
+
                 // Create a leaf node if the number of triangle is 1
                 if (e - s < 2) {
-                    lf();
+                    makeLeaf();
                     continue;
                 }
+
                 // Selects a split axis and position according to SAH
-                F b = Inf;
+                Float b = Inf;
                 int bi, ba;
                 for (int a = 0; a < 3; a++) {
-                    thread_local std::vector<F> l(nt + 1), r(nt + 1);
+                    thread_local std::vector<Float> l(nt+1), r(nt+1);
                     st(a);
-                    B bl, br;
+                    Bound bl, br;
                     for (int i = 0; i <= e - s; i++) {
                         int j = e - s - i;
-                        l[i] = bl.sa() * i;
-                        r[j] = br.sa() * i;
-                        bl = i < e - s ? merge(bl, trs[ti[s + i]].b) : bl;
-                        br = j > 0 ? merge(br, trs[ti[s + j - 1]].b) : br;
+                        l[i] = bl.surfaceArea() * i;
+                        r[j] = br.surfaceArea() * i;
+                        bl = i < e - s ? merge(bl, trs_[indices_[s+i]].b) : bl;
+                        br = j > 0 ? merge(br, trs_[indices_[s+j-1]].b) : br;
                     }
                     for (int i = 1; i < e - s; i++) {
-                        F c = 1 + (l[i] + r[i]) / n.b.sa();
+                        const auto c = 1_f + (l[i]+r[i])/n.b.surfaceArea();
                         if (c < b) {
                             b = c;
                             bi = i;
@@ -169,7 +174,7 @@ public:
                     }
                 }
                 if (b > e - s) {
-                    lf();
+                    makeLeaf();
                     continue;
                 }
                 st(ba);
@@ -180,7 +185,8 @@ public:
                 cv.notify_one();
             }
         };
-        std::vector<std::thread> ths(omp_get_max_threads());
+        constexpr int NumThreads = 4;
+        std::vector<std::thread> ths(NumThreads);
         for (auto& th : ths) {
             th = std::thread(process);
         }
@@ -189,8 +195,32 @@ public:
         }
     };
 
-    virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) override {
-        
+    virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) const override {
+        std::optional<Tri::Hit> mh, h;
+        int mi, s[99]{}, si = 0;
+        while (si >= 0) {
+            auto& n = nodes_.at(s[si--]);
+            if (!n.b.isect(ray, tmin, tmax)) {
+                continue;
+            }
+            if (!n.leaf) {
+                s[++si] = n.c1;
+                s[++si] = n.c2;
+                continue;
+            }
+            for (int i = n.s; i < n.e; i++) {
+                if (h = trs_[indices_[i]].isect(ray, tmin, tmax)) {
+                    mh = h;
+                    tmax = h->t;
+                    mi = i;
+                }
+            }
+        }
+        if (!mh) {
+            return {};
+        }
+        const auto& tr = trs_[indices_[mi]];
+        return Hit{ tmax, Vec2(mh->u, mh->v), tr.primitive, tr.face };
     }
 };
 

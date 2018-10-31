@@ -52,10 +52,30 @@ private:
     //! Underlying reference to owner object (if any)
     std::any ownerRef_;
 
+    //! Shortcut for the root component (if any).
+    Component* context_ = nullptr;
+
+    //! Parent component (if any)
+    Component* parent_ = nullptr;
+
+    //! Index of the component. Used only if the component is managed by parent component.
+    int index_ = -1;
+
 public:
     Component() = default;
     virtual ~Component() = default;
     LM_DISABLE_COPY_AND_MOVE(Component)
+
+public:
+    /*!
+        \brief Context component.
+    */
+    Component* context() const { return context_; }
+
+    /*!
+        \brief Parent component.
+    */
+    Component* parent() const { return parent_; }
 
 public:
     /*!
@@ -82,12 +102,12 @@ public:
     /*!
         \brief Construct a component.
     */
-    virtual bool construct(const Json& prop, Component* parent = nullptr) { return true; }
+    virtual bool construct(const Json& prop) { return true; }
     
     /*!
         \brief Deserialize a component.
     */
-    virtual void load(std::istream& stream, Component* parent = nullptr) {}
+    virtual void load(std::istream& stream) {}
 
     /*!
         \brief Serialize a component.
@@ -121,6 +141,11 @@ public:
             processComponent(p->cast<UnderlyingComponentT>());
         });
     }
+
+    /*!
+        \brief Index of the component (if available).
+    */
+    int index() const { return -1; }
 };
 
 // ----------------------------------------------------------------------------
@@ -167,8 +192,8 @@ InterfaceT* cast(Component* p) {
     \param key Name of the implementation.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(std::string key) {
-    auto* inst = detail::createComp(detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str());
+Component::Ptr<InterfaceT> create(std::string key, Component* parent) {
+    auto* inst = detail::createComp(detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str(), parent);
     if (!inst) {
         return Component::Ptr<InterfaceT>(nullptr, nullptr);
     }
@@ -183,9 +208,9 @@ Component::Ptr<InterfaceT> create(std::string key) {
     \param parent Parent component instance.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(std::string key, const Json& prop, Component* parent = nullptr) {
+Component::Ptr<InterfaceT> create(std::string key, Component* parent, const Json& prop) {
     auto inst = create<InterfaceT>(key);
-    if (!inst || !inst->construct(prop, parent)) {
+    if (!inst || !inst->construct(prop)) {
         return Component::Ptr<InterfaceT>(nullptr, nullptr);
     }
     return inst;
@@ -217,7 +242,7 @@ LM_NAMESPACE_BEGIN(detail)
     \brief Create a component and its deleter.
     \param key Name of the implementation.
 */
-LM_PUBLIC_API Component* createComp(const std::string& key);
+LM_PUBLIC_API Component* createComp(const std::string& key, Component* parent);
 
 // Register a component.
 LM_PUBLIC_API void reg(

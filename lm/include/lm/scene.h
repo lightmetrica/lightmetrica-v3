@@ -42,17 +42,17 @@ struct SurfacePoint {
         const int i = glm::dot(wi, n) > 0;
         return { i ? n : -n, u, i ? v : -v };
     }
-};
 
-/*!
-    \brief Compute geometry term.
-*/
-Float geometryTerm(const SurfacePoint& s1, const SurfacePoint& s2) {
-    Vec3 d = s2.p - s1.p;
-    const Float L2 = glm::dot(d, d);
-    d = d / sqrt(L2);
-    return glm::abs(glm::dot(s1.n, d)) * glm::abs(glm::dot(s2.n, -d)) / L2;
-}
+    /*!
+        \brief Computes geometry term.
+    */
+    friend Float geometryTerm(const SurfacePoint& s1, const SurfacePoint& s2) {
+        Vec3 d = s2.p - s1.p;
+        const Float L2 = glm::dot(d, d);
+        d = d / sqrt(L2);
+        return glm::abs(glm::dot(s1.n, d)) * glm::abs(glm::dot(s2.n, -d)) / L2;
+    }
+};
 
 // ----------------------------------------------------------------------------
 
@@ -60,12 +60,12 @@ Float geometryTerm(const SurfacePoint& s1, const SurfacePoint& s2) {
     \brief Primitive.
     Primitive component of the scene.
 */
-struct Primitive : public Component {
-    Mat4 transform;
-    const Component* mesh = nullptr;
-    const Component* material = nullptr;
-    const Component* sensor = nullptr;
-    const Component* light = nullptr;
+class Primitive : public Component {
+public:
+    /*!
+        \brief Get transform associated to the primitive.
+    */
+    virtual Mat4 transform() const = 0;
 };
 
 /*!
@@ -76,8 +76,7 @@ public:
     /*!
         \brief Loads a scene primitive.
     */
-    virtual bool loadPrimitive(const std::string& name, const Assets& assets,
-        Mat4 transform, const Json& prop) = 0;
+    virtual bool loadPrimitive(const std::string& name, Mat4 transform, const Json& prop) = 0;
 
     /*!
         \brief Build acceleration structure.
@@ -95,7 +94,7 @@ public:
     /*!
         \brief Compute closest intersection point.
     */
-    virtual std::optional<Hit> intersect(const Ray& ray, Float tmin = Eps, Float tmax = Inf) = 0;
+    virtual std::optional<Hit> intersect(const Ray& ray, Float tmin = Eps, Float tmax = Inf) const = 0;
 };
 
 // ----------------------------------------------------------------------------

@@ -24,7 +24,7 @@ public:
     */
     struct Hit {
         Float t;        // Distance to the hit point
-        Float u, v;     // Barycentric coordinates
+        Vec2 uv;        // Barycentric coordinates
         int primitive;  // Primitive index
         int face;       // Face index
     };
@@ -32,7 +32,7 @@ public:
     /*!
         \brief Compute closest intersection point.
     */
-    virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) = 0;
+    virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) const = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)
