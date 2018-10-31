@@ -5,6 +5,7 @@
 
 #include <pch.h>
 #include <lm/accel.h>
+#include <lm/scene.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -28,11 +29,13 @@ struct Tri {
         c = b.center();
     }
 
-    // Checks intersection with a ray [Möller & Trumbore 1997]
+    // Hit information
     struct Hit {
         Float t;     // Distance to the triangle
         Float u, v;  // Hitpoint in barycentric coodinates
     };
+
+    // Checks intersection with a ray [Möller & Trumbore 1997]
     std::optional<Hit> isect(Ray r, Float tl, Float th) const {
         auto p = cross(r.d, e2);
         auto tv = r.o - p1;
@@ -69,9 +72,8 @@ private:
 public:
     virtual void build(const Scene& scene) const override {
         // Setup triangle list
-        scene.forachUnderlying([](Component* p_) {
-            const auto* p = p_->cast<Primitive>();
-            
+        scene.foreachUnderlying<Primitive>([&](Primitive* p) {
+
         });
 
 

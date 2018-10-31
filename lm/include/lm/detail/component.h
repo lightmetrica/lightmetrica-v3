@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <optional>
+#include <functional>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -101,9 +102,24 @@ public:
     /*!
         \brief Get underlying component instance with specific interface type.
     */
-    template <typename UnderlyingInterfaceT>
-    UnderlyingInterfaceT* underlying(const std::string& name = "") const {
-        return dynamic_cast<UnderlyingInterfaceT*>(underlying(name));
+    template <typename UnderlyingComponentT>
+    UnderlyingComponentT* underlying(const std::string& name = "") const {
+        return underlying(name)->cast<UnderlyingComponentT>();
+    }
+
+    /*!
+        \brief Process given function for each underlying component call.
+    */
+    virtual void foreachUnderlying(const std::function<void(Component* p)>& processComponent) const {}
+
+    /*!
+        \brief Process given function for each underlying component call with specific interface type. 
+    */
+    template <typename UnderlyingComponentT>
+    void foreachUnderlying(const std::function<void(UnderlyingComponentT* p)>& processComponent) const {
+        foreachUnderlying([](Component* p) -> void {
+            processComponent(p->cast<UnderlyingComponentT>());
+        });
     }
 };
 
@@ -269,7 +285,6 @@ public:
         unreg(key_.c_str());
     }
 };
-
 
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(comp)
