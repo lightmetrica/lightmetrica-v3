@@ -12,13 +12,13 @@ class Film_Bitmap final : public Film {
 private:
     int w_;
     int h_;
-    std::vector<vec3> data_;
+    std::vector<Vec3> data_;
 
 public:
-    virtual bool construct(const json& prop, Component* parent) override {
+    virtual bool construct(const Json& prop, Component* parent) override {
         w_ = prop["w"];
         h_ = prop["h"];
-        data_.assign(w_ * h_, vec3());
+        data_.assign(w_ * h_, Vec3());
         return true;
     }
 
@@ -26,7 +26,7 @@ public:
         return { w_, h_ };
     }
 
-    virtual void setPixel(int x, int y, vec3 v) override {
+    virtual void setPixel(int x, int y, Vec3 v) override {
         data_[y*w_ + x] = v;
     }
 

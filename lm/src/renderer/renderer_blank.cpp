@@ -12,12 +12,12 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_Blank final : public Renderer {
 private:
-    vec3 color_;
+    Vec3 color_;
     Film* film_;
 
 public:
-    virtual bool construct(const json& prop, Component* parent) override {
-        color_ = lm::castFromJson<vec3>(prop["color"]);
+    virtual bool construct(const Json& prop, Component* parent) override {
+        color_ = lm::castFromJson<Vec3>(prop["color"]);
         film_= parent->underlying<Film>(
             fmt::format("assets.{}", prop["output"].get<std::string>()));
         if (!film_) {

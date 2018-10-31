@@ -6,12 +6,13 @@
 #include <pch.h>
 #include <lm/scene.h>
 #include <lm/assets.h>
+#include <lm/accel.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Scene_ final : public Scene {
 public:
-    virtual bool loadPrimitive(const std::string& name, const Assets& assets, mat4 transform, const json& prop) override {
+    virtual bool loadPrimitive(const std::string& name, const Assets& assets, mat4 transform, const Json& prop) override {
         // Check if already loaded
         if (primitiveIndexMap_.find(name) != primitiveIndexMap_.end()) {
             return false;
@@ -45,12 +46,17 @@ public:
     }
 
     virtual void build(const std::string& name) override {
-        
+        accel_ = comp::create<Accel>(name);
+        if (!accel_) {
+            return;
+        }
+        accel_->build(*this);
     }
 
 private:
     std::vector<ScenePrimitive> primitives_;
     std::unordered_map<std::string, size_t> primitiveIndexMap_;
+    Ptr<Accel> accel_;
 };
 
 LM_COMP_REG_IMPL(Scene_, "scene::default");

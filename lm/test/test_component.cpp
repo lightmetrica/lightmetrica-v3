@@ -146,7 +146,7 @@ struct A_Py final : public A {
 };
 
 struct TestPlugin_Py final : public TestPlugin {
-    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
         PYBIND11_OVERLOAD_PURE(bool, TestPlugin, prop, parent);
     }
     virtual int f() override {
@@ -370,7 +370,7 @@ struct D : public lm::Component {
 struct D1 final : public D {
     int v1;
     int v2;
-    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
         v1 = prop["v1"].get<int>();
         v2 = prop["v2"].get<int>();
         return true;
@@ -390,7 +390,7 @@ struct E : public lm::Component {
 
 struct E1 final : public E {
     D* d;
-    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
         d = parent->cast<D>();
         return true;
     }
@@ -404,7 +404,7 @@ struct E1 final : public E {
 
 struct E2 final : public E {
     D* d;
-    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
         d = parent->underlying()->cast<D>();
         return true;
     }
@@ -455,7 +455,7 @@ TEST_CASE("Construction") {
 // ----------------------------------------------------------------------------
 
 struct D_Py final : public D {
-    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
         PYBIND11_OVERLOAD_PURE(bool, D, prop, parent);
     }
     virtual int f() override {
@@ -471,7 +471,7 @@ struct D_Py final : public D {
 };
 
 struct E_Py final : public E {
-    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
         PYBIND11_OVERLOAD_PURE(bool, E, prop, parent);
     }
     virtual int f() override {
@@ -559,7 +559,7 @@ struct F : public lm::Component {
 struct F1 final : public F {
     int v1_;
     int v2_;
-    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
         const int v = prop["v"];
         v1_ = v + 1;
         v2_ = v - 1;
@@ -580,7 +580,7 @@ struct F1 final : public F {
 struct F2 final : public F {
     int v_;
     F* f_;
-    virtual bool construct(const lm::json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
         f_ = dynamic_cast<F*>(parent);
         v_ = prop["v"];
         return true;

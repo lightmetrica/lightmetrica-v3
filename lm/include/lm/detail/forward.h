@@ -13,7 +13,8 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Assets;
 
 // scene.h
-struct ScenePrimitive;
+struct SurfacePoint;
+struct Primitive;
 class Scene;
 
 // renderer.h

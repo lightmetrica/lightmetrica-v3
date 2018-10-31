@@ -81,7 +81,7 @@ public:
     /*!
         \brief Construct a component.
     */
-    virtual bool construct(const json& prop, Component* parent = nullptr) { return true; }
+    virtual bool construct(const Json& prop, Component* parent = nullptr) { return true; }
     
     /*!
         \brief Deserialize a component.
@@ -167,7 +167,7 @@ Component::Ptr<InterfaceT> create(std::string key) {
     \param parent Parent component instance.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(std::string key, const json& prop, Component* parent = nullptr) {
+Component::Ptr<InterfaceT> create(std::string key, const Json& prop, Component* parent = nullptr) {
     auto inst = create<InterfaceT>(key);
     if (!inst || !inst->construct(prop, parent)) {
         return Component::Ptr<InterfaceT>(nullptr, nullptr);

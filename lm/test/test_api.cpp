@@ -15,7 +15,7 @@ LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 //// Stub mesh
 //struct StubMesh : public lm::Component {
 //    int v_ = 0;
-//    virtual bool construct(const lm::json& prop, lm::Component* parent) {
+//    virtual bool construct(const lmJsonon& prop, lm::Component* parent) {
 //        v_ = prop["v"];
 //    }
 //};

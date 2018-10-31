@@ -21,7 +21,7 @@ public:
         return assets_.at(it->second).get();
     }
 
-    virtual bool loadAsset(const std::string& name, const std::string& implKey, const json& prop) override {
+    virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
         LM_INFO("Loading asset [name='{}']", name);
         LM_INDENTER();
 

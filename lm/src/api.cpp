@@ -63,12 +63,12 @@ public:
         log::shutdown();
     }
 
-    void asset(const std::string& name, const std::string& implKey, const json& prop) {
+    void asset(const std::string& name, const std::string& implKey, const Json& prop) {
         if (!checkInitialized()) { return; }
         assets_->loadAsset(name, implKey, prop);
     }
 
-    void primitive(const std::string& name, mat4 transform, const json& prop) {
+    void primitive(const std::string& name, mat4 transform, const Json& prop) {
         if (!checkInitialized()) { return; }
         scene_->loadPrimitive(name, *assets_.get(), transform, prop);
     }
@@ -83,7 +83,7 @@ public:
         LM_TBA_RUNTIME();
     }
 
-    void render(const std::string& rendererName, const std::string& accelName, const json& prop) {
+    void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {
         if (!checkInitialized()) { return; }
         scene_->build(accelName);
         renderer_ = lm::comp::create<Renderer>(rendererName, prop, this);
@@ -129,11 +129,11 @@ LM_PUBLIC_API void shutdown() {
     Context::instance().shutdown();
 }
 
-LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const json& prop) {
+LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop) {
     Context::instance().asset(name, implKey, prop);
 }
 
-LM_PUBLIC_API void primitive(const std::string& name, mat4 transform, const json& prop) {
+LM_PUBLIC_API void primitive(const std::string& name, mat4 transform, const Json& prop) {
     Context::instance().primitive(name, transform, prop);
 }
 
@@ -145,7 +145,7 @@ LM_PUBLIC_API void primitives(const std::string& modelName) {
     Context::instance().primitives(modelName);
 }
 
-LM_PUBLIC_API void render(const std::string& rendererName, const std::string& accelName, const json& prop) {
+LM_PUBLIC_API void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {
     Context::instance().render(rendererName, accelName, prop);
 }
 

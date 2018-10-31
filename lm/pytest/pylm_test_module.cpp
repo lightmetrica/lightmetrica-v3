@@ -14,7 +14,7 @@ PYBIND11_MODULE(pylm_test_module, m) {
     });
 
     // Round trip
-    m.def("round_trip", [](lm::json v) -> lm::json {
+    m.def("round_trip", [](lm::Json v) -> lm::Json {
         return v;
     });
 }

@@ -18,6 +18,21 @@ public:
         \brief Build acceleration structure.
     */
     virtual void build(const Scene& scene) const = 0;
+
+    /*!
+        \brief Hit information.
+    */
+    struct Hit {
+        Float t;        // Distance to the hit point
+        Float u, v;     // Barycentric coordinates
+        int primitive;  // Primitive index
+        int face;       // Face index
+    };
+
+    /*!
+        \brief Compute closest intersection point.
+    */
+    virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

@@ -22,12 +22,12 @@ LM_PUBLIC_API void shutdown();
 /*!
     \brief Create an asset.
 */
-LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const json& prop);
+LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop);
 
 /*!
     \brief Creates a new primitive and add it to the scene.
 */
-LM_PUBLIC_API void primitive(const std::string& name, mat4 transform, const json& prop);
+LM_PUBLIC_API void primitive(const std::string& name, mat4 transform, const Json& prop);
 
 /*!
     \brief Gets a primitive pointer.
@@ -42,7 +42,7 @@ LM_PUBLIC_API void primitives(const std::string& modelName);
 /*!
     \brief Render image based on current configuration.
 */
-LM_PUBLIC_API void render(const std::string& rendererName, const std::string& accelName, const json& prop);
+LM_PUBLIC_API void render(const std::string& rendererName, const std::string& accelName, const Json& prop);
 
 /*!
     \brief Save an image.

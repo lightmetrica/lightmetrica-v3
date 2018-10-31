@@ -12,10 +12,10 @@
 // Type caster for json type
 namespace pybind11::detail {
 template <>
-struct type_caster<lm::json> {
+struct type_caster<lm::Json> {
 public:
     // Register this class as type caster
-    PYBIND11_TYPE_CASTER(lm::json, _("json"));
+    PYBIND11_TYPE_CASTER(lm::Json, _("json"));
 
     // Python -> C++
     bool load(handle src, bool convert) {
@@ -37,27 +37,27 @@ public:
         }
         else if (isinstance<dict>(src)) {
             auto d = reinterpret_borrow<dict>(src);
-            value = lm::json(value_t::object);
+            value = lm::Json(value_t::object);
             for (auto it : d) {
                 make_caster<std::string> kconv;
-                make_caster<lm::json> vconv;
+                make_caster<lm::Json> vconv;
                 if (!kconv.load(it.first.ptr(), convert) || !vconv.load(it.second.ptr(), convert)) {
                     return false;
                 }
                 value.emplace(
                     cast_op<std::string&&>(std::move(kconv)),
-                    cast_op<lm::json&&>(std::move(vconv)));
+                    cast_op<lm::Json&&>(std::move(vconv)));
             }
         }
         else if (isinstance<sequence>(src)) {
             auto s = reinterpret_borrow<sequence>(src);
-            value = lm::json(value_t::array);
+            value = lm::Json(value_t::array);
             for (auto it : s) {
-                make_caster<lm::json> vconv;
+                make_caster<lm::Json> vconv;
                 if (!vconv.load(it, convert)) {
                     return false;
                 }
-                value.push_back(cast_op<lm::json&&>(std::move(vconv)));
+                value.push_back(cast_op<lm::Json&&>(std::move(vconv)));
             }
         }
         else {
@@ -92,13 +92,13 @@ public:
             }
             case value_t::object: {
                 auto policy_key = return_value_policy_override<std::string>::policy(policy);
-                auto policy_value = return_value_policy_override<lm::json>::policy(policy);
+                auto policy_value = return_value_policy_override<lm::Json>::policy(policy);
                 dict d;
-                for (lm::json::iterator it = src.begin(); it != src.end(); ++it) {
+                for (lm::Json::iterator it = src.begin(); it != src.end(); ++it) {
                     auto k = reinterpret_steal<object>(
                         make_caster<std::string>::cast(forward_like<T>(it.key()), policy_key, parent));
                     auto v = reinterpret_steal<object>(
-                        make_caster<lm::json>::cast(forward_like<T>(it.value()), policy_value, parent));
+                        make_caster<lm::Json>::cast(forward_like<T>(it.value()), policy_value, parent));
                     if (!k || !v) {
                         return handle();
                     }
@@ -107,12 +107,12 @@ public:
                 return d.release();
             }
             case value_t::array: {
-                auto policy_value = return_value_policy_override<lm::json>::policy(policy);
+                auto policy_value = return_value_policy_override<lm::Json>::policy(policy);
                 list l(src.size());
                 size_t index = 0;
                 for (auto&& element : src) {
                     auto v = reinterpret_steal<object>(
-                        make_caster<lm::json>::cast(forward_like<T>(element), policy_value, parent));
+                        make_caster<lm::Json>::cast(forward_like<T>(element), policy_value, parent));
                     if (!v) {
                         return handle();
                     }

@@ -65,7 +65,7 @@ public:
         \brief Creation of component instance with construction.
     */
     template <typename InterfaceT>
-    static pybind11::object createCompWrap(const char* name, const json& prop, Component* parent) {
+    static pybind11::object createCompWrap(const char* name, const Json& prop, Component* parent) {
         auto inst = lm::comp::detail::createComp(name);
         if (!inst || !inst->construct(prop, parent)) {
             return pybind11::object();
@@ -115,7 +115,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
         pybind11::overload_cast<const char*>( \
             &LM_NAMESPACE::py::detail::Impl::createCompWrap<InterfaceT>)) \
     .def_static("create", \
-        pybind11::overload_cast<const char*, const LM_NAMESPACE::json&, LM_NAMESPACE::Component*>( \
+        pybind11::overload_cast<const char*, const LM_NAMESPACE::Json&, LM_NAMESPACE::Component*>( \
             &LM_NAMESPACE::py::detail::Impl::createCompWrap<InterfaceT>))
 
 // ----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ LM_NAMESPACE_BEGIN(detail)
 // Trampoline class for lm::Component
 class Component_Py final : public Component {
 public:
-    virtual bool construct(const json& prop, Component* parent) override {
+    virtual bool construct(const Json& prop, Component* parent) override {
         PYBIND11_OVERLOAD_PURE(bool, Component, prop, parent);
     }
     static void bind(pybind11::module& m) {
