@@ -10,7 +10,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-class Renderer_Blank final : public Renderer {
+class Renderer_Raycast final : public Renderer {
 private:
     Vec3 color_;
     Film* film_;
@@ -18,7 +18,7 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         color_ = castFromJson<Vec3>(prop["color"]);
-        film_= parent()->underlying<Film>(
+        film_ = parent()->underlying<Film>(
             fmt::format("assets.{}", prop["output"].get<std::string>()));
         if (!film_) {
             return false;
@@ -30,12 +30,18 @@ public:
         const auto [w, h] = film_->size();
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                film_->setPixel(x, y, color_);
+                const auto ray = scene.primaryRay({(x+.5_f)/w, (y+.5_f)/h});
+                const auto sp = scene.intersect(ray);
+                if (!sp) {
+                    film_->setPixel(x, y, color_);
+                    continue;
+                }
+                film_->setPixel(x, y, Vec3(glm::abs(glm::dot(sp->n, -ray.d))));
             }
         }
     }
 };
 
-LM_COMP_REG_IMPL(Renderer_Blank, "renderer::blank");
+LM_COMP_REG_IMPL(Renderer_Raycast, "renderer::raycast");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

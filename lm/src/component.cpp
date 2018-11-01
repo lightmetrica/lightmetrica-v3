@@ -33,7 +33,7 @@ public:
         #if LM_PLATFORM_WINDOWS
         handle = LoadLibraryA(p.c_str());
         if (!handle) {
-            LM_ERROR("Failed to load library or its dependencies: {}", p);
+            LM_ERROR("Failed to load library or its dependencies [path='{}']", p);
             LM_INDENTER();
             LM_ERROR(getLastErrorAsString());
             return false;
@@ -41,7 +41,7 @@ public:
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
         handle = dlopen(p.c_str(), RTLD_LAZY | RTLD_LOCAL);
         if (!handle) {
-            LM_ERROR("Failed to load library or its dependencies: {}", p);
+            LM_ERROR("Failed to load library or its dependencies [path='{}']", p);
             LM_INDENTER();
             LM_ERROR(dlerror());
             return false;
@@ -141,6 +141,7 @@ public:
     Component* createComp(const std::string& key, Component* parent) {
         auto it = funcMap_.find(key);
         if (it == funcMap_.end()) {
+            LM_ERROR("Missing component [key='{}']", key);
             return nullptr;
         }
         auto* p = it->second.createFunc();
@@ -159,7 +160,7 @@ public:
         const Component::CreateFunction& createFunc,
         const Component::ReleaseFunction& releaseFunc) {
         if (funcMap_.find(key) != funcMap_.end()) {
-            std::cerr << fmt::format("Failed to register [ {} ]. Already registered.", key) << std::endl;
+            std::cerr << fmt::format("Component is already registered [key='{}']", key) << std::endl;
         }
         funcMap_[key] = CreateAndReleaseFunctions{ createFunc, releaseFunc };
     }
@@ -183,7 +184,7 @@ public:
         SetDllDirectory(parent.c_str());
         #endif
         if (!plugin->load(path.string())) {
-            LM_WARN("Failed to load library: {}", path.string());
+            LM_WARN("Failed to load library [path='{}']", path.string());
             return false;
         }
         #if LM_PLATFORM_WINDOWS
@@ -200,7 +201,7 @@ public:
 
         // Skip if directory does not exist
         if (!fs::is_directory(fs::path(directory))) {
-            LM_WARN("Missing plugin directory '{}'. Skipping.", directory);
+            LM_WARN("Missing plugin directory [directory='{}']. Skipping.", directory);
             return;
         }
 

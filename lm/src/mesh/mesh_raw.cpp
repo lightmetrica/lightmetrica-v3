@@ -22,7 +22,7 @@ private:
     std::vector<MeshFaceIndex> fs_;  // Faces
 
 public:
-    virtual bool construct(const Json& prop, Component* parent) override {
+    virtual bool construct(const Json& prop) override {
         const auto& ps = prop["ps"];
         for (int i = 0; i < ps.size(); i+=3) {
             ps_.push_back(Vec3(ps[i],ps[i+1],ps[i+2]));
@@ -36,12 +36,32 @@ public:
             ts_.push_back(Vec2(ts[i],ts[i+1]));
         }
         const auto& fs = prop["fs"];
-        for (int i = 0; i < fs[0].size(); i += 2) {
-            fs_.push_back(MeshFaceIndex{ fs[0][i],fs[1][i],fs[2][i] });
+        const int fs_size = int(fs["p"].size());
+        for (int i = 0; i < fs_size; i++) {
+            fs_.push_back(MeshFaceIndex{ fs["p"][i],fs["t"][i],fs["n"][i] });
+        }
+        return true;
+    }
+
+    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
+        for (int fi = 0; fi < int(fs_.size()); fi += 3) {
+            const auto p1 = ps_[fs_[fi].p];
+            const auto p2 = ps_[fs_[fi + 1].p];
+            const auto p3 = ps_[fs_[fi + 2].p];
+            processTriangle(fi, p1, p2, p3);
         }
     }
 
-
+    virtual Point surfacePoint(int face, Vec2 uv) const override {
+        const auto i1 = fs_[face];
+        const auto i2 = fs_[face + 1];
+        const auto i3 = fs_[face + 2];
+        return {
+            math::mixBarycentric(ps_[i1.p], ps_[i2.p], ps_[i3.p], uv),
+            glm::normalize(math::mixBarycentric(ns_[i1.n], ns_[i2.n], ns_[i3.n], uv)),
+            math::mixBarycentric(ts_[i1.t], ts_[i2.t], ts_[i3.t], uv)
+        };
+    }
 };
 
 LM_COMP_REG_IMPL(Mesh_Raw, "mesh::raw");

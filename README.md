@@ -1,7 +1,7 @@
 Lightmetrica Version 3
 ====================
 
-Research-oriented meta renderer.
+A research-oriented meta renderer.
 
 ## Setup
 

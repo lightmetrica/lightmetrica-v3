@@ -17,7 +17,7 @@ struct TestAsset : public lm::Component {
 
 struct TestAsset1 final : public TestAsset {
     int v = -1;
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop) override {
         if (prop.count("v")) {
             v = prop["v"];
         }
@@ -30,8 +30,8 @@ struct TestAsset1 final : public TestAsset {
 
 struct TestAsset2 final : public TestAsset {
     int v;
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
-        const auto* other = parent->underlying("asset1")->cast<TestAsset>();
+    virtual bool construct(const lm::Json& prop) override {
+        const auto* other = parent()->underlying("asset1")->cast<TestAsset>();
         v = other->f() + 1;
         return true;
     }
@@ -48,7 +48,7 @@ LM_COMP_REG_IMPL(TestAsset2, "test::testasset2");
 TEST_CASE("Assets") {
     lm::log::ScopedInit init;
 
-    auto assets = lm::comp::create<lm::Assets>("assets::default");
+    auto assets = lm::comp::create<lm::Assets>("assets::default", nullptr);
     REQUIRE(assets);
 
     SUBCASE("Load asset without properties") {

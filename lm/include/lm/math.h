@@ -80,12 +80,12 @@ struct Bound {
 
     // Merges a bound and a point
     friend Bound merge(Bound b, Vec3 p) {
-        return { vmin(b.mi, p), vmax(b.ma, p) };
+        return { glm::min(b.mi, p), glm::max(b.ma, p) };
     }
 
     // Merges two bounds
     friend Bound merge(Bound a, Bound b) {
-        return { vmin(a.mi, b.mi), vmax(a.ma, b.ma) };
+        return { glm::min(a.mi, b.mi), glm::max(a.ma, b.ma) };
     }
 };
 
@@ -103,6 +103,14 @@ static std::tuple<Vec3, Vec3> orthonormalBasis(Vec3 n) {
     const Vec3 u(1_f + s * n.x * n.x * a, s * b, -s * n.x);
     const Vec3 v(b, s + n.y * n.y * a, -n.y);
     return { u, v };
+}
+
+/*!
+    \brief Interpolation with barycentric coordinates.
+*/
+template <typename T>
+static T mixBarycentric(T a, T b, T c, Vec2 uv) {
+    return a * (1_f - uv.x - uv.y) + b * uv.x + c * uv.y;
 }
 
 LM_NAMESPACE_END(math)

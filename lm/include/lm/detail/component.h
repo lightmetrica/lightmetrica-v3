@@ -58,9 +58,6 @@ private:
     //! Parent component (if any)
     Component* parent_ = nullptr;
 
-    //! Index of the component. Used only if the component is managed by parent component.
-    int index_ = -1;
-
 public:
     Component() = default;
     virtual ~Component() = default;
@@ -141,11 +138,6 @@ public:
             processComponent(p->cast<UnderlyingComponentT>());
         });
     }
-
-    /*!
-        \brief Index of the component (if available).
-    */
-    int index() const { return -1; }
 };
 
 // ----------------------------------------------------------------------------
@@ -209,7 +201,7 @@ Component::Ptr<InterfaceT> create(std::string key, Component* parent) {
 */
 template <typename InterfaceT>
 Component::Ptr<InterfaceT> create(std::string key, Component* parent, const Json& prop) {
-    auto inst = create<InterfaceT>(key);
+    auto inst = create<InterfaceT>(key, parent);
     if (!inst || !inst->construct(prop)) {
         return Component::Ptr<InterfaceT>(nullptr, nullptr);
     }

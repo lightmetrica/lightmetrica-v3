@@ -27,7 +27,7 @@ public:
     /*!
         \brief Set pixel value.
     */
-    virtual void setPixel(int x, int y, vec3 v) = 0;
+    virtual void setPixel(int x, int y, Vec3 v) = 0;
 
     /*!
         \brief Save rendered film.

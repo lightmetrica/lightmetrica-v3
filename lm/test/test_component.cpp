@@ -67,7 +67,7 @@ LM_COMP_REG_IMPL(C1, "test::comp::c1");
 TEST_CASE("Component") {
     SUBCASE("Simple interface") {
         // _begin_snippet: A_impl
-        const auto p = lm::comp::create<A>("test::comp::a1");
+        const auto p = lm::comp::create<A>("test::comp::a1", nullptr);
         REQUIRE(p);
         CHECK(p->f1() == 42);
         CHECK(p->f2(1, 2) == 3);
@@ -75,7 +75,7 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Inherited interface") {
-        const auto p = lm::comp::create<B>("test::comp::b1");
+        const auto p = lm::comp::create<B>("test::comp::b1", nullptr);
         REQUIRE(p);
         CHECK(p->f1() == 42);
         CHECK(p->f2(1, 2) == 3);
@@ -83,12 +83,12 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Missing implementation") {
-        const auto p = lm::comp::create<A>("test::comp::a_missing");
+        const auto p = lm::comp::create<A>("test::comp::a_missing", nullptr);
         CHECK(p == nullptr);
     }
 
     SUBCASE("Cast to parent interface") {
-        auto b = lm::comp::create<B>("test::comp::b1");
+        auto b = lm::comp::create<B>("test::comp::b1", nullptr);
         const auto a = lm::Component::Ptr<A>(b.release(), b.get_deleter());
         REQUIRE(a);
         CHECK(a->f1() == 42);
@@ -97,7 +97,7 @@ TEST_CASE("Component") {
 
     SUBCASE("Constructor and destructor") {
         const auto out = captureStdout([]() {
-            const auto p = lm::comp::create<C>("test::comp::c1");
+            const auto p = lm::comp::create<C>("test::comp::c1", nullptr);
             REQUIRE(p);
         });
         CHECK(out == "CC1~C1~C");
@@ -107,13 +107,13 @@ TEST_CASE("Component") {
         lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
         REQUIRE(pluginGuard.valid());
         SUBCASE("Simple") {
-            auto p = lm::comp::create<TestPlugin>("testplugin::default");
+            auto p = lm::comp::create<TestPlugin>("testplugin::default", nullptr);
             REQUIRE(p);
             CHECK(p->f() == 42);
         }
         SUBCASE("Plugin constructor and destructor") {
             const auto out = captureStdout([]() {
-                const auto p = lm::comp::create<TestPluginWithCtorAndDtor>("testpluginxtor::default");
+                const auto p = lm::comp::create<TestPluginWithCtorAndDtor>("testpluginxtor::default", nullptr);
                 REQUIRE(p);
             });
             CHECK(out == "AB~B~A");
@@ -146,8 +146,8 @@ struct A_Py final : public A {
 };
 
 struct TestPlugin_Py final : public TestPlugin {
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
-        PYBIND11_OVERLOAD_PURE(bool, TestPlugin, prop, parent);
+    virtual bool construct(const lm::Json& prop) override {
+        PYBIND11_OVERLOAD_PURE(bool, TestPlugin, prop);
     }
     virtual int f() override {
         PYBIND11_OVERLOAD_PURE(int, TestPlugin, f);
@@ -162,15 +162,16 @@ struct TestPlugin_Py final : public TestPlugin {
 };
 
 PYBIND11_EMBEDDED_MODULE(test_comp, m) {
+    lm::py::bindInterfaces(m);
     A_Py::bind(m);
     TestPlugin_Py::bind(m);
 
     m.def("createA1", []() {
-        return dynamic_cast<A*>(lm::comp::detail::createComp("test::comp::a1"));
+        return dynamic_cast<A*>(lm::comp::detail::createComp("test::comp::a1", nullptr));
     });
 
     m.def("createTestPlugin", []() {
-        return dynamic_cast<TestPlugin*>(lm::comp::detail::createComp("testplugin::default"));
+        return dynamic_cast<TestPlugin*>(lm::comp::detail::createComp("testplugin::default", nullptr));
     });
 
     m.def("useA", [](A* a) -> int {
@@ -314,7 +315,7 @@ TEST_CASE("Python component plugin") {
             SUBCASE("Native embeded plugin") {
                 auto locals = py::dict();
                 py::exec(R"(
-                    p = test_comp.A.create('test::comp::a1')
+                    p = test_comp.A.create('test::comp::a1', None)
                     r1 = p.f1()
                     r2 = p.f2(2, 3)
                 )", py::globals(), locals);
@@ -327,7 +328,7 @@ TEST_CASE("Python component plugin") {
                 REQUIRE(pluginGuard.valid());
                 auto locals = py::dict();
                 py::exec(R"(
-                    p = test_comp.TestPlugin.create('testplugin::default')
+                    p = test_comp.TestPlugin.create('testplugin::default', None)
                     r1 = p.f()
                 )", py::globals(), locals);
                 CHECK(locals["r1"].cast<int>() == 42);
@@ -336,7 +337,7 @@ TEST_CASE("Python component plugin") {
             SUBCASE("Python plugin") {
                 auto locals = py::dict();
                 py::exec(R"(
-                    p = test_comp.A.create('test::comp::a4')
+                    p = test_comp.A.create('test::comp::a4', None)
                     r1 = p.f1()
                     r2 = p.f2(2, 3)
                 )", py::globals(), locals);
@@ -345,7 +346,7 @@ TEST_CASE("Python component plugin") {
             }
 
             SUBCASE("Python plugin instantiate from C++") {
-                auto p = lm::comp::create<A>("test::comp::a4");
+                auto p = lm::comp::create<A>("test::comp::a4", nullptr);
                 CHECK(p->f1() == 44);
                 CHECK(p->f2(2, 3) == -1);
             }
@@ -370,7 +371,7 @@ struct D : public lm::Component {
 struct D1 final : public D {
     int v1;
     int v2;
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop) override {
         v1 = prop["v1"].get<int>();
         v2 = prop["v2"].get<int>();
         return true;
@@ -390,8 +391,8 @@ struct E : public lm::Component {
 
 struct E1 final : public E {
     D* d;
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
-        d = parent->cast<D>();
+    virtual bool construct(const lm::Json& prop) override {
+        d = parent()->cast<D>();
         return true;
     }
     virtual int f() override {
@@ -404,8 +405,8 @@ struct E1 final : public E {
 
 struct E2 final : public E {
     D* d;
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
-        d = parent->underlying()->cast<D>();
+    virtual bool construct(const lm::Json& prop) override {
+        d = parent()->underlying()->cast<D>();
         return true;
     }
     virtual int f() override {
@@ -420,7 +421,7 @@ LM_COMP_REG_IMPL(E2, "test::comp::e2");
 
 TEST_CASE("Construction") {
     SUBCASE("Simple") {
-        auto p = lm::comp::create<D>("test::comp::d1", { {"v1", 42}, {"v2", 43} });
+        auto p = lm::comp::create<D>("test::comp::d1", nullptr, { {"v1", 42}, {"v2", 43} });
         REQUIRE(p);
         CHECK(p->f() == 85);
     }
@@ -428,25 +429,25 @@ TEST_CASE("Construction") {
     SUBCASE("Construction (native plugin)") {
         lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
         REQUIRE(pluginGuard.valid());
-        auto p = lm::comp::create<TestPlugin>("testplugin::construct", { {"v1", 42}, {"v2", 43} });
+        auto p = lm::comp::create<TestPlugin>("testplugin::construct", nullptr, { {"v1", 42}, {"v2", 43} });
         REQUIRE(p);
         CHECK(p->f() == -1);
     }
 
     SUBCASE("Construction with parent component") {
-        auto d = lm::comp::create<D>("test::comp::d1", { {"v1", 42}, {"v2", 43} });
+        auto d = lm::comp::create<D>("test::comp::d1", nullptr, { {"v1", 42}, {"v2", 43} });
         REQUIRE(d);
-        auto e = lm::comp::create<E>("test::comp::e1", {}, d.get());
+        auto e = lm::comp::create<E>("test::comp::e1", d.get(), {});
         REQUIRE(e);
         CHECK(e->f() == 86);
     }
 
     SUBCASE("Construction with underlying component of the parent") {
-        auto d = lm::comp::create<D>("test::comp::d1", { {"v1", 42}, {"v2", 43} });
+        auto d = lm::comp::create<D>("test::comp::d1", nullptr, { {"v1", 42}, {"v2", 43} });
         REQUIRE(d);
-        auto e1 = lm::comp::create<E>("test::comp::e1", {}, d.get());
+        auto e1 = lm::comp::create<E>("test::comp::e1", d.get(), {});
         REQUIRE(e1);
-        auto e2 = lm::comp::create<E>("test::comp::e2", {}, e1.get());
+        auto e2 = lm::comp::create<E>("test::comp::e2", e1.get(), {});
         REQUIRE(e2);
         CHECK(e2->f() == 87);
     }
@@ -455,8 +456,8 @@ TEST_CASE("Construction") {
 // ----------------------------------------------------------------------------
 
 struct D_Py final : public D {
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
-        PYBIND11_OVERLOAD_PURE(bool, D, prop, parent);
+    virtual bool construct(const lm::Json& prop) override {
+        PYBIND11_OVERLOAD_PURE(bool, D, prop);
     }
     virtual int f() override {
         PYBIND11_OVERLOAD_PURE(int, D, f);
@@ -471,8 +472,8 @@ struct D_Py final : public D {
 };
 
 struct E_Py final : public E {
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
-        PYBIND11_OVERLOAD_PURE(bool, E, prop, parent);
+    virtual bool construct(const lm::Json& prop) override {
+        PYBIND11_OVERLOAD_PURE(bool, E, prop);
     }
     virtual int f() override {
         PYBIND11_OVERLOAD_PURE(int, E, f);
@@ -505,7 +506,7 @@ TEST_CASE("Construction (python)") {
         SUBCASE("Simple") {
             auto locals = py::dict();
             py::exec(R"(
-                p = test.D.create('test::comp::d1', {'v1':42, 'v2':43}, None)
+                p = test.D.create('test::comp::d1', None, {'v1':42, 'v2':43})
                 r = p.f()
             )", py::globals(), locals);
             CHECK(locals["r"].cast<int>() == 85);
@@ -516,7 +517,7 @@ TEST_CASE("Construction (python)") {
             REQUIRE(pluginGuard.valid());
             auto locals = py::dict();
             py::exec(R"(
-                p = test.TestPlugin.create('testplugin::construct', {'v1':42, 'v2':43}, None)
+                p = test.TestPlugin.create('testplugin::construct', None, {'v1':42, 'v2':43})
                 r = p.f()
             )", py::globals(), locals);
             CHECK(locals["r"].cast<int>() == -1);
@@ -525,8 +526,8 @@ TEST_CASE("Construction (python)") {
         SUBCASE("Construction with parent component") {
             auto locals = py::dict();
             py::exec(R"(
-                d = test.D.create('test::comp::d1', {'v1':42, 'v2':43}, None)
-                e = test.E.create('test::comp::e1', None, d)
+                d = test.D.create('test::comp::d1', None, {'v1':42, 'v2':43})
+                e = test.E.create('test::comp::e1', d, None)
                 r = e.f()
             )", py::globals(), locals);
             CHECK(locals["r"].cast<int>() == 86);
@@ -535,9 +536,9 @@ TEST_CASE("Construction (python)") {
         SUBCASE("Construction with underlying component of the parent") {
             auto locals = py::dict();
             py::exec(R"(
-                d  = test.D.create('test::comp::d1', {'v1':42, 'v2':43}, None)
-                e1 = test.E.create('test::comp::e1', None, d)
-                e2 = test.E.create('test::comp::e2', None, e1)
+                d  = test.D.create('test::comp::d1', None, {'v1':42, 'v2':43})
+                e1 = test.E.create('test::comp::e1', d, None)
+                e2 = test.E.create('test::comp::e2', e1, None)
                 r = e2.f()
             )", py::globals(), locals);
             CHECK(locals["r"].cast<int>() == 87);
@@ -559,13 +560,13 @@ struct F : public lm::Component {
 struct F1 final : public F {
     int v1_;
     int v2_;
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
+    virtual bool construct(const lm::Json& prop) override {
         const int v = prop["v"];
         v1_ = v + 1;
         v2_ = v - 1;
         return true;
     }
-    virtual void load(std::istream& stream, lm::Component* parent) override {
+    virtual void load(std::istream& stream) override {
         cereal::PortableBinaryInputArchive ar(stream);
         ar(v1_, v2_);
     }
@@ -580,15 +581,15 @@ struct F1 final : public F {
 struct F2 final : public F {
     int v_;
     F* f_;
-    virtual bool construct(const lm::Json& prop, lm::Component* parent) override {
-        f_ = dynamic_cast<F*>(parent);
+    virtual bool construct(const lm::Json& prop) override {
+        f_ = parent()->cast<F>();
         v_ = prop["v"];
         return true;
     }
-    virtual void load(std::istream& stream, lm::Component* parent) override {
+    virtual void load(std::istream& stream) override {
         cereal::PortableBinaryInputArchive ar(stream);
         ar(v_);
-        f_ = dynamic_cast<F*>(parent);
+        f_ = parent()->cast<F>();
     }
     virtual void save(std::ostream& stream) const override {
         cereal::PortableBinaryOutputArchive ar(stream);
@@ -606,7 +607,7 @@ LM_COMP_REG_IMPL(F2, "test::comp::f2");
 TEST_CASE("Serialization") {
     SUBCASE("Simple") {
         // Create instance
-        const auto p = lm::comp::create<F>("test::comp::f1", { {"v", 42} });
+        const auto p = lm::comp::create<F>("test::comp::f1", nullptr, { {"v", 42} });
         REQUIRE(p);
         CHECK(p->f1() == 43);
         CHECK(p->f2() == 41);
@@ -614,21 +615,21 @@ TEST_CASE("Serialization") {
         std::stringstream ss;
         p->save(ss);
         // Load
-        const auto p2 = lm::comp::create<F>("test::comp::f1");
+        const auto p2 = lm::comp::create<F>("test::comp::f1", nullptr);
         p2->load(ss);
         CHECK(p2->f1() == 43);
         CHECK(p2->f2() == 41);
     }
 
     SUBCASE("Serialiation of the instance with references") {
-        const auto f1 = lm::comp::create<F>("test::comp::f1", { {"v", 42} });
-        const auto f2 = lm::comp::create<F>("test::comp::f2", { {"v", 100} }, f1.get());
+        const auto f1 = lm::comp::create<F>("test::comp::f1", nullptr, { {"v", 42} });
+        const auto f2 = lm::comp::create<F>("test::comp::f2", f1.get(), { {"v", 100} });
         CHECK(f2->f1() == 143);
         CHECK(f2->f2() == 141);
         std::stringstream ss;
         f2->save(ss);
-        const auto f2_new = lm::comp::create<F>("test::comp::f2");
-        f2_new->load(ss, f1.get());
+        const auto f2_new = lm::comp::create<F>("test::comp::f2", f1.get());
+        f2_new->load(ss);
         CHECK(f2_new->f1() == 143);
         CHECK(f2_new->f2() == 141);
     }
@@ -662,7 +663,7 @@ LM_COMP_REG_IMPL(G1<double>, "test::comp::g1");
 
 TEST_CASE_TEMPLATE("Templated component", T, int, double) {
     SUBCASE("Simple") {
-        const auto p = lm::comp::create<G<T>>("test::comp::g1");
+        const auto p = lm::comp::create<G<T>>("test::comp::g1", nullptr);
         REQUIRE(p);
         if constexpr (std::is_same_v<T, int>) {
             CHECK(p->f() == 1);
@@ -674,7 +675,7 @@ TEST_CASE_TEMPLATE("Templated component", T, int, double) {
     SUBCASE("Plugin") {
         lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
         REQUIRE(pluginGuard.valid());
-        const auto p = lm::comp::create<TestPluginWithTemplate<T>>("testplugin::template");
+        const auto p = lm::comp::create<TestPluginWithTemplate<T>>("testplugin::template", nullptr);
         if constexpr (std::is_same_v<T, int>) {
             CHECK(p->f() == 1);
         }

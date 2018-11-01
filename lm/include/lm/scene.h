@@ -18,25 +18,26 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     Geometry information around a scene surface point.
 */
 struct SurfacePoint {
+    int primitive;  // Primitive index
     Vec3 p;         // Position
     Vec3 n;         // Normal
     Vec2 t;         // Texture coordinates
     Vec3 u, v;      // Orthogonal tangent vectors
 
     SurfacePoint() {}
-    SurfacePoint(Vec3 p, Vec3 n, Vec3 t) : p(p), n(n), t(t) {
+    SurfacePoint(int primitive, Vec3 p, Vec3 n, Vec2 t) : primitive(primitive), p(p), n(n), t(t) {
         std::tie(u, v) = math::orthonormalBasis(n);
     }
 
     /*!
-        \brief Returns true if wi and wo is same direction according to the normal n.
+        \brief Return true if wi and wo is same direction according to the normal n.
     */
     bool opposite(Vec3 wi, Vec3 wo) const {
         return glm::dot(wi, n) * glm::dot(wo, n) <= 0;
     }
     
     /*!
-        \brief Returns orthonormal basis according to the incident direction wi.
+        \brief Return orthonormal basis according to the incident direction wi.
     */
     std::tuple<Vec3, Vec3, Vec3> orthonormalBasis(Vec3 wi) const {
         const int i = glm::dot(wi, n) > 0;
@@ -44,7 +45,7 @@ struct SurfacePoint {
     }
 
     /*!
-        \brief Computes geometry term.
+        \brief Compute geometry term.
     */
     friend Float geometryTerm(const SurfacePoint& s1, const SurfacePoint& s2) {
         Vec3 d = s2.p - s1.p;
@@ -57,33 +58,20 @@ struct SurfacePoint {
 // ----------------------------------------------------------------------------
 
 /*!
-    \brief Primitive.
-    Primitive component of the scene.
-*/
-class Primitive : public Component {
-public:
-    /*!
-        \brief Get transform associated to the primitive.
-    */
-    virtual Mat4 transform() const = 0;
-
-    /*!
-        \brief Underlying mesh object.
-    */
-    virtual const Mesh* mesh() const = 0;
-};
-
-// ----------------------------------------------------------------------------
-
-/*!
     \brief Scene.
 */
 class Scene : public Component {
 public:
     /*!
-        \brief Loads a scene primitive.
+        \brief Load a scene primitive.
     */
-    virtual bool loadPrimitive(const std::string& name, Mat4 transform, const Json& prop) = 0;
+    virtual bool loadPrimitive(const Assets& assets, Mat4 transform, const Json& prop) = 0;
+
+    /*!
+        \brief Iterate triangles in the scene.
+    */
+    using ProcessTriangleFunc = std::function<void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
+    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const = 0;
 
     /*!
         \brief Build acceleration structure.
@@ -91,17 +79,14 @@ public:
     virtual void build(const std::string& name) = 0;
 
     /*!
-        \brief Hit information.
-    */
-    struct Hit {
-        SurfacePoint sp;
-        const Primitive* p;
-    };
-
-    /*!
         \brief Compute closest intersection point.
     */
-    virtual std::optional<Hit> intersect(const Ray& ray, Float tmin = Eps, Float tmax = Inf) const = 0;
+    virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin = Eps, Float tmax = Inf) const = 0;
+
+    /*!
+        \brief Generate a primary ray with the corresponding raster position.
+    */
+    virtual Ray primaryRay(Vec2 rp) const = 0;
 };
 
 // ----------------------------------------------------------------------------

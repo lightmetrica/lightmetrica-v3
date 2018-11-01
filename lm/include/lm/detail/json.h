@@ -15,7 +15,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // JSON type
 using Json = nlohmann::basic_json<
-    std::unordered_map, // Object type
+    std::map,           // Object type
     std::vector,        // Arrray type
     std::string,        // String type
     bool,               // Boolean type

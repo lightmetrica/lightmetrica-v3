@@ -20,7 +20,7 @@ public:
     virtual void build(const Scene& scene) = 0;
 
     /*!
-        \brief Hit information.
+        \brief Compute closest intersection point.
     */
     struct Hit {
         Float t;        // Distance to the hit point
@@ -28,10 +28,6 @@ public:
         int primitive;  // Primitive index
         int face;       // Face index
     };
-
-    /*!
-        \brief Compute closest intersection point.
-    */
     virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) const = 0;
 };
 

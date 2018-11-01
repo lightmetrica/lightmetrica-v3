@@ -74,13 +74,9 @@ public:
     virtual void build(const Scene& scene) override {
         // Setup triangle list
         trs_.clear();
-        scene.foreachUnderlying<Primitive>([&](Primitive* primitive) {
-            const auto* mesh = primitive->underlying<Mesh>("mesh");
-            mesh->foreachTriangle(primitive->transform(), [&](Vec3 p1, Vec3 p2, Vec3 p3) {
-                trs_.emplace_back(p1, p2, p3, primitive->index());
-            });
+        scene.foreachTriangle([&](int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3) {
+            trs_.emplace_back(p1, p2, p3, primitive, face);
         });
-
         const int nt = int(trs_.size()); // Number of triangles
         struct Entry {
             int index;
@@ -98,7 +94,7 @@ public:
         std::atomic<int> nn = 1;        // Number of current nodes
         bool done = 0;                  // True if the build process is done
 
-        LM_INFO("Building acceleration structure");
+        LM_INFO("Building acceleration structure [name='sahbvh']");
         auto process = [&]() {
             while (!done) {
                 // Each step construct a node for the triangles ranges in [s,e)

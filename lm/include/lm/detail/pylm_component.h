@@ -53,8 +53,8 @@ public:
         \brief Wraps creation of component instance.
     */
     template <typename InterfaceT>
-    static pybind11::object createCompWrap(const char* name) {
-        auto inst = lm::comp::detail::createComp(name);
+    static pybind11::object createCompWrap(const char* name, Component* parent) {
+        auto inst = lm::comp::detail::createComp(name, parent);
         if (!inst) {
             return pybind11::object();
         }
@@ -65,9 +65,9 @@ public:
         \brief Creation of component instance with construction.
     */
     template <typename InterfaceT>
-    static pybind11::object createCompWrap(const char* name, const Json& prop, Component* parent) {
-        auto inst = lm::comp::detail::createComp(name);
-        if (!inst || !inst->construct(prop, parent)) {
+    static pybind11::object createCompWrap(const char* name, Component* parent, const Json& prop) {
+        auto inst = lm::comp::detail::createComp(name, parent);
+        if (!inst || !inst->construct(prop)) {
             return pybind11::object();
         }
         return castToPythonObject<InterfaceT>(inst);
@@ -112,10 +112,10 @@ LM_NAMESPACE_END(LM_NAMESPACE)
      def_static("reg", &LM_NAMESPACE::py::detail::Impl::regCompWrap<InterfaceT>) \
     .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg) \
     .def_static("create", \
-        pybind11::overload_cast<const char*>( \
+        pybind11::overload_cast<const char*, LM_NAMESPACE::Component*>( \
             &LM_NAMESPACE::py::detail::Impl::createCompWrap<InterfaceT>)) \
     .def_static("create", \
-        pybind11::overload_cast<const char*, const LM_NAMESPACE::Json&, LM_NAMESPACE::Component*>( \
+        pybind11::overload_cast<const char*, LM_NAMESPACE::Component*, const LM_NAMESPACE::Json&>( \
             &LM_NAMESPACE::py::detail::Impl::createCompWrap<InterfaceT>))
 
 // ----------------------------------------------------------------------------
@@ -127,13 +127,15 @@ LM_NAMESPACE_BEGIN(detail)
 // Trampoline class for lm::Component
 class Component_Py final : public Component {
 public:
-    virtual bool construct(const Json& prop, Component* parent) override {
-        PYBIND11_OVERLOAD_PURE(bool, Component, prop, parent);
+    virtual bool construct(const Json& prop) override {
+        PYBIND11_OVERLOAD_PURE(bool, Component, prop);
     }
     static void bind(pybind11::module& m) {
         pybind11::class_<Component, Component_Py>(m, "Component")
             .def(pybind11::init<>())
             .def("construct", &Component::construct)
+            .def("parent", &Component::parent)
+            .def("context", &Component::context)
             .PYLM_DEF_COMP_BIND(Component);
     }
 };

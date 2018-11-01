@@ -46,12 +46,13 @@ public:
 public:
     void init() {
         log::init();
+        LM_INFO("Initializing Lightmetrica [version='{}']");
         if (init_) {
             LM_WARN("Lightmetrica is already initialized");
             return;
         }
-        assets_ = comp::create<Assets>("assets::default");
-        scene_  = comp::create<Scene>("scene::default");
+        assets_ = comp::create<Assets>("assets::default", this);
+        scene_  = comp::create<Scene>("scene::default", this);
         init_ = true;
     }
 
@@ -68,14 +69,9 @@ public:
         assets_->loadAsset(name, implKey, prop);
     }
 
-    void primitive(const std::string& name, mat4 transform, const Json& prop) {
+    void primitive(Mat4 transform, const Json& prop) {
         if (!checkInitialized()) { return; }
-        scene_->loadPrimitive(name, *assets_.get(), transform, prop);
-    }
-
-    const ScenePrimitive* primitive(const std::string& name) {
-        if (!checkInitialized()) { return nullptr; }
-        return comp::cast<ScenePrimitive>(scene_->underlying(name));
+        scene_->loadPrimitive(*assets_.get(), transform, prop);
     }
 
     void primitives(const std::string& modelName) {
@@ -86,7 +82,12 @@ public:
     void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {
         if (!checkInitialized()) { return; }
         scene_->build(accelName);
-        renderer_ = lm::comp::create<Renderer>(rendererName, prop, this);
+        renderer_ = lm::comp::create<Renderer>(rendererName, this, prop);
+        if (!renderer_) {
+            LM_ERROR("Failed to render [renderer='{}',accel='{}']", rendererName, accelName);
+            return;
+        }
+        LM_INFO("Starting render [name='{}']", rendererName);
         renderer_->render(*scene_.get());
     }
 
@@ -133,12 +134,8 @@ LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, co
     Context::instance().asset(name, implKey, prop);
 }
 
-LM_PUBLIC_API void primitive(const std::string& name, mat4 transform, const Json& prop) {
-    Context::instance().primitive(name, transform, prop);
-}
-
-LM_PUBLIC_API const ScenePrimitive* primitive(const std::string& name) {
-    return Context::instance().primitive(name);
+LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
+    Context::instance().primitive(transform, prop);
 }
 
 LM_PUBLIC_API void primitives(const std::string& modelName) {

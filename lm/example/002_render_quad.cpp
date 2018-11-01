@@ -11,31 +11,42 @@ int main(int argc, char** argv) {
 
     // Define assets
     // Film for the rendered image
+    constexpr int w = 1920;
+    constexpr int h = 1080;
     lm::asset("film", "film::bitmap", {
-        {"w", 1920},
-        {"h", 1080}
+        {"w", w},
+        {"h", h}
     });
     // Load mesh with raw vertex data
     lm::asset("mesh1", "mesh::raw", {
-        {"ps", {0,0,0,1,0,0,1,1,0,0,1,0}},
+        {"ps", {-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1}},
         {"ns", {0,0,1}},
         {"ts", {0,0,1,0,1,1,0,1}},
         {"fs", {
-            {0,1,2,0,2,3},
-            {0,0,0,0,0,0},
-            {0,1,2,0,2,3}
+            {"p", {0,1,2,0,2,3}},
+            {"n", {0,0,0,0,0,0}},
+            {"t", {0,1,2,0,2,3}}
         }}
+    });
+    // Pinhole camera
+    lm::asset("camera1", "camera::pinhole", {
+        {"position", {0,0,5}},
+        {"center", {0,0,0}},
+        {"up", {0,1,0}},
+        {"vfov", 30},
+        {"aspect", (lm::Float)(w)/h}
     });
 
     // Define scene primitives
-    lm::primitive("p1", lm::mat4(1), {
-        {"mesh", "mesh1"}
+    lm::primitive(lm::Mat4(1), {
+        {"mesh", "mesh1"},
+        {"camera", "camera1"}
     });
 
     // Render an image
-    lm::render("renderer::raycast", "accel::naive", {
+    lm::render("renderer::raycast", "accel::sahbvh", {
         {"output", "film"},
-        {"color", lm::castToJson(lm::vec3(1))}
+        {"color", lm::castToJson(lm::Vec3(0))}
     });
 
     // Save rendered image

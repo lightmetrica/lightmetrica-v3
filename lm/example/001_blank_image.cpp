@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     // We don't need acceleration structure so we keep second argument blank.
     lm::render("renderer::blank", "", {
         {"output", "film"},
-        {"color", lm::castToJson(lm::vec3(1))}
+        {"color", lm::castToJson(lm::Vec3(1))}
     });
 
     // Save rendered image

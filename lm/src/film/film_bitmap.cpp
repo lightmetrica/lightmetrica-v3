@@ -31,11 +31,11 @@ public:
     }
 
     virtual bool save(const std::string& outpath) const override {
-        LM_INFO("Saving image [file = '{}']", outpath);
+        LM_INFO("Saving image [file='{}']", outpath);
         FILE *f;
         errno_t err;
         if ((err = fopen_s(&f, outpath.c_str(), "wb")) != 0) {
-            LM_ERROR("Failed to open [file = '{}', errorno = '{}']", outpath, err);
+            LM_ERROR("Failed to open [file='{}',errorno='{}']", outpath, err);
             return false;
         }
         fprintf(f, "PF\n%d %d\n-1\n", w_, h_);

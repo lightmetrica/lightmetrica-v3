@@ -68,7 +68,10 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/math.h"
     "${_INCLUDE_DIR}/assets.h"
     "${_INCLUDE_DIR}/mesh.h"
+    "${_INCLUDE_DIR}/camera.h"
     "${_INCLUDE_DIR}/texture.h"
+    "${_INCLUDE_DIR}/material.h"
+    "${_INCLUDE_DIR}/light.h"
     "${_INCLUDE_DIR}/scene.h"
     "${_INCLUDE_DIR}/accel.h"
     "${_INCLUDE_DIR}/film.h"
@@ -87,10 +90,12 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/scene.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
     "${_SOURCE_DIR}/mesh/mesh_raw.cpp"
+    "${_SOURCE_DIR}/camera/camera_pinhole.cpp"
     "${_SOURCE_DIR}/texture/texture_bitmap.cpp"
     "${_SOURCE_DIR}/film/film_bitmap.cpp"
     "${_SOURCE_DIR}/accel/accel_sahbvh.cpp"
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_raycast.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp")
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})

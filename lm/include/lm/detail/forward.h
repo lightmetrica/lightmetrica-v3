@@ -21,12 +21,11 @@ class Material;
 // light.h
 class Light;
 
-// sensor.h
-class Sensor;
+// camera.h
+class Camera;
 
 // scene.h
 struct SurfacePoint;
-class Primitive;
 class Scene;
 
 // renderer.h
