@@ -12,9 +12,21 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // assets.h
 class Assets;
 
+// mesh.h
+class Mesh;
+
+// material.h
+class Material;
+
+// light.h
+class Light;
+
+// sensor.h
+class Sensor;
+
 // scene.h
 struct SurfacePoint;
-struct Primitive;
+class Primitive;
 class Scene;
 
 // renderer.h

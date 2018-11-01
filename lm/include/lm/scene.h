@@ -66,7 +66,14 @@ public:
         \brief Get transform associated to the primitive.
     */
     virtual Mat4 transform() const = 0;
+
+    /*!
+        \brief Underlying mesh object.
+    */
+    virtual const Mesh* mesh() const = 0;
 };
+
+// ----------------------------------------------------------------------------
 
 /*!
     \brief Scene.

@@ -13,8 +13,29 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // ----------------------------------------------------------------------------
 
 class Primitive_ final : public Primitive {
+private:
+    // Function to find and obtain an asset by name
+    template <typename T>
+    const T* getAssetRefBy(const Json& prop, const std::string& propName) {
+        if (propName.empty()) {
+            return nullptr;
+        }
+        // Find reference to an asset
+        const auto it = prop.find(propName);
+        if (it == prop.end()) {
+            return nullptr;
+        }
+        // Obtain the referenced asset
+        return assets.underlying(it.value().get<std::string>().c_str());
+    };
+
 public:
     virtual bool construct(const Json& prop) {
+        
+
+        // 
+
+
         if (!prop.is_object()) {
             LM_ERROR("Invalid construction parameters");
             return false;
@@ -36,18 +57,16 @@ public:
         return true;
     }
 
-    virtual Component* underlying(const std::string& name) const override {
-        return comps_[compIndexMap_.at(name)];
-    }
-
     virtual Mat4 transform() const override {
         return transform_;
     }
 
 private:
-    Mat4 transform_;                    // Transform
-    std::vector<Component*> comps_;     // Underlying component references
-    std::unordered_map<std::string, size_t> compIndexMap_;
+    Mat4 transform_; 
+    Mesh* mesh_;
+    Material* material_;
+    Light* light_;
+    Sensor* sensor_;
 };
 
 LM_COMP_REG_IMPL(Primitive_, "primitive::default");
@@ -101,7 +120,7 @@ public:
     }
 
 private:
-    std::vector<Ptr<Primitive>> primitives_;
+    std::vector<std::unique_ptr<Primitive>> primitives_;
     std::unordered_map<std::string, size_t> primitiveIndexMap_;
     Ptr<Accel> accel_;
 };
