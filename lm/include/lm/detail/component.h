@@ -74,6 +74,15 @@ public:
     */
     Component* parent() const { return parent_; }
 
+    /*!
+        \brief Set parent.
+    */
+    void setParent(Component* p) {
+        if (!p) { return; }
+        parent_ = p;
+        context_ = p->context_;
+    }
+
 public:
     /*!
         \brief Make UniquePtr from an component instance.
@@ -245,7 +254,7 @@ static Component* getCurrentOrUnderlying(const std::string& r, Component* p) {
 LM_NAMESPACE_BEGIN(detail)
 
 /*!
-    \brief Create a component and its deleter.
+    \brief Create component instance.
     \param key Name of the implementation.
 */
 LM_PUBLIC_API Component* createComp(const std::string& key, Component* parent);
@@ -267,6 +276,22 @@ LM_PUBLIC_API void loadPlugins(const std::string& directory);
 
 // Unload loaded plugins.
 LM_PUBLIC_API void unloadPlugins();
+
+// ----------------------------------------------------------------------------
+
+/*!
+    \brief Create component instance directly with constructor.
+    Use this function when you want to construct a component instance
+    directly with the visibile component type.
+*/
+template <typename ComponentT, typename... Ts>
+Component::Ptr<ComponentT> createDirect(Component* parent, Ts&&... args) {
+    auto comp = std::make_unique<ComponentT>(std::forward<Ts>(args)...);
+    comp->setParent(parent);
+    return Component::Ptr<ComponentT>(
+        comp.release(),
+        [](Component* p) { LM_SAFE_DELETE(p); });
+}
 
 // ----------------------------------------------------------------------------
 

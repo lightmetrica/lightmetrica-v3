@@ -27,8 +27,8 @@ using Json = nlohmann::basic_json<
 
 // Conversion to JSON type
 template <typename T>
-Json castToJson(T&& v) {
-    return detail::JsonCastImpl<T>::castToJson(std::forward<T>(v));
+Json castToJson(const T& v) {
+    return detail::JsonCastImpl<T>::castToJson(v);
 }
 
 template <typename T>
@@ -44,7 +44,7 @@ struct JsonCastImpl;
 template <int N, typename T, glm::qualifier Q>
 struct JsonCastImpl<glm::vec<N, T, Q>> {
     using ValueT = glm::vec<N, T, Q>;
-    static Json castToJson(ValueT&& v) {
+    static Json castToJson(const ValueT& v) {
         std::array<T, N> a;
         for (int i = 0; i < N; i++) {
             #pragma warning (push)

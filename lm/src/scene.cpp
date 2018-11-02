@@ -11,6 +11,7 @@
 #include <lm/camera.h>
 #include <lm/material.h>
 #include <lm/light.h>
+#include <lm/model.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -52,7 +53,22 @@ public:
         return true;
     }
 
-    virtual void foreachTriangle(const std::function<void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>& processTriangle) const override {
+    virtual bool loadPrimitives(const Component& assetGroup, Mat4 transform, const std::string& modelName) override {
+        auto* model = assetGroup.underlying<Model>(modelName);
+        if (!model) {
+            return false;
+        }
+        model->createPrimitives([&](Component* mesh, Component* material) {
+            primitives_.push_back(Primitive{
+                int(primitives_.size()), transform,
+                mesh->cast<Mesh>(), material->cast<Material>(),
+                nullptr, nullptr
+            });
+        });
+        return true;
+    }
+
+    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
         for (const auto& primitive : primitives_) {
             if (!primitive.mesh) {
                 continue;

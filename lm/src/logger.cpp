@@ -36,7 +36,10 @@ public:
 
     void log(LogLevel level, const char* filename, int line, const char* message) {
         if (!stdoutLogger_) { return; }
-        stdoutLogger_->log(spdlog::level::level_enum(level), indentationString_ + message);
+        stdoutLogger_->log(
+            spdlog::level::level_enum(level),
+            fmt::format("%")
+            indentationString_ + message);
     }
 
     void updateIndentation(int n) {

@@ -148,10 +148,7 @@ public:
         p->key_ = key;
         p->createFunc_ = it->second.createFunc;
         p->releaseFunc_ = it->second.releaseFunc;
-        if (parent) {
-            p->parent_ = parent;
-            p->context_ = parent->context_;
-        }
+        p->setParent(parent);
         return p;
     }
 

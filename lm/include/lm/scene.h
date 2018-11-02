@@ -18,11 +18,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     Geometry information around a scene surface point.
 */
 struct SurfacePoint {
-    int primitive;  // Primitive index
-    Vec3 p;         // Position
-    Vec3 n;         // Normal
-    Vec2 t;         // Texture coordinates
-    Vec3 u, v;      // Orthogonal tangent vectors
+    int primitive;      // Primitive index
+    Vec3 p;             // Position
+    Vec3 n;             // Normal
+    Vec2 t;             // Texture coordinates
+    Vec3 u, v;          // Orthogonal tangent vectors
 
     SurfacePoint() {}
     SurfacePoint(int primitive, Vec3 p, Vec3 n, Vec2 t) : primitive(primitive), p(p), n(n), t(t) {
@@ -66,6 +66,11 @@ public:
         \brief Load a scene primitive.
     */
     virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) = 0;
+
+    /*!
+        \brief Create primitives from a model.
+    */
+    virtual bool loadPrimitives(const Component& assetGroup, Mat4 transform, const std::string& modelName) = 0;
 
     /*!
         \brief Iterate triangles in the scene.

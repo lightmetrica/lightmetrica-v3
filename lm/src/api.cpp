@@ -10,7 +10,6 @@
 #include <lm/renderer.h>
 #include <lm/logger.h>
 #include <lm/film.h>
-#include <lm/model.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -77,11 +76,7 @@ public:
 
     void primitives(Mat4 transform, const std::string& modelName) {
         if (!checkInitialized()) { return; }
-        auto* model = assets_->underlying<Model>(modelName);
-        if (!model) {
-            return;
-        }
-        model->createPrimitives(*scene_.get(), transform);
+        scene_->loadPrimitives(*assets_.get(), transform, modelName);
     }
 
     void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {

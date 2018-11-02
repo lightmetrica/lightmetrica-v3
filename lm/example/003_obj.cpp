@@ -6,6 +6,20 @@
 #include <lm/lm.h>
 
 int main(int argc, char** argv) {
+    // Command line arguments
+    // ----------------------
+    // ./003_obj
+    //   scene_path output_path image_width image_height
+    //   camera_pos_{x,y,z} camera_lookat_{x,y,z} vertical_fov
+    char* a = argv[1];
+    const std::string objPath(a++);
+    const std::string outputPath(a++);
+    const int w = atoi(a++);
+    const int h = atoi(a++);
+    const glm::vec3 cameraPosition(atof(a++), atof(a++), atof(a++));
+    const glm::vec3 cameraLookat(atof(a++), atof(a++), atof(a++));
+    const auto vfov = lm::Float(atof(a++));
+
     // Initialize the framework
     // ------------------------
     lm::init();
@@ -13,8 +27,6 @@ int main(int argc, char** argv) {
     // Define assets
     // -------------
     // Film for the rendered image
-    constexpr int w = 1920;
-    constexpr int h = 1080;
     lm::asset("film", "film::bitmap", {
         {"w", w},
         {"h", h}
@@ -22,16 +34,16 @@ int main(int argc, char** argv) {
 
     // Pinhole camera
     lm::asset("camera1", "camera::pinhole", {
-        {"position", {0,0,5}},
-        {"center", {0,0,0}},
+        {"position", lm::castToJson(cameraPosition)},
+        {"center", lm::castToJson(cameraLookat)},
         {"up", {0,1,0}},
-        {"vfov", 30},
+        {"vfov", vfov},
         {"aspect", (lm::Float)(w) / h}
     });
 
     // OBJ model
     lm::asset("obj1", "model::wavefrontobj", {
-        {"path", argv[1]}
+        {"path", objPath}
     });
     
     // Define scene primitives
@@ -52,7 +64,7 @@ int main(int argc, char** argv) {
     });
 
     // Save rendered image
-    lm::save("film", "result.pfm");
+    lm::save("film", outputPath);
 
     // Finalize the framework
     // ----------------------

@@ -57,9 +57,12 @@ public:
         const auto i2 = fs_[face + 1];
         const auto i3 = fs_[face + 2];
         return {
-            math::mixBarycentric(ps_[i1.p], ps_[i2.p], ps_[i3.p], uv),
-            glm::normalize(math::mixBarycentric(ns_[i1.n], ns_[i2.n], ns_[i3.n], uv)),
-            math::mixBarycentric(ts_[i1.t], ts_[i2.t], ts_[i3.t], uv)
+            math::mixBarycentric(
+                ps_[i1.p], ps_[i2.p], ps_[i3.p], uv),
+            glm::normalize(math::mixBarycentric(
+                ns_[i1.n], ns_[i2.n], ns_[i3.n], uv)),
+            math::mixBarycentric(
+                ts_[i1.t], ts_[i2.t], ts_[i3.t], uv)
         };
     }
 };

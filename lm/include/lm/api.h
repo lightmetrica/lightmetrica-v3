@@ -27,12 +27,12 @@ LM_PUBLIC_API void shutdown();
 LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop);
 
 /*!
-    \brief Creates a new primitive and add it to the scene.
+    \brief Create a primitive and add it to the scene.
 */
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
 
 /*!
-    \brief Constructs primitives from a model.
+    \brief Create primitives from a model.
 */
 LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName);
 
