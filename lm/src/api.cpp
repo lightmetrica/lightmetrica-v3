@@ -10,6 +10,7 @@
 #include <lm/renderer.h>
 #include <lm/logger.h>
 #include <lm/film.h>
+#include <lm/model.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -74,9 +75,13 @@ public:
         scene_->loadPrimitive(*assets_.get(), transform, prop);
     }
 
-    void primitives(const std::string& modelName) {
+    void primitives(Mat4 transform, const std::string& modelName) {
         if (!checkInitialized()) { return; }
-        LM_TBA_RUNTIME();
+        auto* model = assets_->underlying<Model>(modelName);
+        if (!model) {
+            return;
+        }
+        model->createPrimitives(*scene_.get(), transform);
     }
 
     void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {
@@ -138,8 +143,8 @@ LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
     Context::instance().primitive(transform, prop);
 }
 
-LM_PUBLIC_API void primitives(const std::string& modelName) {
-    Context::instance().primitives(modelName);
+LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName) {
+    Context::instance().primitives(transform, modelName);
 }
 
 LM_PUBLIC_API void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {

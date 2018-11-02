@@ -65,7 +65,7 @@ public:
     /*!
         \brief Load a scene primitive.
     */
-    virtual bool loadPrimitive(const Assets& assets, Mat4 transform, const Json& prop) = 0;
+    virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) = 0;
 
     /*!
         \brief Iterate triangles in the scene.

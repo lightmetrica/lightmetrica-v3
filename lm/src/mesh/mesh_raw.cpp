@@ -9,9 +9,9 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct MeshFaceIndex {
-    int p = -1;   // Reference to position
-    int t = -1;   // Reference to texture coordinates
-    int n = -1;   // Reference to normal
+    int p = -1;   // Index of position
+    int t = -1;   // Index of texture coordinates
+    int n = -1;   // Index of normal
 };
 
 class Mesh_Raw final : public Mesh {

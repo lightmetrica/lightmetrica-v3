@@ -43,7 +43,7 @@ public:
         }
 
         // Register created asset
-        assetIndexMap_[name] = assets_.size();
+        assetIndexMap_[name] = int(assets_.size());
         assets_.push_back(std::move(p));
 
         return true;
@@ -51,7 +51,7 @@ public:
 
 private:
     std::vector<Component::Ptr<Component>> assets_;
-    std::unordered_map<std::string, size_t> assetIndexMap_;
+    std::unordered_map<std::string, int> assetIndexMap_;
 };
 
 LM_COMP_REG_IMPL(Assets_, "assets::default");

@@ -110,7 +110,8 @@ public:
         \brief Serialize a component.
     */
     virtual void save(std::ostream& stream) const {}
-
+    
+public:
     /*!
         \brief Get underlying component instance.
     */
@@ -124,6 +125,19 @@ public:
         return underlying(name)->cast<UnderlyingComponentT>();
     }
 
+    /*!
+        \brief Get underlying component instance by index.
+    */
+    virtual Component* underlyingAt(int index) const { return nullptr; }
+
+    /*!
+        \brief Get underlying component instance by index with specifc interface type.
+    */
+    template <typename UnderlyingComponentT>
+    UnderlyingComponentT* underlyingAt(int index) const {
+        return underlyingAt(index)->cast<UnderlyingComponentT>();
+    }
+    
     /*!
         \brief Process given function for each underlying component call.
     */

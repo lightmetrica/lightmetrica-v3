@@ -9,6 +9,8 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+// ----------------------------------------------------------------------------
+
 /*!
     \brief Initializes the renderer.
 */
@@ -32,7 +34,7 @@ LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
 /*!
     \brief Constructs primitives from a model.
 */
-LM_PUBLIC_API void primitives(const std::string& modelName);
+LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName);
 
 /*!
     \brief Render image based on current configuration.

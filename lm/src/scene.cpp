@@ -25,7 +25,7 @@ struct Primitive {
 
 class Scene_ final : public Scene {
 public:
-    virtual bool loadPrimitive(const Assets& assets, Mat4 transform, const Json& prop) override {
+    virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) override {
         const auto getAssetRefBy = [&](const std::string& propName) -> Component* {
             if (propName.empty()) {
                 return nullptr;
@@ -36,7 +36,7 @@ public:
                 return nullptr;
             }
             // Obtain the referenced asset
-            return assets.underlying(it.value().get<std::string>().c_str());
+            return assetGroup.underlying(it.value().get<std::string>().c_str());
         };
         primitives_.push_back(Primitive{
             int(primitives_.size()),

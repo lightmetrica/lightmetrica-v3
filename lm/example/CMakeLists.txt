@@ -18,5 +18,6 @@ endfunction()
 
 # -----------------------------------------------------------------------------
 
-lm_add_example(NAME 001_blank_image SOURCES "001_blank_image.cpp")
-lm_add_example(NAME 002_render_quad SOURCES "002_render_quad.cpp")
+lm_add_example(NAME 001_blank SOURCES "001_blank.cpp")
+lm_add_example(NAME 002_quad SOURCES "002_quad.cpp")
+lm_add_example(NAME 003_obj SOURCES "003_obj.cpp")
