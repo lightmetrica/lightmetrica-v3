@@ -11,14 +11,20 @@ int main(int argc, char** argv) {
     // ./003_obj
     //   scene_path output_path image_width image_height
     //   camera_pos_{x,y,z} camera_lookat_{x,y,z} vertical_fov
-    char* a = argv[1];
-    const std::string objPath(a++);
-    const std::string outputPath(a++);
-    const int w = atoi(a++);
-    const int h = atoi(a++);
-    const glm::vec3 cameraPosition(atof(a++), atof(a++), atof(a++));
-    const glm::vec3 cameraLookat(atof(a++), atof(a++), atof(a++));
-    const auto vfov = lm::Float(atof(a++));
+    argv++;
+    const std::string objPath(*argv++);
+    const std::string outputPath(*argv++);
+    const int w = atoi(*argv++);
+    const int h = atoi(*argv++);
+    glm::vec3 cameraPosition;
+    cameraPosition.x = lm::Float(atof(*argv++));
+    cameraPosition.y = lm::Float(atof(*argv++));
+    cameraPosition.z = lm::Float(atof(*argv++));
+    glm::vec3 cameraLookat;
+    cameraLookat.x = lm::Float(atof(*argv++));
+    cameraLookat.y = lm::Float(atof(*argv++));
+    cameraLookat.z = lm::Float(atof(*argv++));
+    const auto vfov = lm::Float(atof(*argv++));
 
     // Initialize the framework
     // ------------------------

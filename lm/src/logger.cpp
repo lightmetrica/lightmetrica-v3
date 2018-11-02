@@ -27,6 +27,7 @@ public:
     void init() {
         if (stdoutLogger_) { shutdown(); }
         stdoutLogger_ = spdlog::stdout_color_mt("lm_stdout");
+        stdoutLogger_->set_pattern("[%T.%e|%^%L%$] %v");
     }
 
     void shutdown() {
@@ -35,11 +36,18 @@ public:
     }
 
     void log(LogLevel level, const char* filename, int line, const char* message) {
-        if (!stdoutLogger_) { return; }
+        if (!stdoutLogger_) {
+            return;
+        }
+        // Line and filename
+        const auto lineAndFilename = fmt::format("{}@{}",
+            line,
+            std::filesystem::path(filename).stem().string());
+
+        // Query log message
         stdoutLogger_->log(
             spdlog::level::level_enum(level),
-            fmt::format("%")
-            indentationString_ + message);
+            fmt::format("[{:<10}] {}{}", lineAndFilename.substr(0,10), indentationString_, message));
     }
 
     void updateIndentation(int n) {

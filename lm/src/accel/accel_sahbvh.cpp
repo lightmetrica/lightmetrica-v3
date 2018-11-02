@@ -13,7 +13,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 struct Tri {
     Vec3 p1;        // One vertex of the triangle
     Vec3 e1, e2;    // Two edges indident to p1
-    Vec3 n;         // Normal
     Bound b;        // Bound of the triangle
     Vec3 c;         // Center of the bound
     int primitive;  // Primitive index associted to the triangle
@@ -23,7 +22,6 @@ struct Tri {
         : p1(p1), primitive(primitive), face(face) {
         e1 = p2 - p1;
         e2 = p3 - p1;
-        n = glm::normalize(glm::cross(p2 - p1, p3 - p1));
         b = merge(b, p1);
         b = merge(b, p2);
         b = merge(b, p3);

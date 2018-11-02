@@ -22,9 +22,9 @@ struct OBJSurfaceGeometry {
 
 // Face indices
 struct OBJMeshFaceIndex {
-    int p = -1;     // Index of position
-    int t = -1;     // Index of texture coordinates
-    int n = -1;     // Index of normal
+    int p = -1;         // Index of position
+    int t = -1;         // Index of texture coordinates
+    int n = -1;         // Index of normal
 };
 
 // Texture parameters
@@ -280,12 +280,18 @@ public:
         const auto i1 = fs_[face];
         const auto i2 = fs_[face + 1];
         const auto i3 = fs_[face + 2];
+        const auto p1 = geo_.ps[i1.p];
+        const auto p2 = geo_.ps[i2.p];
+        const auto p3 = geo_.ps[i3.p];
         return {
-            math::mixBarycentric(
-                geo_.ps[i1.p], geo_.ps[i2.p], geo_.ps[i3.p], uv),
-            glm::normalize(math::mixBarycentric(
-                geo_.ns[i1.n], geo_.ns[i2.n], geo_.ns[i3.n], uv)),
-            math::mixBarycentric(
+            // Position
+            math::mixBarycentric(p1, p2, p3, uv),
+            // Normal. Use geometry normal if the attribute is missing.
+            i1.n < 0 ? glm::normalize(glm::cross(p2-p1, p3-p1))
+                     : glm::normalize(math::mixBarycentric(
+                         geo_.ns[i1.n], geo_.ns[i2.n], geo_.ns[i3.n], uv)),
+            // Texture coordinates
+            i1.t < 0 ? Vec2(0) : math::mixBarycentric(
                 geo_.ts[i1.t], geo_.ts[i2.t], geo_.ts[i3.t], uv)
         };
     }

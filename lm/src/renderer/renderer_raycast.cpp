@@ -37,6 +37,7 @@ public:
                     continue;
                 }
                 film_->setPixel(x, y, Vec3(glm::abs(glm::dot(sp->n, -ray.d))));
+                //film_->setPixel(x, y, Vec3(glm::abs(sp->n)));
             }
         }
     }
