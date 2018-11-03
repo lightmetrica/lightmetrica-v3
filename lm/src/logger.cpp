@@ -6,6 +6,7 @@
 #include <pch.h>
 #include <lm/logger.h>
 #include <spdlog/async.h>
+#include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::log)
@@ -26,7 +27,11 @@ public:
 public:
     void init() {
         if (stdoutLogger_) { shutdown(); }
+        #if 0
         stdoutLogger_ = spdlog::stdout_color_mt("lm_stdout");
+        #else
+        stdoutLogger_ = spdlog::stdout_logger_mt("lm_stdout");
+        #endif
         stdoutLogger_->set_pattern("[%T.%e|%^%L%$] %v");
     }
 

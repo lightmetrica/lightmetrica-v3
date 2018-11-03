@@ -98,7 +98,7 @@ public:
                 // Each step construct a node for the triangles ranges in [s,e)
                 auto [ni, s, e] = [&]() -> Entry {
                     std::unique_lock<std::mutex> lk(mu);
-                    if (q.empty()) {
+                    if (!done && q.empty()) {
                         cv.wait(lk, [&]() { return done || !q.empty(); });
                     }
                     if (done) {
@@ -133,6 +133,7 @@ public:
                     n.e = e;
                     pr += e - s;
                     if (pr == int(trs_.size())) {
+                        std::unique_lock<std::mutex> lk(mu);
                         done = 1;
                         cv.notify_all();
                     }
@@ -179,8 +180,7 @@ public:
                 cv.notify_one();
             }
         };
-        constexpr int NumThreads = 4;
-        std::vector<std::thread> ths(NumThreads);
+        std::vector<std::thread> ths(std::thread::hardware_concurrency());
         for (auto& th : ths) {
             th = std::thread(process);
         }
