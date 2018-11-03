@@ -29,6 +29,17 @@ public:
     }
     
 public:
+    Context() {
+        // Implicit initialization on first call
+        init();
+    }
+
+    ~Context() {
+        // Implicit shutdown
+        shutdown();
+    }
+
+public:
     virtual Component* underlying(const std::string& name) const {
         const auto [s, r] = comp::splitFirst(name);
         if (s == "assets") {
@@ -45,19 +56,21 @@ public:
 
 public:
     void init() {
-        log::init();
-        LM_INFO("Initializing Lightmetrica [version='{}']");
         if (init_) {
             LM_WARN("Lightmetrica is already initialized");
             return;
         }
+        log::init();
+        LM_INFO("Initializing Lightmetrica [version='{}']");
         assets_ = comp::create<Assets>("assets::default", this);
         scene_  = comp::create<Scene>("scene::default", this);
         init_ = true;
     }
 
     void shutdown() {
-        if (!checkInitialized()) { return; }
+        if (!init_) {
+            return;
+        }
         renderer_.reset();
         scene_.reset();
         assets_.reset();
@@ -65,22 +78,18 @@ public:
     }
 
     void asset(const std::string& name, const std::string& implKey, const Json& prop) {
-        if (!checkInitialized()) { return; }
         assets_->loadAsset(name, implKey, prop);
     }
 
     void primitive(Mat4 transform, const Json& prop) {
-        if (!checkInitialized()) { return; }
         scene_->loadPrimitive(*assets_.get(), transform, prop);
     }
 
     void primitives(Mat4 transform, const std::string& modelName) {
-        if (!checkInitialized()) { return; }
         scene_->loadPrimitives(*assets_.get(), transform, modelName);
     }
 
     void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {
-        if (!checkInitialized()) { return; }
         scene_->build(accelName);
         renderer_ = lm::comp::create<Renderer>(rendererName, this, prop);
         if (!renderer_) {
@@ -92,7 +101,6 @@ public:
     }
 
     void save(const std::string& filmName, const std::string& outpath) {
-        if (!checkInitialized()) { return; }
         const auto* film = assets_->underlying<Film>(filmName);
         if (!film) {
             return;
@@ -100,15 +108,6 @@ public:
         if (!film->save(outpath)) {
             return;
         }
-    }
-
-private:
-    bool checkInitialized() {
-        if (!init_) {
-            LM_ERROR("Lightmetrica is not initialized");
-            return false;
-        }
-        return true;
     }
 
 private:

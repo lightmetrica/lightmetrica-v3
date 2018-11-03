@@ -52,6 +52,7 @@ $ git clone --depth 1 git@github.com:onqtam/doctest.git
 $ git clone --depth 1 git@github.com:gabime/spdlog.git
 $ git clone --depth 1 git@github.com:fmtlib/fmt.git
 $ git clone --depth 1 git@github.com:USCiLab/cereal.git
+$ git clone --depth 1 git@github.com:docopt/docopt.cpp.git
 ```
 
 Build library

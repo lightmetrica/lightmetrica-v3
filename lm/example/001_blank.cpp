@@ -6,20 +6,11 @@
 #include <lm/lm.h>
 
 int main(int argc, char** argv) {
-    // Initialize the framework
-    // ------------------------
-    lm::init();
-
     // Define assets
-    // -------------
     // Film for the rendered image
-    lm::asset("film", "film::bitmap", {
-        {"w", 1920},
-        {"h", 1080}
-    });
+    lm::asset("film", "film::bitmap", {{"w", 1920}, {"h", 1080}});
 
     // Render an image
-    // ---------------
     // We don't need acceleration structure so we keep second argument blank.
     lm::render("renderer::blank", "", {
         {"output", "film"},
@@ -28,10 +19,6 @@ int main(int argc, char** argv) {
 
     // Save rendered image
     lm::save("film", "result.pfm");
-
-    // Finalize the framework
-    // ----------------------
-    lm::shutdown();
 
     return 0;
 }

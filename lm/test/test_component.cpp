@@ -10,8 +10,6 @@
 #include <generated/test_python.h>
 #include <pybind11/embed.h>
 #include <pybind11/functional.h>
-#include <cereal/cereal.hpp>
-#include <cereal/archives/portable_binary.hpp>
 
 namespace py = pybind11;
 using namespace py::literals;

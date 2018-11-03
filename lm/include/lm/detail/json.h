@@ -36,6 +36,14 @@ T castFromJson(const Json& j) {
     return detail::JsonCastImpl<T>::castFromJson(j);
 }
 
+/*!
+    \brief Parse positional command line arguments.
+*/
+template <size_t N>
+Json parsePositionalArgs(int argc, char** argv, const std::string& temp) {
+    return Json::parse(detail::formatWithStringVector<N>(temp, { argv + 1, argv + argc }));
+}
+
 LM_NAMESPACE_BEGIN(detail)
 
 template <typename T>
@@ -66,6 +74,17 @@ struct JsonCastImpl<glm::vec<N, T, Q>> {
         return v;
     }
 };
+
+// https://stackoverflow.com/questions/48875467/how-to-pass-not-variadic-values-to-fmtformat
+template <std::size_t ... Is>
+std::string formatWithStringVector(const std::string& format, const std::vector<std::string>& v, std::index_sequence<Is...>) {
+    return fmt::format(format, v[Is]...);
+}
+
+template <std::size_t N>
+std::string formatWithStringVector(const std::string& format, const std::vector<std::string>& v) {
+    return formatWithStringVector(format, v, std::make_index_sequence<N>());
+}
 
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(LM_NAMESPACE)

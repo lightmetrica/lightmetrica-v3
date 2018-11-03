@@ -6,19 +6,12 @@
 #include <lm/lm.h>
 
 int main(int argc, char** argv) {
-    // Initialize the framework
-    // ------------------------
-    lm::init();
-
     // Define assets
-    // -------------
+
     // Film for the rendered image
     constexpr int w = 1920;
     constexpr int h = 1080;
-    lm::asset("film", "film::bitmap", {
-        {"w", w},
-        {"h", h}
-    });
+    lm::asset("film", "film::bitmap", {{"w", w}, {"h", h}});
 
     // Pinhole camera
     lm::asset("camera1", "camera::pinhole", {
@@ -41,20 +34,19 @@ int main(int argc, char** argv) {
         }}
     });
 
+    // ------------------------------------------------------------------------
+
     // Define scene primitives
-    // -----------------------
+
     // Camera
-    lm::primitive(lm::Mat4(1), {
-        {"camera", "camera1"}
-    });
+    lm::primitive(lm::Mat4(1), {{"camera", "camera1"}});
 
     // Mesh
-    lm::primitive(lm::Mat4(1), {
-        {"mesh", "mesh1"},
-    });
+    lm::primitive(lm::Mat4(1), {{"mesh", "mesh1"}});
+
+    // ------------------------------------------------------------------------
 
     // Render an image
-    // ---------------
     lm::render("renderer::raycast", "accel::sahbvh", {
         {"output", "film"},
         {"color", lm::castToJson(lm::Vec3(0))}
@@ -62,10 +54,6 @@ int main(int argc, char** argv) {
 
     // Save rendered image
     lm::save("film", "result.pfm");
-
-    // Finalize the framework
-    // ----------------------
-    lm::shutdown();
 
     return 0;
 }
