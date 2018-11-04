@@ -43,7 +43,6 @@ int main(int argc, char** argv) {
 
     // OBJ model
     lm::asset("obj1", "model::wavefrontobj", {{"path", opt["obj"]}});
-    #pragma endregion
     
     // ------------------------------------------------------------------------
 
