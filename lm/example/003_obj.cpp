@@ -6,6 +6,9 @@
 #include <lm/lm.h>
 
 int main(int argc, char** argv) {
+    // Initialize the framework
+    lm::init({{"numThreads", -1}});
+
     // Parse command line arguments
     const auto opt = lm::parsePositionalArgs<11>(argc, argv, R"({{
         "obj": "{}",
@@ -24,7 +27,7 @@ int main(int argc, char** argv) {
     // Film for the rendered image
     const int w = opt["w"];
     const int h = opt["h"];
-    lm::asset("film", "film::bitmap", {
+    lm::asset("film1", "film::bitmap", {
         {"w", w},
         {"h", h}
     });
@@ -56,12 +59,12 @@ int main(int argc, char** argv) {
 
     // Render an image
     lm::render("renderer::raycast", "accel::sahbvh", {
-        {"output", "film"},
-        {"color", lm::castToJson(lm::Vec3(0))}
+        {"output", "film1"},
+        {"color", {0,0,0}}
     });
 
     // Save rendered image
-    lm::save("film", opt["out"]);
+    lm::save("film1", opt["out"]);
 
     return 0;
 }

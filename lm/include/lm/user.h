@@ -14,7 +14,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 /*!
     \brief Initializes the renderer.
 */
-LM_PUBLIC_API void init();
+LM_PUBLIC_API void init(const Json& prop = {});
 
 /*!
     \brief Shutdown the renderer.

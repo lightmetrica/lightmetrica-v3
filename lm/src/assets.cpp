@@ -23,7 +23,7 @@ public:
 
     virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
         LM_INFO("Loading asset [name='{}']", name);
-        LM_INDENTER();
+        LM_INDENT();
 
         // Check if the asset with given name has been already loaded
         if (assetIndexMap_.find(name) != assetIndexMap_.end()) {

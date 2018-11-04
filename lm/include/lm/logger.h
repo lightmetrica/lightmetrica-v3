@@ -27,12 +27,12 @@ enum class LogLevel {
 };
 
 /*!
-    \brief Initialize logger system.
+    \brief Initialize logger subsystem.
 */
 LM_PUBLIC_API void init();
 
 /*!
-    \brief Shutdown logger system.
+    \brief Shutdown logger subsystem.
 */
 LM_PUBLIC_API void shutdown();
 
@@ -106,5 +106,5 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 /*!
     \brief Adds an indentation in the current scope.
 */
-#define LM_INDENTER() LM_NAMESPACE::log::LogIndenter \
+#define LM_INDENT() LM_NAMESPACE::log::LogIndenter \
     LM_TOKENPASTE2(logIndenter_, __LINE__)

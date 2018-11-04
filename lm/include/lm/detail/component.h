@@ -175,14 +175,14 @@ struct TypeHolder {};
 // Makes key for create function
 template <typename T>
 struct KeyGen {
-    static std::string gen(std::string s) {
+    static std::string gen(const std::string& s) {
         // For ordinary type, use the given key as it is.
         return s;
     }
 };
 template <template <typename...> class T, typename... Ts>
 struct KeyGen<T<Ts...>> {
-    static std::string gen(std::string s) {
+    static std::string gen(const std::string& s) {
         // For template type, decorate the type with type list.
         return s + "<" + std::string(typeid(TypeHolder<Ts...>).name()) + ">";
     }
@@ -207,7 +207,7 @@ InterfaceT* cast(Component* p) {
     \param key Name of the implementation.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(std::string key, Component* parent) {
+Component::Ptr<InterfaceT> create(const std::string& key, Component* parent) {
     auto* inst = detail::createComp(detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str(), parent);
     if (!inst) {
         return Component::Ptr<InterfaceT>(nullptr, nullptr);
@@ -223,7 +223,7 @@ Component::Ptr<InterfaceT> create(std::string key, Component* parent) {
     \param parent Parent component instance.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(std::string key, Component* parent, const Json& prop) {
+Component::Ptr<InterfaceT> create(const std::string& key, Component* parent, const Json& prop) {
     auto inst = create<InterfaceT>(key, parent);
     if (!inst || !inst->construct(prop)) {
         return Component::Ptr<InterfaceT>(nullptr, nullptr);
@@ -292,6 +292,37 @@ Component::Ptr<ComponentT> createDirect(Component* parent, Ts&&... args) {
         comp.release(),
         [](Component* p) { LM_SAFE_DELETE(p); });
 }
+
+// ----------------------------------------------------------------------------
+
+/*!
+    \brief Singleton for a context component.
+    This singleton holds the ownership the context component where
+    we manages the component hierarchy under the context.
+*/
+template <typename ContextComponentT>
+class ContextInstance {
+private:
+    Component::Ptr<ContextComponentT> context;
+
+public:
+    static ContextInstance& instance() {
+        static ContextInstance instance;
+        return instance;
+    }
+
+    static ContextComponentT& get() {
+        return *instance().context.get();
+    }
+
+    static void init(const std::string& type, const Json& prop) {
+        instance().context = comp::create<ContextComponentT>(type, nullptr, prop);
+    }
+
+    static void shutdown() {
+        instance().context.reset();
+    }
+};
 
 // ----------------------------------------------------------------------------
 

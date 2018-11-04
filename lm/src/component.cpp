@@ -34,7 +34,7 @@ public:
         handle = LoadLibraryA(p.c_str());
         if (!handle) {
             LM_ERROR("Failed to load library or its dependencies [path='{}']", p);
-            LM_INDENTER();
+            LM_INDENT();
             LM_ERROR(getLastErrorAsString());
             return false;
         }
@@ -42,7 +42,7 @@ public:
         handle = dlopen(p.c_str(), RTLD_LAZY | RTLD_LOCAL);
         if (!handle) {
             LM_ERROR("Failed to load library or its dependencies [path='{}']", p);
-            LM_INDENTER();
+            LM_INDENT();
             LM_ERROR(dlerror());
             return false;
         }
@@ -56,14 +56,14 @@ public:
         #if LM_PLATFORM_WINDOWS
         if (!FreeLibrary(handle)) {
             LM_ERROR("Failed to free library");
-            LM_INDENTER();
+            LM_INDENT();
             LM_ERROR(getLastErrorAsString());
             return false;
         }
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
         if (dlclose(handle) != 0) {
             LM_ERROR("Failed to free library");
-            LM_INDENTER();
+            LM_INDENT();
             LM_ERROR(dlerror());
             return false;
         }
@@ -78,7 +78,7 @@ public:
         void* address = (void*)GetProcAddress(handle, symbol.c_str());
         if (address == nullptr) {
             LM_ERROR("Failed to get address of '{}'", symbol);
-            LM_INDENTER();
+            LM_INDENT();
             LM_ERROR(getLastErrorAsString());
             return nullptr;
         }
@@ -86,7 +86,7 @@ public:
         void* address = dlsym(handle, symbol.c_str());
         if (address == nullptr) {
             LM_ERROR("Failed to get address of '{}'", symbol);
-            LM_INDENTER();
+            LM_INDENT();
             LM_ERROR(dlerror());
             return nullptr;
         }
@@ -172,7 +172,7 @@ public:
         fs::path path(p);
 
         LM_INFO("Loading '{}'", path.filename().string());
-        LM_INDENTER();
+        LM_INDENT();
 
         // Load plugin
         std::unique_ptr<SharedLibrary> plugin(new SharedLibrary);

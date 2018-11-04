@@ -6,6 +6,11 @@
 #include <lm/lm.h>
 
 int main(int argc, char** argv) {
+    // Initialize the framework
+    lm::init();
+
+    // ------------------------------------------------------------------------
+
     // Define assets
 
     // Film for the rendered image
@@ -19,7 +24,7 @@ int main(int argc, char** argv) {
         {"center", {0,0,0}},
         {"up", {0,1,0}},
         {"vfov", 30},
-        {"aspect", (lm::Float)(w)/h}
+        {"aspect", lm::Float(w)/h}
     });
 
     // Load mesh with raw vertex data
@@ -49,7 +54,7 @@ int main(int argc, char** argv) {
     // Render an image
     lm::render("renderer::raycast", "accel::sahbvh", {
         {"output", "film"},
-        {"color", lm::castToJson(lm::Vec3(0))}
+        {"color", {0,0,0}}
     });
 
     // Save rendered image

@@ -5,7 +5,7 @@
 
 #include <pch.h>
 #include "test_common.h"
-#include <lm/api.h>
+#include <lm/user.h>
 #include <lm/scene.h>
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)

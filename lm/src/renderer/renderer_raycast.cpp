@@ -7,6 +7,7 @@
 #include <lm/renderer.h>
 #include <lm/scene.h>
 #include <lm/film.h>
+#include <lm/parallel.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -28,18 +29,18 @@ public:
 
     virtual void render(const Scene& scene) const override {
         const auto [w, h] = film_->size();
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                const auto ray = scene.primaryRay({(x+.5_f)/w, (y+.5_f)/h});
-                const auto sp = scene.intersect(ray);
-                if (!sp) {
-                    film_->setPixel(x, y, color_);
-                    continue;
-                }
-                film_->setPixel(x, y, Vec3(glm::abs(glm::dot(sp->n, -ray.d))));
-                //film_->setPixel(x, y, Vec3(glm::abs(sp->n)));
+        parallel::foreach(w*h, [&](long long index, int threadId) {
+            const int x = int(index % w);
+            const int y = int(index / w);
+            const auto ray = scene.primaryRay({(x+.5_f)/w, (y+.5_f)/h});
+            const auto sp = scene.intersect(ray);
+            if (!sp) {
+                film_->setPixel(x, y, color_);
+                return;
             }
-        }
+            film_->setPixel(x, y, Vec3(glm::abs(glm::dot(sp->n, -ray.d))));
+            //film_->setPixel(x, y, Vec3(glm::abs(sp->n)));
+        });
     }
 };
 

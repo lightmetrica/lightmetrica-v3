@@ -19,6 +19,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # -----------------------------------------------------------------------------
 
+# OpenMP
+find_package(OpenMP REQUIRED)
+
 # nlohmann-json
 option(JSON_BuildTests "" OFF)
 add_subdirectory(external/json)
@@ -63,8 +66,9 @@ set(_PCH_FILES
 set(_PROJECT_NAME liblm)
 set(_HEADER_FILES 
     "${_INCLUDE_DIR}/lm.h"
-    "${_INCLUDE_DIR}/api.h"
+    "${_INCLUDE_DIR}/user.h"
     "${_INCLUDE_DIR}/logger.h"
+    "${_INCLUDE_DIR}/parallel.h"
     "${_INCLUDE_DIR}/math.h"
     "${_INCLUDE_DIR}/assets.h"
     "${_INCLUDE_DIR}/mesh.h"
@@ -80,14 +84,15 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/detail/common.h"
     "${_INCLUDE_DIR}/detail/forward.h"
     "${_INCLUDE_DIR}/detail/json.h"
-    "${_INCLUDE_DIR}/detail/component.h"
-    "${_INCLUDE_DIR}/detail/parallel.h")
+    "${_INCLUDE_DIR}/detail/component.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/logger.cpp"
-    "${_SOURCE_DIR}/api.cpp"
+    "${_SOURCE_DIR}/user.cpp"
     "${_SOURCE_DIR}/assets.cpp"
     "${_SOURCE_DIR}/scene.cpp"
+    "${_SOURCE_DIR}/parallel/parallel.cpp"
+    "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
     "${_SOURCE_DIR}/mesh/mesh_raw.cpp"
     "${_SOURCE_DIR}/camera/camera_pinhole.cpp"
@@ -103,7 +108,7 @@ source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
 add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only cereal
-    PRIVATE spdlog)
+    PRIVATE OpenMP::OpenMP_CXX spdlog)
 target_include_directories(${_PROJECT_NAME}
     PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     PRIVATE "${_PCH_DIR}")

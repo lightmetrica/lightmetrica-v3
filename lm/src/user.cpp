@@ -4,12 +4,13 @@
 */
 
 #include <pch.h>
-#include <lm/api.h>
+#include <lm/user.h>
 #include <lm/assets.h>
 #include <lm/scene.h>
 #include <lm/renderer.h>
 #include <lm/logger.h>
 #include <lm/film.h>
+#include <lm/parallel.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -26,17 +27,6 @@ public:
     static Context& instance() {
         static Context instance;
         return instance;
-    }
-    
-public:
-    Context() {
-        // Implicit initialization on first call
-        init();
-    }
-
-    ~Context() {
-        // Implicit shutdown
-        shutdown();
     }
 
 public:
@@ -55,25 +45,19 @@ public:
     }
 
 public:
-    void init() {
-        if (init_) {
-            LM_WARN("Lightmetrica is already initialized");
-            return;
-        }
+    void init(const Json& prop) {
         log::init();
         LM_INFO("Initializing Lightmetrica [version='{}']");
+        parallel::init("parallel::openmp", prop);
         assets_ = comp::create<Assets>("assets::default", this);
         scene_  = comp::create<Scene>("scene::default", this);
-        init_ = true;
     }
 
     void shutdown() {
-        if (!init_) {
-            return;
-        }
         renderer_.reset();
         scene_.reset();
         assets_.reset();
+        parallel::shutdown();
         log::shutdown();
     }
 
@@ -111,7 +95,6 @@ public:
     }
 
 private:
-    bool init_ = false;
     Ptr<Assets> assets_;
     Ptr<Scene> scene_;
     Ptr<Renderer> renderer_;
@@ -121,8 +104,8 @@ private:
 
 // ----------------------------------------------------------------------------
 
-LM_PUBLIC_API void init() {
-    Context::instance().init();
+LM_PUBLIC_API void init(const Json& prop) {
+    Context::instance().init(prop);
 }
 
 LM_PUBLIC_API void shutdown() {
