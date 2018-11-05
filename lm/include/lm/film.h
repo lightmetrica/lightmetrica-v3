@@ -34,6 +34,14 @@ public:
         \brief Save rendered film.
     */
     virtual bool save(const std::string& outpath) const = 0;
+
+    /*!
+        \brief Get aspect ratio.
+    */
+    Float aspectRatio() const {
+        const auto [w, h] = size();
+        return Float(w) / h;
+    }
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

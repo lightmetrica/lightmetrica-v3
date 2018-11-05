@@ -8,6 +8,7 @@
 #include "detail/component.h"
 #include "detail/forward.h"
 #include "math.h"
+#include <variant>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -15,7 +16,9 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
     \brief Scene surface point.
-    Geometry information around a scene surface point.
+    Represents single point on the scene surface, which contains
+    geometry information around a point and a weak reference to
+    the primitive associated with the point.
 */
 struct SurfacePoint {
     int primitive;      // Primitive index
@@ -25,7 +28,9 @@ struct SurfacePoint {
     Vec3 u, v;          // Orthogonal tangent vectors
 
     SurfacePoint() {}
-    SurfacePoint(int primitive, Vec3 p, Vec3 n, Vec2 t) : primitive(primitive), p(p), n(n), t(t) {
+    SurfacePoint(int primitive, Vec3 p, Vec3 n, Vec2 t)
+        : primitive(primitive), p(p), n(n), t(t)
+    {
         std::tie(u, v) = math::orthonormalBasis(n);
     }
 
@@ -65,18 +70,24 @@ public:
     /*!
         \brief Load a scene primitive.
     */
-    virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) = 0;
+    virtual bool loadPrimitive(
+        const Component& assetGroup, Mat4 transform, const Json& prop) = 0;
 
     /*!
         \brief Create primitives from a model.
     */
-    virtual bool loadPrimitives(const Component& assetGroup, Mat4 transform, const std::string& modelName) = 0;
+    virtual bool loadPrimitives(
+        const Component& assetGroup, Mat4 transform, const std::string& modelName) = 0;
 
     /*!
         \brief Iterate triangles in the scene.
     */
-    using ProcessTriangleFunc = std::function<void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
-    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const = 0;
+    using ProcessTriangleFunc = std::function<
+        void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
+    virtual void foreachTriangle(
+        const ProcessTriangleFunc& processTriangle) const = 0;
+
+    // ------------------------------------------------------------------------
 
     /*!
         \brief Build acceleration structure.
@@ -86,12 +97,70 @@ public:
     /*!
         \brief Compute closest intersection point.
     */
-    virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin = Eps, Float tmax = Inf) const = 0;
+    virtual std::optional<SurfacePoint> intersect(
+        Ray ray, Float tmin = Eps, Float tmax = Inf) const = 0;
+
+    // ------------------------------------------------------------------------
 
     /*!
-        \brief Generate a primary ray with the corresponding raster position.
+        \brief Check if given surface point is light.
     */
-    virtual Ray primaryRay(Vec2 rp) const = 0;
+    virtual bool isLigth(const SurfacePoint& sp) const = 0;
+
+    /*!
+        \brief Check if given surface point is specular.
+    */
+    virtual bool isSpecular(const SurfacePoint& sp) const = 0;
+
+    // ------------------------------------------------------------------------
+
+    /*!
+        \brief Result of sampleRay functions.
+    */
+    struct RaySample {
+        Ray ray;        // Sampled ray
+        int comp;       // Sampled component index
+        Vec3 weight;    // Contribution divided by probability
+    };
+
+    /*!
+        \brief Sample a ray given surface point and incident direction.
+        (x,wo) ~ p(x,wo|sp,wi)
+    */
+    virtual std::optional<RaySample> sampleRay(
+        Rng& rng, const SurfacePoint& sp, Vec3 wi) const = 0;
+
+    /*!
+        \brief Sample a ray given pixel position.
+        (x,wo) ~ p(x,wo|pixel position)
+    */
+    virtual std::optional<RaySample> samplePrimaryRay(
+        Rng& rng, int x, int y) const = 0;
+
+    /*!
+        \brief Generic ray sampling.
+        (x,wo) ~ p(x,wo|cond)
+    */
+    struct SurfacePointDir {
+        SurfacePoint sp;
+        Vec3 wi;
+    };
+    struct PixelPosition {
+        int x;
+        int y;
+    };
+    using RaySampleCond = std::variant<SurfacePointDir, PixelPosition>;
+    std::optional<RaySample> sampleRay(Rng& rng, const RaySampleCond& cond) const {
+        return std::visit([&](const auto& arg) -> std::optional<RaySample> {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, SurfacePointDir>) {
+                return sampleRay(rng, arg.sp, arg.wi);
+            }
+            if constexpr (std::is_same_v<T, PixelPosition>) {
+                return samplePrimaryRay(rng, arg.x, arg.y);
+            }
+        }, cond);
+    }
 };
 
 // ----------------------------------------------------------------------------

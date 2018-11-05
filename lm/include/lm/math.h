@@ -88,6 +88,107 @@ struct Bound {
 
 // ----------------------------------------------------------------------------
 
+/*!
+    \brief Random number generator.
+*/
+class Rng {
+private:
+    std::mt19937 eng;
+    std::uniform_real_distribution<Float> dist;
+
+public:
+    Rng() {};
+    Rng(int seed) {
+        eng.seed(seed);
+        dist.reset();
+    }
+
+    // Sample unifom random number in [0,1)
+    Float u() { return dist(eng); }
+
+    // Cosine-weighted direction sampling
+    Vec3 uD() {
+        const auto r = glm::sqrt(u());
+        const auto t = 2_f * Pi * u();
+        const auto x = r * glm::cos(t);
+        const auto y = r * glm::sin(t);
+        return { x, y, glm::sqrt(glm::max(0_f, 1_f-x*x-y*y)) };
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+/*!
+    1d discrete distribution.
+*/
+struct Dist {
+    std::vector<Float> c{ 0_f }; // CDF
+
+    // Add a value to the distribution
+    void add(Float v) {
+        c.push_back(c.back() + v);
+    }
+
+    // Normalize the distribution
+    void norm() {
+        const auto sum = c.back();
+        for (auto& v : c) {
+            v /= sum;
+        }
+    }
+
+    // Evaluate pmf
+    Float p(int i) const {
+        return (i < 0 || i + 1 >= int(c.size())) ? 0 : c[i + 1] - c[i];
+    }
+
+    // Sample from the distribution
+    int samp(Rng& rn) const {
+        const auto it = std::upper_bound(c.begin(), c.end(), rn.u());
+        return std::clamp(int(std::distance(c.begin(), it)) - 1, 0, int(c.size()) - 2);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+// 2d discrete distribution
+struct Dist2 {
+    std::vector<Dist> ds;   // Conditional distribution correspoinding to a row
+    Dist m;                 // Marginal distribution
+    int w, h;               // Size of the distribution
+
+    // Add values to the distribution
+    void init(const std::vector<Float>& v, int a, int b) {
+        w = a;
+        h = b;
+        ds.assign(h, {});
+        for (int i = 0; i < h; i++) {
+            auto& d = ds[i];
+            for (int j = 0; j < w; j++) {
+                d.add(v[i * w + j]);
+            }
+            m.add(d.c.back());
+            d.norm();
+        }
+        m.norm();
+    }
+
+    // Evaluate pmf
+    Float p(Float u, Float v) const {
+        const int y = std::min(int(v * h), h - 1);
+        return m.p(y) * ds[y].p(int(u * w)) * w * h;
+    }
+
+    // Sample from the distribution
+    std::tuple<Float, Float> samp(Rng& rn) const {
+        const int y = m.samp(rn);
+        const int x = ds[y].samp(rn);
+        return {(x + rn.u()) / w, (y + rn.u()) / h};
+    }
+};
+
+// ----------------------------------------------------------------------------
+
 LM_NAMESPACE_BEGIN(math)
 
 /*!

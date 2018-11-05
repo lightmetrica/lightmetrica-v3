@@ -5,31 +5,31 @@
 
 #include <pch.h>
 #include <lm/camera.h>
+#include <lm/film.h>
 #include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Camera_Pinhole final : public Camera {
 private:
-    Vec3 position_;    // Sensor position
-    Vec3 u_, v_, w_;   // Basis for camera coordinates
-    Float tf_;         // Half of the screen height at 1 unit forward from the position
-    Float aspect_;     // Aspect ratio
+    Film* film_;      // Underlying film
+    Vec3 position_;   // Sensor position
+    Vec3 u_, v_, w_;  // Basis for camera coordinates
+    Float tf_;        // Half of the screen height at 1 unit forward from the position
+    Float aspect_;    // Aspect ratio
 
 public:
+    virtual Component* underlying(const std::string& name) const {
+        return film_;
+    }
+
     virtual bool construct(const Json& prop) override {
-        // Camera position
-        position_ = castFromJson<Vec3>(prop["position"]);
-        // Look-at position
-        const auto center = castFromJson<Vec3>(prop["center"]);
-        // Up vector
-        const auto up = castFromJson<Vec3>(prop["up"]);
-        // Vertical FoV
-        const Float fv = prop["vfov"];
-        // Aspect ratio
-        aspect_ = prop["aspect"];
-        // Precompute half of screen height
-        tf_ = tan(fv * Pi / 180_f * .5_f);
+        film_ = parent()->underlying<Film>(prop["aspect"]);      // Film
+        position_ = castFromJson<Vec3>(prop["position"]);        // Camera position
+        const auto center = castFromJson<Vec3>(prop["center"]);  // Look-at position
+        const auto up = castFromJson<Vec3>(prop["up"]);          // Up vector
+        const Float fv = prop["vfov"];                           // Vertical FoV
+        tf_ = tan(fv * Pi / 180_f * .5_f);  // Precompute half of screen height
         // Compute basis
         w_ = glm::normalize(position_ - center);
         u_ = glm::normalize(glm::cross(up, w_));
@@ -39,7 +39,7 @@ public:
 
     virtual Ray primaryRay(Vec2 rp) const override {
         rp = 2_f*rp-1_f;
-        const auto d = -glm::normalize(Vec3(aspect_*tf_*rp.x, tf_*rp.y, 1_f));
+        const auto d = -glm::normalize(Vec3(film_->aspectRatio()*tf_*rp.x, tf_*rp.y, 1_f));
         return { position_, u_*d.x+v_*d.y+w_*d.z };
     }
 };

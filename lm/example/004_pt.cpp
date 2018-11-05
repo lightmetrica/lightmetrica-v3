@@ -7,35 +7,42 @@
 
 int main(int argc, char** argv) {
     // Initialize the framework
-    lm::init();
+    lm::init({{"numThreads", -1}});
+
+    // Parse command line arguments
+    const auto opt = lm::parsePositionalArgs<11>(argc, argv, R"({{
+        "obj": "{}",
+        "out": "{}",
+        "spp": "{}",
+        "len": "{}",
+        "w": {},
+        "h": {},
+        "eye": [{},{},{}],
+        "lookat": [{},{},{}],
+        "vfov": {}
+    }})");
 
     // ------------------------------------------------------------------------
 
     // Define assets
 
     // Film for the rendered image
-    lm::asset("film1", "film::bitmap", {{"w", 1920}, {"h", 1080}});
+    lm::asset("film1", "film::bitmap", {
+        {"w", opt["w"]},
+        {"h", opt["h"]}
+    });
 
     // Pinhole camera
     lm::asset("camera1", "camera::pinhole", {
-        {"film", "film1"},
-        {"position", {0,0,5}},
-        {"center", {0,0,0}},
+        {"position", opt["eye"]},
+        {"center", opt["lookat"]},
         {"up", {0,1,0}},
-        {"vfov", 30}
+        {"vfov", opt["vfov"]},
+        {"aspect", "film1"}
     });
 
-    // Load mesh with raw vertex data
-    lm::asset("mesh1", "mesh::raw", {
-        {"ps", {-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1}},
-        {"ns", {0,0,1}},
-        {"ts", {0,0,1,0,1,1,0,1}},
-        {"fs", {
-            {"p", {0,1,2,0,2,3}},
-            {"n", {0,0,0,0,0,0}},
-            {"t", {0,1,2,0,2,3}}
-        }}
-    });
+    // OBJ model
+    lm::asset("obj1", "model::wavefrontobj", {{"path", opt["obj"]}});
 
     // ------------------------------------------------------------------------
 
@@ -44,19 +51,19 @@ int main(int argc, char** argv) {
     // Camera
     lm::primitive(lm::Mat4(1), {{"camera", "camera1"}});
 
-    // Mesh
-    lm::primitive(lm::Mat4(1), {{"mesh", "mesh1"}});
+    // Create primitives from model asset
+    lm::primitives(lm::Mat4(1), "obj1");
 
     // ------------------------------------------------------------------------
 
     // Render an image
-    lm::render("renderer::raycast", "accel::sahbvh", {
+    lm::render("renderer::pt", "accel::sahbvh", {
         {"output", "film1"},
         {"color", {0,0,0}}
     });
 
     // Save rendered image
-    lm::save("film1", "result.pfm");
+    lm::save("film1", opt["out"]);
 
     return 0;
 }

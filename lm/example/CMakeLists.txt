@@ -20,4 +20,5 @@ endfunction()
 
 lm_add_example(NAME 001_blank SOURCES "001_blank.cpp")
 lm_add_example(NAME 002_quad SOURCES "002_quad.cpp")
-lm_add_example(NAME 003_obj SOURCES "003_obj.cpp")
+lm_add_example(NAME 003_raycast SOURCES "003_raycast.cpp")
+lm_add_example(NAME 004_pt SOURCES "004_pt.cpp")

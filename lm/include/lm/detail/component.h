@@ -150,13 +150,16 @@ public:
     /*!
         \brief Process given function for each underlying component call.
     */
-    virtual void foreachUnderlying(const std::function<void(Component* p)>& processComponent) const {}
+    virtual void foreachUnderlying(
+        const std::function<void(Component* p)>& processComponent) const {}
 
     /*!
         \brief Process given function for each underlying component call with specific interface type. 
     */
     template <typename UnderlyingComponentT>
-    void foreachUnderlying(const std::function<void(UnderlyingComponentT* p)>& processComponent) const {
+    void foreachUnderlying(
+        const std::function<void(UnderlyingComponentT* p)>& processComponent) const
+    {
         foreachUnderlying([](Component* p) -> void {
             processComponent(p->cast<UnderlyingComponentT>());
         });
@@ -208,7 +211,8 @@ InterfaceT* cast(Component* p) {
 */
 template <typename InterfaceT>
 Component::Ptr<InterfaceT> create(const std::string& key, Component* parent) {
-    auto* inst = detail::createComp(detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str(), parent);
+    auto* inst = detail::createComp(
+        detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str(), parent);
     if (!inst) {
         return Component::Ptr<InterfaceT>(nullptr, nullptr);
     }
@@ -223,7 +227,9 @@ Component::Ptr<InterfaceT> create(const std::string& key, Component* parent) {
     \param parent Parent component instance.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(const std::string& key, Component* parent, const Json& prop) {
+Component::Ptr<InterfaceT> create(
+    const std::string& key, Component* parent, const Json& prop)
+{
     auto inst = create<InterfaceT>(key, parent);
     if (!inst || !inst->construct(prop)) {
         return Component::Ptr<InterfaceT>(nullptr, nullptr);

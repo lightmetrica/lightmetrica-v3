@@ -25,20 +25,18 @@ int main(int argc, char** argv) {
     // Define assets
 
     // Film for the rendered image
-    const int w = opt["w"];
-    const int h = opt["h"];
     lm::asset("film1", "film::bitmap", {
-        {"w", w},
-        {"h", h}
+        {"w", opt["w"]},
+        {"h", opt["h"]}
     });
 
     // Pinhole camera
     lm::asset("camera1", "camera::pinhole", {
+        {"film", "film1"},
         {"position", opt["eye"]},
         {"center", opt["lookat"]},
         {"up", {0,1,0}},
-        {"vfov", opt["vfov"]},
-        {"aspect", lm::Float(w) / h}
+        {"vfov", opt["vfov"]}
     });
 
     // OBJ model
