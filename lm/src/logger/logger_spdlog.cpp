@@ -9,23 +9,16 @@
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::log)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::log::detail)
 
-// ----------------------------------------------------------------------------
-
-namespace {
-
-// Logger implementation
-// - Ignores message when the logger is not initialized.
-class LoggerImpl {
-public:
-    static LoggerImpl& instance() {
-        static LoggerImpl instance;
-        return instance;
-    }
+class LoggerContext_spdlog : public LoggerContext {
+private:
+    int indentation_ = 0;
+    std::string indentationString_;
+    std::shared_ptr<spdlog::logger> stdoutLogger_;
 
 public:
-    void init() {
+    virtual bool construct(const Json& prop) override {
         if (stdoutLogger_) { shutdown(); }
         #if 0
         stdoutLogger_ = spdlog::stdout_color_mt("lm_stdout");
@@ -33,11 +26,7 @@ public:
         stdoutLogger_ = spdlog::stdout_logger_mt("lm_stdout");
         #endif
         stdoutLogger_->set_pattern("[%T.%e|%^%L%$] %v");
-    }
-
-    void shutdown() {
-        stdoutLogger_ = nullptr;
-        spdlog::shutdown();
+        return true;
     }
 
     void log(LogLevel level, const char* filename, int line, const char* message) {
@@ -65,33 +54,8 @@ public:
             indentationString_ = "";
         }
     }
-
-private:
-    int indentation_ = 0;
-    std::string indentationString_;
-    std::shared_ptr<spdlog::logger> stdoutLogger_;
 };
 
-}
+LM_COMP_REG_IMPL(LoggerContext_spdlog, "logger::spdlog");
 
-// ----------------------------------------------------------------------------
-
-LM_PUBLIC_API void init() {
-    LoggerImpl::instance().init();
-}
-
-LM_PUBLIC_API void shutdown() {
-    LoggerImpl::instance().shutdown();
-}
-
-LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const char* message) {
-    LoggerImpl::instance().log(level, filename, line, message);
-}
-
-LM_PUBLIC_API void updateIndentation(int n) {
-    LoggerImpl::instance().updateIndentation(n);
-}
-
-// ----------------------------------------------------------------------------
-
-LM_NAMESPACE_END(LM_NAMESPACE::log)
+LM_NAMESPACE_END(LM_NAMESPACE::log::detail)

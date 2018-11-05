@@ -5,25 +5,13 @@
 
 #pragma once
 
-#include "common.h"
-#include "../math.h"
-#include "../logger.h"
+#include "detail/forward.h"
+#include "math.h"
+#include "logger.h"
 #include <nlohmann/json.hpp>
 #include <array>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
-
-// JSON type
-using Json = nlohmann::basic_json<
-    std::map,           // Object type
-    std::vector,        // Arrray type
-    std::string,        // String type
-    bool,               // Boolean type
-    std::int64_t,       // Signed integer type
-    std::uint64_t,      // Unsigned integer type
-    Float,              // Floating point type
-    std::allocator,
-    nlohmann::adl_serializer>;
 
 // Conversion to JSON type
 template <typename T>

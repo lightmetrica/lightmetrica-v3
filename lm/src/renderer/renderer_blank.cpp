@@ -7,6 +7,7 @@
 #include <lm/renderer.h>
 #include <lm/scene.h>
 #include <lm/film.h>
+#include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

@@ -5,6 +5,7 @@
 
 #include <pch.h>
 #include <lm/camera.h>
+#include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

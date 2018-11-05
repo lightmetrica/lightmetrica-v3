@@ -4,6 +4,8 @@
 */
 
 #include <lm/detail/component.h>
+#include <lm/json.h>
+#include <lm/math.h>
 #include <iostream>
 
 LM_NAMESPACE_BEGIN(lmtest)

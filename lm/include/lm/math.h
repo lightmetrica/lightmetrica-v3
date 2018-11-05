@@ -5,16 +5,13 @@
 
 #pragma once
 
-#include  "detail/common.h"
+#include  "detail/forward.h"
 #include <glm/glm.hpp>
 #include <tuple>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
-
-// Default floating point type
-using Float = float;
 
 // Default math types deligated to glm library
 using Vec2 = glm::tvec2<Float>;

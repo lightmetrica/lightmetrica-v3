@@ -5,6 +5,7 @@
 
 #include <pch.h>
 #include <lm/film.h>
+#include <lm/logger.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

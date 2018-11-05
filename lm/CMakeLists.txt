@@ -24,6 +24,7 @@ find_package(OpenMP REQUIRED)
 
 # nlohmann-json
 option(JSON_BuildTests "" OFF)
+option(JSON_MultipleHeaders "" ON)
 add_subdirectory(external/json)
 
 # glm
@@ -67,6 +68,7 @@ set(_PROJECT_NAME liblm)
 set(_HEADER_FILES 
     "${_INCLUDE_DIR}/lm.h"
     "${_INCLUDE_DIR}/user.h"
+    "${_INCLUDE_DIR}/json.h"
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/parallel.h"
     "${_INCLUDE_DIR}/math.h"
@@ -83,14 +85,14 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/renderer.h"
     "${_INCLUDE_DIR}/detail/common.h"
     "${_INCLUDE_DIR}/detail/forward.h"
-    "${_INCLUDE_DIR}/detail/json.h"
     "${_INCLUDE_DIR}/detail/component.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
-    "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/user.cpp"
     "${_SOURCE_DIR}/assets.cpp"
     "${_SOURCE_DIR}/scene.cpp"
+    "${_SOURCE_DIR}/logger/logger.cpp"
+    "${_SOURCE_DIR}/logger/logger_spdlog.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"

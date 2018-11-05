@@ -7,6 +7,7 @@
 #include <lm/accel.h>
 #include <lm/scene.h>
 #include <lm/mesh.h>
+#include <lm/logger.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

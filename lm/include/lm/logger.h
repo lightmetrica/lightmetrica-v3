@@ -5,13 +5,16 @@
 
 #pragma once
 
-#include "detail/common.h"
+#include "detail/component.h"
 #include <fmt/format.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(log)
 
 // ----------------------------------------------------------------------------
+
+//! Default logger type
+constexpr const char* DefaultType = "logger::spdlog";
 
 /*!
     \brief Log level.
@@ -27,12 +30,12 @@ enum class LogLevel {
 };
 
 /*!
-    \brief Initialize logger subsystem.
+    \brief Initialize logger context.
 */
-LM_PUBLIC_API void init();
+LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop = {});
 
 /*!
-    \brief Shutdown logger subsystem.
+    \brief Shutdown logger context.
 */
 LM_PUBLIC_API void shutdown();
 
@@ -67,13 +70,26 @@ struct LogIndenter {
 */
 class ScopedInit {
 public:
-    ScopedInit() { init(); }
+    ScopedInit(const std::string& type = DefaultType, const Json& prop = {}) { init(type, prop); }
     ~ScopedInit() { shutdown(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
 
 // ----------------------------------------------------------------------------
 
+LM_NAMESPACE_BEGIN(detail)
+
+// ----------------------------------------------------------------------------
+
+class LoggerContext : public Component {
+public:
+    virtual void log(LogLevel level, const char* filename, int line, const char* message) = 0;
+    virtual void updateIndentation(int n) = 0;
+};
+
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(log)
 LM_NAMESPACE_END(LM_NAMESPACE)
 

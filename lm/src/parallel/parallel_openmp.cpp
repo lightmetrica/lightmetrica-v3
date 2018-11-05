@@ -5,6 +5,7 @@
 
 #include <pch.h>
 #include <lm/parallel.h>
+#include <lm/logger.h>
 #include <omp.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel::detail)

@@ -6,12 +6,12 @@
 #pragma once
 
 #include "forward.h"
-#include "json.h"
 #include <any>
 #include <memory>
 #include <string>
 #include <optional>
 #include <functional>
+#include <nlohmann/json.hpp>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

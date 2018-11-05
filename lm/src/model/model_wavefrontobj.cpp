@@ -8,6 +8,7 @@
 #include <lm/mesh.h>
 #include <lm/material.h>
 #include <lm/texture.h>
+#include <lm/logger.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
