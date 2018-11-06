@@ -19,6 +19,11 @@ public:
         \brief Generate a primary ray with the corresponding raster position.
     */
     virtual Ray primaryRay(Vec2 rp) const = 0;
+
+    /*!
+        \brief Sample a primary ray within the given raster window.
+    */
+    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

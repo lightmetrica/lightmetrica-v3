@@ -7,6 +7,7 @@
 
 #include  "detail/forward.h"
 #include <glm/glm.hpp>
+#include <glm/gtx/component_wise.hpp>
 #include <tuple>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

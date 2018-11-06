@@ -7,6 +7,7 @@
 #include <lm/camera.h>
 #include <lm/film.h>
 #include <lm/json.h>
+#include <lm/scene.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -41,6 +42,15 @@ public:
         rp = 2_f*rp-1_f;
         const auto d = -glm::normalize(Vec3(film_->aspectRatio()*tf_*rp.x, tf_*rp.y, 1_f));
         return { position_, u_*d.x+v_*d.y+w_*d.z };
+    }
+
+    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
+        const auto [x, y, w, h] = window;
+        return RaySample(
+            SurfacePoint(position_),
+            primaryRay({x+w*rng.u(), y+h*rng.u()}).d,
+            Vec3(1_f)
+        );
     }
 };
 

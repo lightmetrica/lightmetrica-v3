@@ -29,6 +29,7 @@ class Camera;
 
 // scene.h
 struct SurfacePoint;
+struct RaySample;
 class Scene;
 
 // renderer.h

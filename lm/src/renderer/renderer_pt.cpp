@@ -37,37 +37,57 @@ public:
             // Per-thread random number generator
             thread_local Rng rng(rngSeed_ + threadId);
 
-            // Raster position
+            // Pixel positions
             const int x = int(index % w);
             const int y = int(index / w);
-            const Vec2 rp((x+.5_f)/w, (y+.5_f)/h);
 
             // Estimate pixel contribution
             Vec3 L;
             for (long long i = 0; i < spp_; i++) {
+                // Path throughput
                 Vec3 throughput(1_f);
-                Scene::RaySampleCond cond(Scene::PixelPosition{x, y});
+
+                // Initial sampleRay function
+                auto sampleRay = [&]() {
+                    Float dx = 1_f/w, dy = 1_f/h;
+                    return scene.samplePrimaryRay(rng, {dx*x, dy*y, dx, dy});
+                };
+
+                // Perform random walk
                 for (int length = 0; length < maxLength_; length++) {
                     // Sample a ray
-                    const auto sampled = scene.sampleRay(rng, cond);
-                    if (!sampled) {
+                    const auto s = sampleRay();
+                    if (!s) {
                         break;
                     }
-                    const auto [ray, comp, weight] = *sampled;
-                    
-                    // Update throughput
-                    throughput = throughput * weight;
 
-                    // Intersection with next surface
-                    const auto hit = scene.intersect(ray);
+                    // Update throughput
+                    throughput = throughput * s->weight;
+
+                    // Intersection to next surface
+                    const auto hit = scene.intersect(s->ray());
                     if (!hit) {
                         break;
                     }
 
                     // Accumulate contribution from light
-                    if (scene.isLigth(*hit)) {
-                        
+                    if (scene.isLight(*hit) && !scene.isSpecular(s->sp)) {
+                        L += throughput * scene.evalContrbEndpoint(*hit, -s->wo);
                     }
+
+                    // Russian roulette
+                    if (length > 3) {
+                        const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));
+                        throughput = throughput / (1_f - q);
+                        if (rng.u() < q) {
+                            return false;
+                        }
+                    }
+
+                    // Update
+                    sampleRay = [wi = -s->wo, sp = *hit]() {
+                        return scene.sampleRay(rng, sp, wi);
+                    };
                 }
             }
 

@@ -21,6 +21,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     the primitive associated with the point.
 */
 struct SurfacePoint {
+    bool degenerated;   // Surface is degenerated (e.g., point light)
     int primitive;      // Primitive index
     Vec3 p;             // Position
     Vec3 n;             // Normal
@@ -28,8 +29,15 @@ struct SurfacePoint {
     Vec3 u, v;          // Orthogonal tangent vectors
 
     SurfacePoint() {}
+
+    SurfacePoint(Vec3 p)
+        : degenerated(true), p(p) {}
+
+    SurfacePoint(Vec3 p, Vec3 n, Vec2 t)
+        : SurfacePoint(-1, p, n, t) {}
+
     SurfacePoint(int primitive, Vec3 p, Vec3 n, Vec2 t)
-        : primitive(primitive), p(p), n(n), t(t)
+        : degenerated(false), primitive(primitive), p(p), n(n), t(t)
     {
         std::tie(u, v) = math::orthonormalBasis(n);
     }
@@ -57,6 +65,32 @@ struct SurfacePoint {
         const Float L2 = glm::dot(d, d);
         d = d / sqrt(L2);
         return glm::abs(glm::dot(s1.n, d)) * glm::abs(glm::dot(s2.n, -d)) / L2;
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+/*!
+    \brief Result of sampleRay functions.
+*/
+struct RaySample {
+    SurfacePoint sp;  // Sampled point
+    Vec3 wo;          // Sampled direction
+    Vec3 weight;      // Contribution divided by probability
+    int comp = 0;     // Sampled component index
+
+    RaySample(SurfacePoint&& sp, Vec3 wo, Vec3 weight)
+        : sp(sp), wo(wo), weight(weight) {}
+
+    RaySample(int primitive, RaySample&& rs)
+        : sp(rs.sp), wo(rs.wo), weight(rs.weight), comp(rs.comp)
+    {
+        sp.primitive = primitive;
+    }
+
+    // Get a ray from the sample
+    Ray ray() const {
+        return { sp.p, wo };
     }
 };
 
@@ -105,7 +139,7 @@ public:
     /*!
         \brief Check if given surface point is light.
     */
-    virtual bool isLigth(const SurfacePoint& sp) const = 0;
+    virtual bool isLight(const SurfacePoint& sp) const = 0;
 
     /*!
         \brief Check if given surface point is specular.
@@ -115,52 +149,22 @@ public:
     // ------------------------------------------------------------------------
 
     /*!
-        \brief Result of sampleRay functions.
-    */
-    struct RaySample {
-        Ray ray;        // Sampled ray
-        int comp;       // Sampled component index
-        Vec3 weight;    // Contribution divided by probability
-    };
-
-    /*!
         \brief Sample a ray given surface point and incident direction.
         (x,wo) ~ p(x,wo|sp,wi)
     */
-    virtual std::optional<RaySample> sampleRay(
-        Rng& rng, const SurfacePoint& sp, Vec3 wi) const = 0;
+    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const = 0;
 
     /*!
         \brief Sample a ray given pixel position.
-        (x,wo) ~ p(x,wo|pixel position)
+        (x,wo) ~ p(x,wo|raster window)
     */
-    virtual std::optional<RaySample> samplePrimaryRay(
-        Rng& rng, int x, int y) const = 0;
+    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
 
     /*!
-        \brief Generic ray sampling.
-        (x,wo) ~ p(x,wo|cond)
+        \brief Evaluate endpoint contribution.
+        f(x,wo) where x is endpoint
     */
-    struct SurfacePointDir {
-        SurfacePoint sp;
-        Vec3 wi;
-    };
-    struct PixelPosition {
-        int x;
-        int y;
-    };
-    using RaySampleCond = std::variant<SurfacePointDir, PixelPosition>;
-    std::optional<RaySample> sampleRay(Rng& rng, const RaySampleCond& cond) const {
-        return std::visit([&](const auto& arg) -> std::optional<RaySample> {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, SurfacePointDir>) {
-                return sampleRay(rng, arg.sp, arg.wi);
-            }
-            if constexpr (std::is_same_v<T, PixelPosition>) {
-                return samplePrimaryRay(rng, arg.x, arg.y);
-            }
-        }, cond);
-    }
+    virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const = 0;
 };
 
 // ----------------------------------------------------------------------------

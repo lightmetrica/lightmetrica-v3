@@ -308,8 +308,13 @@ public:
     Material_WavefrontObj(const MTLMatParams& m) : objmat_(m) {}
     
 public:
+    virtual bool isSpecular() const override {
+        
+    }
 
-
+    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
+        
+    }
 };
 
 // ----------------------------------------------------------------------------

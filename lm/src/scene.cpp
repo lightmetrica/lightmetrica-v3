@@ -85,6 +85,8 @@ public:
         }
     }
 
+    // ------------------------------------------------------------------------
+
     virtual void build(const std::string& name) override {
         accel_ = comp::create<Accel>(name, this);
         if (!accel_) {
@@ -104,8 +106,37 @@ public:
         return SurfacePoint(primitive, p.p, p.n, p.t);
     }
 
+    // ------------------------------------------------------------------------
+
+    virtual bool isLight(const SurfacePoint& sp) const override {
+        return primitives_.at(sp.primitive).light;
+    }
+
+    virtual bool isSpecular(const SurfacePoint& sp) const override {
+        return primitives_.at(sp.primitive).material->isSpecular();
+    }
+
+    // ------------------------------------------------------------------------
+
     virtual Ray primaryRay(Vec2 rp) const {
         return primitives_.at(camera_).camera->primaryRay(rp);
+    }
+
+    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
+        return primitives_.at(sp.primitive).material->sampleRay(rng, sp, wi);
+    }
+
+    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
+        auto rs = primitives_.at(camera_).camera->samplePrimaryRay(rng, window);
+        if (!rs) {
+            return {};
+        }
+        return RaySample(camera_, std::move(*rs));
+    }
+
+    virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
+        // TODO
+        return {};
     }
 
 private:
