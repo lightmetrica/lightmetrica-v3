@@ -79,7 +79,7 @@ struct RaySample {
     Vec3 weight;      // Contribution divided by probability
     int comp = 0;     // Sampled component index
 
-    RaySample(SurfacePoint&& sp, Vec3 wo, Vec3 weight)
+    RaySample(const SurfacePoint& sp, Vec3 wo, Vec3 weight)
         : sp(sp), wo(wo), weight(weight) {}
 
     RaySample(int primitive, RaySample&& rs)

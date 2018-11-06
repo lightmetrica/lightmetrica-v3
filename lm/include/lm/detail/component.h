@@ -6,12 +6,12 @@
 #pragma once
 
 #include "forward.h"
+#include "json.h"
 #include <any>
 #include <memory>
 #include <string>
 #include <optional>
 #include <functional>
-#include <nlohmann/json.hpp>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -131,7 +131,9 @@ public:
     */
     template <typename UnderlyingComponentT>
     UnderlyingComponentT* underlying(const std::string& name = "") const {
-        return underlying(name)->cast<UnderlyingComponentT>();
+        // Use dynamic_cast directly instead of cast() function
+        // to handle the case with nullptr.
+        return dynamic_cast<UnderlyingComponentT*>(underlying(name));
     }
 
     /*!
@@ -144,9 +146,37 @@ public:
     */
     template <typename UnderlyingComponentT>
     UnderlyingComponentT* underlyingAt(int index) const {
-        return underlyingAt(index)->cast<UnderlyingComponentT>();
+        return dynamic_cast<UnderlyingComponentT*>(underlyingAt(index));
     }
-    
+
+    /*!
+        \brief Get underlying comonent by property.
+        If there is no matching entry, return nullptr.
+    */
+    Component* underlying(const Json& prop, const std::string& name) const {
+        const auto it = prop.find(name);
+        if (it == prop.end()) {
+            // No entry
+            return nullptr;
+        }
+        if (it->is_string()) {
+            return underlying(*it);
+        }
+        else if (it->is_number()) {
+            return underlyingAt(*it);
+        }
+        // Invalid type
+        return nullptr;
+    }
+
+    /*!
+        \brief Get underlying comonent by property with specific interface type.
+    */
+    template <typename UnderlyingComponentT>
+    UnderlyingComponentT* underlying(const Json& prop, const std::string& name) const {
+        return dynamic_cast<UnderlyingComponentT*>(underlying(prop, name));
+    }
+
     /*!
         \brief Process given function for each underlying component call.
     */

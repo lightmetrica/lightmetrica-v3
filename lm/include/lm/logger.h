@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "detail/component.h"
+#include "detail/forward.h"
 #include <fmt/format.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -77,19 +77,6 @@ public:
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(detail)
-
-// ----------------------------------------------------------------------------
-
-class LoggerContext : public Component {
-public:
-    virtual void log(LogLevel level, const char* filename, int line, const char* message) = 0;
-    virtual void updateIndentation(int n) = 0;
-};
-
-// ----------------------------------------------------------------------------
-
-LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(log)
 LM_NAMESPACE_END(LM_NAMESPACE)
 

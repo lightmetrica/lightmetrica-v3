@@ -62,7 +62,7 @@ public:
                     }
 
                     // Update throughput
-                    throughput = throughput * s->weight;
+                    throughput *= s->weight;
 
                     // Intersection to next surface
                     const auto hit = scene.intersect(s->ray());
@@ -78,7 +78,7 @@ public:
                     // Russian roulette
                     if (length > 3) {
                         const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));
-                        throughput = throughput / (1_f - q);
+                        throughput /= 1_f - q;
                         if (rng.u() < q) {
                             return false;
                         }

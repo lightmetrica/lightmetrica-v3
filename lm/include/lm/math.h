@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <tuple>
+#include <optional>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -106,15 +107,6 @@ public:
 
     // Sample unifom random number in [0,1)
     Float u() { return dist(eng); }
-
-    // Cosine-weighted direction sampling
-    Vec3 uD() {
-        const auto r = glm::sqrt(u());
-        const auto t = 2_f * Pi * u();
-        const auto x = r * glm::cos(t);
-        const auto y = r * glm::sin(t);
-        return { x, y, glm::sqrt(glm::max(0_f, 1_f-x*x-y*y)) };
-    }
 };
 
 // ----------------------------------------------------------------------------
@@ -210,6 +202,33 @@ static std::tuple<Vec3, Vec3> orthonormalBasis(Vec3 n) {
 template <typename T>
 static T mixBarycentric(T a, T b, T c, Vec2 uv) {
     return a * (1_f - uv.x - uv.y) + b * uv.x + c * uv.y;
+}
+
+/*!
+    \brief Reflected direction.
+*/
+Vec3 reflection(Vec3 w, Vec3 n) {
+    return 2_f * dot(w, n) * n - w;
+}
+
+/*!
+    \brief Refracted direction.
+*/
+std::optional<Vec3> refraction(Vec3 wi, Vec3 n, Float eta) {
+    const auto t = dot(wi, n);
+    const auto t2 = 1_f - eta*eta*(1_f-t*t);
+    return t2 > 0_f ? eta*(n*t-wi)-n*glm::sqrt(t2) : std::optional<Vec3>{};
+}
+
+/*!
+    \brief Cosine-weighted direction sampling.
+*/
+Vec3 sampleCosineWeighted(Rng& rng) {
+    const auto r = glm::sqrt(rng.u());
+    const auto t = 2_f * Pi * rng.u();
+    const auto x = r * glm::cos(t);
+    const auto y = r * glm::sin(t);
+    return { x, y, glm::sqrt(glm::max(0_f, 1_f - x * x - y * y)) };
 }
 
 LM_NAMESPACE_END(math)

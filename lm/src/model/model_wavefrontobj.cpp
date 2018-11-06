@@ -41,7 +41,7 @@ struct MTLMatParams {
     Vec3 Kd;            // Diffuse reflectance
     Vec3 Ks;            // Specular reflectance
     Vec3 Ke;            // Luminance
-    int mapKd;          // Texture index for Kd
+    int mapKd = -1;     // Texture index for Kd
     Float Ni;           // Index of refraction
     Float Ns;           // Specular exponent for phong shading
     Float an;           // Anisotropy
@@ -302,12 +302,56 @@ public:
 
 class Material_WavefrontObj : public Material {
 private:
+    // Material parameters of MLT file
     MTLMatParams objmat_;
+
+    // Underlying materials
+    Ptr<Material> diffuse_;  // Diffuse
+    Ptr<Material> glossy_;   // Glossy
+    Ptr<Material> glass_;    // Glass (Fresnel reflection/refraction)
+    Ptr<Material> mirror_;   // Mirror (perfect speculuar reflection)
+    Ptr<Material> mask_;     // Transparency mask
 
 public:
     Material_WavefrontObj(const MTLMatParams& m) : objmat_(m) {}
     
 public:
+    virtual Component* underlyingAt(int index) const {
+        // Forward to parent
+        return parent()->underlyingAt(index);
+    }
+
+    virtual bool construct(const Json& prop) override {
+        if (objmat_.illum == 7) {
+            // Glass material
+            glass_ = comp::create<Material>("material::glass", this,
+                {{"Ni", objmat_.Ni}});
+        }
+        else if (objmat_.illum == 5) {
+            // Mirror material
+            mirror_ = comp::create<Material>("material::mirror", this);
+        }
+        else {
+            // Diffuse material
+            diffuse_ = comp::create<Material>("material::diffuse", this, {
+                {"Kd", castToJson(objmat_.Kd)},
+                {"mapKd", objmat_.mapKd < 0 ? Json{} : objmat_.mapKd}
+            });
+
+            // Glossy material
+            const auto r = 2_f / (2_f + objmat_.Ns);
+            const auto as = std::sqrt(1_f - objmat_.an * .9_f);
+            glossy_ = comp::create<Material>("material::glossy", this, {
+                {"Ks", objmat_.Ks},
+                {"ax", std::max(1e-3_f, r / as)},
+                {"ay", std::max(1e-3_f, r * as)}
+            });
+
+            // Transparency mask
+            mask_ = comp::create<Material>("material::mask", this);
+        }
+    }
+
     virtual bool isSpecular() const override {
         
     }

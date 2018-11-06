@@ -4,7 +4,7 @@
 */
 
 #include <pch.h>
-#include <lm/logger.h>
+#include <lm/detail/logger_context.h>
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/stdout_color_sinks.h>

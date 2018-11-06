@@ -68,7 +68,6 @@ set(_PROJECT_NAME liblm)
 set(_HEADER_FILES 
     "${_INCLUDE_DIR}/lm.h"
     "${_INCLUDE_DIR}/user.h"
-    "${_INCLUDE_DIR}/json.h"
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/parallel.h"
     "${_INCLUDE_DIR}/math.h"
@@ -83,9 +82,12 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/film.h"
     "${_INCLUDE_DIR}/model.h"
     "${_INCLUDE_DIR}/renderer.h"
+    "${_INCLUDE_DIR}/detail/json.h"
     "${_INCLUDE_DIR}/detail/common.h"
     "${_INCLUDE_DIR}/detail/forward.h"
-    "${_INCLUDE_DIR}/detail/component.h")
+    "${_INCLUDE_DIR}/detail/component.h"
+    "${_INCLUDE_DIR}/detail/logger_context.h"
+    "${_INCLUDE_DIR}/detail/parallel_context.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/user.cpp"
@@ -99,6 +101,11 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/mesh/mesh_raw.cpp"
     "${_SOURCE_DIR}/camera/camera_pinhole.cpp"
     "${_SOURCE_DIR}/texture/texture_bitmap.cpp"
+    "${_SOURCE_DIR}/material/material_diffuse.cpp"
+    "${_SOURCE_DIR}/material/material_glass.cpp"
+    "${_SOURCE_DIR}/material/material_glossy.cpp"
+    "${_SOURCE_DIR}/material/material_mirror.cpp"
+    "${_SOURCE_DIR}/material/material_mask.cpp"
     "${_SOURCE_DIR}/film/film_bitmap.cpp"
     "${_SOURCE_DIR}/accel/accel_sahbvh.cpp"
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
