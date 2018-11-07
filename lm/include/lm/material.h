@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "detail/component.h"
+#include "component.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -27,7 +27,17 @@ public:
     /*!
         \brief Evaluate reflectance.
     */
-    virtual Vec3 reflectance(const SurfacePoint& sp) const { return {}; }
+    virtual Vec3 reflectance(const SurfacePoint& sp) const { LM_UNREACHABLE_RETURN(); }
+
+    /*!
+        \brief Evaluate pdf in projected solid angle measure.
+    */
+    virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const { LM_UNREACHABLE_RETURN(); }
+
+    /*!
+        \brief Evaluate BSDF.
+    */
+    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const { LM_UNREACHABLE_RETURN(); }
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

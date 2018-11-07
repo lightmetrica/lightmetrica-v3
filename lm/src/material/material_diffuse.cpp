@@ -42,6 +42,18 @@ public:
     virtual Vec3 reflectance(const SurfacePoint& sp) const {
         return mapKd_ ? mapKd_->eval(sp.t) : Kd_;
     }
+
+    virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {
+        return sp.opposite(wi, wo) ? 0_f : 1_f / Pi;
+    }
+
+    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {
+        if (sp.opposite(wi, wo)) {
+            return {};
+        }
+        const auto a = mapKd_ ? mapKd_->evalAlpha(sp.t) : 1_f;
+        return (mapKd_ ? mapKd_->eval(sp.t) : Kd_) * (a / Pi);
+    }
 };
 
 LM_COMP_REG_IMPL(Material_Diffuse, "material::diffuse");

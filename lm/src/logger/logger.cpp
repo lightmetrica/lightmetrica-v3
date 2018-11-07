@@ -4,7 +4,7 @@
 */
 
 #include <pch.h>
-#include <lm/detail/logger_context.h>
+#include <lm//logger_context.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::log)
 

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "detail/component.h"
+#include "component.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -14,7 +14,15 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Light : public Component {
 public:
+    /*!
+        \brief Check if the light is specular.
+    */
+    virtual bool isSpecular(const SurfacePoint& sp) const = 0;
 
+    /*!
+        \brief Evaluate Luminance.
+    */
+    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

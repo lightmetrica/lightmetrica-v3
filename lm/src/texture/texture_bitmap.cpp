@@ -5,16 +5,129 @@
 
 #include <pch.h>
 #include <lm/texture.h>
+#include <lm/logger.h>
+
+#if LM_COMPILER_MSVC
+int bswap(int x) { return _byteswap_ulong(x); }
+#elif LM_COMPILER_GCC
+int bswap(int x) { return __builtin_bswap32(x); }
+#endif
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+class Bitmap_PXM {
+private:
+    int w;                  // Width of the texture
+    int h;                  // Height of the texture
+    std::vector<Float> cs;  // Colors
+    std::vector<Float> as;  // Alphas
+    
+private:
+    // Calculate pixel coordinate of the vertically-flipped image
+    int flip(int i) {
+        const int j = i / 3;
+        const int x = j % w;
+        const int y = j / w;
+        return 3*((h-y-1)*w + x) + i%3;
+    }
+
+    // Post procses a pixel for ppm textures
+    Float postprocess(int i, Float e, std::vector<uint8_t>& ct) {
+        // Gamma expansion
+        return std::pow(Float(ct[flip(i)]) / e, 2.2_f);
+    }
+
+    // Post procses a pixel for pmf textures
+    Float postprocess(int i, Float e, std::vector<float>& ct) {
+        if (e < 0) {
+            return ct[flip(i)];
+        }
+        auto m = bswap(*(int32_t *)&ct[flip(i)]);
+        return *(float *)&m;
+    }
+
+    // Load a ppm or a pfm texture
+    template <typename T>
+    void loadpxm(std::vector<Float>& c, const std::string& p) {
+        LM_INFO("Loading texture [path='{}']", p);
+        static std::vector<T> ct;
+        FILE *f;
+        fopen_s(&f, p.c_str(), "rb");
+        if (!f) {
+            return;
+        }
+        double e;
+        fscanf_s(f, "%*s %d %d %lf%*c", &w, &h, &e);
+        const int sz = w * h * 3;
+        ct.assign(sz, 0);
+        c.assign(sz, 0);
+        fread_s(ct.data(), sz*sizeof(T), sizeof(T), sz, f);
+        for (int i = 0; i < sz; i++) {
+            c[i] = postprocess(i, Float(e), ct);
+        }
+        std::fclose(f);
+    }
+
+public:
+    // Load pfm texture
+    void loadpfm(const std::string& p) {
+        loadpxm<float>(cs, p);
+    }
+
+    // Load ppm texture
+    void loadppm(const std::string& p) {
+        auto b = std::filesystem::path(p);
+        auto pc = b.replace_extension(".ppm").string();
+        auto pa = (b.parent_path() / std::filesystem::path(b.stem().string() + "_alpha.ppm")).string();
+        loadpxm<uint8_t>(cs, pc);
+        loadpxm<uint8_t>(as, pa);
+    }
+
+    // Evaluate the texture on the given pixel coordinate
+    Vec3 eval(Vec2 t) const {
+        const auto u = t.x - floor(t.x);
+        const auto v = t.y - floor(t.y);
+        const int x = std::clamp(int(u * w), 0, w - 1);
+        const int y = std::clamp(int(v * h), 0, h - 1);
+        const int i = w * y + x;
+        return { cs[3*i], cs[3*i+1], cs[3*i+2] };
+    }
+
+    Float evalAlpha(Vec2 t) const {
+        const auto u = t.x - floor(t.x);
+        const auto v = t.y - floor(t.y);
+        const int x = std::clamp(int(u * w), 0, w - 1);
+        const int y = std::clamp(int(v * h), 0, h - 1);
+        const int i = w * y + x;
+        return as[3*i];
+    }
+
+    bool hasAlpha() const {
+        return !as.empty();
+    }
+};
+
 class Texture_Bitmap final : public Texture {
+private:
+    Bitmap_PXM bitmap_;
+
 public:
     virtual bool construct(const Json& prop) override {
-        // TODO
+        bitmap_.loadppm(prop["path"]);
         return true;
     }
 
+    virtual Vec3 eval(Vec2 t) const override {
+        return bitmap_.eval(t);
+    }
+
+    virtual Float evalAlpha(Vec2 t) const override {
+        return bitmap_.evalAlpha(t);
+    }
+
+    virtual bool hasAlpha() const override {
+        return bitmap_.hasAlpha();
+    }
 };
 
 LM_COMP_REG_IMPL(Texture_Bitmap, "texture::bitmap");

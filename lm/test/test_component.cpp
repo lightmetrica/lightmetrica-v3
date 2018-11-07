@@ -63,6 +63,8 @@ LM_COMP_REG_IMPL(C1, "test::comp::c1");
 // ----------------------------------------------------------------------------
 
 TEST_CASE("Component") {
+    lm::log::ScopedInit init;
+
     SUBCASE("Simple interface") {
         // _begin_snippet: A_impl
         const auto p = lm::comp::create<A>("test::comp::a1", nullptr);
@@ -189,6 +191,8 @@ Ptr<T> create(const char* name, Args... opt) {
 }
 
 TEST_CASE("Python component plugin") {
+    lm::log::ScopedInit init;
+
     Py_SetPythonHome(LM_TEST_PYTHON_ROOT);
     py::scoped_interpreter guard{};
   
@@ -418,6 +422,8 @@ LM_COMP_REG_IMPL(E2, "test::comp::e2");
 // ----------------------------------------------------------------------------
 
 TEST_CASE("Construction") {
+    lm::log::ScopedInit init;
+
     SUBCASE("Simple") {
         auto p = lm::comp::create<D>("test::comp::d1", nullptr, { {"v1", 42}, {"v2", 43} });
         REQUIRE(p);
@@ -493,6 +499,8 @@ PYBIND11_EMBEDDED_MODULE(test_comp_2, m) {
 }
 
 TEST_CASE("Construction (python)") {
+    lm::log::ScopedInit init;
+
     Py_SetPythonHome(LM_TEST_PYTHON_ROOT);
     py::scoped_interpreter guard{};
 
@@ -603,6 +611,8 @@ LM_COMP_REG_IMPL(F2, "test::comp::f2");
 // ----------------------------------------------------------------------------
 
 TEST_CASE("Serialization") {
+    lm::log::ScopedInit init;
+
     SUBCASE("Simple") {
         // Create instance
         const auto p = lm::comp::create<F>("test::comp::f1", nullptr, { {"v", 42} });
@@ -660,6 +670,8 @@ LM_COMP_REG_IMPL(G1<double>, "test::comp::g1");
 // ----------------------------------------------------------------------------
 
 TEST_CASE_TEMPLATE("Templated component", T, int, double) {
+    lm::log::ScopedInit init;
+
     SUBCASE("Simple") {
         const auto p = lm::comp::create<G<T>>("test::comp::g1", nullptr);
         REQUIRE(p);

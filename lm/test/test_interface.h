@@ -3,7 +3,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <lm/detail/component.h>
+#include <lm//component.h>
 #include <lm/json.h>
 #include <lm/math.h>
 #include <iostream>

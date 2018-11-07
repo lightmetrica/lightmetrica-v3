@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "detail/pylm_component.h"
-#include "detail/pylm_json.h"
+#include "pylm_component.h"
+#include "pylm_json.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(py)

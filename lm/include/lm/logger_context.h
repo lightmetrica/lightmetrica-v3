@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../logger.h"
+#include "logger.h"
 #include "component.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

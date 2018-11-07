@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../parallel.h"
+#include "parallel.h"
 #include "component.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

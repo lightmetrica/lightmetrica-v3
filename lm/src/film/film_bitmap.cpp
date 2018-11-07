@@ -19,7 +19,7 @@ public:
     virtual bool construct(const Json& prop) override {
         w_ = prop["w"];
         h_ = prop["h"];
-        data_.assign(w_ * h_, Vec3());
+        data_.assign(w_ * h_, Vec3(0_f));
         return true;
     }
 

@@ -58,11 +58,14 @@ public:
         if (!model) {
             return false;
         }
-        model->createPrimitives([&](Component* mesh, Component* material) {
+        model->createPrimitives([&](Component* mesh, Component* material, Component* light) {
             primitives_.push_back(Primitive{
-                int(primitives_.size()), transform,
-                mesh->cast<Mesh>(), material->cast<Material>(),
-                nullptr, nullptr
+                int(primitives_.size()),
+                transform,
+                dynamic_cast<Mesh*>(mesh),
+                dynamic_cast<Material*>(material),
+                dynamic_cast<Light*>(light),
+                nullptr
             });
         });
         return true;
@@ -103,7 +106,7 @@ public:
         const auto [t, uv, primitive, face] = *hit;
         const auto* mesh = primitives_.at(primitive).mesh;
         const auto p = mesh->surfacePoint(face, uv);
-        return SurfacePoint(primitive, p.p, p.n, p.t);
+        return SurfacePoint(primitive, -1, p.p, p.n, p.t);
     }
 
     // ------------------------------------------------------------------------
@@ -113,7 +116,17 @@ public:
     }
 
     virtual bool isSpecular(const SurfacePoint& sp) const override {
-        return primitives_.at(sp.primitive).material->isSpecular();
+        const auto& primitive = primitives_.at(sp.primitive);
+        if (sp.endpoint) {
+            if (primitive.light) {
+                return primitive.light->isSpecular(sp);
+            }
+            else if (primitive.camera) {
+                return primitive.camera->isSpecular(sp);
+            }
+            LM_UNREACHABLE_RETURN();
+        }
+        return primitive.material->isSpecular(sp);
     }
 
     // ------------------------------------------------------------------------
@@ -131,12 +144,15 @@ public:
         if (!rs) {
             return {};
         }
-        return RaySample(camera_, std::move(*rs));
+        return rs->asPrimitive(camera_).asEndpoint(true);
     }
 
     virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
-        // TODO
-        return {};
+        const auto& primitive = primitives_.at(sp.primitive);
+        if (!primitive.light) {
+            return {};
+        }
+        return primitive.light->eval(sp, wo);
     }
 
 private:

@@ -5,15 +5,20 @@
 
 #pragma once
 
-#include  "detail/forward.h"
+#include  "forward.h"
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <tuple>
 #include <optional>
+#include <random>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
+
+// Default floating point type
+using Float = float;
 
 // Default math types deligated to glm library
 using Vec2 = glm::tvec2<Float>;
@@ -205,17 +210,24 @@ static T mixBarycentric(T a, T b, T c, Vec2 uv) {
 }
 
 /*!
+    \brief Compute square.
+*/
+static Float sq(Float v) {
+    return v * v;
+}
+
+/*!
     \brief Reflected direction.
 */
-Vec3 reflection(Vec3 w, Vec3 n) {
-    return 2_f * dot(w, n) * n - w;
+static Vec3 reflection(Vec3 w, Vec3 n) {
+    return 2_f * glm::dot(w, n) * n - w;
 }
 
 /*!
     \brief Refracted direction.
 */
-std::optional<Vec3> refraction(Vec3 wi, Vec3 n, Float eta) {
-    const auto t = dot(wi, n);
+static std::optional<Vec3> refraction(Vec3 wi, Vec3 n, Float eta) {
+    const auto t = glm::dot(wi, n);
     const auto t2 = 1_f - eta*eta*(1_f-t*t);
     return t2 > 0_f ? eta*(n*t-wi)-n*glm::sqrt(t2) : std::optional<Vec3>{};
 }
@@ -223,12 +235,12 @@ std::optional<Vec3> refraction(Vec3 wi, Vec3 n, Float eta) {
 /*!
     \brief Cosine-weighted direction sampling.
 */
-Vec3 sampleCosineWeighted(Rng& rng) {
-    const auto r = glm::sqrt(rng.u());
+static Vec3 sampleCosineWeighted(Rng& rng) {
+    const auto r = std::sqrt(rng.u());
     const auto t = 2_f * Pi * rng.u();
-    const auto x = r * glm::cos(t);
-    const auto y = r * glm::sin(t);
-    return { x, y, glm::sqrt(glm::max(0_f, 1_f - x * x - y * y)) };
+    const auto x = r * std::cos(t);
+    const auto y = r * std::sin(t);
+    return { x, y, std::sqrt(std::max(0_f, 1_f - x * x - y * y)) };
 }
 
 LM_NAMESPACE_END(math)

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "detail/forward.h"
+#include "json.h"
 #include <functional>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

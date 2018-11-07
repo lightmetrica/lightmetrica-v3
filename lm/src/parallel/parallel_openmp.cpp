@@ -4,7 +4,7 @@
 */
 
 #include <pch.h>
-#include <lm/parallel.h>
+#include <lm/parallel_context.h>
 #include <lm/logger.h>
 #include <omp.h>
 
@@ -37,7 +37,7 @@ public:
     }
 
     virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc) const override {
-        #pragma omp parallel for
+        #pragma omp parallel for schedule(dynamic, 1)
         for (long long i = 0; i < numSamples; i++) {
             processFunc(i, omp_get_thread_num());
         }

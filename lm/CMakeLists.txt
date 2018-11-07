@@ -24,7 +24,7 @@ find_package(OpenMP REQUIRED)
 
 # nlohmann-json
 option(JSON_BuildTests "" OFF)
-option(JSON_MultipleHeaders "" ON)
+option(JSON_MultipleHeaders "" OFF)
 add_subdirectory(external/json)
 
 # glm
@@ -82,12 +82,12 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/film.h"
     "${_INCLUDE_DIR}/model.h"
     "${_INCLUDE_DIR}/renderer.h"
-    "${_INCLUDE_DIR}/detail/json.h"
-    "${_INCLUDE_DIR}/detail/common.h"
-    "${_INCLUDE_DIR}/detail/forward.h"
-    "${_INCLUDE_DIR}/detail/component.h"
-    "${_INCLUDE_DIR}/detail/logger_context.h"
-    "${_INCLUDE_DIR}/detail/parallel_context.h")
+    "${_INCLUDE_DIR}/json.h"
+    "${_INCLUDE_DIR}/common.h"
+    "${_INCLUDE_DIR}/forward.h"
+    "${_INCLUDE_DIR}/component.h"
+    "${_INCLUDE_DIR}/logger_context.h"
+    "${_INCLUDE_DIR}/parallel_context.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/user.cpp"
@@ -100,6 +100,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
     "${_SOURCE_DIR}/mesh/mesh_raw.cpp"
     "${_SOURCE_DIR}/camera/camera_pinhole.cpp"
+    "${_SOURCE_DIR}/light/light_area.cpp"
     "${_SOURCE_DIR}/texture/texture_bitmap.cpp"
     "${_SOURCE_DIR}/material/material_diffuse.cpp"
     "${_SOURCE_DIR}/material/material_glass.cpp"
@@ -135,8 +136,8 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES
 set(_PROJECT_NAME pylm)
 set(_HEADER_FILES 
     "${_INCLUDE_DIR}/pylm.h"
-    "${_INCLUDE_DIR}/detail/pylm_component.h"
-    "${_INCLUDE_DIR}/detail/pylm_json.h")
+    "${_INCLUDE_DIR}/pylm_component.h"
+    "${_INCLUDE_DIR}/pylm_json.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/pylm.cpp")
 add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES})

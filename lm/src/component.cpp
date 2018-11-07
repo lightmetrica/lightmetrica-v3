@@ -4,7 +4,7 @@
 */
 
 #include <pch.h>
-#include <lm/detail/component.h>
+#include <lm/component.h>
 #include <lm/logger.h>
 
 #if LM_PLATFORM_WINDOWS

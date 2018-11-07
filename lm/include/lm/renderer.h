@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "detail/component.h"
-#include "detail/forward.h"
+#include "component.h"
+#include "forward.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

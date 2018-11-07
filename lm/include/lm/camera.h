@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "detail/component.h"
+#include "component.h"
 #include "math.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -15,6 +15,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Camera : public Component {
 public:
+    /*!
+        \brief Check if the camera is specular.
+    */
+    virtual bool isSpecular(const SurfacePoint& sp) const = 0;
+
     /*!
         \brief Generate a primary ray with the corresponding raster position.
     */

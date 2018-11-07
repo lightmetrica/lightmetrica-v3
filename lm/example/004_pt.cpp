@@ -10,11 +10,11 @@ int main(int argc, char** argv) {
     lm::init({{"numThreads", -1}});
 
     // Parse command line arguments
-    const auto opt = lm::parsePositionalArgs<11>(argc, argv, R"({{
+    const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{
         "obj": "{}",
         "out": "{}",
-        "spp": "{}",
-        "len": "{}",
+        "spp": {},
+        "len": {},
         "w": {},
         "h": {},
         "eye": [{},{},{}],
@@ -34,11 +34,11 @@ int main(int argc, char** argv) {
 
     // Pinhole camera
     lm::asset("camera1", "camera::pinhole", {
+        {"film", "film1"},
         {"position", opt["eye"]},
         {"center", opt["lookat"]},
         {"up", {0,1,0}},
-        {"vfov", opt["vfov"]},
-        {"aspect", "film1"}
+        {"vfov", opt["vfov"]}
     });
 
     // OBJ model
@@ -59,7 +59,8 @@ int main(int argc, char** argv) {
     // Render an image
     lm::render("renderer::pt", "accel::sahbvh", {
         {"output", "film1"},
-        {"color", {0,0,0}}
+        {"spp", opt["spp"]},
+        {"maxLength", opt["len"]}
     });
 
     // Save rendered image

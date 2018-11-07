@@ -3,7 +3,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include "detail/component.h"
+#include "component.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -21,6 +21,11 @@ public:
         \brief Evaluate alpha component of the texture.
     */
     virtual Float evalAlpha(Vec2 t) const = 0;
+
+    /*!
+        \brief Check if texture has alpha component.
+    */
+    virtual bool hasAlpha() const = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

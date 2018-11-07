@@ -4,7 +4,7 @@
 */
 
 #include <pch.h>
-#include <lm/parallel.h>
+#include <lm/parallel_context.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
 

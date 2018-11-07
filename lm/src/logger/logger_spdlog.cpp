@@ -4,7 +4,7 @@
 */
 
 #include <pch.h>
-#include <lm/detail/logger_context.h>
+#include <lm//logger_context.h>
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -18,8 +18,12 @@ private:
     std::shared_ptr<spdlog::logger> stdoutLogger_;
 
 public:
+    ~LoggerContext_spdlog() {
+        spdlog::shutdown();
+    }
+
+public:
     virtual bool construct(const Json& prop) override {
-        if (stdoutLogger_) { shutdown(); }
         #if 0
         stdoutLogger_ = spdlog::stdout_color_mt("lm_stdout");
         #else

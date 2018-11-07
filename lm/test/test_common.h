@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <lm/detail/common.h>
+#include <lm//common.h>
 #include <lm/logger.h>
 #include <functional>
 #include <doctest.h>

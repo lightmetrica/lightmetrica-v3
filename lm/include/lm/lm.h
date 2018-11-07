@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "detail/component.h"
+#include "component.h"
 #include "json.h"
 #include "user.h"
 #include "logger.h"

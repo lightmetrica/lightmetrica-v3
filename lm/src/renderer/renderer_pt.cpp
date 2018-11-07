@@ -8,7 +8,6 @@
 #include <lm/scene.h>
 #include <lm/film.h>
 #include <lm/parallel.h>
-#include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -33,7 +32,7 @@ public:
 
     virtual void render(const Scene& scene) const override {
         const auto [w, h] = film_->size();
-        parallel::foreach(w*h, [&](long long index, int threadId) {
+        parallel::foreach(w*h, [&](long long index, int threadId) -> void {
             // Per-thread random number generator
             thread_local Rng rng(rngSeed_ + threadId);
 
@@ -42,13 +41,13 @@ public:
             const int y = int(index / w);
 
             // Estimate pixel contribution
-            Vec3 L;
+            Vec3 L(0_f);
             for (long long i = 0; i < spp_; i++) {
                 // Path throughput
                 Vec3 throughput(1_f);
 
                 // Initial sampleRay function
-                auto sampleRay = [&]() {
+                std::function<std::optional<RaySample>()> sampleRay = [&]() {
                     Float dx = 1_f/w, dy = 1_f/h;
                     return scene.samplePrimaryRay(rng, {dx*x, dy*y, dx, dy});
                 };
@@ -71,7 +70,7 @@ public:
                     }
 
                     // Accumulate contribution from light
-                    if (scene.isLight(*hit) && !scene.isSpecular(s->sp)) {
+                    if (scene.isLight(*hit)) {
                         L += throughput * scene.evalContrbEndpoint(*hit, -s->wo);
                     }
 
@@ -80,16 +79,17 @@ public:
                         const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));
                         throughput /= 1_f - q;
                         if (rng.u() < q) {
-                            return false;
+                            break;
                         }
                     }
 
                     // Update
-                    sampleRay = [wi = -s->wo, sp = *hit]() {
+                    sampleRay = [&, wi = -s->wo, sp = *hit]() {
                         return scene.sampleRay(rng, sp, wi);
                     };
                 }
             }
+            L /= spp_;
 
             // Set color of the pixel
             film_->setPixel(x, y, L);

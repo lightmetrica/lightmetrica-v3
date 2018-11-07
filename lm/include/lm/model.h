@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "detail/component.h"
+#include "component.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -18,7 +18,7 @@ public:
     /*!
         \brief Create primitives from underlying components.
     */
-    using CreatePrimitiveFunc = std::function<void(Component* mesh, Component* material)>;
+    using CreatePrimitiveFunc = std::function<void(Component* mesh, Component* material, Component* light)>;
     virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const = 0;
 };
 

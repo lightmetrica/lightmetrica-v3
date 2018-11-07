@@ -25,17 +25,21 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
-        film_ = parent()->underlying<Film>(prop["aspect"]);      // Film
+        film_ = parent()->underlying<Film>(prop["film"]);        // Film
+        aspect_ = film_->aspectRatio();                          // Aspect ratio
         position_ = castFromJson<Vec3>(prop["position"]);        // Camera position
         const auto center = castFromJson<Vec3>(prop["center"]);  // Look-at position
         const auto up = castFromJson<Vec3>(prop["up"]);          // Up vector
         const Float fv = prop["vfov"];                           // Vertical FoV
-        tf_ = tan(fv * Pi / 180_f * .5_f);  // Precompute half of screen height
-        // Compute basis
-        w_ = glm::normalize(position_ - center);
+        tf_ = tan(fv * Pi / 180_f * .5_f);                       // Precompute half of screen height
+        w_ = glm::normalize(position_ - center);                 // Compute basis
         u_ = glm::normalize(glm::cross(up, w_));
         v_ = cross(w_, u_);
         return true;
+    }
+
+    virtual bool isSpecular(const SurfacePoint& sp) const override {
+        return false;
     }
 
     virtual Ray primaryRay(Vec2 rp) const override {
@@ -45,7 +49,7 @@ public:
     }
 
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
-        const auto [x, y, w, h] = window;
+        const auto [x, y, w, h] = window.data.data;
         return RaySample(
             SurfacePoint(position_),
             primaryRay({x+w*rng.u(), y+h*rng.u()}).d,
