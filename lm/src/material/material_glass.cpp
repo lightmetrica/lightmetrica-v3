@@ -19,7 +19,7 @@ public:
         return true;
     }
 
-    virtual bool isSpecular() const override {
+    virtual bool isSpecular(const SurfacePoint& sp) const override {
         return true;
     }
 

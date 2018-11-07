@@ -16,13 +16,13 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        Ks_ = prop["Ks"];
+        Ks_ = castFromJson<Vec3>(prop["Ks"]);
         ax_ = prop["ax"];
         ay_ = prop["ay"];
         return true;
     }
 
-    virtual bool isSpecular() const override {
+    virtual bool isSpecular(const SurfacePoint& sp) const override {
         return false;
     }
 
@@ -40,6 +40,10 @@ public:
             wo,
             eval(sp, wi, wo) / pdf(sp, wi, wo)
         );
+    }
+
+    virtual Vec3 reflectance(const SurfacePoint& sp) const {
+        return Ks_;
     }
 };
 

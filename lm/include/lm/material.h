@@ -17,12 +17,17 @@ public:
     /*!
         \brief Check if the material is specular.
     */
-    virtual bool isSpecular() const = 0;
+    virtual bool isSpecular(const SurfacePoint& sp) const = 0;
 
     /*!
         \brief Sample a ray given surface point and incident direction.
     */
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const = 0;
+
+    /*!
+        \brief Evaluate reflectance.
+    */
+    virtual Vec3 reflectance(const SurfacePoint& sp) const { return {}; }
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

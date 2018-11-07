@@ -21,8 +21,9 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     the primitive associated with the point.
 */
 struct SurfacePoint {
-    bool degenerated;   // Surface is degenerated (e.g., point light)
     int primitive;      // Primitive index
+    int comp;           // Primitive component index
+    bool degenerated;   // Surface is degenerated (e.g., point light)
     Vec3 p;             // Position
     Vec3 n;             // Normal
     Vec2 t;             // Texture coordinates
@@ -34,13 +35,16 @@ struct SurfacePoint {
         : degenerated(true), p(p) {}
 
     SurfacePoint(Vec3 p, Vec3 n, Vec2 t)
-        : SurfacePoint(-1, p, n, t) {}
+        : SurfacePoint(-1, -1, p, n, t) {}
 
-    SurfacePoint(int primitive, Vec3 p, Vec3 n, Vec2 t)
-        : degenerated(false), primitive(primitive), p(p), n(n), t(t)
+    SurfacePoint(int primitive, int comp, Vec3 p, Vec3 n, Vec2 t)
+        : degenerated(false), primitive(primitive), comp(comp), p(p), n(n), t(t)
     {
         std::tie(u, v) = math::orthonormalBasis(n);
     }
+
+    SurfacePoint(SurfacePoint&& sp, int primiopitive)
+        : degenerated(sp.degenerated), primitive(primitive), comp(comp), p(p), n(n), t(t) {}
 
     /*!
         \brief Return true if wi and wo is same direction according to the normal n.
@@ -77,16 +81,9 @@ struct RaySample {
     SurfacePoint sp;  // Sampled point
     Vec3 wo;          // Sampled direction
     Vec3 weight;      // Contribution divided by probability
-    int comp = 0;     // Sampled component index
 
     RaySample(const SurfacePoint& sp, Vec3 wo, Vec3 weight)
         : sp(sp), wo(wo), weight(weight) {}
-
-    RaySample(int primitive, RaySample&& rs)
-        : sp(rs.sp), wo(rs.wo), weight(rs.weight), comp(rs.comp)
-    {
-        sp.primitive = primitive;
-    }
 
     // Get a ray from the sample
     Ray ray() const {

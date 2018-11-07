@@ -9,6 +9,8 @@
 #include <lm/material.h>
 #include <lm/texture.h>
 #include <lm/logger.h>
+#include <lm/film.h>
+#include <lm/scene.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -305,59 +307,139 @@ private:
     // Material parameters of MLT file
     MTLMatParams objmat_;
 
-    // Underlying materials
-    Ptr<Material> diffuse_;  // Diffuse
-    Ptr<Material> glossy_;   // Glossy
-    Ptr<Material> glass_;    // Glass (Fresnel reflection/refraction)
-    Ptr<Material> mirror_;   // Mirror (perfect speculuar reflection)
-    Ptr<Material> mask_;     // Transparency mask
+    // Underlying material components
+    std::vector<Ptr<Material>> materials_;
+    
+    // Component indices
+    int diffuse_ = -1;
+    int glossy_ = -1;
+    int glass_ = -1;
+    int mirror_ = -1;
+    int mask_ = -1;
+    
+    // Texture for the alpha mask
+    const Texture* maskTex_ = nullptr; 
 
 public:
     Material_WavefrontObj(const MTLMatParams& m) : objmat_(m) {}
     
 public:
     virtual Component* underlyingAt(int index) const {
-        // Forward to parent
+        // Deligate to parent component
         return parent()->underlyingAt(index);
     }
 
     virtual bool construct(const Json& prop) override {
+        // Make parent component as a parent for the newly created components
         if (objmat_.illum == 7) {
             // Glass material
-            glass_ = comp::create<Material>("material::glass", this,
-                {{"Ni", objmat_.Ni}});
+            auto p = comp::create<Material>("material::glass", this, {
+                {"Ni", objmat_.Ni}
+            });
+            if (!p) {
+                return false;
+            }
+            glass_ = int(materials_.size());
+            materials_.push_back(std::move(p));
         }
         else if (objmat_.illum == 5) {
             // Mirror material
-            mirror_ = comp::create<Material>("material::mirror", this);
+            auto p = comp::create<Material>("material::mirror", this);
+            if (!p) {
+                return false;
+            }
+            mirror_ = int(materials_.size());
+            materials_.push_back(std::move(p));
         }
         else {
             // Diffuse material
-            diffuse_ = comp::create<Material>("material::diffuse", this, {
+            auto diffuse = comp::create<Material>("material::diffuse", this, {
                 {"Kd", castToJson(objmat_.Kd)},
                 {"mapKd", objmat_.mapKd < 0 ? Json{} : objmat_.mapKd}
             });
-
+            if (!diffuse) {
+                return false;
+            }
+            diffuse_ = int(materials_.size());
+            materials_.push_back(std::move(diffuse));
+            
             // Glossy material
             const auto r = 2_f / (2_f + objmat_.Ns);
             const auto as = std::sqrt(1_f - objmat_.an * .9_f);
-            glossy_ = comp::create<Material>("material::glossy", this, {
+            auto glossy = comp::create<Material>("material::glossy", this, {
                 {"Ks", objmat_.Ks},
                 {"ax", std::max(1e-3_f, r / as)},
                 {"ay", std::max(1e-3_f, r * as)}
             });
+            if (!glossy) {
+                return false;
+            }
+            glossy_ = int(materials_.size());
+            materials_.push_back(std::move(glossy));
 
-            // Transparency mask
-            mask_ = comp::create<Material>("material::mask", this);
+            // Mask texture
+            if (objmat_.mapKd >= 0) {
+                auto mask = comp::create<Material>("material::mask", this);
+                maskTex_ = parent()->underlyingAt<Texture>(objmat_.mapKd);
+                if (!mask || !maskTex_) {
+                    return false;
+                }
+                mask_ = int(materials_.size());
+                materials_.push_back(std::move(mask));
+            }
         }
+        return true;
     }
 
-    virtual bool isSpecular() const override {
-        
+    virtual bool isSpecular(const SurfacePoint& sp) const override {
+        return materials_.at(sp.comp)->isSpecular(sp);
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
-        
+        if (glass_ >= 0 || mirror_ >= 0) {
+            // Glass or mirror
+            int comp = mirror_ < 0 ? glass_ : mirror_;
+            auto s = materials_.at(comp)->sampleRay(rng, sp, wi);
+            if (!s) {
+                return {};
+            }
+            return RaySample(sp.primitive, comp, std::move(*s));
+        }
+        else {
+            // Diffuse or glossy or mask
+            const auto* diffuse = materials_.at(diffuse_).get();
+            const auto* glossy = materials_.at(glossy_).get();
+            const auto wd = [&]() {
+                const auto wd = glm::compMax(diffuse->reflectance(sp));
+                const auto ws = glm::compMax(glossy->reflectance(sp));
+                return wd == 0_f && ws == 0_f ? 1_f : wd/(wd + ws);
+            }();
+            if (rng.u() < wd) {
+                if (maskTex_ && rng.u() > maskTex_->evalAlpha(sp.t)) {
+                    // Mask
+                    const auto* mask = materials_.at(mask_).get();
+                    return RaySample(sp.primitive, mask_, *mask->sampleRay(rng, sp, wi));
+                }
+                else {
+                    // Diffuse
+                    auto s = diffuse->sampleRay(rng, sp, wi);
+                    if (!s) {
+                        return {};
+                    }
+                    return RaySample(sp.primitive, diffuse_, std::move(*s));
+                }
+            }
+            else {
+                // Glossy
+                auto s = glossy->sampleRay(rng, sp, wi);
+                if (!s) {
+                    return {};
+                }
+                return RaySample(sp.primitive, glossy_, std::move(*s));
+            }
+        }
+        LM_UNREACHABLE();
+        return {};
     }
 };
 
@@ -367,30 +449,30 @@ class Model_WavefrontObj : public Model {
 private:
     // Surface geometry
     OBJSurfaceGeometry geo_;
-    // Underlying meshes. The instances are directly created instead of using comp::create.
-    std::vector<Ptr<Mesh_WavefrontObj>> meshes_;
-    // Underlying materials
-    std::vector<Ptr<Material_WavefrontObj>> materials_;
-    // Underlying textures
-    std::vector<Ptr<Texture>> textures_;
+    // Underlying assets
+    std::vector<Ptr<Component>> assets_;
     // Mesh group which assocites a mesh and a material
     std::vector<std::tuple<int, int>> groups_;
 
 public:
+    virtual Component* underlyingAt(int index) const {
+        return assets_.at(index).get();
+    }
+
     virtual bool construct(const Json& prop) override {
         WavefrontOBJParser parser;
         parser.parse(prop["path"], geo_,
             // Process mesh
             [&](const std::vector<OBJMeshFaceIndex>& fs, int materialIndex) -> std::optional<int> {
                 auto mesh = comp::detail::createDirect<Mesh_WavefrontObj>(this, geo_, fs);
-                groups_.push_back({int(meshes_.size()), materialIndex});
-                meshes_.push_back(std::move(mesh));
+                groups_.push_back({int(assets_.size()), materialIndex});
+                assets_.push_back(std::move(mesh));
                 return true;
             },
             // Process material
             [&](const MTLMatParams& m) -> bool {
                 auto mat = comp::detail::createDirect<Material_WavefrontObj>(this, m);
-                materials_.push_back(std::move(mat));
+                assets_.push_back(std::move(mat));
                 return true;
             },
             // Process texture
@@ -399,7 +481,7 @@ public:
                 if (!texture) {
                     return false;
                 }
-                textures_.push_back(std::move(texture));
+                assets_.push_back(std::move(texture));
                 return true;
             });
         return true;
@@ -407,7 +489,7 @@ public:
     
     virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const override {
         for (auto [mesh, material] : groups_) {
-            createPrimitive(meshes_.at(mesh).get(), materials_.at(material).get());
+            createPrimitive(assets_.at(mesh).get(), assets_.at(material).get());
         }
     }
 };

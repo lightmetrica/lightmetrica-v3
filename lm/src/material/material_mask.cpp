@@ -11,7 +11,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Material_Mask : public Material {
 private:
-    virtual bool isSpecular() const override {
+    virtual bool isSpecular(const SurfacePoint& sp) const override {
         return true;
     }
 
