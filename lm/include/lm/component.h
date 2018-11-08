@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include "forward.h"
-#include "json.h"
+#include "common.h"
 #include <any>
 #include <memory>
 #include <string>

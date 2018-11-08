@@ -6,7 +6,6 @@
 #pragma once
 
 #include "component.h"
-#include "forward.h"
 #include "math.h"
 #include <variant>
 

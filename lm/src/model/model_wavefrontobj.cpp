@@ -12,6 +12,7 @@
 #include <lm/film.h>
 #include <lm/light.h>
 #include <lm/scene.h>
+#include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

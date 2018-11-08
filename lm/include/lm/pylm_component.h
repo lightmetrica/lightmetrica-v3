@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "common.h"
 #include "component.h"
 #include <pybind11/pybind11.h>
 

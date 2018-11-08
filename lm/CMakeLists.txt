@@ -69,6 +69,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/lm.h"
     "${_INCLUDE_DIR}/user.h"
     "${_INCLUDE_DIR}/logger.h"
+    "${_INCLUDE_DIR}/exception.h"
     "${_INCLUDE_DIR}/parallel.h"
     "${_INCLUDE_DIR}/math.h"
     "${_INCLUDE_DIR}/assets.h"
@@ -84,10 +85,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/renderer.h"
     "${_INCLUDE_DIR}/json.h"
     "${_INCLUDE_DIR}/common.h"
-    "${_INCLUDE_DIR}/forward.h"
-    "${_INCLUDE_DIR}/component.h"
-    "${_INCLUDE_DIR}/logger_context.h"
-    "${_INCLUDE_DIR}/parallel_context.h")
+    "${_INCLUDE_DIR}/component.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/user.cpp"
@@ -95,6 +93,8 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/scene.cpp"
     "${_SOURCE_DIR}/logger/logger.cpp"
     "${_SOURCE_DIR}/logger/logger_spdlog.cpp"
+    "${_SOURCE_DIR}/exception/exception.cpp"
+    "${_SOURCE_DIR}/exception/exception_default.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
@@ -124,6 +124,7 @@ target_include_directories(${_PROJECT_NAME}
     PRIVATE "${_PCH_DIR}")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/EHa>) # Enable SEH
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 set_target_properties(${_PROJECT_NAME} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"

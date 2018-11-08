@@ -6,6 +6,7 @@
 #include <pch.h>
 #include <lm/material.h>
 #include <lm/scene.h>
+#include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

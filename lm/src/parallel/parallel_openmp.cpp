@@ -4,7 +4,7 @@
 */
 
 #include <pch.h>
-#include <lm/parallel_context.h>
+#include <lm/parallel.h>
 #include <lm/logger.h>
 #include <omp.h>
 

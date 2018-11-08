@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include  "forward.h"
+#include  "common.h"
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
@@ -16,9 +17,6 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
-
-// Default floating point type
-using Float = float;
 
 // Default math types deligated to glm library
 using Vec2 = glm::tvec2<Float>;

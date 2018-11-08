@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "json.h"
+#include "component.h"
 #include <fmt/format.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -74,6 +74,18 @@ public:
     ~ScopedInit() { shutdown(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
+
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(detail)
+
+class LoggerContext : public Component {
+public:
+    virtual void log(LogLevel level, const char* filename, int line, const char* message) = 0;
+    virtual void updateIndentation(int n) = 0;
+};
+
+LM_NAMESPACE_END(detail)
 
 // ----------------------------------------------------------------------------
 

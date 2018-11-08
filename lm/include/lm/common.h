@@ -7,17 +7,16 @@
 
 // ----------------------------------------------------------------------------
 
-#pragma region Debug mode flag
+// Debug mode flag
 #ifndef NDEBUG
 	#define LM_DEBUG_MODE 1
 #else
 	#define LM_DEBUG_MODE 0
 #endif
-#pragma endregion
 
 // ----------------------------------------------------------------------------
 
-#pragma region Platform flag
+// Platform flag
 #ifdef _WIN32
 	#define LM_PLATFORM_WINDOWS 1
 #else
@@ -33,11 +32,10 @@
 #else
 	#define LM_PLATFORM_APPLE 0
 #endif
-#pragma endregion
 
 // ----------------------------------------------------------------------------
 
-#pragma region Compiler flag
+// Compiler flag
 #ifdef _MSC_VER
 	#define LM_COMPILER_MSVC 1
 #else
@@ -63,11 +61,10 @@
 #else
 	#define LM_COMPILER_CLANG 0
 #endif
-#pragma endregion
 
 // ----------------------------------------------------------------------------
 
-#pragma region Architecture flag
+// Architecture flag
 #if LM_COMPILER_MSVC
 	#ifdef _M_IX86
 		#define LM_ARCH_X86 1
@@ -91,11 +88,10 @@
 		#define LM_ARCH_X64 0
 	#endif
 #endif
-#pragma endregion
 
 // ----------------------------------------------------------------------------
 
-#pragma region Disable some warnings
+// Disable some warnings
 #if LM_PLATFORM_WINDOWS
 	#ifndef NOMINMAX
 		#define NOMINMAX
@@ -104,11 +100,10 @@
 		#define WIN32_LEAN_AND_MEAN
 	#endif
 #endif
-#pragma endregion
 
 // ----------------------------------------------------------------------------
 
-#pragma region Dynamic library import and export
+// Dynamic library import and export
 #if LM_COMPILER_MSVC
 	#ifdef LM_EXPORTS
 		#define LM_PUBLIC_API __declspec(dllexport)
@@ -128,7 +123,6 @@
 	#define LM_PUBLIC_API
 	#define LM_HIDDEN_API
 #endif
-#pragma endregion
 
 // ----------------------------------------------------------------------------
 
@@ -142,7 +136,7 @@
 
 // ----------------------------------------------------------------------------
 
-#pragma region Alignment
+// Alignment
 #if LM_COMPILER_MSVC
 	#define LM_ALIGN(x) __declspec(align(x))
 #elif LM_COMPILER_GCC || LM_COMPILER_CLANG
@@ -150,21 +144,19 @@
 #endif
 #define LM_ALIGN_16 LM_ALIGN(16)
 #define LM_ALIGN_32 LM_ALIGN(32)
-#pragma endregion
 
 // ----------------------------------------------------------------------------
 
-#pragma region Calling convension
+// Calling convension
 #if LM_COMPILER_MSVC
     #define LM_CDECL __cdecl
 #elif LM_COMPILER_GCC || LM_COMPILER_CLANG
     #define LM_CDECL [[gnu::cdecl]]
 #endif
-#pragma endregion
 
 // ----------------------------------------------------------------------------
 
-#pragma region Helper macros
+// Helper macros
 #define LM_TOKENPASTE(x, y) x ## y
 #define LM_TOKENPASTE2(x, y) LM_TOKENPASTE(x, y)
 #define LM_STRINGIFY(x) #x
@@ -194,11 +186,10 @@
 
 #define LM_TBA() LM_PRAGMA(error ("TBA"))
 #define LM_TBA_RUNTIME() throw std::runtime_error("TBA")
-#pragma endregion
 
 // ----------------------------------------------------------------------------
 
-#pragma region Framework namespace
+// Framework namespace
 #ifndef LM_NAMESPACE_BEGIN
     #define LM_NAMESPACE_BEGIN(name) namespace name {
 #endif
@@ -214,4 +205,47 @@
 #ifndef LM_NAMESPACE
 #define LM_NAMESPACE lm
 #endif
-#pragma endregion
+
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+// ----------------------------------------------------------------------------
+
+// Forward declarations
+class Assets;         // assets.h
+class Mesh;           // mesh.h
+class Material;       // material.h
+class Light;          // light.h
+class Camera;         // camera.h
+struct SurfacePoint;  // scene.h
+struct RaySample;
+class Scene;
+class Renderer;       // renderer.h
+LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, class Impl)  // Some detailed classes
+LM_FORWARD_DECLARE_WITH_NAMESPACE(py::detail, class Impl)
+
+// ----------------------------------------------------------------------------
+
+// Default floating point type
+using Float = float;
+
+// ----------------------------------------------------------------------------
+
+// JSON type
+#include <nlohmann/json.hpp>
+
+using Json = nlohmann::basic_json<
+    std::map,           // Object type
+    std::vector,        // Arrray type
+    std::string,        // String type
+    bool,               // Boolean type
+    std::int64_t,       // Signed integer type
+    std::uint64_t,      // Unsigned integer type
+    Float,              // Floating point type
+    std::allocator,
+    nlohmann::adl_serializer>;
+
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_END(LM_NAMESPACE)

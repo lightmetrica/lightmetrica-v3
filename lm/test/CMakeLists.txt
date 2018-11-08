@@ -29,6 +29,7 @@ set(_HEADER_FILES
 set(_SOURCE_FILES
     "main.cpp"
     "test_common.cpp"
+    "test_exception.cpp"
     "test_api.cpp"
     "test_component.cpp"
     "test_assets.cpp")
