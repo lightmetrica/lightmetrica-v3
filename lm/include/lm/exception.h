@@ -45,7 +45,7 @@ LM_PUBLIC_API void stackTrace();
 */
 class ScopedInit {
 public:
-    ScopedInit(const std::string& type = DefaultType, const Json& prop = {}) { init(DefaultType, prop); }
+    ScopedInit(const std::string& type = DefaultType, const Json& prop = {}) { init(type, prop); }
     ~ScopedInit() { shutdown(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };

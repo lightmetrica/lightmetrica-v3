@@ -121,7 +121,7 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Failed to load plugin") {
-        REQUIRE(!lm::comp::detail::loadPlugin("__missing_plugin_name__"));
+        REQUIRE(!lm::comp::detail::loadPlugin("__missing_plugin__"));
     }
 }
 

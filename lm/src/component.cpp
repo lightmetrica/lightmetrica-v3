@@ -114,7 +114,8 @@ private:
         std::string message(buffer, size);
         LocalFree(buffer);
 
-        return message;
+        // Message obtained by FormatMessage contains newline. Remove it
+        return std::regex_replace(message, std::regex("\r\n"), " ");
     }
     #endif
 

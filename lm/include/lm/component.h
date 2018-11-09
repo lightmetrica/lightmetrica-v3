@@ -107,23 +107,23 @@ public:
     /*!
         \brief Construct a component.
     */
-    virtual bool construct(const Json& prop) { return true; }
+    virtual bool construct(const Json& prop) { LM_UNUSED(prop); return true; }
     
     /*!
         \brief Deserialize a component.
     */
-    virtual void load(std::istream& stream) {}
+    virtual void load(std::istream& stream) { LM_UNUSED(stream); }
 
     /*!
         \brief Serialize a component.
     */
-    virtual void save(std::ostream& stream) const {}
+    virtual void save(std::ostream& stream) const { LM_UNUSED(stream); }
     
 public:
     /*!
         \brief Get underlying component instance.
     */
-    virtual Component* underlying(const std::string& name = "") const { return nullptr; }
+    virtual Component* underlying(const std::string& name = "") const { LM_UNUSED(name); return nullptr; }
 
     /*!
         \brief Get underlying component instance with specific interface type.
@@ -138,7 +138,7 @@ public:
     /*!
         \brief Get underlying component instance by index.
     */
-    virtual Component* underlyingAt(int index) const { return nullptr; }
+    virtual Component* underlyingAt(int index) const { LM_UNUSED(index); return nullptr; }
 
     /*!
         \brief Get underlying component instance by index with specifc interface type.
@@ -179,8 +179,9 @@ public:
     /*!
         \brief Process given function for each underlying component call.
     */
-    virtual void foreachUnderlying(
-        const std::function<void(Component* p)>& processComponent) const {}
+    virtual void foreachUnderlying(const std::function<void(Component* p)>& processComponent) const {
+        LM_UNUSED(processComponent);
+    }
 
     /*!
         \brief Process given function for each underlying component call with specific interface type. 

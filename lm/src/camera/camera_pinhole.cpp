@@ -21,6 +21,7 @@ private:
 
 public:
     virtual Component* underlying(const std::string& name) const {
+        LM_UNUSED(name);
         return film_;
     }
 

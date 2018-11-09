@@ -88,6 +88,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
+        LM_UNUSED(prop);
         return true;
     }
 

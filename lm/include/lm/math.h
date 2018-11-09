@@ -7,9 +7,13 @@
 
 #include  "common.h"
 
+#pragma warning(push)
+#pragma warning(disable:4201)  // nonstandard extension used: nameless struct/union
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
+#pragma warning(pop)
+
 #include <tuple>
 #include <optional>
 #include <random>
@@ -191,9 +195,9 @@ LM_NAMESPACE_BEGIN(math)
     \brief Compute orthogonal basis [Duff et al. 2017].
 */
 static std::tuple<Vec3, Vec3> orthonormalBasis(Vec3 n) {
-    const Float s = copysign(1_f, n.z);
-    const Float a = -1_f / (s + n.z);
-    const Float b = n.x * n.y * a;
+    const auto s = copysign(1_f, n.z);
+    const auto a = -1_f / (s + n.z);
+    const auto b = n.x * n.y * a;
     const Vec3 u(1_f + s * n.x * n.x * a, s * b, -s * n.x);
     const Vec3 v(b, s + n.y * n.y * a, -n.y);
     return { u, v };

@@ -124,7 +124,10 @@ target_include_directories(${_PROJECT_NAME}
     PRIVATE "${_PCH_DIR}")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
-target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/EHa>) # Enable SEH
+# Enable warning level 4, treat warning as errors, enable SEH
+target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHa>)
+# Enable parallel build
+target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/MP>)
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 set_target_properties(${_PROJECT_NAME} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"

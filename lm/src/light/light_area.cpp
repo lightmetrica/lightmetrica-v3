@@ -25,6 +25,7 @@ public:
         
         // Construct CDF for surface sampling
         mesh_->foreachTriangle([&](int face, Vec3 a, Vec3 b, Vec3 c) {
+            LM_UNUSED(face);
             const auto cr = cross(b - a, c - a);
             dist_.add(std::sqrt(glm::dot(cr, cr)) * .5_f);
         });
@@ -35,6 +36,7 @@ public:
     }
 
     virtual bool isSpecular(const SurfacePoint& sp) const override {
+        LM_UNUSED(sp);
         return false;
     }
 
