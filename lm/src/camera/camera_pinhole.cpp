@@ -40,6 +40,7 @@ public:
     }
 
     virtual bool isSpecular(const SurfacePoint& sp) const override {
+        LM_UNUSED(sp);
         return false;
     }
 

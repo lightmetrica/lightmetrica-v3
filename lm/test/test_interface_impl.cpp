@@ -54,7 +54,6 @@ struct TestPluginWithTemplate_ final : public TestPluginWithTemplate<T> {
         if constexpr (std::is_same_v<T, double>) {
             return 2;
         }
-        LM_UNREACHABLE_RETURN();
     }
 };
 

@@ -31,6 +31,7 @@ struct TestAsset1 final : public TestAsset {
 struct TestAsset2 final : public TestAsset {
     int v;
     virtual bool construct(const lm::Json& prop) override {
+        LM_UNUSED(prop);
         const auto* other = parent()->underlying("asset1")->cast<TestAsset>();
         v = other->f() + 1;
         return true;

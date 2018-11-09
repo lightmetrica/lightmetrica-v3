@@ -148,7 +148,7 @@ public:
 
                 // Selects a split axis and position according to SAH
                 Float b = Inf;
-                int bi, ba;
+                int bi = -1, ba = -1;
                 for (int a = 0; a < 3; a++) {
                     thread_local std::vector<Float> l(nt+1), r(nt+1);
                     st(a);
@@ -192,7 +192,9 @@ public:
 
     virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) const override {
         std::optional<Tri::Hit> mh, h;
-        int mi, s[99]{}, si = 0;
+        int mi = -1;
+        int s[99]{};
+        int si = 0;
         while (si >= 0) {
             auto& n = nodes_.at(s[si--]);
             if (!n.b.isect(ray, tmin, tmax)) {

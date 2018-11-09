@@ -99,6 +99,7 @@
 	#ifndef WIN32_LEAN_AND_MEAN
 		#define WIN32_LEAN_AND_MEAN
 	#endif
+    #pragma warning(disable:4505)  // unreferenced local function has been removed
 #endif
 
 // ----------------------------------------------------------------------------

@@ -28,6 +28,8 @@ public:
     ExceptionContext_Default() {
         #if LM_PLATFORM_WINDOWS
         _set_se_translator([](unsigned int code, PEXCEPTION_POINTERS data) {
+            LM_UNUSED(data);
+
             // Map of the error code descriptions
             std::unordered_map<unsigned int, std::string> m;
             LM_EXCEPTION_ERROR_CODE(m, EXCEPTION_ACCESS_VIOLATION);
@@ -94,7 +96,7 @@ public:
 
     virtual void enableFPEx() override {
         _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
-        setFPExState(~(_EM_INVALID | _EM_ZERODIVIDE));
+        setFPExState((unsigned int)(~(_EM_INVALID | _EM_ZERODIVIDE)));
     }
 
     virtual void disableFPEx() override {

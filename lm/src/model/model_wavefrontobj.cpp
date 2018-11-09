@@ -332,6 +332,7 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
+        LM_UNUSED(prop);
         // Make parent component as a parent for the newly created components
         if (objmat_.illum == 7) {
             // Glass material
@@ -434,8 +435,6 @@ public:
                 return s->asComp(glossy_).multWeight(1_f/(1_f-wd));
             }
         }
-        LM_UNREACHABLE();
-        return {};
     }
 
     virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {

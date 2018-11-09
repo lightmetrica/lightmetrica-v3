@@ -31,6 +31,7 @@ public:
     virtual void render(const Scene& scene) const override {
         const auto [w, h] = film_->size();
         parallel::foreach(w*h, [&](long long index, int threadId) {
+            LM_UNUSED(threadId);
             const int x = int(index % w);
             const int y = int(index / w);
             const auto ray = scene.primaryRay({(x+.5_f)/w, (y+.5_f)/h});
@@ -40,7 +41,6 @@ public:
                 return;
             }
             film_->setPixel(x, y, Vec3(glm::abs(glm::dot(sp->n, -ray.d))));
-            //film_->setPixel(x, y, Vec3(glm::abs(sp->n)));
         });
     }
 };

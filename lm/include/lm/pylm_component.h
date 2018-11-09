@@ -126,7 +126,7 @@ LM_NAMESPACE_BEGIN(detail)
 // Trampoline class for lm::Component
 class Component_Py final : public Component {
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual bool construct([[maybe_unused]] const Json& prop) override {
         PYBIND11_OVERLOAD_PURE(bool, Component, prop);
     }
     static void bind(pybind11::module& m) {

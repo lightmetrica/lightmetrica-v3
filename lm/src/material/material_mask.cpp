@@ -12,10 +12,12 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Material_Mask : public Material {
 private:
     virtual bool isSpecular(const SurfacePoint& sp) const override {
+        LM_UNUSED(sp);
         return true;
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
+        LM_UNUSED(rng);
         return RaySample(sp, -wi, Vec3(1_f));
     }
 };

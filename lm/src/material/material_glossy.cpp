@@ -24,6 +24,7 @@ public:
     }
 
     virtual bool isSpecular(const SurfacePoint& sp) const override {
+        LM_UNUSED(sp);
         return false;
     }
 
@@ -44,6 +45,7 @@ public:
     }
 
     virtual Vec3 reflectance(const SurfacePoint& sp) const {
+        LM_UNUSED(sp);
         return Ks_;
     }
 

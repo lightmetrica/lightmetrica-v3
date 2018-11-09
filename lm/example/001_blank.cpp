@@ -5,7 +5,7 @@
 
 #include <lm/lm.h>
 
-int main(int argc, char** argv) {
+int main() {
     // Initialize the framework
     lm::init();
 

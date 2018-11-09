@@ -146,7 +146,7 @@ struct A_Py final : public A {
 };
 
 struct TestPlugin_Py final : public TestPlugin {
-    virtual bool construct(const lm::Json& prop) override {
+    virtual bool construct([[maybe_unused]] const lm::Json& prop) override {
         PYBIND11_OVERLOAD_PURE(bool, TestPlugin, prop);
     }
     virtual int f() override {
@@ -401,6 +401,7 @@ struct E1 final : public E {
         return d->f() + 1;
     }
     virtual Component* underlying(const std::string& name) const {
+        LM_UNUSED(name);
         return d;
     }
 };
@@ -408,6 +409,7 @@ struct E1 final : public E {
 struct E2 final : public E {
     D* d;
     virtual bool construct(const lm::Json& prop) override {
+        LM_UNUSED(prop);
         d = parent()->underlying()->cast<D>();
         return true;
     }
@@ -460,7 +462,7 @@ TEST_CASE("Construction") {
 // ----------------------------------------------------------------------------
 
 struct D_Py final : public D {
-    virtual bool construct(const lm::Json& prop) override {
+    virtual bool construct([[maybe_unused]] const lm::Json& prop) override {
         PYBIND11_OVERLOAD_PURE(bool, D, prop);
     }
     virtual int f() override {
@@ -476,7 +478,7 @@ struct D_Py final : public D {
 };
 
 struct E_Py final : public E {
-    virtual bool construct(const lm::Json& prop) override {
+    virtual bool construct([[maybe_unused]] const lm::Json& prop) override {
         PYBIND11_OVERLOAD_PURE(bool, E, prop);
     }
     virtual int f() override {
@@ -659,7 +661,6 @@ struct G1 final : public G<T> {
         if constexpr (std::is_same_v<T, double>) {
             return 2;
         }
-        LM_UNREACHABLE_RETURN();
     }
 };
 
