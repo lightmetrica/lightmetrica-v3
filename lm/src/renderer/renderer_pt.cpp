@@ -56,7 +56,7 @@ public:
                 for (int length = 0; length < maxLength_; length++) {
                     // Sample a ray
                     const auto s = sampleRay();
-                    if (!s) {
+                    if (!s || math::isZero(s->weight)) {
                         break;
                     }
 
@@ -77,10 +77,10 @@ public:
                     // Russian roulette
                     if (length > 3) {
                         const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));
-                        throughput /= 1_f - q;
                         if (rng.u() < q) {
                             break;
                         }
+                        throughput /= 1_f - q;
                     }
 
                     // Update

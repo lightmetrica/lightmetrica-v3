@@ -41,7 +41,7 @@ LM_PUBLIC_API void disableFPEx();
 LM_PUBLIC_API void stackTrace();
 
 /*!
-    Scoped guard of `init` and `shutdown` functions.
+    \brief Scoped guard of `init` and `shutdown` functions.
 */
 class ScopedInit {
 public:
@@ -51,7 +51,8 @@ public:
 };
 
 /*!
-    Scoped enable/disable of floating point exception.
+    \brief Scoped enable/disable of floating point exception.
+    Useful helper when you want to temporarily disable floating point exceptions.
 */
 class ScopedDisableFPEx {
 public:

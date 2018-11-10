@@ -368,7 +368,7 @@ public:
 
             // Glossy material
             const auto r = 2_f / (2_f + objmat_.Ns);
-            const auto as = std::sqrt(1_f - objmat_.an * .9_f);
+            const auto as = math::safeSqrt(1_f - objmat_.an * .9_f);
             auto glossy = comp::create<Material>("material::glossy", this, {
                 {"Ks", castToJson(objmat_.Ks)},
                 {"ax", std::max(1e-3_f, r / as)},

@@ -7,7 +7,13 @@
 
 int main(int argc, char** argv) {
     // Initialize the framework
-    lm::init({{"numThreads", -1}});
+    lm::init({
+        #if LM_DEBUG_MODE
+        {"numThreads", -1}
+        #else
+        {"numThreads", -1}
+        #endif
+    });
 
     // Parse command line arguments
     const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{

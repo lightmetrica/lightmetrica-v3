@@ -140,6 +140,23 @@ TEST_CASE("Exception") {
             CHECK(code.empty());
         }
     }
+
+    // ------------------------------------------------------------------------
+
+    SUBCASE("Scoped disable") {
+        const auto f = []() {
+            const volatile double z = 0;
+            const volatile double t = 0 / z;
+            LM_UNUSED(t);
+        };
+        lm::exception::ScopedInit ex_;
+        CHECK(Check(f) == "EXCEPTION_FLT_INVALID_OPERATION");
+        {
+            lm::exception::ScopedDisableFPEx disabled_;
+            CHECK(Check(f).empty());
+        }
+        CHECK(Check(f) == "EXCEPTION_FLT_INVALID_OPERATION");
+    }
 }
 
 LM_NAMESPACE_END(LM_TEST_NAMESPACE)

@@ -27,7 +27,7 @@ public:
         mesh_->foreachTriangle([&](int face, Vec3 a, Vec3 b, Vec3 c) {
             LM_UNUSED(face);
             const auto cr = cross(b - a, c - a);
-            dist_.add(std::sqrt(glm::dot(cr, cr)) * .5_f);
+            dist_.add(math::safeSqrt(glm::dot(cr, cr)) * .5_f);
         });
         invA_ = 1_f / dist_.c.back();
         dist_.norm();

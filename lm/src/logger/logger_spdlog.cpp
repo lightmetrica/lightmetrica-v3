@@ -19,12 +19,18 @@ private:
 
 public:
     LoggerContext_spdlog() {
+        // Create logger
         #if 0
         stdoutLogger_ = spdlog::stdout_color_mt("lm_stdout");
         #else
         stdoutLogger_ = spdlog::stdout_logger_mt("lm_stdout");
         #endif
+
+        // Set pattern
         stdoutLogger_->set_pattern("[%T.%e|%^%L%$] %v");
+
+        // Set the log level that triggers automatic flush
+        stdoutLogger_->flush_on(spdlog::level::err);
     }
 
     ~LoggerContext_spdlog() {

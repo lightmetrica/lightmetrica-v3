@@ -32,7 +32,7 @@ public:
         const auto [n, u, v] = sp.orthonormalBasis(wi);
         const auto u1 = rng.u() * 2_f * Pi;
         const auto u2 = rng.u();
-        const auto wh = glm::normalize(glm::sqrt(u2/(1_f-u2))*(ax_*cos(u1)*u+ay_*sin(u1)*v)+n);
+        const auto wh = glm::normalize(math::safeSqrt(u2/(1_f-u2))*(ax_*cos(u1)*u+ay_*sin(u1)*v)+n);
         const auto wo = math::reflection(wi, wh);
         if (sp.opposite(wi, wo)) {
             return {};
@@ -81,11 +81,11 @@ private:
     Float GGX_G(Vec3 wi, Vec3 wo, Vec3 u, Vec3 v, Vec3 n) const {
         const auto G1 = [&](Vec3 w) {
             const auto c = glm::dot(w, n);
-            const auto s = std::sqrt(1_f - c * c);
+            const auto s = std::max(Eps, math::safeSqrt(1_f - c * c));
             const auto cp = glm::dot(w, u) / s;
             const auto cs = glm::dot(w, v) / s;
             const auto a2 = math::sq(cp * ax_) + math::sq(cs * ay_);
-            return c == 0_f ? 0_f : 2_f / (1_f + std::sqrt(1_f + a2 * math::sq(s / c)));
+            return c == 0_f ? 0_f : 2_f / (1_f + math::safeSqrt(1_f + a2 * math::sq(s / c)));
         };
         return G1(wi) * G1(wo);
     }

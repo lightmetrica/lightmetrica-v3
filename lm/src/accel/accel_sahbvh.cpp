@@ -8,6 +8,7 @@
 #include <lm/scene.h>
 #include <lm/mesh.h>
 #include <lm/logger.h>
+#include <lm/exception.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -191,6 +192,7 @@ public:
     };
 
     virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) const override {
+        exception::ScopedDisableFPEx guard_;  // Disable floating point exceptions
         std::optional<Tri::Hit> mh, h;
         int mi = -1;
         int s[99]{};

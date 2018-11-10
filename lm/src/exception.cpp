@@ -31,6 +31,7 @@ private:
 public:
     ExceptionContext_Default() {
         #if LM_PLATFORM_WINDOWS
+        // Handle structured exception as C++ exception
         _set_se_translator([](unsigned int code, PEXCEPTION_POINTERS data) {
             LM_UNUSED(data);
 
@@ -67,6 +68,11 @@ public:
 
             throw std::runtime_error(m[code]);
         });
+
+        // Handle denormals as zero
+        _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+
+        // Enable floating point exceptions
         enableFPEx();
         #endif
     }
@@ -74,6 +80,7 @@ public:
     ~ExceptionContext_Default() {
         #if LM_PLATFORM_WINDOWS
         disableFPEx();
+        _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_OFF);
         _set_se_translator(nullptr);
         #endif
     }
@@ -83,10 +90,12 @@ private:
         // Get current floating-point control word
         unsigned int old;
         _controlfp_s(&old, 0, 0);
+
         // Set a new control word
         unsigned int current;
         _controlfp_s(&current, state, _MCW_EM);
         LM_UNUSED(current);
+
         return old;
     }
 
@@ -98,12 +107,10 @@ public:
     }
 
     virtual void enableFPEx() override {
-        _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
         setFPExState((unsigned int)(~(_EM_INVALID | _EM_ZERODIVIDE)));
     }
 
     virtual void disableFPEx() override {
-        _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_OFF);
         setFPExState(_CW_DEFAULT);
     }
 

@@ -64,7 +64,7 @@ struct SurfacePoint {
     friend Float geometryTerm(const SurfacePoint& s1, const SurfacePoint& s2) {
         Vec3 d = s2.p - s1.p;
         const Float L2 = glm::dot(d, d);
-        d = d / sqrt(L2);
+        d = d / std::sqrt(L2);
         return glm::abs(glm::dot(s1.n, d)) * glm::abs(glm::dot(s2.n, -d)) / L2;
     }
 };
