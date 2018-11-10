@@ -32,7 +32,8 @@ set(_SOURCE_FILES
     "test_exception.cpp"
     "test_api.cpp"
     "test_component.cpp"
-    "test_assets.cpp")
+    "test_assets.cpp"
+    "test_json.cpp")
 add_executable(${_PROJECT_NAME} ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest pybind11::embed lm_test_plugin::interface)

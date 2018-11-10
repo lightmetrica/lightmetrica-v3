@@ -30,6 +30,17 @@ Json parsePositionalArgs(int argc, char** argv, const std::string& temp) {
     return Json::parse(detail::formatWithStringVector<N>(temp, { argv + 1, argv + argc }));
 }
 
+/*!
+    \brief Get the value inside the element with default.
+*/
+template <typename T>
+T valueOr(const Json& j, const std::string& name, T&& default) {
+    if (const auto it = j.find(name); it != j.end()) {
+        return *it;
+    }
+    return default;
+}
+
 LM_NAMESPACE_BEGIN(detail)
 
 template <typename T>

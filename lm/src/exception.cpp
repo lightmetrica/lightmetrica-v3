@@ -8,6 +8,7 @@
 #include <pch.h>
 #include <lm/exception.h>
 #include <lm/logger.h>
+#include <lm/json.h>
 
 #if LM_PLATFORM_WINDOWS
 #include <Windows.h>
@@ -16,13 +17,16 @@
 #pragma comment(lib, "Dbghelp.lib")
 #endif
 
+// ----------------------------------------------------------------------------
+
 #define LM_EXCEPTION_ERROR_CODE(m, code) m[code] = #code
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::exception::detail)
 
 class ExceptionContext_Default : public ExceptionContext {
 private:
-
+    int start_;   // Skips first n entries of the stack trace
+    int stacks_;  // Number of entries of stack trace
 
 public:
     ExceptionContext_Default() {
@@ -59,7 +63,7 @@ public:
             LM_ERROR("Structured exception [desc='{}']", m[code]);
             LM_ERROR("Stack trace");
             LM_INDENT();
-            stackTrace_();
+            exception::stackTrace();
 
             throw std::runtime_error(m[code]);
         });
@@ -86,11 +90,10 @@ private:
         return old;
     }
 
-private:
-
 public:
     virtual bool construct(const Json& prop) override {
-        LM_UNUSED(prop);
+        start_  = valueOr(prop, "start", 3);
+        stacks_ = valueOr(prop, "stacks", 5);
         return true;
     }
 
@@ -105,10 +108,6 @@ public:
     }
 
     virtual void stackTrace() override {
-        stackTrace_();
-    }
-
-    static void stackTrace_() {
         #if LM_PLATFORM_WINDOWS
         // Get necessary function
         using CaptureStackBackTraceFunc= USHORT(WINAPI*)(__in ULONG, __in ULONG, __out PVOID*, __out_opt PULONG);
@@ -127,11 +126,11 @@ public:
 
         // Print captured stack frame
         constexpr int MaxCallers = 62;
-        void* callers_stack[MaxCallers];
-        const int frames = RtlCaptureStackBackTrace(0, MaxCallers, callers_stack, NULL);
-        for (int i = 0; i < std::min(frames, 10); i++) {
-            SymFromAddr(process, (DWORD64)(callers_stack[i]), 0, symbol);
-            LM_ERROR("{}: {} {} - {}", i, callers_stack[i], symbol->Name, symbol->Address);
+        void* callersStack[MaxCallers];
+        const int frames = RtlCaptureStackBackTrace(0, MaxCallers, callersStack, NULL);
+        for (int i = start_; i < std::min(frames, start_ + stacks_); i++) {
+            SymFromAddr(process, (DWORD64)(callersStack[i]), 0, symbol);
+            LM_ERROR("{}: {}", i - start_, symbol->Name);
         }
         free(symbol);
         #endif
@@ -141,3 +140,31 @@ public:
 LM_COMP_REG_IMPL(ExceptionContext_Default, "exception::default");
 
 LM_NAMESPACE_END(LM_NAMESPACE::exception::detail)
+
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::exception)
+
+using Instance = comp::detail::ContextInstance<detail::ExceptionContext>;
+
+LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
+    Instance::init(type, prop);
+}
+
+LM_PUBLIC_API void shutdown() {
+    Instance::shutdown();
+}
+
+LM_PUBLIC_API void enableFPEx() {
+    Instance::get().enableFPEx();
+}
+
+LM_PUBLIC_API void disableFPEx() {
+    Instance::get().disableFPEx();
+}
+
+LM_PUBLIC_API void stackTrace() {
+    Instance::get().stackTrace();
+}
+
+LM_NAMESPACE_END(LM_NAMESPACE::exception)
