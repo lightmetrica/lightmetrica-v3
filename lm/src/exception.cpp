@@ -26,7 +26,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::exception::detail)
 class ExceptionContext_Default : public ExceptionContext {
 private:
     int start_;   // Skips first n entries of the stack trace
-    int stacks_;  // Number of entries of stack trace
+    int stacks_;  // Number of entries of stack trace (0: disable)
 
 public:
     ExceptionContext_Default() {
@@ -62,8 +62,6 @@ public:
 
             // Print error message
             LM_ERROR("Structured exception [desc='{}']", m[code]);
-            LM_ERROR("Stack trace");
-            LM_INDENT();
             exception::stackTrace();
 
             throw std::runtime_error(m[code]);
@@ -102,7 +100,7 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         start_  = valueOr(prop, "start", 3);
-        stacks_ = valueOr(prop, "stacks", 5);
+        stacks_ = valueOr(prop, "stacks", 0);
         return true;
     }
 
@@ -115,7 +113,14 @@ public:
     }
 
     virtual void stackTrace() override {
+        if (stacks_ == 0) {
+            return;
+        }
+
         #if LM_PLATFORM_WINDOWS
+        LM_ERROR("Stack trace");
+        LM_INDENT();
+
         // Get necessary function
         using CaptureStackBackTraceFunc= USHORT(WINAPI*)(__in ULONG, __in ULONG, __out PVOID*, __out_opt PULONG);
         auto RtlCaptureStackBackTrace = CaptureStackBackTraceFunc(

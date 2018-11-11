@@ -84,6 +84,7 @@ public:
             return;
         }
         LM_INFO("Starting render [name='{}']", rendererName);
+        LM_INDENT();
         renderer_->render(*scene_.get());
     }
 

@@ -9,6 +9,7 @@
 #include <lm/film.h>
 #include <lm/parallel.h>
 #include <lm/json.h>
+#include <lm/logger.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -30,7 +31,8 @@ public:
 
     virtual void render(const Scene& scene) const override {
         const auto [w, h] = film_->size();
-        parallel::foreach(w*h, [&](long long index, int threadId) {
+        const long long samples = w * h;
+        parallel::foreach(samples, [&](long long index, int threadId) {
             LM_UNUSED(threadId);
             const int x = int(index % w);
             const int y = int(index / w);

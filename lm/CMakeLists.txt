@@ -93,6 +93,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/scene.cpp"
     "${_SOURCE_DIR}/exception.cpp"
     "${_SOURCE_DIR}/logger/logger.cpp"
+    "${_SOURCE_DIR}/logger/logger_default.cpp"
     "${_SOURCE_DIR}/logger/logger_spdlog.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
@@ -119,8 +120,9 @@ target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only cereal
     PRIVATE OpenMP::OpenMP_CXX spdlog)
 target_include_directories(${_PROJECT_NAME}
-    PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    PRIVATE "${_PCH_DIR}")
+    PUBLIC  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    PRIVATE "${_PCH_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/external/rang/include")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 # Enable warning level 4, treat warning as errors, enable SEH

@@ -14,19 +14,21 @@ LM_NAMESPACE_BEGIN(log)
 // ----------------------------------------------------------------------------
 
 //! Default logger type
-constexpr const char* DefaultType = "logger::spdlog";
+constexpr const char* DefaultType = "logger::default";
 
 /*!
     \brief Log level.
 */
 enum class LogLevel {
-    Trace    = 0,
-    Debug    = 1,
-    Info     = 2,
-    Warn     = 3,
-    Err      = 4,
-    Critical = 5,
-    Off      = 6,
+    Trace       = 0,
+    Debug       = 1,
+    Info        = 2,
+    Warn        = 3,
+    Err         = 4,
+    Critical    = 5,
+    Off         = 6,
+    Progress    = 7,
+    ProgressEnd = 8,
 };
 
 /*!
@@ -117,6 +119,18 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 #define LM_DEBUG(message, ...) LM_NAMESPACE::log::log( \
     LM_NAMESPACE::log::LogLevel::Debug, __FILE__, __LINE__, message, __VA_ARGS__)
+
+/*!
+    \brief Log progress outputs.
+*/
+#define LM_PROGRESS(message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::Progress, __FILE__, __LINE__, message, __VA_ARGS__)
+
+/*!
+    \brief Log end of progress outputs.
+*/
+#define LM_PROGRESS_END(message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::ProgressEnd, __FILE__, __LINE__, message, __VA_ARGS__)
 
 /*!
     \brief Adds an indentation in the current scope.
