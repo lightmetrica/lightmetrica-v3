@@ -33,13 +33,14 @@ public:
     }
 
     virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc) const override {
+        using namespace std::chrono;
         using namespace std::literals::chrono_literals;
 
         // Processed number of samples
         std::atomic<long long> processed = 0;
 
         // Last progress update time and number of samples
-        const auto start = std::chrono::high_resolution_clock::now();
+        const auto start = high_resolution_clock::now();
         auto lastUpdated = start;
         long long lastProcessed = 0;
 
@@ -58,8 +59,8 @@ public:
 
             // Update progress
             if (threadId == 0) {
-                const auto now = std::chrono::high_resolution_clock::now();
-                const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdated);
+                const auto now = high_resolution_clock::now();
+                const auto elapsed = duration_cast<milliseconds>(now - lastUpdated);
                 if (elapsed > .5s) {
                     // Current processed number of samples
                     const long long currProcessed = processed;
@@ -69,7 +70,7 @@ public:
                         if (currProcessed == 0) {
                             return "";
                         }
-                        const auto eta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start)
+                        const auto eta = duration_cast<milliseconds>(now - start)
                             * (numSamples - currProcessed) / currProcessed;
                         return fmt::format(", ETA={:.1f}s", eta.count() / 1000.0);
                     }();
