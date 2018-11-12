@@ -1,4 +1,4 @@
-﻿/*
+/*
     Lightmetrica - Copyright (c) 2018 Hisanari Otsu
     Distributed under MIT license. See LICENSE file for details.
 */
@@ -7,26 +7,27 @@
 #include <lm/logger.h>
 #include <rang.hpp>
 
+// ----------------------------------------------------------------------------
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::log::detail)
 
 class LoggerContext_Default : public LoggerContext {
 private:
     int indentation_ = 0;
     std::string indentationString_;
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_ = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_ =
+        std::chrono::high_resolution_clock::now();
     std::mutex mutex_;
+
     struct Style {
         std::string name;
         rang::fg color;
     };
     std::unordered_map<LogLevel, Style> styles_{
-        {LogLevel::Trace      , {"T", rang::fg::gray}},
         {LogLevel::Debug      , {"D", rang::fg::cyan}},
         {LogLevel::Info       , {"I", rang::fg::green}},
         {LogLevel::Warn       , {"W", rang::fg::yellow}},
         {LogLevel::Err        , {"E", rang::fg::red}},
-        {LogLevel::Critical   , {"C", rang::fg::red}},
-        {LogLevel::Off        , {"O", rang::fg::reset}},
         {LogLevel::Progress   , {"I", rang::fg::green}},
         {LogLevel::ProgressEnd, {"I", rang::fg::green}},
     };
@@ -108,3 +109,27 @@ public:
 LM_COMP_REG_IMPL(LoggerContext_Default, "logger::default");
 
 LM_NAMESPACE_END(LM_NAMESPACE::log::detail)
+
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::log)
+
+using Instance = comp::detail::ContextInstance<detail::LoggerContext>;
+
+LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
+    Instance::init(type, prop);
+}
+
+LM_PUBLIC_API void shutdown() {
+    Instance::shutdown();
+}
+
+LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const char* message) {
+    Instance::get().log(level, filename, line, message);
+}
+
+LM_PUBLIC_API void updateIndentation(int n) {
+    Instance::get().updateIndentation(n);
+}
+
+LM_NAMESPACE_END(LM_NAMESPACE::log)

@@ -20,15 +20,12 @@ constexpr const char* DefaultType = "logger::default";
     \brief Log level.
 */
 enum class LogLevel {
-    Trace       = 0,
-    Debug       = 1,
-    Info        = 2,
-    Warn        = 3,
-    Err         = 4,
-    Critical    = 5,
-    Off         = 6,
-    Progress    = 7,
-    ProgressEnd = 8,
+    Debug,
+    Info,
+    Warn,
+    Err,
+    Progress,
+    ProgressEnd,
 };
 
 /*!

@@ -65,15 +65,21 @@ public:
                     const long long currProcessed = processed;
 
                     // Compute ETA
-                    const auto eta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start)
-                        * (numSamples - currProcessed) / currProcessed;
+                    const auto etaStr = [&]() -> std::string {
+                        if (currProcessed == 0) {
+                            return "";
+                        }
+                        const auto eta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start)
+                            * (numSamples - currProcessed) / currProcessed;
+                        return fmt::format(", ETA={:.1f}s", eta.count() / 1000.0);
+                    }();
 
                     // Print progress
-                    LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%, ETA={:.1f}s]",
+                    LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
                         currProcessed,
                         numSamples,
                         double(currProcessed) / numSamples * 100,
-                        eta.count() / 1000.0);
+                        etaStr);
 
                     lastUpdated = now;
                     lastProcessed = currProcessed;
