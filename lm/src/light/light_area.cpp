@@ -20,7 +20,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        Ke_ = castFromJson<Vec3>(prop["Ke"]);
+        Ke_ = prop["Ke"];
         mesh_ = parent()->underlying<Mesh>(prop, "mesh");
         
         // Construct CDF for surface sampling

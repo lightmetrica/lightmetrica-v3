@@ -20,7 +20,7 @@ public:
     virtual bool construct(const Json& prop) override {
         mapKd_ = parent()->underlying<Texture>(prop, "mapKd");
         if (!mapKd_) {
-            Kd_ = castFromJson<Vec3>(prop["Kd"]);
+            Kd_ = prop["Kd"];
         }
         return true;
     }

@@ -357,7 +357,7 @@ public:
         else {
             // Diffuse material
             auto diffuse = comp::create<Material>("material::diffuse", this, {
-                {"Kd", castToJson(objmat_.Kd)},
+                {"Kd", objmat_.Kd},
                 {"mapKd", objmat_.mapKd < 0 ? Json{} : objmat_.mapKd}
             });
             if (!diffuse) {
@@ -370,7 +370,7 @@ public:
             const auto r = 2_f / (2_f + objmat_.Ns);
             const auto as = math::safeSqrt(1_f - objmat_.an * .9_f);
             auto glossy = comp::create<Material>("material::glossy", this, {
-                {"Ks", castToJson(objmat_.Ks)},
+                {"Ks", objmat_.Ks},
                 {"ax", std::max(1e-3_f, r / as)},
                 {"ay", std::max(1e-3_f, r * as)}
             });
@@ -480,7 +480,7 @@ public:
                 int lightIndex = -1;
                 if (glm::compMax(m.Ke) > 0_f) {
                     auto light = comp::create<Light>("light::area", this, {
-                        {"Ke", castToJson(m.Ke)},
+                        {"Ke", m.Ke},
                         {"mesh", meshIndex}
                     });
                     if (!light) {

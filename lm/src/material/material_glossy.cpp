@@ -17,7 +17,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        Ks_ = castFromJson<Vec3>(prop["Ks"]);
+        Ks_ = prop["Ks"];
         ax_ = prop["ax"];
         ay_ = prop["ay"];
         return true;

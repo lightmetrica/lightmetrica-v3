@@ -51,9 +51,6 @@ private:
     //! Underlying reference to owner object (if any)
     std::any ownerRef_;
 
-    //! Shortcut for the root component (if any).
-    Component* context_ = nullptr;
-
     //! Parent component (if any)
     Component* parent_ = nullptr;
 
@@ -63,11 +60,6 @@ public:
     LM_DISABLE_COPY_AND_MOVE(Component)
 
 public:
-    /*!
-        \brief Context component.
-    */
-    Component* context() const { return context_; }
-
     /*!
         \brief Parent component.
     */
@@ -79,7 +71,6 @@ public:
     void setParent(Component* p) {
         if (!p) { return; }
         parent_ = p;
-        context_ = p->context_;
     }
 
 public:

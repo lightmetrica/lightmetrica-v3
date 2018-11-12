@@ -134,7 +134,6 @@ public:
             .def(pybind11::init<>())
             .def("construct", &Component::construct)
             .def("parent", &Component::parent)
-            .def("context", &Component::context)
             .PYLM_DEF_COMP_BIND(Component);
     }
 };

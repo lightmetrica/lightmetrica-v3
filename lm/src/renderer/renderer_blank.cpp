@@ -18,7 +18,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        color_ = castFromJson<Vec3>(prop["color"]);
+        color_ = prop["color"];
         film_= parent()->underlying<Film>(
             fmt::format("assets.{}", prop["output"].get<std::string>()));
         if (!film_) {

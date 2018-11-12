@@ -26,14 +26,14 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
-        film_ = parent()->underlying<Film>(prop["film"]);        // Film
-        aspect_ = film_->aspectRatio();                          // Aspect ratio
-        position_ = castFromJson<Vec3>(prop["position"]);        // Camera position
-        const auto center = castFromJson<Vec3>(prop["center"]);  // Look-at position
-        const auto up = castFromJson<Vec3>(prop["up"]);          // Up vector
-        const Float fv = prop["vfov"];                           // Vertical FoV
-        tf_ = tan(fv * Pi / 180_f * .5_f);                       // Precompute half of screen height
-        w_ = glm::normalize(position_ - center);                 // Compute basis
+        film_ = parent()->underlying<Film>(prop["film"]);  // Film
+        aspect_ = film_->aspectRatio();                    // Aspect ratio
+        position_ = prop["position"];                      // Camera position
+        const Vec3 center = prop["center"];                // Look-at position
+        const Vec3 up = prop["up"];                        // Up vector
+        const Float fv = prop["vfov"];                     // Vertical FoV
+        tf_ = tan(fv * Pi / 180_f * .5_f);                 // Precompute half of screen height
+        w_ = glm::normalize(position_ - center);           // Compute basis
         u_ = glm::normalize(glm::cross(up, w_));
         v_ = cross(w_, u_);
         return true;
