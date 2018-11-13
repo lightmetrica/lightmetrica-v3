@@ -13,12 +13,10 @@ def test_from_python():
     assert m.compSum4(np.array([1,2,3,4]).astype(np.float32)) == pytest.approx(10)
 
     # Matrix types
-    mat = np.array([
-        [1,0,0,1],
-        [0,1,0,1],
-        [0,0,1,1],
-        [1,1,0,0]
-    ])
+    mat = np.array([[1,0,0,1],
+                    [0,1,0,1],
+                    [0,0,1,1],
+                    [1,1,0,0]])
     assert m.compMat4(mat.astype(np.float32)) == pytest.approx(8)
 
 def test_to_python():
@@ -29,10 +27,8 @@ def test_to_python():
     assert m.getVec4() == pytest.approx([1,2,3,4])
 
     # Matrix types
-    mat = np.array([
-        [1,1,0,1],
-        [1,1,1,0],
-        [0,1,1,1],
-        [1,1,0,1]
-    ])
+    mat = np.array([[1,1,0,1],
+                    [1,1,1,0],
+                    [0,1,1,1],
+                    [1,1,0,1]])
     assert_allclose(m.getMat4(), mat)

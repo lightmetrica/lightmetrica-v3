@@ -10,6 +10,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 PYBIND11_MODULE(pylm, m)
 {
+    using namespace pybind11::literals;
+
+    // ------------------------------------------------------------------------
+
     m.doc() = R"x(
         pylm: Python binding of Lightmetrica.
     )x";
