@@ -234,6 +234,12 @@ public:
         plugins_.clear();
     }
 
+    void foreachRegistered(const std::function<void(const std::string& name)>& func) {
+        for (const auto& [k, v] : funcMap_) {
+            func(k);
+        }
+    }
+
 private:
     // Registered implementations
     struct CreateAndReleaseFunctions
@@ -274,6 +280,10 @@ LM_PUBLIC_API void loadPlugins(const std::string& directory) {
 
 LM_PUBLIC_API void unloadPlugins() {
     Impl::instance().unloadPlugins();
+}
+
+LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func) {
+    Impl::instance().foreachRegistered(func);
 }
 
 // ----------------------------------------------------------------------------

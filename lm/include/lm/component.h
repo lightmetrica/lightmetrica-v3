@@ -304,6 +304,9 @@ LM_PUBLIC_API void loadPlugins(const std::string& directory);
 // Unload loaded plugins.
 LM_PUBLIC_API void unloadPlugins();
 
+// Iterate registered component names.
+LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func);
+
 // ----------------------------------------------------------------------------
 
 /*!

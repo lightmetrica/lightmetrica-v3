@@ -1,7 +1,7 @@
 """ Simple tests """
-import pylm_test_module as pylm_test
+from pylm_test import simple as m
 
 def test_simple():
     """ Tests simple function """
-    assert pylm_test.test() == 42
+    assert m.test() == 42
     

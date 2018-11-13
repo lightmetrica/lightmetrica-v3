@@ -39,9 +39,6 @@ add_subdirectory(external/doctest)
 # pybind11
 add_subdirectory(external/pybind11)
 
-# spdlog
-add_subdirectory(external/spdlog)
-
 # fmt
 add_subdirectory(external/fmt)
 
@@ -116,7 +113,7 @@ source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
 add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only cereal
-    PRIVATE OpenMP::OpenMP_CXX spdlog)
+    PRIVATE OpenMP::OpenMP_CXX)
 target_include_directories(${_PROJECT_NAME}
     PUBLIC  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     PRIVATE "${_PCH_DIR}"

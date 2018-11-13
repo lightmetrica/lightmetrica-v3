@@ -3,7 +3,9 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <lm//component.h>
+#pragma once
+
+#include <lm/component.h>
 #include <lm/json.h>
 #include <lm/math.h>
 #include <iostream>
