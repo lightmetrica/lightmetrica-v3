@@ -10,7 +10,8 @@ set(_HEADER_FILES
 set(_SOURCE_FILES
 	"pylm_test.cpp"
 	"pylm_test_json.cpp"
-	"pylm_test_simple.cpp")
+	"pylm_test_simple.cpp"
+	"pylm_test_math.cpp")
 add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)

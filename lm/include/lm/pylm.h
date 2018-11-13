@@ -7,6 +7,7 @@
 
 #include "pylm_component.h"
 #include "pylm_json.h"
+#include "pylm_math.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(py)

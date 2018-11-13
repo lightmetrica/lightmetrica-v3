@@ -16,6 +16,7 @@ PYBIND11_MODULE(pylm, m)
 
     // ------------------------------------------------------------------------
 
+#if 0
     // Math types
     // Vec3
     pybind11::class_<Vec3>(m, "Vec3", pybind11::buffer_protocol())
@@ -46,6 +47,7 @@ PYBIND11_MODULE(pylm, m)
                 { 3 * sizeof(Float) }
             );
         });
+#endif
 
     // ------------------------------------------------------------------------
 

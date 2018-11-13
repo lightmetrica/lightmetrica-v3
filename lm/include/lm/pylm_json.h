@@ -9,8 +9,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+LM_NAMESPACE_BEGIN(pybind11::detail)
+
 // Type caster for json type
-namespace pybind11::detail {
 template <>
 struct type_caster<lm::Json> {
 public:
@@ -19,6 +20,11 @@ public:
 
     // Python -> C++
     bool load(handle src, bool convert) {
+        if (!convert) {
+            // No-convert mode
+            return false;
+        }
+
         using namespace nlohmann::detail;
         if (isinstance<none>(src)) {
             value = {};
@@ -141,4 +147,5 @@ private:
     }
 
 };
-}
+
+LM_NAMESPACE_END(pybind11::detail)
