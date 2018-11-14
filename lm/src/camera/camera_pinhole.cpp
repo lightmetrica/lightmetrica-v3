@@ -46,7 +46,7 @@ public:
 
     virtual Ray primaryRay(Vec2 rp) const override {
         rp = 2_f*rp-1_f;
-        const auto d = -glm::normalize(Vec3(film_->aspectRatio()*tf_*rp.x, tf_*rp.y, 1_f));
+        const auto d = glm::normalize(Vec3(film_->aspectRatio()*tf_*rp.x, tf_*rp.y, -1_f));
         return { position_, u_*d.x+v_*d.y+w_*d.z };
     }
 

@@ -52,6 +52,10 @@ public:
         fclose(f);
         return true;
     }
+
+    virtual FilmBuffer buffer() override {
+        return FilmBuffer{ w_, h_, &data_[0].x };
+    }
 };
 
 LM_COMP_REG_IMPL(Film_Bitmap, "film::bitmap");

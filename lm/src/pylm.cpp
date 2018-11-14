@@ -55,6 +55,23 @@ PYBIND11_MODULE(pylm, m)
 
     // ------------------------------------------------------------------------
 
+    pybind11::class_<FilmBuffer>(m, "FilmBuffer", pybind11::buffer_protocol())
+        // Register buffer description
+        .def_buffer([](FilmBuffer& buf) -> pybind11::buffer_info {
+            return pybind11::buffer_info(
+                buf.data,
+                sizeof(Float),
+                pybind11::format_descriptor<Float>::format(),
+                3,
+                { buf.h, buf.w, 3 },
+                { 3 * buf.w * sizeof(Float),
+                  3 * sizeof(Float),
+                  sizeof(Float) }
+            );
+        });
+
+    // ------------------------------------------------------------------------
+
     // User API (user.h)
     m.def("init", &init);
     m.def("shutdown", &shutdown);
@@ -63,6 +80,7 @@ PYBIND11_MODULE(pylm, m)
     m.def("primitives", &primitives);
     m.def("render", &render);
     m.def("save", &save);
+    m.def("buffer", &buffer);
 
 }
 

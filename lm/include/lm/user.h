@@ -49,6 +49,11 @@ LM_PUBLIC_API void render(const std::string& rendererName,
 */
 LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath);
 
+/*!
+    \brief Get buffer of an image.
+*/
+LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)

@@ -98,6 +98,14 @@ public:
         }
     }
 
+    FilmBuffer buffer(const std::string& filmName) {
+        auto* film = assets_->underlying<Film>(filmName);
+        if (!film) {
+            return {};
+        }
+        return film->buffer();
+    }
+
 private:
     Ptr<Assets> assets_;
     Ptr<Scene> scene_;
@@ -134,6 +142,10 @@ LM_PUBLIC_API void render(const std::string& rendererName, const std::string& ac
 
 LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath) {
     Context::instance().save(filmName, outpath);
+}
+
+LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName) {
+    return Context::instance().buffer(filmName);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

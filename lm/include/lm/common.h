@@ -224,6 +224,8 @@ class Mesh;           // mesh.h
 class Material;       // material.h
 class Light;          // light.h
 class Camera;         // camera.h
+struct FilmBuffer;    // film.h
+class Film;
 struct SurfacePoint;  // scene.h
 struct RaySample;
 class Scene;

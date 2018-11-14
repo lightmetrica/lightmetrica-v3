@@ -15,6 +15,12 @@ struct FilmSize {
     int h;
 };
 
+struct FilmBuffer {
+    int w;
+    int h;
+    Float* data;
+};
+
 /*!
     \brief Film.
 */
@@ -42,6 +48,11 @@ public:
         const auto [w, h] = size();
         return Float(w) / h;
     }
+
+    /*!
+        \brief Get buffer of the film
+    */
+    virtual FilmBuffer buffer() = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)
