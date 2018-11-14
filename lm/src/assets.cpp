@@ -34,11 +34,11 @@ public:
         // Create an instance of the asset
         auto p = comp::create<Component>(implKey, this);
         if (!p) {
-            LM_ERROR("Failed to create asset [name='{}']. Component [key={}] is not found", name, implKey);
+            LM_ERROR("Failed to create component [name='{}', key='{}']", name, implKey);
             return false;
         }
         if (!p->construct(prop)) {
-            LM_ERROR("Failed to create asset [name='{}']. Failed to initialize component [key={}]", name, implKey);
+            LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
             return false;
         }
 

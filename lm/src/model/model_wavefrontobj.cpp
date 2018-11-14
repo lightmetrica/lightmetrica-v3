@@ -465,7 +465,7 @@ public:
 
     virtual bool construct(const Json& prop) override {
         WavefrontOBJParser parser;
-        parser.parse(prop["path"], geo_,
+        return parser.parse(prop["path"], geo_,
             // Process mesh
             [&](const std::vector<OBJMeshFaceIndex>& fs, const MTLMatParams& m) -> std::optional<int> {
                 // Create mesh
@@ -519,7 +519,6 @@ public:
                 assets_.push_back(std::move(texture));
                 return true;
             });
-        return true;
     }
     
     virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const override {

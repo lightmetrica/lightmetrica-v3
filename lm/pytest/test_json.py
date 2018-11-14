@@ -1,4 +1,4 @@
-""" JSON tests """
+"""JSON tests"""
 import pytest
 from numpy.testing import assert_allclose
 from pylm_test import json as m
@@ -21,7 +21,7 @@ def test_round_trip_simple():
     assert m.round_trip('hai domo') == 'hai domo'
 
 def test_round_trip_sequence():
-    """ Tests sequence type """
+    """Tests sequence type"""
     # Empty
     assert m.round_trip([]) == []
     # Simple
@@ -34,7 +34,7 @@ def test_round_trip_sequence():
     assert m.round_trip([[],[[],[[],[]]]]) == [[],[[],[[],[]]]]
 
 def test_round_trip_dict():
-    """ Tests dict type """
+    """Tests dict type"""
     # Empty
     assert m.round_trip({}) == {}
     # Simple

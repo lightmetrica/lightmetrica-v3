@@ -15,6 +15,9 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+#define THROW_RUNTIME_ERROR() \
+    throw std::runtime_error("Consult log outputs for detailed error messages")
+
 // ----------------------------------------------------------------------------
 
 namespace {
@@ -65,15 +68,21 @@ public:
     }
 
     void asset(const std::string& name, const std::string& implKey, const Json& prop) {
-        assets_->loadAsset(name, implKey, prop);
+        if (!assets_->loadAsset(name, implKey, prop)) {
+            THROW_RUNTIME_ERROR();
+        }
     }
 
     void primitive(Mat4 transform, const Json& prop) {
-        scene_->loadPrimitive(*assets_.get(), transform, prop);
+        if (!scene_->loadPrimitive(*assets_.get(), transform, prop)) {
+            THROW_RUNTIME_ERROR();
+        }
     }
 
     void primitives(Mat4 transform, const std::string& modelName) {
-        scene_->loadPrimitives(*assets_.get(), transform, modelName);
+        if (!scene_->loadPrimitives(*assets_.get(), transform, modelName)) {
+            THROW_RUNTIME_ERROR();
+        }
     }
 
     void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {
@@ -81,7 +90,7 @@ public:
         renderer_ = lm::comp::create<Renderer>(rendererName, this, prop);
         if (!renderer_) {
             LM_ERROR("Failed to render [renderer='{}',accel='{}']", rendererName, accelName);
-            return;
+            THROW_RUNTIME_ERROR();
         }
         LM_INFO("Starting render [name='{}']", rendererName);
         LM_INDENT();
@@ -91,17 +100,17 @@ public:
     void save(const std::string& filmName, const std::string& outpath) {
         const auto* film = assets_->underlying<Film>(filmName);
         if (!film) {
-            return;
+            THROW_RUNTIME_ERROR();
         }
         if (!film->save(outpath)) {
-            return;
+            THROW_RUNTIME_ERROR();
         }
     }
 
     FilmBuffer buffer(const std::string& filmName) {
         auto* film = assets_->underlying<Film>(filmName);
         if (!film) {
-            return {};
+            THROW_RUNTIME_ERROR();
         }
         return film->buffer();
     }

@@ -4,73 +4,79 @@
 */
 
 #include <lm/lm.h>
+#include <iostream>
 
 int main(int argc, char** argv) {
-    // Initialize the framework
-    lm::init({
-        #if LM_DEBUG_MODE
-        {"numThreads", -1}
-        #else
-        {"numThreads", -1}
-        #endif
-    });
+    try {
+        // Initialize the framework
+        lm::init({
+            #if LM_DEBUG_MODE
+            {"numThreads", -1}
+            #else
+            {"numThreads", -1}
+            #endif
+        });
 
-    // Parse command line arguments
-    const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{
-        "obj": "{}",
-        "out": "{}",
-        "spp": {},
-        "len": {},
-        "w": {},
-        "h": {},
-        "eye": [{},{},{}],
-        "lookat": [{},{},{}],
-        "vfov": {}
-    }})");
+        // Parse command line arguments
+        const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{
+            "obj": "{}",
+            "out": "{}",
+            "spp": {},
+            "len": {},
+            "w": {},
+            "h": {},
+            "eye": [{},{},{}],
+            "lookat": [{},{},{}],
+            "vfov": {}
+        }})");
 
-    // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
 
-    // Define assets
+        // Define assets
 
-    // Film for the rendered image
-    lm::asset("film1", "film::bitmap", {
-        {"w", opt["w"]},
-        {"h", opt["h"]}
-    });
+        // Film for the rendered image
+        lm::asset("film1", "film::bitmap", {
+            {"w", opt["w"]},
+            {"h", opt["h"]}
+        });
 
-    // Pinhole camera
-    lm::asset("camera1", "camera::pinhole", {
-        {"film", "film1"},
-        {"position", opt["eye"]},
-        {"center", opt["lookat"]},
-        {"up", {0,1,0}},
-        {"vfov", opt["vfov"]}
-    });
+        // Pinhole camera
+        lm::asset("camera1", "camera::pinhole", {
+            {"film", "film1"},
+            {"position", opt["eye"]},
+            {"center", opt["lookat"]},
+            {"up", {0,1,0}},
+            {"vfov", opt["vfov"]}
+        });
 
-    // OBJ model
-    lm::asset("obj1", "model::wavefrontobj", {{"path", opt["obj"]}});
+        // OBJ model
+        lm::asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
 
-    // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
 
-    // Define scene primitives
+        // Define scene primitives
 
-    // Camera
-    lm::primitive(lm::Mat4(1), {{"camera", "camera1"}});
+        // Camera
+        lm::primitive(lm::Mat4(1), { {"camera", "camera1"} });
 
-    // Create primitives from model asset
-    lm::primitives(lm::Mat4(1), "obj1");
+        // Create primitives from model asset
+        lm::primitives(lm::Mat4(1), "obj1");
 
-    // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
 
-    // Render an image
-    lm::render("renderer::pt", "accel::sahbvh", {
-        {"output", "film1"},
-        {"spp", opt["spp"]},
-        {"maxLength", opt["len"]}
-    });
+        // Render an image
+        lm::render("renderer::pt", "accel::sahbvh", {
+            {"output", "film1"},
+            {"spp", opt["spp"]},
+            {"maxLength", opt["len"]}
+        });
 
-    // Save rendered image
-    lm::save("film1", opt["out"]);
+        // Save rendered image
+        lm::save("film1", opt["out"]);
+    }
+    catch (const std::exception& e) {
+        std::cout << "Runtime error: " << e.what() << std::endl;
+    }
 
     return 0;
 }
