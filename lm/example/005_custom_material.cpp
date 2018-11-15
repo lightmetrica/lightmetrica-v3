@@ -5,15 +5,33 @@
 
 #include <lm/lm.h>
 #include <iostream>
+using namespace lm::literals;
 
 // ----------------------------------------------------------------------------
 
+class Material_VisualizeNormal final : public lm::Material {
+public:
+    virtual bool construct(const lm::Json& prop) override {
+        LM_UNUSED(prop);
+        return true;
+    }
 
+    virtual std::optional<lm::RaySample> sampleRay(lm::Rng& rng, const lm::SurfacePoint& sp, lm::Vec3 wi) const override {
+        LM_UNUSED(rng, sp, wi);
+        LM_UNREACHABLE_RETURN();
+    }
+
+    virtual std::optional<lm::Vec3> reflectance(const lm::SurfacePoint& sp) const override {
+        return glm::abs(sp.n);
+    }
+};
+
+LM_COMP_REG_IMPL(Material_VisualizeNormal, "material::visualize_normal");
 
 // ----------------------------------------------------------------------------
 
 // This example illustrates how to extend features of Lightmetrica
-// by creating simple texture extension.
+// by creating simple material extension.
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
@@ -29,8 +47,6 @@ int main(int argc, char** argv) {
         const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
-            "spp": {},
-            "len": {},
             "w": {},
             "h": {},
             "eye": [{},{},{}],
@@ -58,7 +74,11 @@ int main(int argc, char** argv) {
         });
 
         // OBJ model
-        lm::asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
+        // Replace all materials to diffuse and use our checker texture
+        lm::asset("obj1", "model::wavefrontobj", {
+            {"path", opt["obj"]},
+            {"base_material", "material::visualize_normal"}
+        });
 
         // ------------------------------------------------------------------------
 
@@ -68,15 +88,15 @@ int main(int argc, char** argv) {
         lm::primitive(lm::Mat4(1), { {"camera", "camera1"} });
 
         // Create primitives from model asset
+        // Replace all textures inside OBJ file to our texture
         lm::primitives(lm::Mat4(1), "obj1");
 
         // ------------------------------------------------------------------------
 
         // Render an image
-        lm::render("renderer::pt", "accel::sahbvh", {
+        lm::render("renderer::raycast", "accel::sahbvh", {
             {"output", "film1"},
-            {"spp", opt["spp"]},
-            {"maxLength", opt["len"]}
+            {"use_constant_color", true}
         });
 
         // Save rendered image

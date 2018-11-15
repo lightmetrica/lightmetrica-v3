@@ -20,8 +20,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        film_ = parent()->underlying<Film>(
-            fmt::format("assets.{}", prop["output"].get<std::string>()));
+        film_ = parent()->underlying<Film>(fmt::format("assets.{}", prop["output"].get<std::string>()));
         if (!film_) {
             return false;
         }

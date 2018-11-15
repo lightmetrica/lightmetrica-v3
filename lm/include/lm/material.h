@@ -18,7 +18,9 @@ public:
     /*!
         \brief Check if the material is specular.
     */
-    virtual bool isSpecular(const SurfacePoint& sp) const = 0;
+    virtual bool isSpecular(const SurfacePoint& sp) const {
+        LM_UNUSED(sp); return false;
+    }
 
     /*!
         \brief Sample a ray given surface point and incident direction.
@@ -28,25 +30,22 @@ public:
     /*!
         \brief Evaluate reflectance.
     */
-    virtual Vec3 reflectance(const SurfacePoint& sp) const {
-        LM_UNUSED(sp);
-        LM_UNREACHABLE_RETURN();
+    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const {
+        LM_UNUSED(sp); return {};
     }
 
     /*!
         \brief Evaluate pdf in projected solid angle measure.
     */
     virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {
-        LM_UNUSED(sp); LM_UNUSED(wi); LM_UNUSED(wo);
-        LM_UNREACHABLE_RETURN();
+        LM_UNUSED(sp, wi, wo); LM_UNREACHABLE_RETURN();
     }
 
     /*!
         \brief Evaluate BSDF.
     */
     virtual Vec3 eval(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {
-        LM_UNUSED(sp); LM_UNUSED(wi); LM_UNUSED(wo);
-        LM_UNREACHABLE_RETURN();
+        LM_UNUSED(sp, wi, wo); LM_UNREACHABLE_RETURN();
     }
 };
 

@@ -155,6 +155,14 @@ public:
         return primitive.light->eval(sp, wo);
     }
 
+    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const override {
+        const auto& primitive = primitives_.at(sp.primitive);
+        if (!primitive.material) {
+            return {};
+        }
+        return primitive.material->reflectance(sp);
+    }
+
 private:
     int camera_;    // Camera primitive index
     std::vector<Primitive> primitives_;

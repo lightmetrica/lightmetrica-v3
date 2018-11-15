@@ -162,7 +162,6 @@
 #define LM_TOKENPASTE2(x, y) LM_TOKENPASTE(x, y)
 #define LM_STRINGIFY(x) #x
 #define LM_STRINGIFY2(x) LM_STRINGIFY(x)
-#define LM_UNUSED(x) (void)x
 #define LM_UNREACHABLE() assert(0)
 #define LM_UNREACHABLE_RETURN() assert(0); return {}
 
@@ -206,6 +205,18 @@
 #ifndef LM_NAMESPACE
 #define LM_NAMESPACE lm
 #endif
+
+// ----------------------------------------------------------------------------
+
+// Unused macro
+// https://stackoverflow.com/questions/1486904/how-do-i-best-silence-a-warning-about-unused-variables/44106902
+#define LM_UNUSED(...) { (decltype(LM_NAMESPACE::detail::unused(__VA_ARGS__)))0; }
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+LM_NAMESPACE_BEGIN(detail)
+template <typename... Args>
+inline void unused(Args&&...) {}
+LM_NAMESPACE_END(detail)
+LM_NAMESPACE_END(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
 

@@ -418,8 +418,8 @@ public:
             const auto* diffuse = materials_.at(diffuse_).get();
             const auto* glossy  = materials_.at(glossy_).get();
             const auto wd = [&]() {
-                const auto wd = glm::compMax(diffuse->reflectance(sp));
-                const auto ws = glm::compMax(glossy->reflectance(sp));
+                const auto wd = glm::compMax(*diffuse->reflectance(sp));
+                const auto ws = glm::compMax(*glossy->reflectance(sp));
                 return wd == 0_f && ws == 0_f ? 1_f : wd / (wd + ws);
             }();
             if (rng.u() < wd) {
@@ -440,6 +440,16 @@ public:
                 return s->asComp(glossy_).multWeight(1_f/(1_f-wd));
             }
         }
+    }
+
+    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const {
+        if (sp.comp >= 0) {
+            return materials_.at(sp.comp)->reflectance(sp);
+        }
+        if (diffuse_ >= 0) {
+            return materials_.at(diffuse_)->reflectance(sp);
+        }
+        return {};
     }
 
     virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {
@@ -469,6 +479,10 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
+        // Texture asset name
+        const auto textureAssetName = valueOr<std::string>(prop, "texture", "texture::bitmap");
+
+        // Paruse OBJ/MLT file
         WavefrontOBJParser parser;
         return parser.parse(prop["path"], geo_,
             // Process mesh
@@ -502,20 +516,32 @@ public:
             },
             // Process material
             [&](const MTLMatParams& m) -> bool {
-                auto mat = comp::detail::createDirect<Material_WavefrontObj>(this, m);
-                if (!mat) {
-                    return false;
+                if (const auto it = prop.find("base_material"); it != prop.end()) {
+                    // Use user-specified material
+                    auto mat = comp::create<Material>(*it, this, {});
+                    if (!mat) {
+                        return false;
+                    }
+                    assetsMap_[m.name] = int(assets_.size());
+                    assets_.push_back(std::move(mat));
                 }
-                if (!mat->construct({})) {
-                    return false;
+                else {
+                    // Default mixture material
+                    auto mat = comp::detail::createDirect<Material_WavefrontObj>(this, m);
+                    if (!mat) {
+                        return false;
+                    }
+                    if (!mat->construct(prop)) {
+                        return false;
+                    }
+                    assetsMap_[m.name] = int(assets_.size());
+                    assets_.push_back(std::move(mat));
                 }
-                assetsMap_[m.name] = int(assets_.size());
-                assets_.push_back(std::move(mat));
                 return true;
             },
             // Process texture
             [&](const MTLTextureParams& tex) -> bool {
-                auto texture = comp::create<Texture>("texture::bitmap", this, {
+                auto texture = comp::create<Texture>(textureAssetName, this, {
                     {"path", tex.path}
                 });
                 if (!texture) {

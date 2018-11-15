@@ -195,6 +195,12 @@ public:
         f(x,wo) where x is endpoint
     */
     virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const = 0;
+
+    /*!
+        \brief Evaluate reflectance (if available).
+        \rho(x)
+    */
+    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const = 0;
 };
 
 // ----------------------------------------------------------------------------

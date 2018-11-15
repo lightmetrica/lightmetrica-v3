@@ -44,7 +44,7 @@ public:
         );
     }
 
-    virtual Vec3 reflectance(const SurfacePoint& sp) const {
+    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const {
         LM_UNUSED(sp);
         return Ks_;
     }

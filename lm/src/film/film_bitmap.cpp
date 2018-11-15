@@ -44,7 +44,7 @@ public:
         for (int y = 0; y < h_; y++) {
             for (int x = 0; x < w_; x++) {
                 for (int i = 0; i < 3; i++) {
-                    d[3*(y*w_+x)+i] = float(data_[(h_-1-y)*w_+(w_-1-x)][i]);
+                    d[3*(y*w_+x)+i] = float(data_[y*w_+x][i]);
                 }
             }
         }

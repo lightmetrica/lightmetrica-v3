@@ -15,14 +15,15 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_Raycast final : public Renderer {
 private:
-    Vec3 color_;
+    Vec3 bgColor_;
+    bool useConstantColor_;
     Film* film_;
 
 public:
     virtual bool construct(const Json& prop) override {
-        color_ = valueOr(prop, "color", Vec3(1_f));
-        film_ = parent()->underlying<Film>(
-            fmt::format("assets.{}", prop["output"].get<std::string>()));
+        bgColor_ = valueOr(prop, "bg_color", Vec3(1_f));
+        useConstantColor_ = valueOr(prop, "use_constant_color", false);
+        film_ = parent()->underlying<Film>(fmt::format("assets.{}", prop["output"].get<std::string>()));
         if (!film_) {
             return false;
         }
@@ -39,10 +40,15 @@ public:
             const auto ray = scene.primaryRay({(x+.5_f)/w, (y+.5_f)/h});
             const auto sp = scene.intersect(ray);
             if (!sp) {
-                film_->setPixel(x, y, color_);
+                film_->setPixel(x, y, bgColor_);
                 return;
             }
-            film_->setPixel(x, y, Vec3(glm::abs(glm::dot(sp->n, -ray.d))));
+            const auto R = scene.reflectance(*sp);
+            auto C = R ? *R : Vec3();
+            if (!useConstantColor_) {
+                C *= glm::abs(glm::dot(sp->n, -ray.d));
+            }
+            film_->setPixel(x, y, C);
         });
     }
 };

@@ -21,12 +21,12 @@ public:
     /*!
         \brief Evaluate alpha component of the texture.
     */
-    virtual Float evalAlpha(Vec2 t) const = 0;
+    virtual Float evalAlpha(Vec2 t) const { LM_UNUSED(t); return 0_f; }
 
     /*!
         \brief Check if texture has alpha component.
     */
-    virtual bool hasAlpha() const = 0;
+    virtual bool hasAlpha() const { return false; }
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

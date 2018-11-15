@@ -20,7 +20,7 @@ public:
     virtual bool construct(const Json& prop) override {
         mapKd_ = parent()->underlying<Texture>(prop, "mapKd");
         if (!mapKd_) {
-            Kd_ = prop["Kd"];
+            Kd_ = valueOr<Vec3>(prop, "Kd", Vec3(1_f));
         }
         return true;
     }
@@ -41,7 +41,7 @@ public:
         );
     }
 
-    virtual Vec3 reflectance(const SurfacePoint& sp) const {
+    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const {
         return mapKd_ ? mapKd_->eval(sp.t) : Kd_;
     }
 

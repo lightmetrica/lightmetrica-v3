@@ -30,8 +30,13 @@ using Mat3 = glm::tmat3x3<Float>;
 using Mat4 = glm::tmat4x4<Float>;
 
 // Floating point literals
+LM_NAMESPACE_BEGIN(literals)
 constexpr Float operator"" _f(long double v) { return Float(v); }
 constexpr Float operator"" _f(unsigned long long v) { return Float(v); }
+LM_NAMESPACE_END(literals)
+
+// Make user-defined literals default inside lm namespace
+using namespace literals;
 
 // Math constants
 constexpr Float Inf = 1e+10_f;
