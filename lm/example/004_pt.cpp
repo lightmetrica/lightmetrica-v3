@@ -6,6 +6,8 @@
 #include <lm/lm.h>
 #include <iostream>
 
+// Example of rendering an image with path tracing,
+// which explains basic usage of user APIs.
 int main(int argc, char** argv) {
     try {
         // Initialize the framework

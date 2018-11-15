@@ -20,7 +20,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        color_ = prop["color"];
+        color_ = valueOr(prop, "color", Vec3(1_f));
         film_ = parent()->underlying<Film>(
             fmt::format("assets.{}", prop["output"].get<std::string>()));
         if (!film_) {
