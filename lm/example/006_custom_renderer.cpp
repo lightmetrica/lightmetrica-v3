@@ -4,7 +4,6 @@
 */
 
 #include <lm/lm.h>
-#include <iostream>
 using namespace lm::literals;
 
 // ----------------------------------------------------------------------------
@@ -77,7 +76,7 @@ int main(int argc, char** argv) {
             "vfov": {}
         }})");
 
-        // ------------------------------------------------------------------------
+        // --------------------------------------------------------------------
 
         // Define assets
 
@@ -102,7 +101,7 @@ int main(int argc, char** argv) {
             {"path", opt["obj"]}
         });
 
-        // ------------------------------------------------------------------------
+        // --------------------------------------------------------------------
 
         // Define scene primitives
 
@@ -112,7 +111,7 @@ int main(int argc, char** argv) {
         // Create primitives from model asset
         lm::primitives(lm::Mat4(1), "obj1");
 
-        // ------------------------------------------------------------------------
+        // --------------------------------------------------------------------
 
         // Render an image
         lm::render("renderer::ao", "accel::sahbvh", {
@@ -124,7 +123,7 @@ int main(int argc, char** argv) {
         lm::save("film1", opt["out"]);
     }
     catch (const std::exception& e) {
-        std::cout << "Runtime error: " << e.what() << std::endl;
+        LM_ERROR("Runtime error: {}", e.what());
     }
 
     return 0;

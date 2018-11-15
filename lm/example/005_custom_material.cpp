@@ -5,7 +5,6 @@
 
 #include <lm/lm.h>
 #include <iostream>
-using namespace lm::literals;
 
 // ----------------------------------------------------------------------------
 
@@ -54,7 +53,7 @@ int main(int argc, char** argv) {
             "vfov": {}
         }})");
 
-        // ------------------------------------------------------------------------
+        // --------------------------------------------------------------------
 
         // Define assets
 
@@ -80,7 +79,7 @@ int main(int argc, char** argv) {
             {"base_material", "material::visualize_normal"}
         });
 
-        // ------------------------------------------------------------------------
+        // --------------------------------------------------------------------
 
         // Define scene primitives
 
@@ -91,7 +90,7 @@ int main(int argc, char** argv) {
         // Replace all textures inside OBJ file to our texture
         lm::primitives(lm::Mat4(1), "obj1");
 
-        // ------------------------------------------------------------------------
+        // --------------------------------------------------------------------
 
         // Render an image
         lm::render("renderer::raycast", "accel::sahbvh", {
@@ -103,7 +102,7 @@ int main(int argc, char** argv) {
         lm::save("film1", opt["out"]);
     }
     catch (const std::exception& e) {
-        std::cout << "Runtime error: " << e.what() << std::endl;
+        LM_ERROR("Runtime error: {}", e.what());
     }
 
     return 0;
