@@ -332,11 +332,16 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
-        LM_UNUSED(prop);
+        // Underlying assets name
+        const auto glassMaterialName   = valueOr<std::string>(prop, "glass", "material::glass");
+        const auto mirrorMaterialName  = valueOr<std::string>(prop, "mirror", "material::mirror");
+        const auto diffuseMaterialName = valueOr<std::string>(prop, "diffuse", "material::diffuse");
+        const auto glossyMaterialName  = valueOr<std::string>(prop, "glossy", "material::glossy");
+
         // Make parent component as a parent for the newly created components
         if (objmat_.illum == 7) {
             // Glass material
-            auto p = comp::create<Material>("material::glass", this, {
+            auto p = comp::create<Material>(glassMaterialName, this, {
                 {"Ni", objmat_.Ni}
             });
             if (!p) {
@@ -347,7 +352,7 @@ public:
         }
         else if (objmat_.illum == 5) {
             // Mirror material
-            auto p = comp::create<Material>("material::mirror", this);
+            auto p = comp::create<Material>(mirrorMaterialName, this);
             if (!p) {
                 return false;
             }
@@ -356,7 +361,7 @@ public:
         }
         else {
             // Diffuse material
-            auto diffuse = comp::create<Material>("material::diffuse", this, {
+            auto diffuse = comp::create<Material>(diffuseMaterialName, this, {
                 {"Kd", objmat_.Kd},
                 {"mapKd", objmat_.mapKd < 0 ? Json{} : objmat_.mapKd}
             });
@@ -369,7 +374,7 @@ public:
             // Glossy material
             const auto r = 2_f / (2_f + objmat_.Ns);
             const auto as = math::safeSqrt(1_f - objmat_.an * .9_f);
-            auto glossy = comp::create<Material>("material::glossy", this, {
+            auto glossy = comp::create<Material>(glossyMaterialName, this, {
                 {"Ks", objmat_.Ks},
                 {"ax", std::max(1e-3_f, r / as)},
                 {"ay", std::max(1e-3_f, r * as)}

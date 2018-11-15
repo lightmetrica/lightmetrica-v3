@@ -4,61 +4,87 @@
 */
 
 #include <lm/lm.h>
+#include <iostream>
+
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
 
 // This example illustrates how to extend features of Lightmetrica
 // by creating simple texture extension.
-int main() {
-    // Initialize the framework
-    lm::init();
+int main(int argc, char** argv) {
+    try {
+        // Initialize the framework
+        lm::init({
+            #if LM_DEBUG_MODE
+            {"numThreads", -1}
+            #else
+            {"numThreads", -1}
+            #endif
+        });
 
-    // ------------------------------------------------------------------------
+        // Parse command line arguments
+        const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{
+            "obj": "{}",
+            "out": "{}",
+            "spp": {},
+            "len": {},
+            "w": {},
+            "h": {},
+            "eye": [{},{},{}],
+            "lookat": [{},{},{}],
+            "vfov": {}
+        }})");
 
-    // Define assets
+        // ------------------------------------------------------------------------
 
-    // Film for the rendered image
-    lm::asset("film1", "film::bitmap", {{"w", 1920}, {"h", 1080}});
+        // Define assets
 
-    // Pinhole camera
-    lm::asset("camera1", "camera::pinhole", {
-        {"film", "film1"},
-        {"position", {0,0,5}},
-        {"center", {0,0,0}},
-        {"up", {0,1,0}},
-        {"vfov", 30}
-    });
+        // Film for the rendered image
+        lm::asset("film1", "film::bitmap", {
+            {"w", opt["w"]},
+            {"h", opt["h"]}
+        });
 
-    // Load mesh with raw vertex data
-    lm::asset("mesh1", "mesh::raw", {
-        {"ps", {-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1}},
-        {"ns", {0,0,1}},
-        {"ts", {0,0,1,0,1,1,0,1}},
-        {"fs", {
-            {"p", {0,1,2,0,2,3}},
-            {"n", {0,0,0,0,0,0}},
-            {"t", {0,1,2,0,2,3}}
-        }}
-    });
+        // Pinhole camera
+        lm::asset("camera1", "camera::pinhole", {
+            {"film", "film1"},
+            {"position", opt["eye"]},
+            {"center", opt["lookat"]},
+            {"up", {0,1,0}},
+            {"vfov", opt["vfov"]}
+        });
 
-    // ------------------------------------------------------------------------
+        // OBJ model
+        lm::asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
 
-    // Define scene primitives
+        // ------------------------------------------------------------------------
 
-    // Camera
-    lm::primitive(lm::Mat4(1), {{"camera", "camera1"}});
+        // Define scene primitives
 
-    // Mesh
-    lm::primitive(lm::Mat4(1), {{"mesh", "mesh1"}});
+        // Camera
+        lm::primitive(lm::Mat4(1), { {"camera", "camera1"} });
 
-    // ------------------------------------------------------------------------
+        // Create primitives from model asset
+        lm::primitives(lm::Mat4(1), "obj1");
 
-    // Render an image
-    lm::render("renderer::raycast", "accel::sahbvh", {
-        {"output", "film1"},
-        {"color", {0,0,0}}
-    });
+        // ------------------------------------------------------------------------
 
-    // Save rendered image
-    lm::save("film1", "result.pfm");
+        // Render an image
+        lm::render("renderer::pt", "accel::sahbvh", {
+            {"output", "film1"},
+            {"spp", opt["spp"]},
+            {"maxLength", opt["len"]}
+        });
+
+        // Save rendered image
+        lm::save("film1", opt["out"]);
+    }
+    catch (const std::exception& e) {
+        std::cout << "Runtime error: " << e.what() << std::endl;
+    }
 
     return 0;
 }
