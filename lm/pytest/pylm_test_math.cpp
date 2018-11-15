@@ -10,7 +10,7 @@ LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
 class PyTestBinder_Math : public PyTestBinder {
 public:
-    virtual void bind(pybind11::module& m) const {
+    virtual void bind(py::module& m) const {
         // Python -> C++
         m.def("compSum2", [](lm::Vec2 v) -> lm::Float {
             return v.x + v.y;

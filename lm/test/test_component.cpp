@@ -127,6 +127,7 @@ TEST_CASE("Component") {
 
 // ----------------------------------------------------------------------------
 
+#if 1
 // Define a trampoline class (see ref) for the interface A
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
 struct A_Py final : public A {
@@ -363,6 +364,7 @@ TEST_CASE("Python component plugin") {
         REQUIRE(false);
     }
 }
+#endif
 
 // ----------------------------------------------------------------------------
 

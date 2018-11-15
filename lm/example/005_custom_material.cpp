@@ -87,7 +87,6 @@ int main(int argc, char** argv) {
         lm::primitive(lm::Mat4(1), { {"camera", "camera1"} });
 
         // Create primitives from model asset
-        // Replace all textures inside OBJ file to our texture
         lm::primitives(lm::Mat4(1), "obj1");
 
         // --------------------------------------------------------------------

@@ -10,7 +10,7 @@ LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
 class PyTestBinder_Json : public PyTestBinder {
 public:
-    virtual void bind(pybind11::module& m) const {
+    virtual void bind(py::module& m) const {
         m.def("round_trip", [](lm::Json v) -> lm::Json {
             return v;
         });
