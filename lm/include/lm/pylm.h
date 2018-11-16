@@ -20,7 +20,9 @@ LM_NAMESPACE_BEGIN(detail)
 // Allows to access private members to Component instances
 class ComponentAccess {
 public:
-    
+    static std::any& ownerRef(Component& comp) {
+        return comp.ownerRef_;
+    }
 };
 LM_NAMESPACE_END(detail)
 
@@ -39,7 +41,7 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             // to manage lifetime of the instance
             auto instCpp = instPy.cast<InterfaceT*>();
             // Assignment to std::any increments ref counter.
-            instCpp->ownerRef_ = instPy;
+            detail::ComponentAccess::ownerRef(*instCpp) = instPy;
             // Destruction of instPy decreases ref counter.
             return instCpp;
         },
@@ -48,7 +50,7 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             // Note we need one extra deref because one reference is still hold by ownerRef_.
             // The pointer of component is associated with instPy
             // and it will be destructed when it is deallocated by GC.
-            auto instPy = std::any_cast<pybind11::object>(p->ownerRef_);
+            auto instPy = std::any_cast<pybind11::object>(detail::ComponentAccess::ownerRef(*p));
             instPy.dec_ref();
         });
 }
@@ -88,11 +90,12 @@ static pybind11::object castToPythonObject(Component* inst) {
     // Instead we associate lifetime of the object with python object.
 
     // Extract owner if available
-    if (inst->ownerRef_.has_value()) {
+    auto& ownerRef = detail::ComponentAccess::ownerRef(*inst);
+    if (ownerRef.has_value()) {
         // Returning instantiated pointer incurs another wrapper for the pointer inside pybind.
         // To avoid this, if the instance was created inside python, extract the underlying
         // python object and directly return it.
-        auto instPy = std::any_cast<pybind11::object>(inst->ownerRef_);
+        auto instPy = std::any_cast<pybind11::object>(ownerRef);
         return instPy;
     }
     // Otherwise inst is C++ instance so return with standard pointer
