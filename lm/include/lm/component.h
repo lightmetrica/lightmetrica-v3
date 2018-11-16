@@ -26,6 +26,7 @@ class Component {
 private:
     friend class comp::detail::Impl;
     friend class py::detail::ComponentAccess;
+    friend struct ComponentDeleter;
 
 public:
     //! Factory function type
@@ -36,7 +37,7 @@ public:
 
     //! Unique pointer for component instances.
     template <typename InterfaceT>
-    using Ptr = std::unique_ptr<InterfaceT, ReleaseFunction>;
+    using Ptr = std::unique_ptr<InterfaceT, ComponentDeleter>;
 
 private:
     //! Name of the component instance.
@@ -74,14 +75,6 @@ public:
     }
 
 public:
-    /*!
-        \brief Make UniquePtr from an component instance.
-    */
-    template <typename InterfaceT>
-    static Ptr<InterfaceT> makeUnique(Component* inst) {
-        return Ptr<InterfaceT>(dynamic_cast<InterfaceT*>(inst), inst->releaseFunc_);
-    }
-
     /*!
         \brief Cast to specific component interface type.
     */
@@ -189,6 +182,21 @@ public:
 
 // ----------------------------------------------------------------------------
 
+/*!
+    \brief Deleter for component instances
+    This must be default constructable because pybind11 library
+    requires to construct unique_ptr from a single pointer.
+*/
+struct ComponentDeleter {
+    ComponentDeleter() = default;
+    void operator()(Component* p) const noexcept {
+        auto releaseFunc = p->releaseFunc_;
+        releaseFunc(p);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
 LM_NAMESPACE_BEGIN(comp)
 LM_NAMESPACE_BEGIN(detail)
 
@@ -235,9 +243,9 @@ Component::Ptr<InterfaceT> create(const std::string& key, Component* parent) {
     auto* inst = detail::createComp(
         detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str(), parent);
     if (!inst) {
-        return Component::Ptr<InterfaceT>(nullptr, nullptr);
+        return {};
     }
-    return Component::makeUnique<InterfaceT>(inst);
+    return Component::Ptr<InterfaceT>(dynamic_cast<InterfaceT*>(inst));
 }
 
 /*!
@@ -253,7 +261,7 @@ Component::Ptr<InterfaceT> create(
 {
     auto inst = create<InterfaceT>(key, parent);
     if (!inst || !inst->construct(prop)) {
-        return Component::Ptr<InterfaceT>(nullptr, nullptr);
+        return {};
     }
     return inst;
 }
@@ -318,9 +326,7 @@ template <typename ComponentT, typename... Ts>
 Component::Ptr<ComponentT> createDirect(Component* parent, Ts&&... args) {
     auto comp = std::make_unique<ComponentT>(std::forward<Ts>(args)...);
     comp->setParent(parent);
-    return Component::Ptr<ComponentT>(
-        comp.release(),
-        [](Component* p) { LM_SAFE_DELETE(p); });
+    return Component::Ptr<ComponentT>(comp.release());
 }
 
 // ----------------------------------------------------------------------------
@@ -394,8 +400,12 @@ public:
     RegEntry(std::string key) : key_(std::move(key)) {
         // Register factory function
         reg(key_.c_str(),
-            []() -> Component* { return new ImplType; },
-            [](Component* p)   { LM_SAFE_DELETE(p); });
+            []() -> Component* {
+                return new ImplType;
+            },
+            [](Component* p) {
+                LM_SAFE_DELETE(p);
+            });
     }
     ~RegEntry() {
         // Unregister factory function

@@ -89,7 +89,7 @@ TEST_CASE("Component") {
 
     SUBCASE("Cast to parent interface") {
         auto b = lm::comp::create<B>("test::comp::b1", nullptr);
-        const auto a = lm::Component::Ptr<A>(b.release(), b.get_deleter());
+        const auto a = std::unique_ptr<A>(b.release());
         REQUIRE(a);
         CHECK(a->f1() == 42);
         CHECK(a->f2(1, 2) == 3);

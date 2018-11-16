@@ -166,7 +166,7 @@ public:
 private:
     int camera_;    // Camera primitive index
     std::vector<Primitive> primitives_;
-    Ptr<Accel> accel_;
+    Component::Ptr<Accel> accel_;
 };
 
 LM_COMP_REG_IMPL(Scene_, "scene::default");

@@ -6,7 +6,6 @@
 #pragma once
 
 #include <lm/pylm.h>
-#include <lm/component.h>
 
 #define LM_TEST_NAMESPACE lmtest
 

@@ -230,17 +230,19 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // ----------------------------------------------------------------------------
 
 // Forward declarations
-class Assets;         // assets.h
-class Mesh;           // mesh.h
-class Material;       // material.h
-class Light;          // light.h
-class Camera;         // camera.h
-struct FilmBuffer;    // film.h
+struct ComponentDeleter;  // component.h
+class Component;
+class Assets;             // assets.h
+class Mesh;               // mesh.h
+class Material;           // material.h
+class Light;              // light.h
+class Camera;             // camera.h
+struct FilmBuffer;        // film.h
 class Film;
-struct SurfacePoint;  // scene.h
+struct SurfacePoint;      // scene.h
 struct RaySample;
 class Scene;
-class Renderer;       // renderer.h
+class Renderer;           // renderer.h
 LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, class Impl)  // Some detailed classes
 LM_FORWARD_DECLARE_WITH_NAMESPACE(py::detail, class ComponentAccess)
 

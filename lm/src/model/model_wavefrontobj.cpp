@@ -310,7 +310,7 @@ private:
     MTLMatParams objmat_;
 
     // Underlying material components
-    std::vector<Ptr<Material>> materials_;
+    std::vector<Component::Ptr<Material>> materials_;
 
     // Component indices
     int diffuse_ = -1;
@@ -468,7 +468,7 @@ private:
     // Surface geometry
     OBJSurfaceGeometry geo_;
     // Underlying assets
-    std::vector<Ptr<Component>> assets_;
+    std::vector<Component::Ptr<Component>> assets_;
     std::unordered_map<std::string, int> assetsMap_;
     // Mesh group which assocites a mesh and a material
     std::vector<std::tuple<int, int, int>> groups_;

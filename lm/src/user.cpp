@@ -116,9 +116,9 @@ public:
     }
 
 private:
-    Ptr<Assets> assets_;
-    Ptr<Scene> scene_;
-    Ptr<Renderer> renderer_;
+    Component::Ptr<Assets> assets_;
+    Component::Ptr<Scene> scene_;
+    Component::Ptr<Renderer> renderer_;
 };
 
 }

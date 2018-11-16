@@ -8,6 +8,11 @@
 #include "lm.h"
 #include "pylm_json.h"
 #include "pylm_math.h"
+#include <pybind11/functional.h>
+
+// ----------------------------------------------------------------------------
+
+PYBIND11_DECLARE_HOLDER_TYPE(T, lm::Component::Ptr<T>, true);
 
 // ----------------------------------------------------------------------------
 
@@ -17,7 +22,7 @@ LM_NAMESPACE_BEGIN(py)
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
-// Allows to access private members to Component instances
+// Allows to access private members of Component
 class ComponentAccess {
 public:
     static std::any& ownerRef(Component& comp) {
@@ -136,11 +141,23 @@ static void init(pybind11::module& m) {
     // ------------------------------------------------------------------------
 
     // component.h
-    pybind11::class_<Component, Component_Py>(m, "Component")
+    pybind11::class_<Component, Component_Py, Component::Ptr<Component>>(m, "Component")
         .def(pybind11::init<>())
         .def("construct", &Component::construct)
         .def("parent", &Component::parent)
         .PYLM_DEF_COMP_BIND(Component);
+
+    {
+        // Namespaces are handled as submodules
+        auto sm = m.def_submodule("comp");
+        auto sm_detail = sm.def_submodule("detail");
+
+        // Component API
+        sm_detail.def("loadPlugin", &comp::detail::loadPlugin);
+        sm_detail.def("loadPlugins", &comp::detail::loadPlugins);
+        sm_detail.def("unloadPlugins", &comp::detail::unloadPlugins);
+        sm_detail.def("foreachRegistered", &comp::detail::foreachRegistered);
+    }
 
     // ------------------------------------------------------------------------
 
@@ -158,7 +175,6 @@ static void init(pybind11::module& m) {
 
     // logger.h
     {
-        // Namespaces are handled as submodules
         auto sm = m.def_submodule("log");
 
         // LogLevel
