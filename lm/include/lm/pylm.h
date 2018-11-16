@@ -28,6 +28,9 @@ public:
     static std::any& ownerRef(Component& comp) {
         return comp.ownerRef_;
     }
+    static Component::ReleaseFunction& releaseFunc(Component& comp) {
+        return comp.releaseFunc_;
+    }
 };
 LM_NAMESPACE_END(detail)
 
@@ -57,6 +60,8 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             // and it will be destructed when it is deallocated by GC.
             auto instPy = std::any_cast<pybind11::object>(detail::ComponentAccess::ownerRef(*p));
             instPy.dec_ref();
+            // Prevent further invocation of release function
+            detail::ComponentAccess::releaseFunc(*p) = nullptr;
         });
 }
 

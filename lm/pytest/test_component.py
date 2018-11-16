@@ -28,20 +28,15 @@ def test_construction():
     """Construction of instances"""
     with lm_logger_scope():
         # Create and use component inside python script
+        # without using factory function
         p = m.createA1()
         assert p.f1() == 42
         assert p.f2(1, 2) == 3
 
-        # Create component instance
-        p = m.D.create('test::comp::d1', None, {'v1':42, 'v2':43})
-        assert p.f() == 85
-
         # Use component inside native plugin
         with lm_plugin_scope('lm_test_plugin'):
-            #p = m.createTestPlugin()
-            #assert p.f() == 42
-            p = m.TestPlugin.create('testplugin::construct', None, {'v1':42, 'v2':43})
-            assert p.f() == -1
+            p = m.createTestPlugin()
+            assert p.f() == 42
             # Free p before unloading the plugin
             del p
             gc.collect()
@@ -52,19 +47,59 @@ def test_construction():
                 return 43
             def f2(self, a, b):
                 return a * b
-
-        class A3(m.A):
-            def __init__(self, v):
-                # We need explicit initialization (not super()) of the base class
-                # See https://pybind11.readthedocs.io/en/stable/advanced/classes.html
-                test_comp.A.__init__(self)
-                self.v = v
-            def f1(self):
-                return self.v
-            def f2(self, a, b):
-                return self.v * self.v
     
         # Instantiate inside python script and use it in python
         p = A2()
         assert p.f1() == 43
         assert p.f2(2, 3) == 6
+
+        # Instantiate inside python script and use it in C++
+        assert m.useA(p) == 86
+
+        # Define and register component implementation
+        # Implement component A
+        class A4(m.A):
+            def f1(self):
+                return 44
+            def f2(self, a, b):
+                return a - b
+        # Register A4 to the framework
+        m.A.reg(A4, 'test::comp::a4')
+
+        # Native embeded plugin
+        # w/o property
+        p = m.A.create('test::comp::a1', None)
+        assert p.f1() == 42
+        assert p.f2(2, 3) == 5
+        # w/ property
+        p = m.D.create('test::comp::d1', None, {'v1':42, 'v2':43})
+        assert p.f() == 85
+        # w/ parent component
+        d = m.D.create('test::comp::d1', None, {'v1':42, 'v2':43})
+        e = m.E.create('test::comp::e1', d, None)
+        assert e.f() == 86
+        # w/ underlying component of the parent
+        d  = m.D.create('test::comp::d1', None, {'v1':42, 'v2':43})
+        e1 = m.E.create('test::comp::e1', d, None)
+        e2 = m.E.create('test::comp::e2', e1, None)
+        assert e2.f() == 87
+
+        # Native external plugin
+        with lm_plugin_scope('lm_test_plugin'):
+            # w/o property
+            p = m.TestPlugin.create('testplugin::default', None)
+            assert p.f() == 42
+            # w/ property
+            p = m.TestPlugin.create('testplugin::construct', None, {'v1':42, 'v2':43})
+            assert p.f() == -1
+            del p
+            gc.collect()
+
+        # Python plugin
+        p = m.A.create('test::comp::a4', None)
+        assert p.f1() == 44
+        assert p.f2(2, 3) == -1
+
+        # Python plugin instantiate from C++
+        assert m.createA4AndCallFuncs() == (44, -1)
+

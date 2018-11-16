@@ -22,7 +22,7 @@ def pytest_configure(config):
 
     # Inject binary directory inside pytest module
     # so that it can be accessed from any tests.
-    pytest.lm_binary_dir = bin_dir
+    pytest.lm_binary_dir = os.path.abspath(bin_dir)
 
     # Wait for being attached
     attach = config.getoption("--attach")

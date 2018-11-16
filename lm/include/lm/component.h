@@ -190,8 +190,11 @@ public:
 struct ComponentDeleter {
     ComponentDeleter() = default;
     void operator()(Component* p) const noexcept {
-        auto releaseFunc = p->releaseFunc_;
-        releaseFunc(p);
+        if (auto releaseFunc = p->releaseFunc_; releaseFunc) {
+            // If the instance is directly created inside Python script
+            // and managed by Python interpreter, releaseFunc can be nullptr. 
+            releaseFunc(p);
+        }
     }
 };
 

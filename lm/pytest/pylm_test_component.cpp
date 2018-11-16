@@ -4,6 +4,7 @@
 */
 
 #include <pch.h>
+#define LM_TEST_INTERFACE_REG_IMPL
 #include <test_interface.h>
 #include "pylm_test.h"
 
@@ -11,20 +12,6 @@ namespace py = pybind11;
 using namespace py::literals;
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
-
-// ----------------------------------------------------------------------------
-
-struct A : public lm::Component {
-    virtual int f1() = 0;
-    virtual int f2(int a, int b) = 0;
-};
-
-struct A1 final : public A {
-    virtual int f1() override { return 42; }
-    virtual int f2(int a, int b) override { return a + b; }
-};
-
-LM_COMP_REG_IMPL(A1, "test::comp::a1");
 
 // ----------------------------------------------------------------------------
 
@@ -47,65 +34,6 @@ struct TestPlugin_Py final : public TestPlugin {
         PYBIND11_OVERLOAD_PURE(int, TestPlugin, f);
     }
 };
-
-// ----------------------------------------------------------------------------
-
-struct D : public lm::Component {
-    virtual int f() = 0;
-};
-
-struct D1 final : public D {
-    int v1;
-    int v2;
-    virtual bool construct(const lm::Json& prop) override {
-        v1 = prop["v1"].get<int>();
-        v2 = prop["v2"].get<int>();
-        return true;
-    }
-    virtual int f() override {
-        return v1 + v2;
-    }
-};
-
-LM_COMP_REG_IMPL(D1, "test::comp::d1");
-
-// ----------------------------------------------------------------------------
-
-struct E : public lm::Component {
-    virtual int f() = 0;
-};
-
-struct E1 final : public E {
-    D* d;
-    virtual bool construct(const lm::Json& prop) override {
-        d = parent()->cast<D>();
-        return true;
-    }
-    virtual int f() override {
-        return d->f() + 1;
-    }
-    virtual Component* underlying(const std::string& name) const {
-        LM_UNUSED(name);
-        return d;
-    }
-};
-
-struct E2 final : public E {
-    D* d;
-    virtual bool construct(const lm::Json& prop) override {
-        LM_UNUSED(prop);
-        d = parent()->underlying()->cast<D>();
-        return true;
-    }
-    virtual int f() override {
-        return d->f() + 2;
-    }
-};
-
-LM_COMP_REG_IMPL(E1, "test::comp::e1");
-LM_COMP_REG_IMPL(E2, "test::comp::e2");
-
-// ----------------------------------------------------------------------------
 
 struct D_Py final : public D {
     virtual bool construct([[maybe_unused]] const lm::Json& prop) override {
@@ -168,6 +96,17 @@ public:
 
         m.def("useA", [](A* a) -> int {
             return a->f1() * 2;
+        });
+
+        m.def("createA4AndCallFuncs", []() -> std::tuple<int, int> {
+            // test::comp::a4 should be defined inside Python script
+            int v1, v2;
+            {
+                auto p = lm::comp::create<A>("test::comp::a4", nullptr);
+                v1 = p->f1();
+                v2 = p->f2(2, 3);
+            }
+            return { v1, v2 };
         });
     }
 };
