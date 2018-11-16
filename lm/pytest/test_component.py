@@ -7,7 +7,10 @@ from pylm_test import component as m
 @contextmanager
 def lm_logger():
     try:
-        lm.log.
+        lm.log.init(['logger::default', {})
+    finally:
+        lm.log.shutdown()
+
 
 def test_construction():
     """Construction of instances"""

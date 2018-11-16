@@ -76,9 +76,20 @@ PYBIND11_MODULE(pylm, m)
     // Namespaces are handled as submodules
     {
         auto sm = m.def_submodule("log");
+
+        // LogLevel
+        pybind11::enum_<log::LogLevel>(sm, "LogLevel")
+            .value("Debug", log::LogLevel::Debug)
+            .value("Info", log::LogLevel::Info)
+            .value("Warn", log::LogLevel::Warn)
+            .value("Err", log::LogLevel::Err)
+            .value("Progress", log::LogLevel::Progress)
+            .value("ProgressEnd", log::LogLevel::ProgressEnd);
+
+        // Log API
         sm.def("init", &log::init);
         sm.def("shutdown", &log::shutdown);
-        sm.def("log", &log::log);
+        sm.def("log", pybind11::overload_cast<log::LogLevel, const char*, int, const char*>(&log::log));
         sm.def("updateIndentation", &log::updateIndentation);
     }
 }
