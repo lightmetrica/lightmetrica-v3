@@ -25,7 +25,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Component {
 private:
     friend class comp::detail::Impl;
-    friend class py::detail::Impl;
+    friend class py::detail::ComponentAccess;
 
 public:
     //! Factory function type

@@ -12,10 +12,21 @@ using namespace py::literals;
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
+// ----------------------------------------------------------------------------
+
 struct A : public lm::Component {
     virtual int f1() = 0;
     virtual int f2(int a, int b) = 0;
 };
+
+struct A1 final : public A {
+    virtual int f1() override { return 42; }
+    virtual int f2(int a, int b) override { return a + b; }
+};
+
+LM_COMP_REG_IMPL(A1, "test::comp::a1");
+
+// ----------------------------------------------------------------------------
 
 // Define a trampoline class (see ref) for the interface A
 // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
@@ -51,10 +62,12 @@ struct TestPlugin_Py final : public TestPlugin {
     }
 };
 
+// ----------------------------------------------------------------------------
+
 class PyTestBinder_Component : public PyTestBinder {
 public:
     virtual void bind(py::module& m) const {
-        lm::py::bindInterfaces(m);
+        lm::py::init(m);
         A_Py::bind(m);
         TestPlugin_Py::bind(m);
 

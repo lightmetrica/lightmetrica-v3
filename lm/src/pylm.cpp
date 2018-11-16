@@ -29,69 +29,11 @@ LM_NAMESPACE_END(log::detail)
 
 // ----------------------------------------------------------------------------
 
-PYBIND11_MODULE(pylm, m)
-{
-    using namespace pybind11::literals;
-
-    // Module description
+PYBIND11_MODULE(pylm, m) {
     m.doc() = R"x(
         pylm: Python binding of Lightmetrica.
     )x";
-
-    // Register component classes
-    
-
-    // ------------------------------------------------------------------------
-
-    // Film buffer (film.h)
-    pybind11::class_<FilmBuffer>(m, "FilmBuffer", pybind11::buffer_protocol())
-        // Register buffer description
-        .def_buffer([](FilmBuffer& buf) -> pybind11::buffer_info {
-            return pybind11::buffer_info(
-                buf.data,
-                sizeof(Float),
-                pybind11::format_descriptor<Float>::format(),
-                3,
-                { buf.h, buf.w, 3 },
-                { 3 * buf.w * sizeof(Float),
-                  3 * sizeof(Float),
-                  sizeof(Float) }
-            );
-        });
-
-    // ------------------------------------------------------------------------
-
-    // Register context APIs
-    // user.h
-    m.def("init", &init);
-    m.def("shutdown", &shutdown);
-    m.def("asset", &asset);
-    m.def("primitive", &primitive);
-    m.def("primitives", &primitives);
-    m.def("render", &render);
-    m.def("save", &save);
-    m.def("buffer", &buffer);
-
-    // logger.h
-    // Namespaces are handled as submodules
-    {
-        auto sm = m.def_submodule("log");
-
-        // LogLevel
-        pybind11::enum_<log::LogLevel>(sm, "LogLevel")
-            .value("Debug", log::LogLevel::Debug)
-            .value("Info", log::LogLevel::Info)
-            .value("Warn", log::LogLevel::Warn)
-            .value("Err", log::LogLevel::Err)
-            .value("Progress", log::LogLevel::Progress)
-            .value("ProgressEnd", log::LogLevel::ProgressEnd);
-
-        // Log API
-        sm.def("init", &log::init);
-        sm.def("shutdown", &log::shutdown);
-        sm.def("log", pybind11::overload_cast<log::LogLevel, const char*, int, const char*>(&log::log));
-        sm.def("updateIndentation", &log::updateIndentation);
-    }
+    py::init(m);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

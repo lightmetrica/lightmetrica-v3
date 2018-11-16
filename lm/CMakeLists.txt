@@ -138,7 +138,6 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES
 set(_PROJECT_NAME pylm)
 set(_HEADER_FILES 
     "${_INCLUDE_DIR}/pylm.h"
-    "${_INCLUDE_DIR}/pylm_component.h"
     "${_INCLUDE_DIR}/pylm_json.h"
     "${_INCLUDE_DIR}/pylm_math.h")
 set(_SOURCE_FILES 

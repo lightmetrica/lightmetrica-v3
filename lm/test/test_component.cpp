@@ -163,7 +163,7 @@ struct TestPlugin_Py final : public TestPlugin {
 };
 
 PYBIND11_EMBEDDED_MODULE(test_comp, m) {
-    lm::py::bindInterfaces(m);
+    lm::py::init(m);
     A_Py::bind(m);
     TestPlugin_Py::bind(m);
 
@@ -496,7 +496,7 @@ struct E_Py final : public E {
 };
 
 PYBIND11_EMBEDDED_MODULE(test_comp_2, m) {
-    lm::py::bindInterfaces(m);
+    lm::py::init(m);
     D_Py::bind(m);
     E_Py::bind(m);
     TestPlugin_Py::bind(m);
