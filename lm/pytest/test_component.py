@@ -56,16 +56,6 @@ def test_construction():
         # Instantiate inside python script and use it in C++
         assert m.useA(p) == 86
 
-        # Define and register component implementation
-        # Implement component A
-        class A4(m.A):
-            def f1(self):
-                return 44
-            def f2(self, a, b):
-                return a - b
-        # Register A4 to the framework
-        m.A.reg(A4, 'test::comp::a4')
-
         # Native embeded plugin
         # w/o property
         p = m.A.create('test::comp::a1', None)
@@ -95,6 +85,27 @@ def test_construction():
             del p
             gc.collect()
 
+        # Define and register component implementation
+        # Implement component A
+        class A4(m.A):
+            def f1(self):
+                return 44
+            def f2(self, a, b):
+                return a - b
+        # Register A4 to the framework
+        m.A.reg(A4, 'test::comp::a4')
+
+        # A5: with properties
+        class A5(m.A):
+            def construct(self, prop):
+                self.v = prop['v']
+                return True
+            def f1(self):
+                return self.v
+            def f2(self, a, b):
+                return a + b + self.v
+        m.A.reg(A5, 'test::comp::a5')
+
         # Python plugin
         p = m.A.create('test::comp::a4', None)
         assert p.f1() == 44
@@ -102,4 +113,4 @@ def test_construction():
 
         # Python plugin instantiate from C++
         assert m.createA4AndCallFuncs() == (44, -1)
-
+        assert m.createA5AndCallFuncs() == (7, 10)

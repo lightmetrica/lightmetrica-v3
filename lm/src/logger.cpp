@@ -125,11 +125,19 @@ LM_PUBLIC_API void shutdown() {
 }
 
 LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const char* message) {
-    Instance::get().log(level, filename, line, message);
+    if (Instance::initialized()) {
+        Instance::get().log(level, filename, line, message);
+    }
+    else {
+        // Fallback to stdout
+        std::cout << message << std::endl;
+    }
 }
 
 LM_PUBLIC_API void updateIndentation(int n) {
-    Instance::get().updateIndentation(n);
+    if (Instance::initialized()) {
+        Instance::get().updateIndentation(n);
+    }
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::log)

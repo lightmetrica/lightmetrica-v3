@@ -318,6 +318,9 @@ LM_PUBLIC_API void unloadPlugins();
 // Iterate registered component names.
 LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func);
 
+// Print registered component names.
+LM_PUBLIC_API void printRegistered();
+
 // ----------------------------------------------------------------------------
 
 /*!
@@ -360,6 +363,11 @@ public:
 
     static void shutdown() {
         instance().context.reset();
+    }
+
+    // Check if the context instance is initialized
+    static bool initialized() {
+        return bool(instance().context);
     }
 };
 

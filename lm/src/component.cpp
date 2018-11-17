@@ -240,6 +240,12 @@ public:
         }
     }
 
+    void printRegistered() {
+        for (const auto&[k, v] : funcMap_) {
+            LM_INFO(k);
+        }
+    }
+
 private:
     // Registered implementations
     struct CreateAndReleaseFunctions
@@ -284,6 +290,10 @@ LM_PUBLIC_API void unloadPlugins() {
 
 LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func) {
     Impl::instance().foreachRegistered(func);
+}
+
+LM_PUBLIC_API void printRegistered() {
+    Impl::instance().printRegistered();
 }
 
 // ----------------------------------------------------------------------------

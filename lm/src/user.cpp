@@ -12,6 +12,7 @@
 #include <lm/film.h>
 #include <lm/parallel.h>
 #include <lm/exception.h>
+#include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -51,7 +52,7 @@ public:
 public:
     void init(const Json& prop) {
         exception::init();
-        log::init();
+        log::init(valueOr<std::string>(prop, "logger", log::DefaultType));
         LM_INFO("Initializing Lightmetrica [version='{}']");
         parallel::init("parallel::openmp", prop);
         assets_ = comp::create<Assets>("assets::default", this);

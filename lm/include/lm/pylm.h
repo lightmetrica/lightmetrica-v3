@@ -256,7 +256,6 @@ struct type_caster<glm::mat<C, R, T, Q>> {
         );
         return a.release();
     }
-
 };
 
 LM_NAMESPACE_END(pybind11::detail)
@@ -373,120 +372,5 @@ static pybind11::object castToPythonObject(Component* inst) {
         pybind11::overload_cast<const char*, LM_NAMESPACE::Component*, const LM_NAMESPACE::Json&>( \
             &LM_NAMESPACE::detail::createCompWrap<InterfaceT>))
 
-// Trampoline class for lm::Component
-class Component_Py final : public Component {
-public:
-    virtual bool construct(const Json& prop) override {
-        PYBIND11_OVERLOAD(bool, Component, construct, prop);
-    }
-};
-
 LM_NAMESPACE_END(detail)
-
-// ----------------------------------------------------------------------------
-
-//LM_NAMESPACE_BEGIN(log)
-//LM_NAMESPACE_BEGIN(detail)
-//
-//// logger.h
-//class LoggerContext_Py : public LoggerContext {
-//    virtual bool construct(const Json& prop) override {
-//        PYBIND11_OVERLOAD_PURE(bool, LoggerContext, construct, prop);
-//    }
-//    virtual void log(lm::log::LogLevel level, const char* filename, int line, const char* message) override {
-//        PYBIND11_OVERLOAD_PURE(void, LoggerContext, log, level, filename, line, message);
-//    }
-//    virtual void updateIndentation(int n) override {
-//        PYBIND11_OVERLOAD_PURE(void, LoggerContext, updateIndentation, n);
-//    }
-//};
-//
-//LM_NAMESPACE_END(detail)
-//LM_NAMESPACE_END(log)
-
-// ----------------------------------------------------------------------------
-
-/*!
-    \brief Binds Lightmetrica to the specified module.
-*/
-static void bind(pybind11::module& m) {
-    using namespace pybind11::literals;
-
-    // ------------------------------------------------------------------------
-
-    // component.h
-    pybind11::class_<Component, detail::Component_Py, Component::Ptr<Component>>(m, "Component")
-        .def(pybind11::init<>())
-        .def("construct", &Component::construct)
-        .def("parent", &Component::parent)
-        .PYLM_DEF_COMP_BIND(Component);
-
-    {
-        // Namespaces are handled as submodules
-        auto sm = m.def_submodule("comp");
-        auto sm_detail = sm.def_submodule("detail");
-
-        // Component API
-        sm_detail.def("loadPlugin", &comp::detail::loadPlugin);
-        sm_detail.def("loadPlugins", &comp::detail::loadPlugins);
-        sm_detail.def("unloadPlugins", &comp::detail::unloadPlugins);
-        sm_detail.def("foreachRegistered", &comp::detail::foreachRegistered);
-    }
-
-    // ------------------------------------------------------------------------
-
-    // user.h
-    m.def("init", &init);
-    m.def("shutdown", &shutdown);
-    m.def("asset", &asset);
-    m.def("primitive", &primitive);
-    m.def("primitives", &primitives);
-    m.def("render", &render);
-    m.def("save", &save);
-    m.def("buffer", &buffer);
-
-    // ------------------------------------------------------------------------
-
-    // logger.h
-    {
-        auto sm = m.def_submodule("log");
-
-        // LogLevel
-        pybind11::enum_<log::LogLevel>(sm, "LogLevel")
-            .value("Debug", log::LogLevel::Debug)
-            .value("Info", log::LogLevel::Info)
-            .value("Warn", log::LogLevel::Warn)
-            .value("Err", log::LogLevel::Err)
-            .value("Progress", log::LogLevel::Progress)
-            .value("ProgressEnd", log::LogLevel::ProgressEnd);
-
-        // Log API
-        sm.def("init", &log::init);
-        sm.def("shutdown", &log::shutdown);
-        using LogFuncPtr = void(*)(log::LogLevel, const char*, int, const char*);
-        sm.def("log", (LogFuncPtr)&log::log);
-        sm.def("updateIndentation", &log::updateIndentation);
-    }
-
-    // ------------------------------------------------------------------------
-
-    // Film buffer (film.h)
-    pybind11::class_<FilmBuffer>(m, "FilmBuffer", pybind11::buffer_protocol())
-        // Register buffer description
-        .def_buffer([](FilmBuffer& buf) -> pybind11::buffer_info {
-            return pybind11::buffer_info(
-                buf.data,
-                sizeof(Float),
-                pybind11::format_descriptor<Float>::format(),
-                3,
-                { buf.h, buf.w, 3 },
-                { 3 * buf.w * sizeof(Float),
-                  3 * sizeof(Float),
-                  sizeof(Float) }
-            );
-        });
-}
-
-// ----------------------------------------------------------------------------
-
 LM_NAMESPACE_END(LM_NAMESPACE)
