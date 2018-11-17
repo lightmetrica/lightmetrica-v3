@@ -27,8 +27,8 @@ struct A_Py final : public A {
 };
 
 struct TestPlugin_Py final : public TestPlugin {
-    virtual bool construct([[maybe_unused]] const lm::Json& prop) override {
-        PYBIND11_OVERLOAD_PURE(bool, TestPlugin, prop);
+    virtual bool construct(const lm::Json& prop) override {
+        PYBIND11_OVERLOAD_PURE(bool, TestPlugin, construct, prop);
     }
     virtual int f() override {
         PYBIND11_OVERLOAD_PURE(int, TestPlugin, f);
@@ -36,8 +36,8 @@ struct TestPlugin_Py final : public TestPlugin {
 };
 
 struct D_Py final : public D {
-    virtual bool construct([[maybe_unused]] const lm::Json& prop) override {
-        PYBIND11_OVERLOAD_PURE(bool, D, prop);
+    virtual bool construct(const lm::Json& prop) override {
+        PYBIND11_OVERLOAD_PURE(bool, D, construct, prop);
     }
     virtual int f() override {
         PYBIND11_OVERLOAD_PURE(int, D, f);
@@ -45,8 +45,8 @@ struct D_Py final : public D {
 };
 
 struct E_Py final : public E {
-    virtual bool construct([[maybe_unused]] const lm::Json& prop) override {
-        PYBIND11_OVERLOAD_PURE(bool, E, prop);
+    virtual bool construct(const lm::Json& prop) override {
+        PYBIND11_OVERLOAD_PURE(bool, E, construct, prop);
     }
     virtual int f() override {
         PYBIND11_OVERLOAD_PURE(int, E, f);

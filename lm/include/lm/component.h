@@ -25,7 +25,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Component {
 private:
     friend class comp::detail::Impl;
-    friend class py::detail::ComponentAccess;
+    friend class detail::ComponentAccess;
     friend struct ComponentDeleter;
 
 public:

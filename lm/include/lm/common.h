@@ -244,7 +244,7 @@ struct RaySample;
 class Scene;
 class Renderer;           // renderer.h
 LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, class Impl)  // Some detailed classes
-LM_FORWARD_DECLARE_WITH_NAMESPACE(py::detail, class ComponentAccess)
+LM_FORWARD_DECLARE_WITH_NAMESPACE(detail, class ComponentAccess)
 
 // ----------------------------------------------------------------------------
 

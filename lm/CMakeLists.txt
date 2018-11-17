@@ -137,9 +137,7 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES
 # Python binding
 set(_PROJECT_NAME pylm)
 set(_HEADER_FILES 
-    "${_INCLUDE_DIR}/pylm.h"
-    "${_INCLUDE_DIR}/pylm_json.h"
-    "${_INCLUDE_DIR}/pylm_math.h")
+    "${_INCLUDE_DIR}/pylm.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/pylm.cpp")
 add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES})

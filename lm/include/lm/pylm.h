@@ -6,22 +6,271 @@
 #pragma once
 
 #include "lm.h"
-#include "pylm_json.h"
-#include "pylm_math.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <pybind11/functional.h>
+#include <pybind11/numpy.h>
 
 // ----------------------------------------------------------------------------
 
+LM_NAMESPACE_BEGIN(pybind11::detail)
+
+// Type caster for json type
+template <>
+struct type_caster<lm::Json> {
+public:
+    // Register this class as type caster
+    PYBIND11_TYPE_CASTER(lm::Json, _("json"));
+
+    // Python -> C++
+    bool load(handle src, bool convert) {
+        if (!convert) {
+            // No-convert mode
+            return false;
+        }
+
+        using namespace nlohmann::detail;
+        if (isinstance<none>(src)) {
+            value = {};
+        }
+        else if (isinstance<bool_>(src)) {
+            value = src.cast<bool>();
+        }
+        else if (isinstance<float_>(src)) {
+            value = src.cast<double>();
+        }
+        else if (isinstance<int_>(src)) {
+            value = src.cast<int>();
+        }
+        else if (isinstance<str>(src)) {
+            value = src.cast<std::string>();
+        }
+        else if (isinstance<dict>(src)) {
+            auto d = reinterpret_borrow<dict>(src);
+            value = lm::Json(value_t::object);
+            for (auto it : d) {
+                make_caster<std::string> kconv;
+                make_caster<lm::Json> vconv;
+                if (!kconv.load(it.first.ptr(), convert) || !vconv.load(it.second.ptr(), convert)) {
+                    return false;
+                }
+                value.emplace(
+                    cast_op<std::string&&>(std::move(kconv)),
+                    cast_op<lm::Json&&>(std::move(vconv)));
+            }
+        }
+        else if (isinstance<sequence>(src)) {
+            auto s = reinterpret_borrow<sequence>(src);
+            value = lm::Json(value_t::array);
+            for (auto it : s) {
+                make_caster<lm::Json> vconv;
+                if (!vconv.load(it, convert)) {
+                    return false;
+                }
+                value.push_back(cast_op<lm::Json&&>(std::move(vconv)));
+            }
+        }
+        else {
+            LM_UNREACHABLE();
+            return false;
+        }
+        return true;
+    }
+    
+    // C++ -> Python
+    // policy and parent are used only for casting return values
+    static handle cast(const lm::Json& src, return_value_policy policy, handle parent) {
+        using namespace nlohmann::detail;
+        // Check types
+        switch (src.type()) {
+            case value_t::null: {
+                return none().release();
+            }
+            case value_t::boolean: {
+                return castToPythonObject<bool>(src, policy, std::move(parent));
+            }
+            case value_t::number_float: {
+                return castToPythonObject<double>(src, policy, std::move(parent));
+            }
+            case value_t::number_integer: { [[fallthrough]]; }
+            case value_t::number_unsigned: {
+                return castToPythonObject<int>(src, policy, std::move(parent));
+            }
+            case value_t::string: {
+                return castToPythonObject<std::string>(src, policy, std::move(parent));
+            }
+            case value_t::object: {
+                auto policy_key = return_value_policy_override<std::string>::policy(policy);
+                auto policy_value = return_value_policy_override<lm::Json>::policy(policy);
+                dict d;
+                for (lm::Json::const_iterator it = src.begin(); it != src.end(); ++it) {
+                    auto k = reinterpret_steal<object>(
+                        make_caster<std::string>::cast(it.key(), policy_key, parent));
+                    auto v = reinterpret_steal<object>(
+                        make_caster<lm::Json>::cast(it.value(), policy_value, parent));
+                    if (!k || !v) {
+                        return handle();
+                    }
+                    d[k] = v;
+                }
+                return d.release();
+            }
+            case value_t::array: {
+                auto policy_value = return_value_policy_override<lm::Json>::policy(policy);
+                list l(src.size());
+                size_t index = 0;
+                for (auto&& element : src) {
+                    auto v = reinterpret_steal<object>(
+                        make_caster<lm::Json>::cast(element, policy_value, parent));
+                    if (!v) {
+                        return handle();
+                    }
+                    PyList_SET_ITEM(l.ptr(), (ssize_t)(index++), v.release().ptr());
+                }
+                return l.release();
+            }
+            case value_t::discarded: {
+                LM_TBA_RUNTIME();
+                break;
+            }
+        }
+        LM_UNREACHABLE();
+        return handle();
+    }
+
+private:
+    template <typename U>
+    static handle castToPythonObject(const lm::Json& src, return_value_policy policy, handle&& parent) {
+        auto p = return_value_policy_override<U>::policy(policy);
+        auto v = reinterpret_steal<object>(make_caster<U>::cast(src.get<U>(), p, parent));
+        if (!v) {
+            return handle();
+        }
+        return v.release();
+    }
+
+};
+
+// Type caster for glm::vec type
+template <int N, typename T, glm::qualifier Q>
+struct type_caster<glm::vec<N, T, Q>> {
+    using VecT = glm::vec<N, T, Q>;
+
+    // Register this class as type caster
+    PYBIND11_TYPE_CASTER(VecT, _("glm::vec"));
+
+    // Python -> C++
+    bool load(handle src, bool convert) {
+        if (!convert) {
+            // No-convert mode
+            return false;
+        }
+
+        if (!isinstance<array_t<T>>(src)) {
+            // Invalid numpy array type
+            return false;
+        }
+
+        // Ensure that the argument is a numpy array of correct type
+        auto buf = array::ensure(src);
+        if (!buf) {
+            return false;
+        }
+
+        // Check dimension
+        if (buf.ndim() != 1) {
+            return false;
+        }
+
+        // Copy values
+        memcpy(&value.data, buf.data(), N * sizeof(T));
+
+        return true;
+    }
+
+    // C++ -> Python
+    static handle cast(VecT&& src, return_value_policy policy, handle parent) {
+        LM_UNUSED(policy);
+        // Create numpy array from VecT
+        array a(
+            {N},          // Shapes
+            {sizeof(T)},  // Strides
+            &src.x,       // Data
+            parent        // Parent handle
+        );
+        return a.release();
+    }
+};
+
+// Type caster for glm::mat type
+template <int C, int R, typename T, glm::qualifier Q>
+struct type_caster<glm::mat<C, R, T, Q>> {
+    using MatT = glm::mat<C, R, T, Q>;
+
+    // Register this class as type caster
+    PYBIND11_TYPE_CASTER(MatT, _("glm::mat"));
+
+    // Python -> C++
+    bool load(handle src, bool convert) {
+        if (!convert) {
+            // No-convert mode
+            return false;
+        }
+
+        if (!isinstance<array_t<T>>(src)) {
+            // Invalid numpy array type
+            return false;
+        }
+
+        // Ensure that the argument is a numpy array of correct type
+        auto buf = array::ensure(src);
+        if (!buf) {
+            return false;
+        }
+
+        // Check dimension
+        if (buf.ndim() != 2) {
+            return false;
+        }
+
+        // Copy values
+        memcpy(&value[0].data, buf.data(), C * R * sizeof(T));
+
+        // Transpose the copied values because
+        // glm is column major on the other hand numpy is row major.
+        glm::transpose(value);
+
+        return true;
+    }
+
+    // C++ -> Python
+    static handle cast(MatT&& src, return_value_policy policy, handle parent) {
+        LM_UNUSED(policy);
+        // Create numpy array from MatT
+        src = glm::transpose(src);
+        array a(
+            {R, C},                    // Shapes
+            {R*sizeof(T), sizeof(T)},  // Strides
+            &src[0].x,                 // Data
+            parent                     // Parent handle
+        );
+        return a.release();
+    }
+
+};
+
+LM_NAMESPACE_END(pybind11::detail)
+
+// ----------------------------------------------------------------------------
+
+// Add component's unique_ptr as internal holder type
 PYBIND11_DECLARE_HOLDER_TYPE(T, lm::Component::Ptr<T>, true);
 
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
-LM_NAMESPACE_BEGIN(py)
-
-// ----------------------------------------------------------------------------
-
 LM_NAMESPACE_BEGIN(detail)
+
 // Allows to access private members of Component
 class ComponentAccess {
 public:
@@ -32,9 +281,6 @@ public:
         return comp.releaseFunc_;
     }
 };
-LM_NAMESPACE_END(detail)
-
-// ----------------------------------------------------------------------------
 
 /*!
     \brief Wraps registration of component instance.
@@ -118,35 +364,58 @@ static pybind11::object castToPythonObject(Component* inst) {
     \brief Adds component-related functions to the binding of a component interface.
 */
 #define PYLM_DEF_COMP_BIND(InterfaceT) \
-     def_static("reg", &LM_NAMESPACE::py::regCompWrap<InterfaceT>) \
+     def_static("reg", &LM_NAMESPACE::detail::regCompWrap<InterfaceT>) \
     .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg) \
     .def_static("create", \
         pybind11::overload_cast<const char*, LM_NAMESPACE::Component*>( \
-            &LM_NAMESPACE::py::createCompWrap<InterfaceT>)) \
+            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
     .def_static("create", \
         pybind11::overload_cast<const char*, LM_NAMESPACE::Component*, const LM_NAMESPACE::Json&>( \
-            &LM_NAMESPACE::py::createCompWrap<InterfaceT>))
+            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>))
 
 // Trampoline class for lm::Component
 class Component_Py final : public Component {
 public:
-    virtual bool construct([[maybe_unused]] const Json& prop) override {
-        PYBIND11_OVERLOAD_PURE(bool, Component, prop);
+    virtual bool construct(const Json& prop) override {
+        PYBIND11_OVERLOAD(bool, Component, construct, prop);
     }
 };
+
+LM_NAMESPACE_END(detail)
+
+// ----------------------------------------------------------------------------
+
+//LM_NAMESPACE_BEGIN(log)
+//LM_NAMESPACE_BEGIN(detail)
+//
+//// logger.h
+//class LoggerContext_Py : public LoggerContext {
+//    virtual bool construct(const Json& prop) override {
+//        PYBIND11_OVERLOAD_PURE(bool, LoggerContext, construct, prop);
+//    }
+//    virtual void log(lm::log::LogLevel level, const char* filename, int line, const char* message) override {
+//        PYBIND11_OVERLOAD_PURE(void, LoggerContext, log, level, filename, line, message);
+//    }
+//    virtual void updateIndentation(int n) override {
+//        PYBIND11_OVERLOAD_PURE(void, LoggerContext, updateIndentation, n);
+//    }
+//};
+//
+//LM_NAMESPACE_END(detail)
+//LM_NAMESPACE_END(log)
 
 // ----------------------------------------------------------------------------
 
 /*!
     \brief Binds Lightmetrica to the specified module.
 */
-static void init(pybind11::module& m) {
+static void bind(pybind11::module& m) {
     using namespace pybind11::literals;
 
     // ------------------------------------------------------------------------
 
     // component.h
-    pybind11::class_<Component, Component_Py, Component::Ptr<Component>>(m, "Component")
+    pybind11::class_<Component, detail::Component_Py, Component::Ptr<Component>>(m, "Component")
         .def(pybind11::init<>())
         .def("construct", &Component::construct)
         .def("parent", &Component::parent)
@@ -220,5 +489,4 @@ static void init(pybind11::module& m) {
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_END(py)
 LM_NAMESPACE_END(LM_NAMESPACE)
