@@ -100,6 +100,43 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
+    // progress.h
+    {
+        auto sm = m.def_submodule("progress");
+
+        // Progress report API
+        sm.def("init", &progress::init);
+        sm.def("shutdown", &progress::shutdown);
+        sm.def("start", &progress::start);
+        sm.def("end", &progress::end);
+        sm.def("update", &progress::update);
+
+        // Context
+        using ProgressContext = progress::detail::ProgressContext;
+        class ProgressContext_Py final : public ProgressContext {
+            virtual bool construct(const Json& prop) override {
+                PYBIND11_OVERLOAD(bool, ProgressContext, construct, prop);
+            }
+            virtual void start(long long total) override {
+                PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, total);
+            }
+            virtual void end() override {
+                PYBIND11_OVERLOAD_PURE(void, ProgressContext, end);
+            }
+            virtual void update(long long processed) override {
+                PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
+            }
+        };
+        pybind11::class_<ProgressContext, ProgressContext_Py, Component::Ptr<ProgressContext>>(sm, "ProgressContext")
+            .def(pybind11::init<>())
+            .def("start", &ProgressContext::start)
+            .def("end", &ProgressContext::end)
+            .def("update", &ProgressContext::update)
+            .PYLM_DEF_COMP_BIND(ProgressContext);
+    }
+
+    // ------------------------------------------------------------------------
+
     // Film buffer (film.h)
     pybind11::class_<FilmBuffer>(m, "FilmBuffer", pybind11::buffer_protocol())
         // Register buffer description

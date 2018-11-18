@@ -158,7 +158,7 @@ public:
         const Component::CreateFunction& createFunc,
         const Component::ReleaseFunction& releaseFunc) {
         if (funcMap_.find(key) != funcMap_.end()) {
-            std::cerr <<fmt::format("Component is already registered [key='{}']", key) << std::endl;
+            LM_ERROR("Component is already registered [key='{}']", key);
         }
         funcMap_[key] = CreateAndReleaseFunctions{ createFunc, releaseFunc };
     }

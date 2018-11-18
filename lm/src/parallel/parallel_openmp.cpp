@@ -7,6 +7,7 @@
 #include <lm/parallel.h>
 #include <lm/logger.h>
 #include <lm/json.h>
+#include <lm/progress.h>
 #include <omp.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel::detail)
@@ -33,18 +34,11 @@ public:
     }
 
     virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc) const override {
-        using namespace std::chrono;
-        using namespace std::literals::chrono_literals;
-
         // Processed number of samples
         std::atomic<long long> processed = 0;
 
-        // Last progress update time and number of samples
-        const auto start = high_resolution_clock::now();
-        auto lastUpdated = start;
-        long long lastProcessed = 0;
-
         // Execute parallel loop
+        progress::ScopedReport progress_(numSamples);
         #pragma omp parallel for schedule(dynamic, 1)
         for (long long i = 0; i < numSamples; i++) {
             const int threadId = omp_get_thread_num();
@@ -59,35 +53,9 @@ public:
 
             // Update progress
             if (threadId == 0) {
-                const auto now = high_resolution_clock::now();
-                const auto elapsed = duration_cast<milliseconds>(now - lastUpdated);
-                if (elapsed > .5s) {
-                    // Current processed number of samples
-                    const long long currProcessed = processed;
-
-                    // Compute ETA
-                    const auto etaStr = [&]() -> std::string {
-                        if (currProcessed == 0) {
-                            return "";
-                        }
-                        const auto eta = duration_cast<milliseconds>(now - start)
-                            * (numSamples - currProcessed) / currProcessed;
-                        return fmt::format(", ETA={:.1f}s", eta.count() / 1000.0);
-                    }();
-
-                    // Print progress
-                    LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
-                        currProcessed,
-                        numSamples,
-                        double(currProcessed) / numSamples * 100,
-                        etaStr);
-
-                    lastUpdated = now;
-                    lastProcessed = currProcessed;
-                }
+                progress::update(processed);
             }
         }
-        LM_PROGRESS_END("Processing [completed]");
     }
 };
 

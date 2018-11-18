@@ -13,6 +13,7 @@
 #include <lm/parallel.h>
 #include <lm/exception.h>
 #include <lm/json.h>
+#include <lm/progress.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -55,6 +56,7 @@ public:
         log::init(valueOr<std::string>(prop, "logger", log::DefaultType));
         LM_INFO("Initializing Lightmetrica [version='{}']");
         parallel::init("parallel::openmp", prop);
+        progress::init(valueOr<std::string>(prop, "progress", progress::DefaultType));
         assets_ = comp::create<Assets>("assets::default", this);
         scene_  = comp::create<Scene>("scene::default", this);
     }
@@ -63,6 +65,7 @@ public:
         renderer_.reset();
         scene_.reset();
         assets_.reset();
+        progress::shutdown();
         parallel::shutdown();
         log::shutdown();
         exception::shutdown();
