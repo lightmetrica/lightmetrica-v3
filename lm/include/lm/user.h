@@ -29,6 +29,11 @@ LM_PUBLIC_API void asset(const std::string& name,
     const std::string& implKey, const Json& prop);
 
 /*!
+    \brief Get an asset by name.
+*/
+LM_PUBLIC_API Component* getAsset(const std::string& name);
+
+/*!
     \brief Create a primitive and add it to the scene.
 */
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);

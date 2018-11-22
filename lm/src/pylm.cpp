@@ -50,6 +50,7 @@ static void bind(pybind11::module& m) {
     m.def("init", &init);
     m.def("shutdown", &shutdown);
     m.def("asset", &asset);
+    m.def("getAsset", &getAsset);
     m.def("primitive", &primitive);
     m.def("primitives", &primitives);
     m.def("render", &render);

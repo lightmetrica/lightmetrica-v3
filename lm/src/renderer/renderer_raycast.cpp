@@ -4,6 +4,7 @@
 */
 
 #include <pch.h>
+#include <lm/user.h>
 #include <lm/renderer.h>
 #include <lm/scene.h>
 #include <lm/film.h>
@@ -23,7 +24,7 @@ public:
     virtual bool construct(const Json& prop) override {
         bgColor_ = valueOr(prop, "bg_color", Vec3(1_f));
         useConstantColor_ = valueOr(prop, "use_constant_color", false);
-        film_ = parent()->underlying<Film>(fmt::format("assets.{}", prop["output"].get<std::string>()));
+        film_ = getAsset(prop["output"].get<std::string>())->cast<lm::Film>();
         if (!film_) {
             return false;
         }

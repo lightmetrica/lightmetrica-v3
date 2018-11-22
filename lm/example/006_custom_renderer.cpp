@@ -17,7 +17,7 @@ private:
 
 public:
     virtual bool construct(const lm::Json& prop) override {
-        film_ = parent()->underlying<lm::Film>(fmt::format("assets.{}", prop["output"].get<std::string>()));
+        film_ = lm::getAsset(prop["output"].get<std::string>())->cast<lm::Film>();
         if (!film_) {
             return false;
         }

@@ -4,6 +4,7 @@
 */
 
 #include <pch.h>
+#include <lm/user.h>
 #include <lm/renderer.h>
 #include <lm/scene.h>
 #include <lm/film.h>
@@ -19,8 +20,7 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         color_ = prop["color"];
-        film_= parent()->underlying<Film>(
-            fmt::format("assets.{}", prop["output"].get<std::string>()));
+        film_ = getAsset(prop["output"].get<std::string>())->cast<lm::Film>();
         if (!film_) {
             return false;
         }

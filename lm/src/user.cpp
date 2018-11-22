@@ -77,6 +77,10 @@ public:
         }
     }
 
+    Component* getAsset(const std::string& name) {
+        return assets_->underlying(name);
+    }
+
     void primitive(Mat4 transform, const Json& prop) {
         if (!scene_->loadPrimitive(*assets_.get(), transform, prop)) {
             THROW_RUNTIME_ERROR();
@@ -139,6 +143,10 @@ LM_PUBLIC_API void shutdown() {
 
 LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop) {
     Context::instance().asset(name, implKey, prop);
+}
+
+LM_PUBLIC_API Component* getAsset(const std::string& name) {
+    return Context::instance().getAsset(name);
 }
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
