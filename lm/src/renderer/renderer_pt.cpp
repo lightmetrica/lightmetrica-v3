@@ -21,7 +21,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        film_ = getAsset(prop["output"].get<std::string>())->cast<lm::Film>();
+        film_ = comp::cast<lm::Film>(lm::getAsset(prop["output"].get<std::string>()));
         if (!film_) {
             return false;
         }
@@ -30,7 +30,7 @@ public:
         return true;
     }
 
-    virtual void render(const Scene& scene) const override {
+    virtual void render(const Scene* scene) const override {
         const auto [w, h] = film_->size();
         parallel::foreach(w*h, [&](long long index, int threadId) -> void {
             // Per-thread random number generator
@@ -49,7 +49,7 @@ public:
                 // Initial sampleRay function
                 std::function<std::optional<RaySample>()> sampleRay = [&]() {
                     Float dx = 1_f/w, dy = 1_f/h;
-                    return scene.samplePrimaryRay(rng, {dx*x, dy*y, dx, dy});
+                    return scene->samplePrimaryRay(rng, {dx*x, dy*y, dx, dy});
                 };
 
                 // Perform random walk
@@ -64,14 +64,14 @@ public:
                     throughput *= s->weight;
 
                     // Intersection to next surface
-                    const auto hit = scene.intersect(s->ray());
+                    const auto hit = scene->intersect(s->ray());
                     if (!hit) {
                         break;
                     }
 
                     // Accumulate contribution from light
-                    if (scene.isLight(*hit)) {
-                        L += throughput * scene.evalContrbEndpoint(*hit, -s->wo);
+                    if (scene->isLight(*hit)) {
+                        L += throughput * scene->evalContrbEndpoint(*hit, -s->wo);
                     }
 
                     // Russian roulette
@@ -85,7 +85,7 @@ public:
 
                     // Update
                     sampleRay = [&, wi = -s->wo, sp = *hit]() {
-                        return scene.sampleRay(rng, sp, wi);
+                        return scene->sampleRay(rng, sp, wi);
                     };
                 }
             }

@@ -93,16 +93,19 @@ public:
         }
     }
 
-    void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {
+    void build(const std::string& accelName) {
         scene_->build(accelName);
+    }
+
+    void render(const std::string& rendererName, const Json& prop) {
         renderer_ = lm::comp::create<Renderer>(rendererName, this, prop);
         if (!renderer_) {
-            LM_ERROR("Failed to render [renderer='{}',accel='{}']", rendererName, accelName);
+            LM_ERROR("Failed to render [renderer='{}']", rendererName);
             THROW_RUNTIME_ERROR();
         }
         LM_INFO("Starting render [name='{}']", rendererName);
         LM_INDENT();
-        renderer_->render(*scene_.get());
+        renderer_->render(scene_.get());
     }
 
     void save(const std::string& filmName, const std::string& outpath) {
@@ -157,8 +160,12 @@ LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName) {
     Context::instance().primitives(transform, modelName);
 }
 
-LM_PUBLIC_API void render(const std::string& rendererName, const std::string& accelName, const Json& prop) {
-    Context::instance().render(rendererName, accelName, prop);
+LM_PUBLIC_API void build(const std::string& accelName) {
+    Context::instance().build(accelName);
+}
+
+LM_PUBLIC_API void render(const std::string& rendererName, const Json& prop) {
+    Context::instance().render(rendererName, prop);
 }
 
 LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath) {

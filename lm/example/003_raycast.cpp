@@ -56,7 +56,8 @@ int main(int argc, char** argv) {
         // --------------------------------------------------------------------
 
         // Render an image
-        lm::render("renderer::raycast", "accel::sahbvh", {
+        lm::build("accel::sahbvh");
+        lm::render("renderer::raycast", {
             {"output", "film1"},
             {"color", {0,0,0}}
         });

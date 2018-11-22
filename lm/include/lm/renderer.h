@@ -17,7 +17,7 @@ public:
     /*!
         \brief Process rendering.
     */
-    virtual void render(const Scene& scene) const = 0;
+    virtual void render(const Scene* scene) const = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

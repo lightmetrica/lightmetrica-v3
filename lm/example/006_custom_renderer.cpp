@@ -17,7 +17,7 @@ private:
 
 public:
     virtual bool construct(const lm::Json& prop) override {
-        film_ = lm::getAsset(prop["output"].get<std::string>())->cast<lm::Film>();
+        film_ = lm::comp::cast<lm::Film>(lm::getAsset(prop["output"].get<std::string>()));
         if (!film_) {
             return false;
         }
@@ -25,14 +25,14 @@ public:
         return true;
     }
 
-    virtual void render(const lm::Scene& scene) const override {
+    virtual void render(const lm::Scene* scene) const override {
         const auto [w, h] = film_->size();
         lm::parallel::foreach(w*h, [&](long long index, int threadId) -> void {
             thread_local lm::Rng rng(rngSeed_ + threadId);
             const int x = int(index % w);
             const int y = int(index / w);
-            const auto ray = scene.primaryRay({(x+.5_f)/w, (y+.5_f)/h});
-            const auto hit = scene.intersect(ray);
+            const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h});
+            const auto hit = scene->intersect(ray);
             if (!hit) {
                 return;
             }
@@ -40,7 +40,7 @@ public:
             for (long long i = 0; i < spp_; i++) {
                 const auto [n, u, v] = hit->orthonormalBasis(-ray.d);
                 const auto d = lm::math::sampleCosineWeighted(rng);
-                V += scene.intersect({hit->p, u*d.x+v*d.y+n*d.z}, lm::Eps, .2_f) ? 0_f : 1_f;
+                V += scene->intersect({hit->p, u*d.x+v*d.y+n*d.z}, lm::Eps, .2_f) ? 0_f : 1_f;
             }
             V /= spp_;
             film_->setPixel(x, y, lm::Vec3(V));
@@ -114,7 +114,8 @@ int main(int argc, char** argv) {
         // --------------------------------------------------------------------
 
         // Render an image
-        lm::render("renderer::ao", "accel::sahbvh", {
+        lm::build("accel::sahbvh");
+        lm::render("renderer::ao", {
             {"output", "film1"},
             {"spp", opt["spp"]}
         });

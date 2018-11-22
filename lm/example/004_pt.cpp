@@ -66,7 +66,8 @@ int main(int argc, char** argv) {
         // --------------------------------------------------------------------
 
         // Render an image
-        lm::render("renderer::pt", "accel::sahbvh", {
+        lm::build("accel::sahbvh");
+        lm::render("renderer::pt", {
             {"output", "film1"},
             {"spp", opt["spp"]},
             {"maxLength", opt["len"]}

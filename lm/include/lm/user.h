@@ -44,10 +44,14 @@ LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
 LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName);
 
 /*!
+    \brief Build acceleration structure.
+*/
+LM_PUBLIC_API void build(const std::string& accelName);
+
+/*!
     \brief Render image based on current configuration.
 */
-LM_PUBLIC_API void render(const std::string& rendererName,
-    const std::string& accelName, const Json& prop);
+LM_PUBLIC_API void render(const std::string& rendererName, const Json& prop);
 
 /*!
     \brief Save an image.

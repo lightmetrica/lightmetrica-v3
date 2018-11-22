@@ -189,7 +189,7 @@ struct type_caster<glm::vec<N, T, Q>> {
     }
 
     // C++ -> Python
-    static handle cast(VecT&& src, return_value_policy policy, handle parent) {
+    static handle cast(const VecT& src, return_value_policy policy, handle parent) {
         LM_UNUSED(policy);
         // Create numpy array from VecT
         array a(
@@ -244,14 +244,14 @@ struct type_caster<glm::mat<C, R, T, Q>> {
     }
 
     // C++ -> Python
-    static handle cast(MatT&& src, return_value_policy policy, handle parent) {
+    static handle cast(const MatT& src, return_value_policy policy, handle parent) {
         LM_UNUSED(policy);
         // Create numpy array from MatT
-        src = glm::transpose(src);
+        const auto srcTrans = glm::transpose(src);
         array a(
             {R, C},                    // Shapes
             {R*sizeof(T), sizeof(T)},  // Strides
-            &src[0].x,                 // Data
+            &srcTrans[0].x,            // Data
             parent                     // Parent handle
         );
         return a.release();
@@ -263,7 +263,10 @@ LM_NAMESPACE_END(pybind11::detail)
 // ----------------------------------------------------------------------------
 
 // Add component's unique_ptr as internal holder type
-PYBIND11_DECLARE_HOLDER_TYPE(T, lm::Component::Ptr<T>, true);
+// Third argument must be false (as for default)
+// otherwise a new holder instance is always created when we cast
+// a return type even if we specify return_value_policy::reference.
+PYBIND11_DECLARE_HOLDER_TYPE(T, lm::Component::Ptr<T>, false);
 
 // ----------------------------------------------------------------------------
 
@@ -360,6 +363,14 @@ static pybind11::object castToPythonObject(Component* inst) {
 }
 
 /*!
+    \brief Cast from component type.
+*/
+template <typename InterfaceT>
+static std::optional<InterfaceT*> castFrom(Component* p) {
+    return comp::cast<InterfaceT>(p);
+}
+
+/*!
     \brief Adds component-related functions to the binding of a component interface.
 */
 #define PYLM_DEF_COMP_BIND(InterfaceT) \
@@ -370,7 +381,10 @@ static pybind11::object castToPythonObject(Component* inst) {
             &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
     .def_static("create", \
         pybind11::overload_cast<const char*, LM_NAMESPACE::Component*, const LM_NAMESPACE::Json&>( \
-            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>))
+            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
+    .def_static("castFrom", \
+        &LM_NAMESPACE::detail::castFrom<InterfaceT>, \
+        pybind11::return_value_policy::reference)
 
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(LM_NAMESPACE)

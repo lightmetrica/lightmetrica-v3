@@ -158,7 +158,7 @@ public:
         const Component::CreateFunction& createFunc,
         const Component::ReleaseFunction& releaseFunc) {
         if (funcMap_.find(key) != funcMap_.end()) {
-            LM_ERROR("Component is already registered [key='{}']", key);
+            LM_WARN("Component is already registered [key='{}'], overriding", key);
         }
         funcMap_[key] = CreateAndReleaseFunctions{ createFunc, releaseFunc };
     }

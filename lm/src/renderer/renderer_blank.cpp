@@ -20,14 +20,14 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         color_ = prop["color"];
-        film_ = getAsset(prop["output"].get<std::string>())->cast<lm::Film>();
+        film_ = comp::cast<lm::Film>(lm::getAsset(prop["output"].get<std::string>()));
         if (!film_) {
             return false;
         }
         return true;
     }
 
-    virtual void render(const Scene& scene) const override {
+    virtual void render(const Scene* scene) const override {
         LM_UNUSED(scene);
         const auto [w, h] = film_->size();
         for (int y = 0; y < h; y++) {

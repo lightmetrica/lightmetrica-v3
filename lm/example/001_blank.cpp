@@ -15,8 +15,7 @@ int main() {
         lm::asset("film", "film::bitmap", {{"w", 1920}, {"h", 1080}});
 
         // Render an image
-        // We don't need acceleration structure so we keep second argument blank.
-        lm::render("renderer::blank", "", {
+        lm::render("renderer::blank", {
             {"output", "film"},
             {"color", {1,1,1}}
         });
