@@ -190,13 +190,20 @@ struct type_caster<glm::vec<N, T, Q>> {
 
     // C++ -> Python
     static handle cast(const VecT& src, return_value_policy policy, handle parent) {
-        LM_UNUSED(policy);
+        LM_UNUSED(policy, parent);
+
+        // Always copy the value irrespective to the return value policy
+        auto* src_copy = new VecT(src);
+        capsule base(src_copy, [](void* o) {
+            delete static_cast<VecT*>(o);
+        });
+
         // Create numpy array from VecT
         array a(
             {N},          // Shapes
             {sizeof(T)},  // Strides
-            &src.x,       // Data
-            parent        // Parent handle
+            (T*)src_copy, // Data
+            base          // Parent handle
         );
         return a.release();
     }
