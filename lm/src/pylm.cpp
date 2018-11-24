@@ -18,6 +18,11 @@ static void bind(pybind11::module& m) {
 
     // math.h
 
+    // Constants
+    m.attr("Inf") = Inf;
+    m.attr("Eps") = Eps;
+    m.attr("Pi") = Pi;
+
     // Ray
     pybind11::class_<Ray>(m, "Ray")
         .def_readwrite("o", &Ray::o)
