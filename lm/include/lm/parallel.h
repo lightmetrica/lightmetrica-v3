@@ -32,6 +32,11 @@ LM_PUBLIC_API void shutdown();
 LM_PUBLIC_API int numThreads();
 
 /*!
+    \brief Check if current thread is the main thread.
+*/
+LM_PUBLIC_API bool mainThread();
+
+/*!
     \brief Parallel for loop.
 */
 using ParallelProcessFunc = std::function<void(long long index, int threadId)>;
@@ -44,6 +49,7 @@ LM_NAMESPACE_BEGIN(detail)
 class ParallelContext : public Component {
 public:
     virtual int numThreads() const = 0;
+    virtual bool mainThread() const = 0;
     virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc) const = 0;
 };
 

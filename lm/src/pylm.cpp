@@ -143,6 +143,9 @@ static void bind(pybind11::module& m) {
             virtual int numThreads() const override {
                 PYBIND11_OVERLOAD_PURE(int, ParallelContext, numThreads);
             }
+            virtual bool mainThread() const override {
+                PYBIND11_OVERLOAD_PURE(bool, ParallelContext, mainThread);
+            }
             virtual void foreach(long long numSamples, const parallel::ParallelProcessFunc& processFunc) const override {
                 PYBIND11_OVERLOAD_PURE(void, ParallelContext, foreach, numSamples, processFunc);
             }
@@ -150,6 +153,7 @@ static void bind(pybind11::module& m) {
         pybind11::class_<ParallelContext, ParallelContext_Py, Component::Ptr<ParallelContext>>(sm, "ParallelContext")
             .def(pybind11::init<>())
             .def("numThreads", &ParallelContext::numThreads)
+            .def("mainThread", &ParallelContext::mainThread)
             .def("foreach", &ParallelContext::foreach)
             .PYLM_DEF_COMP_BIND(ParallelContext);
     }
@@ -241,6 +245,7 @@ static void bind(pybind11::module& m) {
         .def("save", &Film::save)
         .def("aspectRatio", &Film::aspectRatio)
         .def("buffer", &Film::buffer)
+        .def("regReporter", &Film::regReporter)
         .PYLM_DEF_COMP_BIND(Film);
 
     // ------------------------------------------------------------------------

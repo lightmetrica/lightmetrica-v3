@@ -33,6 +33,10 @@ public:
         return numThreads_;
     }
 
+    virtual bool mainThread() const override {
+        return omp_get_thread_num() == 0;
+    }
+
     virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc) const override {
         // Processed number of samples
         std::atomic<long long> processed = 0;

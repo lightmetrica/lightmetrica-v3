@@ -22,6 +22,10 @@ LM_PUBLIC_API int numThreads() {
     return Instance::get().numThreads();
 }
 
+LM_PUBLIC_API bool mainThread() {
+    return Instance::get().mainThread();
+}
+
 LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& processFunc) {
     Instance::get().foreach(numSamples, processFunc);
 }
