@@ -57,10 +57,10 @@ public:
         LM_INFO("Initializing Lightmetrica [version='{}']");
         parallel::init("parallel::openmp", prop);
         {
-            const auto it = prop.find("progress");
+            auto it = prop.find("progress");
             if (it != prop.end()) {
-                if (it->is_string()) { progress::init(*it); }
-                else { progress::init("progress::mux", *it); }
+                it = it->begin();
+                progress::init(it.key(), it.value());
             }
             else {
                 progress::init(progress::DefaultType);

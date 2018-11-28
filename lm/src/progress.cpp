@@ -58,7 +58,8 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         delay_ = milliseconds(prop["delay"].get<int>());
-        ctx_ = comp::create<ProgressContext>("progress::mux", this, prop["progress"]);
+        auto it = prop["progress"].begin();
+        ctx_ = comp::create<ProgressContext>(it.key(), this, it.value());
         return true;
     }
 
