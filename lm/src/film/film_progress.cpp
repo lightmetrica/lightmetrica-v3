@@ -13,11 +13,29 @@ using namespace std::literals::chrono_literals;
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+// Wrapper for std::atomic.
+// Extending std::vector with std::atomic generates a compilation error
+// because std::atomic is neither copy nor move constructable.
+// cf. https://stackoverflow.com/questions/13193484/how-to-declare-a-vector-of-atomic-in-c
+template <typename T>
+struct AtomicWrapper {
+    std::atomic<T> v_;
+    AtomicWrapper() = default;
+    AtomicWrapper(T& v) : v_(v) {}
+    AtomicWrapper(const std::atomic<T>& v) : v_(v.load()) {}
+    AtomicWrapper(const AtomicWrapper& o) : v_(o.v_.load()) {}
+    AtomicWrapper& operator=(const AtomicWrapper& o) { v_.store(o.v_.load()); return *this; }
+    void update(const T& src) {
+        auto expected = v_.load();
+        while (!v_.compare_exchange_weak(expected, src));
+    }
+};
+
 class Film_Progress final : public Film {
 private:
     int w_;
     int h_;
-    std::vector<std::atomic<Vec3>> data_;
+    std::vector<AtomicWrapper<Vec3>> data_;
     std::vector<Vec3> dataTemp_;  // Temporary buffer for external reference
     time_point<high_resolution_clock> lastUpdated_;
     ReportProgressFunc reportProgress_;
@@ -26,22 +44,15 @@ private:
     void makeTemp() {
         dataTemp_.clear();
         for (const auto& v : data_) {
-            dataTemp_.push_back(v);
+            dataTemp_.push_back(v.v_);
         }
-    }
-
-    void atomicUpdate(std::atomic<Vec3>& dst, Vec3 src) {
-        auto expected = dst.load();
-        while (!dst.compare_exchange_weak(expected, src));
     }
 
 public:
     virtual bool construct(const Json& prop) override {
         w_ = prop["w"];
         h_ = prop["h"];
-        for (int i = 0; i < w_*h_; i++) {
-            data_.emplace_back();
-        }
+        data_.assign(w_*h_, {});
         return true;
     }
 
@@ -50,7 +61,7 @@ public:
     }
 
     virtual void setPixel(int x, int y, Vec3 v) override {
-        atomicUpdate(data_[y*w_ + x], v);
+        data_[y*w_ + x].update(v);
         if (parallel::mainThread()) {
             const auto now = high_resolution_clock::now();
             const auto elapsed = duration_cast<milliseconds>(now - lastUpdated_);
