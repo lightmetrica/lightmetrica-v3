@@ -9,17 +9,36 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+// Wrapper for std::atomic.
+// Extending std::vector with std::atomic generates a compilation error
+// because std::atomic is neither copy nor move constructable.
+// cf. https://stackoverflow.com/questions/13193484/how-to-declare-a-vector-of-atomic-in-c
+template <typename T>
+struct AtomicWrapper {
+    std::atomic<T> v_;
+    AtomicWrapper() = default;
+    AtomicWrapper(T& v) : v_(v) {}
+    AtomicWrapper(const std::atomic<T>& v) : v_(v.load()) {}
+    AtomicWrapper(const AtomicWrapper& o) : v_(o.v_.load()) {}
+    AtomicWrapper& operator=(const AtomicWrapper& o) { v_.store(o.v_.load()); return *this; }
+    void update(const T& src) {
+        auto expected = v_.load();
+        while (!v_.compare_exchange_weak(expected, src));
+    }
+};
+
 class Film_Bitmap final : public Film {
 private:
     int w_;
     int h_;
-    std::vector<Vec3> data_;
+    std::vector<AtomicWrapper<Vec3>> data_;
+    std::vector<Vec3> dataTemp_;  // Temporary buffer for external reference
 
 public:
     virtual bool construct(const Json& prop) override {
         w_ = prop["w"];
         h_ = prop["h"];
-        data_.assign(w_ * h_, Vec3(0_f));
+        data_.assign(w_*h_, {});
         return true;
     }
 
@@ -28,7 +47,7 @@ public:
     }
 
     virtual void setPixel(int x, int y, Vec3 v) override {
-        data_[y*w_ + x] = v;
+        data_[y*w_ + x].update(v);
     }
 
     virtual bool save(const std::string& outpath) const override {
@@ -44,7 +63,7 @@ public:
         for (int y = 0; y < h_; y++) {
             for (int x = 0; x < w_; x++) {
                 for (int i = 0; i < 3; i++) {
-                    d[3*(y*w_+x)+i] = float(data_[y*w_+x][i]);
+                    d[3*(y*w_+x)+i] = float(data_[y*w_+x].v_.load()[i]);
                 }
             }
         }
@@ -54,7 +73,11 @@ public:
     }
 
     virtual FilmBuffer buffer() override {
-        return FilmBuffer{ w_, h_, &data_[0].x };
+        dataTemp_.clear();
+        for (const auto& v : data_) {
+            dataTemp_.push_back(v.v_);
+        }
+        return FilmBuffer{ w_, h_, &dataTemp_[0].x };
     }
 };
 

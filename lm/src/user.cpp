@@ -56,7 +56,17 @@ public:
         log::init(valueOr<std::string>(prop, "logger", log::DefaultType));
         LM_INFO("Initializing Lightmetrica [version='{}']");
         parallel::init("parallel::openmp", prop);
-        progress::init(valueOr<std::string>(prop, "progress", progress::DefaultType));
+        {
+            const auto it = prop.find("progress");
+            if (it != prop.end()) {
+                if (it->is_string()) { progress::init(*it); }
+                else { progress::init("progress::mux", *it); }
+            }
+            else {
+                progress::init(progress::DefaultType);
+            }
+        }
+        //progress::init(valueOr<std::string>(prop, "progress", progress::DefaultType));
         assets_ = comp::create<Assets>("assets::default", this);
         scene_  = comp::create<Scene>("scene::default", this);
     }

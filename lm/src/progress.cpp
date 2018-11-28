@@ -14,6 +14,77 @@ using namespace std::literals::chrono_literals;
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::progress::detail)
 
+// Multiplexed progress reporter
+class ProgressContext_Mux : public ProgressContext {
+private:
+    std::vector<Ptr<ProgressContext>> ctx_;
+
+public:
+    virtual bool construct(const Json& prop) override {
+        for (const auto& entry : prop) {
+            auto it = entry.begin();
+            auto ctx = comp::create<ProgressContext>(it.key(), this, it.value());
+            if (!ctx) {
+                return false;
+            }
+            ctx_.push_back(std::move(ctx));
+        }
+        return true;
+    }
+
+    virtual void start(long long total) override {
+        for (auto& ctx : ctx_) { ctx->start(total); }
+    }
+
+    virtual void update(long long processed) override {
+        for (auto& ctx : ctx_) { ctx->update(processed); }
+    }
+
+    virtual void end() override {
+        for (auto& ctx : ctx_) { ctx->end(); }
+    }
+};
+
+LM_COMP_REG_IMPL(ProgressContext_Mux, "progress::mux");
+
+// Delay the update for the specified seconds
+class ProgressContext_Delay : public ProgressContext {
+private:
+    milliseconds delay_;
+    Ptr<ProgressContext> ctx_;                       // Underlying progress context
+    time_point<high_resolution_clock> start_;        // Time starting progress report
+    time_point<high_resolution_clock> lastUpdated_;  // Last updated time
+
+public:
+    virtual bool construct(const Json& prop) override {
+        delay_ = milliseconds(prop["delay"].get<int>());
+        ctx_ = comp::create<ProgressContext>("progress::mux", this, prop["progress"]);
+        return true;
+    }
+
+    virtual void start(long long total) override {
+        start_ = high_resolution_clock::now();
+        lastUpdated_ = start_;
+        ctx_->start(total);
+    }
+
+    virtual void update(long long processed) override {
+        const auto now = high_resolution_clock::now();
+        const auto elapsed = duration_cast<milliseconds>(now - lastUpdated_);
+        if (elapsed > delay_) {
+            ctx_->update(processed);
+            lastUpdated_ = now;
+        }
+    }
+
+    virtual void end() override {
+        ctx_->end();
+    }
+};
+
+LM_COMP_REG_IMPL(ProgressContext_Delay, "progress::delay");
+
+// Default progress reporter
 class ProgressContext_Default : public ProgressContext {
 private:
     long long total_;                                // Total number of progress updates

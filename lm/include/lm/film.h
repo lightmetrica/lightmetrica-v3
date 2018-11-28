@@ -53,14 +53,15 @@ public:
         \brief Get buffer of the film
     */
     virtual FilmBuffer buffer() = 0;
-
-    /*!
-        \brief Register progress reporter of the film.
-    */
-    using ReportProgressFunc = std::function<void(FilmBuffer buf)>;
-    virtual void regReporter(const ReportProgressFunc& reportProgress) {
-        LM_UNUSED(reportProgress);
-    }
 };
+
+/*!
+    \brief Progress reporter for a film.
+*/
+//class FilmProgress : public Component {
+//public:
+//    virtual void start() = 0;
+//    virtual void update(FilmBuffer& buf) = 0;
+//};
 
 LM_NAMESPACE_END(LM_NAMESPACE)

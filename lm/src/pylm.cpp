@@ -178,12 +178,15 @@ static void bind(pybind11::module& m) {
                 PYBIND11_OVERLOAD(bool, ProgressContext, construct, prop);
             }
             virtual void start(long long total) override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, total);
             }
             virtual void end() override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, end);
             }
             virtual void update(long long processed) override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
             }
         };
@@ -220,6 +223,26 @@ static void bind(pybind11::module& m) {
             );
         });
 
+    // Film progress reporter
+    //class FilmProgress_Py final : public FilmProgress {
+    //    virtual bool construct(const Json& prop) override {
+    //        PYBIND11_OVERLOAD(bool, FilmProgress, construct, prop);
+    //    }
+    //    virtual void start() override {
+    //        pybind11::gil_scoped_acquire acquire;
+    //        PYBIND11_OVERLOAD_PURE(void, FilmProgress, start);
+    //    }
+    //    virtual void update(FilmBuffer& buf) override {
+    //        pybind11::gil_scoped_acquire acquire;
+    //        PYBIND11_OVERLOAD_PURE(void, FilmProgress, update, buf);
+    //    }
+    //};
+    //pybind11::class_<FilmProgress, FilmProgress_Py, Component::Ptr<FilmProgress>>(m, "FilmProgress")
+    //    .def(pybind11::init<>())
+    //    .def("start", &FilmProgress::start)
+    //    .def("update", &FilmProgress::update)
+    //    .PYLM_DEF_COMP_BIND(FilmProgress);
+    
     // Film
     class Film_Py final : public Film {
         virtual bool construct(const Json& prop) override {
@@ -245,7 +268,6 @@ static void bind(pybind11::module& m) {
         .def("save", &Film::save)
         .def("aspectRatio", &Film::aspectRatio)
         .def("buffer", &Film::buffer)
-        .def("regReporter", &Film::regReporter)
         .PYLM_DEF_COMP_BIND(Film);
 
     // ------------------------------------------------------------------------
@@ -345,7 +367,7 @@ static void bind(pybind11::module& m) {
     };
     pybind11::class_<Renderer, Renderer_Py, Component::Ptr<Renderer>>(m, "Renderer")
         .def(pybind11::init<>())
-        .def("render", &Renderer::render)
+        .def("render", &Renderer::render, pybind11::call_guard<pybind11::gil_scoped_release>())
         .PYLM_DEF_COMP_BIND(Renderer);
 }
 
