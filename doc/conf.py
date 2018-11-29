@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 #
 import os
 import sys
-#logger.warning(os.path.abspath('../build/pylm/Release'))
-sys.path.insert(0, os.path.abspath('../build/lm/Release'))
+sys.path.insert(0, os.path.abspath('../build/bin/Release'))
 
 
 # -- Project information -----------------------------------------------------

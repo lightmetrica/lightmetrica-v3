@@ -18,5 +18,6 @@
     ],
     "files.associations": {
       "unordered_map": "cpp"
-    }
+    },
+    "restructuredtext.confPath": "c:\\Users\\perim\\lab\\projects\\lightmetrica-v3\\doc"
   }

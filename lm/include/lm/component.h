@@ -240,6 +240,7 @@ InterfaceT* cast(Component* p) {
     \brief Create component with specific interface type.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
+    \param parent Parent component.
 */
 template <typename InterfaceT>
 Component::Ptr<InterfaceT> create(const std::string& key, Component* parent) {
@@ -256,7 +257,7 @@ Component::Ptr<InterfaceT> create(const std::string& key, Component* parent) {
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
     \param prop Properties.
-    \param parent Parent component instance.
+    \param parent Parent component.
 */
 template <typename InterfaceT>
 Component::Ptr<InterfaceT> create(
@@ -294,6 +295,7 @@ LM_NAMESPACE_BEGIN(detail)
 /*!
     \brief Create component instance.
     \param key Name of the implementation.
+    \param parent Parent component.
 */
 LM_PUBLIC_API Component* createComp(const std::string& key, Component* parent);
 
@@ -432,7 +434,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 /*!
     \brief Register implementation.
-    \param ImplType Component implemenation type.
+    \param ImplT Component implemenation type.
     \param Key Name of the implementation.
 */
 #define LM_COMP_REG_IMPL(ImplT, Key) \

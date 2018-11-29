@@ -180,25 +180,33 @@ public:
 
     /*!
         \brief Sample a ray given surface point and incident direction.
+        \rst
         (x,wo) ~ p(x,wo|sp,wi)
+        \endrst
     */
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const = 0;
 
     /*!
         \brief Sample a ray given pixel position.
+        \rst
         (x,wo) ~ p(x,wo|raster window)
+        \endrst
     */
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
 
     /*!
         \brief Evaluate endpoint contribution.
+        \rst
         f(x,wo) where x is endpoint
+        \endrst
     */
     virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate reflectance (if available).
+        \rst
         \rho(x)
+        \endrst
     */
     virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const = 0;
 };

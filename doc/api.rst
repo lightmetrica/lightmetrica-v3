@@ -13,7 +13,7 @@ API
 
    .. group-tab:: C++
 
-      .. doxygenfunction:: lm::api::primitive
+      .. doxygenfunction:: lm::primitive
 
    .. group-tab:: Python
 
