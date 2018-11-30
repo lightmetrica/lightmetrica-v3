@@ -12,6 +12,7 @@
 #pragma warning(disable:4723)  // potential divide by 0
 #endif
 
+#if LM_COMPILER_MSVC
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
 TEST_CASE("Exception") {
@@ -160,6 +161,7 @@ TEST_CASE("Exception") {
 }
 
 LM_NAMESPACE_END(LM_TEST_NAMESPACE)
+#endif
 
 #if LM_COMPILER_MSVC
 #pragma warning(pop)

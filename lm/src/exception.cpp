@@ -3,8 +3,6 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#pragma once
-
 #include <pch.h>
 #include <lm/exception.h>
 #include <lm/logger.h>
@@ -85,6 +83,7 @@ public:
 
 private:
     unsigned int setFPExState(unsigned int state) const {
+        #if LM_PLATFORM_WINDOWS
         // Get current floating-point control word
         unsigned int old;
         _controlfp_s(&old, 0, 0);
@@ -95,6 +94,10 @@ private:
         LM_UNUSED(current);
 
         return old;
+        #else
+        LM_TBA_RUNTIME();
+        return {};
+        #endif
     }
 
 public:
@@ -105,11 +108,19 @@ public:
     }
 
     virtual void enableFPEx() override {
+        #if LM_PLATFORM_WINDOWS
         setFPExState((unsigned int)(~(_EM_INVALID | _EM_ZERODIVIDE)));
+        #else
+        LM_TBA_RUNTIME();
+        #endif
     }
 
     virtual void disableFPEx() override {
+        #if LM_PLATFORM_WINDOWS
         setFPExState(_CW_DEFAULT);
+        #else
+        LM_TBA_RUNTIME();
+        #endif
     }
 
     virtual void stackTrace() override {

@@ -32,7 +32,7 @@ public:
         const auto [n, u, v] = sp.orthonormalBasis(wi);
         const auto u1 = rng.u() * 2_f * Pi;
         const auto u2 = rng.u();
-        const auto wh = glm::normalize(math::safeSqrt(u2/(1_f-u2))*(ax_*cos(u1)*u+ay_*sin(u1)*v)+n);
+        const auto wh = glm::normalize(math::safeSqrt(u2/(1_f-u2))*(ax_*glm::cos(u1)*u+ay_*glm::sin(u1)*v)+n);
         const auto wo = math::reflection(wi, wh);
         if (sp.opposite(wi, wo)) {
             return {};

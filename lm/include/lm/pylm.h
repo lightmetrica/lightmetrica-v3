@@ -321,30 +321,6 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
 }
 
 /*!
-    \brief Wraps creation of component instance.
-*/
-template <typename InterfaceT>
-static pybind11::object createCompWrap(const char* name, Component* parent) {
-    auto inst = lm::comp::detail::createComp(name, parent);
-    if (!inst) {
-        return pybind11::object();
-    }
-    return castToPythonObject<InterfaceT>(inst);
-}
-
-/*!
-    \brief Creation of component instance with construction.
-*/
-template <typename InterfaceT>
-static pybind11::object createCompWrap(const char* name, Component* parent, const Json& prop) {
-    auto inst = lm::comp::detail::createComp(name, parent);
-    if (!inst || !inst->construct(prop)) {
-        return pybind11::object();
-    }
-    return castToPythonObject<InterfaceT>(inst);
-}
-
-/*!
     \brief Cast lm::Component to Python object.
 */
 template <typename InterfaceT>
@@ -367,6 +343,30 @@ static pybind11::object castToPythonObject(Component* inst) {
     // It should work without registered deleter, underlying unique_ptr will take care of it.
     auto* instT = dynamic_cast<InterfaceT*>(inst);
     return pybind11::cast(instT, pybind11::return_value_policy::take_ownership);
+}
+
+/*!
+    \brief Wraps creation of component instance.
+*/
+template <typename InterfaceT>
+static pybind11::object createCompWrap(const char* name, Component* parent) {
+    auto inst = lm::comp::detail::createComp(name, parent);
+    if (!inst) {
+        return pybind11::object();
+    }
+    return castToPythonObject<InterfaceT>(inst);
+}
+
+/*!
+    \brief Creation of component instance with construction.
+*/
+template <typename InterfaceT>
+static pybind11::object createCompWrap(const char* name, Component* parent, const Json& prop) {
+    auto inst = lm::comp::detail::createComp(name, parent);
+    if (!inst || !inst->construct(prop)) {
+        return pybind11::object();
+    }
+    return castToPythonObject<InterfaceT>(inst);
 }
 
 /*!

@@ -199,7 +199,13 @@ private:
 
     // Parses a string
     template <int N>
-    void nextString(char *&t, char (&name)[N]) { sscanf_s(t, "%s", name, N); };
+    void nextString(char *&t, char (&name)[N]) {
+        #if LM_COMPILER_MSVC
+        sscanf_s(t, "%s", name, N);
+        #else
+        sscanf(t, "%s", name);
+        #endif
+    };
 
     // Parses .mtl file
     bool loadmtl(std::string p, const ProcessMaterialFunc& processMaterial, const ProcessTextureFunc& processTexture)
@@ -363,7 +369,7 @@ public:
             // Diffuse material
             auto diffuse = comp::create<Material>(diffuseMaterialName, this, {
                 {"Kd", objmat_.Kd},
-                {"mapKd", objmat_.mapKd < 0 ? Json{} : objmat_.mapKd}
+                {"mapKd", objmat_.mapKd < 0 ? Json{} : Json(objmat_.mapKd)}
             });
             if (!diffuse) {
                 return false;

@@ -8,6 +8,7 @@
 #include "common.h"
 #include "math.h"
 #include <array>
+#include <fmt/format.h>
 
 // ----------------------------------------------------------------------------
 
@@ -53,27 +54,6 @@ LM_NAMESPACE_END(nlohmann)
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-/*!
-    \brief Parse positional command line arguments.
-*/
-template <size_t N>
-Json parsePositionalArgs(int argc, char** argv, const std::string& temp) {
-    return Json::parse(detail::formatWithStringVector<N>(temp, { argv + 1, argv + argc }));
-}
-
-/*!
-    \brief Get the value inside the element with default.
-*/
-template <typename T>
-T valueOr(const Json& j, const std::string& name, T&& default) {
-    if (const auto it = j.find(name); it != j.end()) {
-        return *it;
-    }
-    return default;
-}
-
-// ----------------------------------------------------------------------------
-
 LM_NAMESPACE_BEGIN(detail)
 
 // https://stackoverflow.com/questions/48875467/how-to-pass-not-variadic-values-to-fmtformat
@@ -87,7 +67,27 @@ std::string formatWithStringVector(const std::string& format, const std::vector<
     return formatWithStringVector(format, v, std::make_index_sequence<N>());
 }
 
+LM_NAMESPACE_END(detail)
+
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_END(detail)
+/*!
+    \brief Parse positional command line arguments.
+*/
+template <size_t N>
+Json parsePositionalArgs(int argc, char** argv, const std::string& temp) {
+    return Json::parse(detail::formatWithStringVector<N>(temp, { argv + 1, argv + argc }));
+}
+
+/*!
+    \brief Get the value inside the element with default.
+*/
+template <typename T>
+T valueOr(const Json& j, const std::string& name, T&& def) {
+    if (const auto it = j.find(name); it != j.end()) {
+        return *it;
+    }
+    return def;
+}
+
 LM_NAMESPACE_END(LM_NAMESPACE)

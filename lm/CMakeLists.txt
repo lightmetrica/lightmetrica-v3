@@ -22,29 +22,33 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # OpenMP
 find_package(OpenMP REQUIRED)
 
-# nlohmann-json
-option(JSON_BuildTests "" OFF)
-option(JSON_MultipleHeaders "" OFF)
-add_subdirectory(external/json)
-
-# glm
-option(GLM_TEST_ENABLE "" OFF)
-add_subdirectory(external/glm)
-
-# doctest
-option(DOCTEST_WITH_TESTS "" OFF)
-option(DOCTEST_NO_INSTALL "" ON)
-add_subdirectory(external/doctest)
-
-# pybind11
-add_subdirectory(external/pybind11)
-
-# fmt
-add_subdirectory(external/fmt)
-
-# cereal
-option(JUST_INSTALL_CEREAL "" ON)
-add_subdirectory(external/cereal)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external")
+    # nlohmann-json
+    option(JSON_BuildTests "" OFF)
+    option(JSON_MultipleHeaders "" OFF)
+    add_subdirectory(external/json)
+    # glm
+    option(GLM_TEST_ENABLE "" OFF)
+    add_subdirectory(external/glm)
+    # doctest
+    option(DOCTEST_WITH_TESTS "" OFF)
+    option(DOCTEST_NO_INSTALL "" ON)
+    add_subdirectory(external/doctest)
+    # pybind11
+    add_subdirectory(external/pybind11)
+    # fmt
+    add_subdirectory(external/fmt)
+    # cereal
+    option(JUST_INSTALL_CEREAL "" ON)
+    add_subdirectory(external/cereal)
+elseif()
+    find_package(json REQUIRED)
+    find_package(glm REQUIRED)
+    find_package(doctest REQUIRED)
+    find_package(pybind11 REQUIRED)
+    find_package(fmt REQUIRED)
+    find_package(cereal REQUIRED)
+endif()
 
 # -----------------------------------------------------------------------------
 
@@ -112,10 +116,12 @@ set(_SOURCE_FILES
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
-add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
+#add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only cereal
-    PRIVATE OpenMP::OpenMP_CXX)
+    PRIVATE OpenMP::OpenMP_CXX
+            $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
+            $<$<CXX_COMPILER_ID:GNU>:atomic>)
 target_include_directories(${_PROJECT_NAME}
     PUBLIC  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     PRIVATE "${_PCH_DIR}"
@@ -128,6 +134,8 @@ target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/MP>)
 # Floating point behavior
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/fp:strict /fp:except>)
+# filesystem
+target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:GNU>:-lstdc++fs>)
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 set_target_properties(${_PROJECT_NAME} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"

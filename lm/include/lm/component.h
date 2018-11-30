@@ -174,7 +174,7 @@ public:
     void foreachUnderlying(
         const std::function<void(UnderlyingComponentT* p)>& processComponent) const
     {
-        foreachUnderlying([](Component* p) -> void {
+        foreachUnderlying([&](Component* p) -> void {
             processComponent(p->cast<UnderlyingComponentT>());
         });
     }
@@ -222,6 +222,37 @@ struct KeyGen<T<Ts...>> {
         return s + "<" + std::string(typeid(TypeHolder<Ts...>).name()) + ">";
     }
 };
+
+/*!
+    \brief Create component instance.
+    \param key Name of the implementation.
+    \param parent Parent component.
+*/
+LM_PUBLIC_API Component* createComp(const std::string& key, Component* parent);
+
+// Register a component.
+LM_PUBLIC_API void reg(
+    const std::string& key,
+    const Component::CreateFunction& createFunc,
+    const Component::ReleaseFunction& releaseFunc);
+
+// Unregister a component.
+LM_PUBLIC_API void unreg(const std::string& key);
+
+// Load a plugin.
+LM_PUBLIC_API bool loadPlugin(const std::string& path);
+
+// Load plugins inside a given directory.
+LM_PUBLIC_API void loadPlugins(const std::string& directory);
+
+// Unload loaded plugins.
+LM_PUBLIC_API void unloadPlugins();
+
+// Iterate registered component names.
+LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func);
+
+// Print registered component names.
+LM_PUBLIC_API void printRegistered();
 
 LM_NAMESPACE_END(detail)
 
@@ -291,39 +322,6 @@ static Component* getCurrentOrUnderlying(const std::string& r, Component* p) {
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
-
-/*!
-    \brief Create component instance.
-    \param key Name of the implementation.
-    \param parent Parent component.
-*/
-LM_PUBLIC_API Component* createComp(const std::string& key, Component* parent);
-
-// Register a component.
-LM_PUBLIC_API void reg(
-    const std::string& key,
-    const Component::CreateFunction& createFunc,
-    const Component::ReleaseFunction& releaseFunc);
-
-// Unregister a component.
-LM_PUBLIC_API void unreg(const std::string& key);
-
-// Load a plugin.
-LM_PUBLIC_API bool loadPlugin(const std::string& path);
-
-// Load plugins inside a given directory.
-LM_PUBLIC_API void loadPlugins(const std::string& directory);
-
-// Unload loaded plugins.
-LM_PUBLIC_API void unloadPlugins();
-
-// Iterate registered component names.
-LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func);
-
-// Print registered component names.
-LM_PUBLIC_API void printRegistered();
-
-// ----------------------------------------------------------------------------
 
 /*!
     \brief Create component instance directly with constructor.

@@ -38,18 +38,18 @@ struct Tri {
 
     // Checks intersection with a ray [Möller & Trumbore 1997]
     std::optional<Hit> isect(Ray r, Float tl, Float th) const {
-        auto p = cross(r.d, e2);
+        auto p = glm::cross(r.d, e2);
         auto tv = r.o - p1;
-        auto q = cross(tv, e1);
-        auto d = dot(e1, p);
-        auto ad = abs(d);
-        auto s = copysign(1_f, d);
-        auto u = dot(tv, p) * s;
-        auto v = dot(r.d, q) * s;
+        auto q = glm::cross(tv, e1);
+        auto d = glm::dot(e1, p);
+        auto ad = glm::abs(d);
+        auto s = std::copysign(1_f, d);
+        auto u = glm::dot(tv, p) * s;
+        auto v = glm::dot(r.d, q) * s;
         if (ad < 1e-8_f || u < 0_f || v < 0_f || u + v > ad) {
             return {};
         }
-        auto t = dot(e2, q) / d;
+        auto t = glm::dot(e2, q) / d;
         if (t < tl || th < t) {
             return {};
         }

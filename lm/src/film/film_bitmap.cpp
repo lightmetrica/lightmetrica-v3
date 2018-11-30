@@ -53,11 +53,18 @@ public:
     virtual bool save(const std::string& outpath) const override {
         LM_INFO("Saving image [file='{}']", outpath);
         FILE *f;
-        errno_t err;
+        int err;
+        #if LM_COMPILER_MSVC
         if ((err = fopen_s(&f, outpath.c_str(), "wb")) != 0) {
             LM_ERROR("Failed to open [file='{}',errorno='{}']", outpath, err);
             return false;
         }
+        #else
+        if ((f = fopen(outpath.c_str(), "wb")) == nullptr) {
+            LM_ERROR("Failed to open [file='{}']", outpath);
+            return false;
+        }
+        #endif
         fprintf(f, "PF\n%d %d\n-1\n", w_, h_);
         std::vector<float> d(w_*h_*3);
         for (int y = 0; y < h_; y++) {
@@ -67,7 +74,10 @@ public:
                 }
             }
         }
+        #if LM_COMPILER_MSVC
+        #else
         fwrite(d.data(), 4, d.size(), f);
+        #endif
         fclose(f);
         return true;
     }

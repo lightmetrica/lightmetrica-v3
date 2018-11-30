@@ -96,38 +96,68 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 /*!
     \brief Log error message.
 */
+#if LM_COMPILER_MSVC
 #define LM_ERROR(message, ...) LM_NAMESPACE::log::log( \
     LM_NAMESPACE::log::LogLevel::Err, __FILE__, __LINE__, message, __VA_ARGS__)
+#else
+#define LM_ERROR(message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::Err, __FILE__, __LINE__, message, ## __VA_ARGS__)
+#endif
 
 /*!
     \brief Log warning message.
 */
+#if LM_COMPILER_MSVC
 #define LM_WARN(message, ...) LM_NAMESPACE::log::log( \
     LM_NAMESPACE::log::LogLevel::Warn, __FILE__, __LINE__, message, __VA_ARGS__)
+#else
+#define LM_WARN(message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::Warn, __FILE__, __LINE__, message, ## __VA_ARGS__)
+#endif
 
 /*!
     \brief Log info message.
 */
+#if LM_COMPILER_MSVC
 #define LM_INFO(message, ...) LM_NAMESPACE::log::log( \
     LM_NAMESPACE::log::LogLevel::Info, __FILE__, __LINE__, message, __VA_ARGS__)
+#else
+#define LM_INFO(message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::Info, __FILE__, __LINE__, message, ## __VA_ARGS__)
+#endif
 
 /*!
     \brief Log debug message.
 */
+#if LM_COMPILER_MSVC
 #define LM_DEBUG(message, ...) LM_NAMESPACE::log::log( \
     LM_NAMESPACE::log::LogLevel::Debug, __FILE__, __LINE__, message, __VA_ARGS__)
+#else
+#define LM_DEBUG(message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::Debug, __FILE__, __LINE__, message, ## __VA_ARGS__)
+#endif
 
 /*!
     \brief Log progress outputs.
 */
+#if LM_COMPILER_MSVC
 #define LM_PROGRESS(message, ...) LM_NAMESPACE::log::log( \
     LM_NAMESPACE::log::LogLevel::Progress, __FILE__, __LINE__, message, __VA_ARGS__)
+#else
+#define LM_PROGRESS(message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::Progress, __FILE__, __LINE__, message, ## __VA_ARGS__)
+#endif
 
 /*!
     \brief Log end of progress outputs.
 */
+#if LM_COMPILER_MSVC
 #define LM_PROGRESS_END(message, ...) LM_NAMESPACE::log::log( \
     LM_NAMESPACE::log::LogLevel::ProgressEnd, __FILE__, __LINE__, message, __VA_ARGS__)
+#else
+#define LM_PROGRESS_END(message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::ProgressEnd, __FILE__, __LINE__, message, ## __VA_ARGS__)
+#endif
 
 /*!
     \brief Adds an indentation in the current scope.
