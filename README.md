@@ -66,8 +66,8 @@ $ start lightmetrica-v3.sln
 ### Build (docker)
 
 ```bash
-$ docker build -t lm3_dev -f Dockerfile_dev .
-$ docker run --rm --user root -v ${PWD}:/usr/src/lightmetrica-v3 -it lm3_dev /bin/bash
+> docker build -t lm3_dev -f Dockerfile_dev .
+> docker run --rm --user root -v ${PWD}:/usr/src/lightmetrica-v3 -it lm3_dev /bin/bash
 $ cd /usr/src/lightmetrica-v3
 $ mkdir build && cd build
 $ cmake -DCMAKE_BUILD_TYPE=Release ..
