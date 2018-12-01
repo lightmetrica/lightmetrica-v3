@@ -22,7 +22,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # OpenMP
 find_package(OpenMP REQUIRED)
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external")
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external")
     # nlohmann-json
     option(JSON_BuildTests "" OFF)
     option(JSON_MultipleHeaders "" OFF)
@@ -116,7 +116,9 @@ set(_SOURCE_FILES
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
-#add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
+if (MSVC)
+    add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
+endif()
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt-header-only cereal
     PRIVATE OpenMP::OpenMP_CXX

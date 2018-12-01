@@ -14,7 +14,9 @@ set(_SOURCE_FILES
 	"pylm_test_simple.cpp"
 	"pylm_test_math.cpp")
 add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
-#add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
+if (MSVC)
+	add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
+endif()
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module lm_test_plugin::interface)
 target_include_directories(${_PROJECT_NAME} PRIVATE "${_PCH_DIR}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")

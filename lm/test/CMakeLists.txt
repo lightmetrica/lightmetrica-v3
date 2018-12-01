@@ -27,7 +27,9 @@ set(_SOURCE_FILES
     "test_assets.cpp"
     "test_json.cpp")
 add_executable(${_PROJECT_NAME} ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
-#add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
+if (MSVC)
+    add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
+endif()
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm doctest lm_test_plugin::interface)
 target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${_PCH_DIR}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/test")
