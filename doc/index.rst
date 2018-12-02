@@ -10,6 +10,8 @@ Lightmetrica Version 3
    :maxdepth: 3
    :caption: Contents
 
+   intro
+   changelog
    component
    log
    api

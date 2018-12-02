@@ -6,21 +6,14 @@ Component
 Features
 -------------
 
-| **Dependency-injection**:
-| An implementation is perfectly decoupled from the interface.
-  We provide a simple factory function to create instances.
-
-| **Native/Python plugin support**:
-| An developer can easily extend features with dynamically loaded
-  native plugins, or even with python scripts.
-
-| **Assembly agnostic**:
-| An component implementation can be accessible from the same interface
-  irrespective to the assembly where the implementation is defined.
-
-| **Serialization/deserialization**:
-| We provide an interface for serialization/deserialization
-  of component instances, simple yet sufficient to handle practical cases with dependent instances.
+- **Dependency-injection**:
+  An implementation is perfectly decoupled from the interface. We provide a simple factory |   function to create instances.
+- **Native/Python plugin support**:
+  An developer can easily extend features with dynamically loaded native plugins, or even with python scripts.
+- **Assembly agnostic**:
+  An component implementation can be accessible from the same interface irrespective to the assembly where the implementation is defined.
+- **Serialization/deserialization**:
+  We provide an interface for serialization/deserialization of component instances, simple yet sufficient to handle practical cases with dependent instances.
 
 API
 -------------
