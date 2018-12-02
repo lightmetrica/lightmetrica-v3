@@ -19,7 +19,7 @@ Extensibility
 
 *Extensibility* allows the developer to extend the renderer and to implement a new feature. This is necessary as a research-oriented render because the developers want to focus on only the modification they really need. For instance, the developer who want to implement new materials doesn't want to modify the code of the rendering techniques.
 
-Lightmetrica provides decoupled interfaces to extend various features so that the developers are not necessary to know the details on the other part of the renderer. Also, our plugin system enables to extend the feature extremely simple by adding one macro at the end of the C++ code. Our plugin system does not care about the number of implementations inside a library and the places where the implementation exists. 
+Lightmetrica provides decoupled interfaces to extend various features so that the developers are not necessary to know the details on the other part of the renderer. Also, our plugin system enables to extend the feature extremely simple by adding one macro at the end of the C++ code. Moreover, our plugin system does not care about the number of implementations inside a library and the places where the implementation exists. 
 
 Verifiability
 -------------
@@ -37,8 +37,13 @@ Our framework provides a comprehensible solution to design various experiments i
 
 Although it is still possible to use stand-alone renderers in the experiments, it requires another layer of API to manage input/output of the renderer where we usually needs constant maintainance as the renderer specification change (and it happens a lot for research purpose, by design). On the other hand, our framework exposes internal features directly to the developers, which enables broader applicability to the experiments. For instance, we can design an experiment where the data is shared among renderings with different parameters. This is obviously not possible with stand-alone renderers because we need to dispatch another process to execute the renderer where additional data transfer is unavoidable. 
 
-Core features
+Features
 =============
 
+TBA
 
+Supported compilers
+===================
 
+- Microsoft Visual Studio 2017 or newer
+- GCC 8 or newer

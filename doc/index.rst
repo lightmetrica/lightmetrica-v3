@@ -7,11 +7,27 @@ Lightmetrica Version 3
 ======================
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Contents
+   :maxdepth: 1
 
    intro
    changelog
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User's guide
+
+   install
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developers's guide
+
+   build
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API reference
+
    component
    log
    api
