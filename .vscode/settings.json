@@ -3,21 +3,26 @@
     //"python.pythonPath": "C:\\Users\\hotsu\\AppData\\Local\\Continuum\\miniconda3\\envs\\lm3\\python.exe",
     //"python.linting.pylintPath": "C:\\Users\\hotsu\\AppData\\Local\\Continuum\\miniconda3\\envs\\lm3\\Scripts\\pylint.exe",
 
-    "python.unitTest.unittestEnabled": false,
-    "python.unitTest.pyTestEnabled": true,
-    "python.unitTest.nosetestsEnabled": false,
-    "python.unitTest.pyTestArgs": [
-      "--lm",
-      "build/lm/Debug",
-      "lm/pytest"
-    ],
+    // "python.unitTest.unittestEnabled": false,
+    // "python.unitTest.pyTestEnabled": true,
+    // "python.unitTest.nosetestsEnabled": false,
+    // "python.unitTest.pyTestArgs": [
+    //   "--lm",
+    //   "build/lm/Debug",
+    //   "lm/pytest"
+    // ],
     "cSpell.enabledLanguageIds": [
       "plaintext",
+      "restructuredtext",
       "text",
-      "yml",
+      "yml"
     ],
     "files.associations": {
       "unordered_map": "cpp"
     },
-    "restructuredtext.confPath": "c:\\Users\\perim\\lab\\projects\\lightmetrica-v3\\doc"
+    "restructuredtext.confPath": "${workspaceFolder}\\doc",
+    "cSpell.words": [
+      "jupyter",
+      "lightmetrica"
+    ]
   }

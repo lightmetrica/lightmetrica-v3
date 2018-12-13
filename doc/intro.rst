@@ -1,9 +1,12 @@
 Introduction
 ############
 
+About this project
+==================
+
 .. General introduction. Briefly describe the purpose of this project.
 
-**Lightmetrica** is a research-oriented renderering framework. The development of the framework is motivated by the goal to provide a practical environment for rendering research and development, where the researchers and developers need to tuckle various challenging requirements through the development process.
+**Lightmetrica** is a research-oriented rendering framework. The development of the framework is motivated by the goal to provide a practical environment for rendering research and development, where the researchers and developers need to tackle various challenging requirements through the development process.
 
 .. Background and motivation of this project.
 
@@ -12,7 +15,7 @@ Unlike many other renderers, Lightmetrica is *not* a stand-alone renderer, but a
 Characteristics
 ===============
 
-In particular, we can characterize the requirements of the research-oriented renderer with three criteria: *extensibility*, *verifiability* and *orchestraction*. Lightmetrica provides various features to meet the requirements.
+In particular, we can characterize the requirements of the research-oriented renderer with three criteria: *extensibility*, *verifiability* and *orchestration*. Lightmetrica provides various features to meet the requirements.
 
 Extensibility
 -------------
@@ -24,9 +27,9 @@ Lightmetrica provides decoupled interfaces to extend various features so that th
 Verifiability
 -------------
 
-*Verifiability* helps the developers to assure the extended feature to be correct. The process of rendering research is a sequence of trials-and-errors where a developer need to feedback the knowledge from the previous iteration to the next. Verifiability is crucial in renderer development because a developer need to know what is actually hapening inside the code to feedback the knowledge. That is, a developer is responsible for giviing a rationale to the phenomena they observed. For instance, if a developer found an inconsistency in an experiment, e.g., mismatch of the rendered vs. references, they need to identify where the cause of inconsistency comes from. It is crucially important to identify the phenomena is due to a bug or not, because otherwise a developer cannot have a clue to improve the appraoch.
+*Verifiability* helps the developers to assure the extended feature to be correct. The process of rendering research is a sequence of trials-and-errors where a developer need to feedback the knowledge from the previous iteration to the next. Verifiability is crucial in renderer development because a developer need to know what is actually happening inside the code to feedback the knowledge. That is, a developer is responsible for giving a rationale to the phenomena they observed. For instance, if a developer found an inconsistency in an experiment, e.g., mismatch of the rendered vs. references, they need to identify where the cause of inconsistency comes from. It is crucially important to identify the phenomena is due to a bug or not, because otherwise a developer cannot have a clue to improve the approach.
 
-Our framework provides tools to help developers to find the cause behind the observation as soon and as easy as they can, such as a visual debugger, tools to find statistical inconsistencies or to analyze performance of the code. Also, we provide various implementation with least possiblity of bugs inside. Developers can utilize the code as a reference to find incosistency in their codes.
+Our framework provides tools to help developers to find the cause behind the observation as soon and as easy as they can, such as a visual debugger, tools to find statistical inconsistencies or to analyze performance of the code. Also, we provide various implementation with least possibility of bugs inside. Developers can utilize the code as a reference to find inconsistency in their codes.
 
 Orchestration
 -------------
@@ -35,15 +38,60 @@ Orchestration
 
 Our framework provides a comprehensible solution to design various experiments in Python, where we provide a complete Python API of every features including the extension of framework. As a result, we could successfully facilitate a richness of Python ecosystem. Internal types are automatically converted to Python types that compatible with Python's standard datatypes or Numpy's array type so that we can easily integrate inputs or outputs into the pipeline using other useful Python libraries. Also, we provide a IPython extension which supports us to implement various experiments interactively inside the Jupyter notebook.
 
-Although it is still possible to use stand-alone renderers in the experiments, it requires another layer of API to manage input/output of the renderer where we usually needs constant maintainance as the renderer specification change (and it happens a lot for research purpose, by design). On the other hand, our framework exposes internal features directly to the developers, which enables broader applicability to the experiments. For instance, we can design an experiment where the data is shared among renderings with different parameters. This is obviously not possible with stand-alone renderers because we need to dispatch another process to execute the renderer where additional data transfer is unavoidable. 
+Although it is still possible to use stand-alone renderers in the experiments, it requires another layer of API to manage input/output of the renderer where we usually needs constant maintenance as the renderer specification change (and it happens a lot for research purpose, by design). On the other hand, our framework exposes internal features directly to the developers, which enables broader applicability to the experiments. For instance, we can design an experiment where the data is shared among renderings with different parameters. This is obviously not possible with stand-alone renderers because we need to dispatch another process to execute the renderer where additional data transfer is unavoidable. 
 
-Features
+Features (incl. plans)
 =============
 
-TBA
+.. TODO: add link
+
+Current major version is **3**. Upon the major update, we have redesigned most of the features from the previous version, and rewrote the entire framework from scratch.
+
+- Basic rendering support
+
+  - Easy-to-use API for rendering
+  - Parameter configuration as Json type
+  - Tristimulus/spectral rendering
+  - Volume rendering
+  - Network rendering
+  - Differential rendering
+  - Pause and resume rendering 
+  - Standard scene formats (Wavefront OBJ, Mitsuba, PBRT)
+  - Various (hopefully) correct implementation of rendering techniques
+
+- Extension support
+
+  - Component object model that allows to extend any interfaces as plugins
+  - Serialization of component objects
+  - Position-agnostic plugins
+
+- Verification support
+
+  - Visual debugger
+  - Performance measurements
+  - Statistical verification
+
+- Orchestration support
+
+  - Complete set of Python API
+  - Jupyter notebook integration
 
 Supported compilers
 ===================
 
 - Microsoft Visual Studio 2017 or newer
 - GCC 8 or newer
+
+Citation of this project
+========================
+
+You can use the following BibTex entry:
+
+.. code-block:: bash
+
+    @misc{lightmetrica-v3,
+        author = {Hisanari Otsu},
+        title = {Lightmetrica -- Research-oriented rendering framework (Version 3)},
+        note = {http://lightmetrica.org},
+        year = {2018},
+    }

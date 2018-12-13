@@ -1,7 +1,7 @@
 PROJECT_NAME           = lightmetrica-v3
-INPUT                  = ../lm/include/lm/ 
+INPUT                  = ../include/lm/ 
 RECURSIVE              = YES
-EXAMPLE_PATH           = ../lm/
+EXAMPLE_PATH           = ../
 
 GENERATE_HTML          = YES
 GENERATE_LATEX         = NO
