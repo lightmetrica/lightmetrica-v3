@@ -20,8 +20,14 @@ $ conda create -n lm3 python=3.6
 
 ```bash
 $ source activate lm3
-$ conda install sphinx
-$ pip install sphinx-autobuild sphinx_rtd_theme breathe sphinx_tabs pytest
+$ conda install -c conda-forge sphinx jupyter matplotlib
+$ pip install sphinx-autobuild sphinx_rtd_theme breathe sphinx_tabs pytest tqdm
+```
+
+Optionally, you can install Jupyter notebook for some examples:
+
+```bash
+$ conda install -c conda-forge jupyter ipywidgets
 ```
 
 ### Display and edit documentation
@@ -60,7 +66,7 @@ Build library
 $ source activate lm3
 $ mkdir build && cd build
 $ cmake -G "Visual Studio 15 2017 Win64" ..
-$ start lightmetrica-v3.sln
+$ start lightmetrica.sln
 ```
 
 ### Build (docker)
