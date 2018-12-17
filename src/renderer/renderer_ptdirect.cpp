@@ -46,6 +46,19 @@ public:
                 // Path throughput
                 Vec3 throughput(1_f);
 
+				// Initial sampleEdge function
+				struct Edge {
+					
+				};
+				std::function<std::optional<Edge>()> sampleEdge = [&]() {
+					Float dx = 1_f / w, dy = 1_f / h;
+					auto s = scene->samplePrimaryRay(rng, { dx*x, dy*y, dx, dy });
+					if (!s || math::isZero(s->weight)) {
+						return {};
+					}
+					
+				};
+
                 // Initial sampleRay function
                 std::function<std::optional<RaySample>()> sampleRay = [&]() {
                     Float dx = 1_f/w, dy = 1_f/h;
@@ -60,14 +73,14 @@ public:
                         break;
                     }
 
-                    // Update throughput
-                    throughput *= s->weight;
-
                     // Intersection to next surface
                     const auto hit = scene->intersect(s->ray());
                     if (!hit) {
                         break;
                     }
+
+					// Update throughput
+					throughput *= s->weight;
 
                     // Accumulate contribution from light
                     if (scene->isLight(*hit)) {
