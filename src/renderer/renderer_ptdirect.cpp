@@ -46,24 +46,17 @@ public:
                 // Path throughput
                 Vec3 throughput(1_f);
 
-				// Initial sampleEdge function
-				struct Edge {
-					
-				};
-				std::function<std::optional<Edge>()> sampleEdge = [&]() {
-					Float dx = 1_f / w, dy = 1_f / h;
-					auto s = scene->samplePrimaryRay(rng, { dx*x, dy*y, dx, dy });
-					if (!s || math::isZero(s->weight)) {
-						return {};
-					}
-					
-				};
-
                 // Initial sampleRay function
                 std::function<std::optional<RaySample>()> sampleRay = [&]() {
                     Float dx = 1_f/w, dy = 1_f/h;
                     return scene->samplePrimaryRay(rng, {dx*x, dy*y, dx, dy});
                 };
+
+				// Conditions
+				struct Cond {
+					Vec3 wi;
+					SurfacePoint sp;
+				} cond;
 
                 // Perform random walk
                 for (int length = 0; length < maxLength_; length++) {
@@ -72,6 +65,22 @@ public:
                     if (!s || math::isZero(s->weight)) {
                         break;
                     }
+
+					// Sample a NEE edge
+					const bool enableNEE = length > 0 && !scene->isSpecular(s->sp);
+					if (enableNEE) [&] {
+						// Sample a light
+						const auto sL = scene->sampleLight(rng, s->sp);
+						if (!sL) {
+							return;
+						}
+						if (scene->intersect(Ray{s->sp.p, sL->wo}, Eps, sL->d*(1_f-Eps))) {
+							return;
+						}
+						// Evaluate contribution
+						const auto f = scene->evalFs(s->sp, ) * sL->fs;
+						// TODO
+					}();
 
                     // Intersection to next surface
                     const auto hit = scene->intersect(s->ray());

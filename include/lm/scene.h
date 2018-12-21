@@ -121,6 +121,15 @@ struct RaySample {
 
 // ----------------------------------------------------------------------------
 
+struct LightSample {
+	Vec3 wo;	// Sampled direction
+	Float d;    // Distance to the sampled position
+	Vec3 fs;    // Evaluated Le
+	Float p;    // Evaluated probablity
+};
+
+// ----------------------------------------------------------------------------
+
 /*!
     \brief Scene.
 */
@@ -193,6 +202,18 @@ public:
         \endrst
     */
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
+
+	/*!
+		\brief Sample a position on a light.
+	*/
+	virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const = 0;
+
+	// ------------------------------------------------------------------------
+
+	/*!
+		\brief Evaluate extended BSDF.
+	*/
+	virtual Vec3 evalFs(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate endpoint contribution.

@@ -147,6 +147,16 @@ public:
         return rs->asPrimitive(camera_).asEndpoint(true);
     }
 
+	virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+		
+	}
+
+	// ------------------------------------------------------------------------
+
+	virtual Vec3 evalFs(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+		
+	}
+
     virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
         const auto& primitive = primitives_.at(sp.primitive);
         if (!primitive.light) {
