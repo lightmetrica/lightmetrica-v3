@@ -12,21 +12,30 @@
 #include <lm/material.h>
 #include <lm/light.h>
 #include <lm/model.h>
+#include <lm/logger.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct Primitive {
-    int index;
-    Mat4 transform; 
-    const Mesh* mesh;
+    int index;					// Primitive index
+    Mat4 transform;				// Transform associated to the primitive
+	Mat3 normalTransform;		// Transform for normals
+    const Mesh* mesh;			// Underlying assets
     const Material* material;
     const Light* light;
     const Camera* camera;
 };
 
 class Scene_ final : public Scene {
+private:
+	std::vector<Primitive> primitives_;
+	Component::Ptr<Accel> accel_;
+	int camera_;			   // Camera primitive index
+	std::vector<int> lights_;  // Light primitive indices
+
 public:
     virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) override {
+		// Helper function to find an asset by property name
         const auto getAssetRefBy = [&](const std::string& propName) -> Component* {
             if (propName.empty()) {
                 return nullptr;
@@ -39,17 +48,35 @@ public:
             // Obtain the referenced asset
             return assetGroup.underlying(it.value().get<std::string>().c_str());
         };
+
+		// Underlying components of primitive
+		const auto* mesh = getAssetRefBy("mesh")->cast<Mesh>();
+		const auto* material = getAssetRefBy("material")->cast<Material>();
+		const auto* light = getAssetRefBy("light")->cast<Light>();
+		const auto* camera = getAssetRefBy("camera")->cast<Camera>();
+
+		// Primitive cannot be both camera and light
+		if (camera && light) {
+			LM_ERROR("Primitive cannot be both camera and light");
+			return false;
+		}
+
+		// Add a primitive entry
         primitives_.push_back(Primitive{
             int(primitives_.size()),
             transform,
-            getAssetRefBy("mesh")->cast<Mesh>(),
-            getAssetRefBy("material")->cast<Material>(),
-            getAssetRefBy("light")->cast<Light>(),
-            getAssetRefBy("camera")->cast<Camera>()
+			math::normalTransform(transform),
+            mesh,
+            material,
+            light,
+            camera
         });
         if (primitives_.back().camera) {
             camera_ = primitives_.back().index;
         }
+		if (primitives_.back().light) {
+			lights_.push_back(primitives_.back().index);
+		}
         return true;
     }
 
@@ -62,6 +89,7 @@ public:
             primitives_.push_back(Primitive{
                 int(primitives_.size()),
                 transform,
+				math::normalTransform(transform),
                 dynamic_cast<Mesh*>(mesh),
                 dynamic_cast<Material*>(material),
                 dynamic_cast<Light*>(light),
@@ -103,10 +131,16 @@ public:
         if (!hit) {
             return {};
         }
-        const auto [t, uv, primitive, face] = *hit;
-        const auto* mesh = primitives_.at(primitive).mesh;
+        const auto [t, uv, primitiveIndex, face] = *hit;
+		const auto* primitive = primitives_.at(primitiveIndex);
+        const auto* mesh = primitive.mesh;
         const auto p = mesh->surfacePoint(face, uv);
-        return SurfacePoint(primitive, -1, p.p, p.n, p.t);
+		return SurfacePoint(
+			primitiveIndex,
+			-1,
+			math::applyTransform(p.p, primitive->transform),
+			math::applyTransform(p.n, primitive->normalTransform),
+			p.t);
     }
 
     // ------------------------------------------------------------------------
@@ -148,13 +182,27 @@ public:
     }
 
 	virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+		// Sample a light
+		const int n  = int(lights_.size());
+		const int i  = glm::clamp(int(rng.u() * n), 0, n-1);
+		const auto pL = 1_f / n;
 		
+		// Sample a position on the light
+		return primitives_.at(i).light->sampleLight(rng, sp);
 	}
-
+	
 	// ------------------------------------------------------------------------
 
-	virtual Vec3 evalFs(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-		
+	virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+		if (sp.endpoint) {
+			if (sp.primitive == camera_) {
+				return primitives_.at(sp.primitive).camera->eval(sp, wo);
+			}
+			else {
+				return primitives_.at(sp.primitive).light->eval(sp, wo);
+			}
+		}
+		return primitives_.at(sp.primitive).material->eval(sp, wi, wo);
 	}
 
     virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
@@ -172,11 +220,6 @@ public:
         }
         return primitive.material->reflectance(sp);
     }
-
-private:
-    int camera_;    // Camera primitive index
-    std::vector<Primitive> primitives_;
-    Component::Ptr<Accel> accel_;
 };
 
 LM_COMP_REG_IMPL(Scene_, "scene::default");

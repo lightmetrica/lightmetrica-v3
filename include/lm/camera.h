@@ -29,6 +29,11 @@ public:
         \brief Sample a primary ray within the given raster window.
     */
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
+
+	/*!
+		\brief Evaluate importance.
+	*/
+	virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const = 0;
 };
 
 LM_NAMESPACE_END(LM_NAMESPACE)

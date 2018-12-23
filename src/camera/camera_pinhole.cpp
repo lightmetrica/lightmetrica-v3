@@ -58,6 +58,11 @@ public:
             Vec3(1_f)
         );
     }
+
+	virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const override {
+		LM_UNUSED(sp, wo);
+		LM_TBA_RUNTIME();
+	}
 };
 
 LM_COMP_REG_IMPL(Camera_Pinhole, "camera::pinhole");

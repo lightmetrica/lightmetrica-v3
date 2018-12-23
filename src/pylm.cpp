@@ -28,6 +28,18 @@ static void bind(pybind11::module& m) {
         .def_readwrite("o", &Ray::o)
         .def_readwrite("d", &Ray::d);
 
+	// Helper functions
+	m.def("identity", []() -> Mat4 {
+		return Mat4(1_f);
+	});
+	m.def("rotate", [](Float angle, Vec3 axis) -> Mat4 {
+		return glm::rotate(angle, axis);
+	});
+	m.def("radians", &glm::radians<Float>);
+	m.def("make_vec3", [](Float v1, Float v2, Float v3) -> Vec3 {
+		return Vec3(v1, v2, v3);
+	});
+
     // ------------------------------------------------------------------------
 
     // component.h
@@ -222,26 +234,6 @@ static void bind(pybind11::module& m) {
                   sizeof(Float) }
             );
         });
-
-    // Film progress reporter
-    //class FilmProgress_Py final : public FilmProgress {
-    //    virtual bool construct(const Json& prop) override {
-    //        PYBIND11_OVERLOAD(bool, FilmProgress, construct, prop);
-    //    }
-    //    virtual void start() override {
-    //        pybind11::gil_scoped_acquire acquire;
-    //        PYBIND11_OVERLOAD_PURE(void, FilmProgress, start);
-    //    }
-    //    virtual void update(FilmBuffer& buf) override {
-    //        pybind11::gil_scoped_acquire acquire;
-    //        PYBIND11_OVERLOAD_PURE(void, FilmProgress, update, buf);
-    //    }
-    //};
-    //pybind11::class_<FilmProgress, FilmProgress_Py, Component::Ptr<FilmProgress>>(m, "FilmProgress")
-    //    .def(pybind11::init<>())
-    //    .def("start", &FilmProgress::start)
-    //    .def("update", &FilmProgress::update)
-    //    .PYLM_DEF_COMP_BIND(FilmProgress);
     
     // Film
     class Film_Py final : public Film {
@@ -296,6 +288,12 @@ static void bind(pybind11::module& m) {
         .def_readwrite("wo", &RaySample::wo)
         .def_readwrite("weight", &RaySample::weight);
 
+	// LightSample
+	pybind11::class_<LightSample>(m, "LightSample")
+		.def_readwrite("wo", &LightSample::wo)
+		.def_readwrite("d", &LightSample::d)
+		.def_readwrite("weight", &LightSample::weight);
+
     // Scene
     class Scene_Py final : public Scene {
         virtual bool construct(const Json& prop) override {
@@ -331,6 +329,12 @@ static void bind(pybind11::module& m) {
         virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, samplePrimaryRay, rng, window);
         }
+		virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<LightSample>, Scene, sampleLight, rng, sp);
+		}
+		virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+			PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalBsdf, sp, wi, wo);
+		}
         virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrbEndpoint, sp, wo);
         }

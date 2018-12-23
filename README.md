@@ -91,6 +91,6 @@ $ python -m pytest --lm <Binary directory of lightmetrica> lm/pytest
 For instance, if you want to use Debug build, run
 
 ```bash
-$ python -m pytest --lm build/lm/Debug lm/pytest
+$ python -m pytest --lm build/bin/Debug pytest
 ```
 

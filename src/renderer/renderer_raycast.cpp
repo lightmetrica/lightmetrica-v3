@@ -22,7 +22,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        bgColor_ = valueOr(prop, "bg_color", Vec3(1_f));
+        bgColor_ = valueOr(prop, "bg_color", Vec3(0_f));
         useConstantColor_ = valueOr(prop, "use_constant_color", false);
         film_ = comp::cast<lm::Film>(lm::getAsset(prop["output"].get<std::string>()));
         if (!film_) {

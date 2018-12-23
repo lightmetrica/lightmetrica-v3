@@ -55,13 +55,4 @@ public:
     virtual FilmBuffer buffer() = 0;
 };
 
-/*!
-    \brief Progress reporter for a film.
-*/
-//class FilmProgress : public Component {
-//public:
-//    virtual void start() = 0;
-//    virtual void update(FilmBuffer& buf) = 0;
-//};
-
 LM_NAMESPACE_END(LM_NAMESPACE)

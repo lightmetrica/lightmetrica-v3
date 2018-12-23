@@ -46,17 +46,15 @@ public:
                 // Path throughput
                 Vec3 throughput(1_f);
 
+				// Incident direction and current surface point
+				Vec3 wi;
+				SurfacePoint sp;
+
                 // Initial sampleRay function
                 std::function<std::optional<RaySample>()> sampleRay = [&]() {
                     Float dx = 1_f/w, dy = 1_f/h;
                     return scene->samplePrimaryRay(rng, {dx*x, dy*y, dx, dy});
                 };
-
-				// Conditions
-				struct Cond {
-					Vec3 wi;
-					SurfacePoint sp;
-				} cond;
 
                 // Perform random walk
                 for (int length = 0; length < maxLength_; length++) {
@@ -77,9 +75,10 @@ public:
 						if (scene->intersect(Ray{s->sp.p, sL->wo}, Eps, sL->d*(1_f-Eps))) {
 							return;
 						}
-						// Evaluate contribution
-						const auto f = scene->evalFs(s->sp, ) * sL->fs;
-						// TODO
+
+						// Evaluate and accumulate contribution
+						const auto f = scene->evalBsdf(s->sp, wi, sL->wo);
+						L += throughput * f * sL->weight;
 					}();
 
                     // Intersection to next surface
@@ -92,9 +91,9 @@ public:
 					throughput *= s->weight;
 
                     // Accumulate contribution from light
-                    if (scene->isLight(*hit)) {
-                        L += throughput * scene->evalContrbEndpoint(*hit, -s->wo);
-                    }
+                    //if (scene->isLight(*hit)) {
+                    //    L += throughput * scene->evalContrbEndpoint(*hit, -s->wo);
+                    //}
 
                     // Russian roulette
                     if (length > 3) {
@@ -106,7 +105,9 @@ public:
                     }
 
                     // Update
-                    sampleRay = [&, wi = -s->wo, sp = *hit]() {
+					wi = -s->wo;
+					sp = *hit;
+                    sampleRay = [&]() {
                         return scene->sampleRay(rng, sp, wi);
                     };
                 }

@@ -15,13 +15,23 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Light : public Component {
 public:
+	/*!
+		\brief Sample a position on the light.
+	*/
+	virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const = 0;
+
+	/*!
+		\brief Evaluate pdf for light sampling in projected solid angle measure.
+	*/
+	virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const = 0;
+
     /*!
         \brief Check if the light is specular.
     */
     virtual bool isSpecular(const SurfacePoint& sp) const = 0;
 
     /*!
-        \brief Evaluate Luminance.
+        \brief Evaluate luminance.
     */
     virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const = 0;
 };

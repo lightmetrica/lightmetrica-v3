@@ -287,6 +287,13 @@ public:
         }
     }
 
+	virtual Tri triangleAt(int face) const override {
+		const auto p1 = geo_.ps[fs_[3*face].p];
+		const auto p2 = geo_.ps[fs_[3*face + 1].p];
+		const auto p3 = geo_.ps[fs_[3*face + 2].p];
+		return { p1, p2, p3 };
+	}
+
     virtual Point surfacePoint(int face, Vec2 uv) const override {
         const auto i1 = fs_[face];
         const auto i2 = fs_[face + 1];

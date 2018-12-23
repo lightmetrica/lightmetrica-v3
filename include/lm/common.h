@@ -241,6 +241,7 @@ struct FilmBuffer;        // film.h
 class Film;
 struct SurfacePoint;      // scene.h
 struct RaySample;
+struct LightSample;
 class Scene;
 class Renderer;           // renderer.h
 LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, class Impl)  // Some detailed classes

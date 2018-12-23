@@ -252,14 +252,21 @@ struct type_caster<glm::mat<C, R, T, Q>> {
 
     // C++ -> Python
     static handle cast(const MatT& src, return_value_policy policy, handle parent) {
-        LM_UNUSED(policy);
+        LM_UNUSED(policy, parent);
+
+		// Always copy the value irrespective to the return value policy
+		auto* src_copy = new MatT(src);
+		capsule base(src_copy, [](void* o) {
+			delete static_cast<MatT*>(o);
+		});
+
         // Create numpy array from MatT
         const auto srcTrans = glm::transpose(src);
         array a(
             {R, C},                    // Shapes
             {R*sizeof(T), sizeof(T)},  // Strides
-            &srcTrans[0].x,            // Data
-            parent                     // Parent handle
+            (T*)src_copy,              // Data
+            base                       // Parent handle
         );
         return a.release();
     }

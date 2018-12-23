@@ -12,6 +12,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
+#include <glm/gtx/transform.hpp>
 #pragma warning(pop)
 
 #include <tuple>
@@ -317,6 +318,20 @@ static Vec3 sampleCosineWeighted(Rng& rng) {
     const auto x = r * std::cos(t);
     const auto y = r * std::sin(t);
     return { x, y, safeSqrt(1_f - x*x - y*y) };
+}
+
+/*!
+	\brief Compute normal transform matrix.
+*/
+static Mat3 normalTransform(Mat4 transform) {
+	return Mat3(glm::transpose(glm::inverse(transform)));
+}
+
+/*!
+	\brief Apply transform to a point.
+*/
+static Vec3 applyTransform(Vec3 p, Mat4 transform) {
+	return Vec3(transform * Vec4(p, 1_f));
 }
 
 LM_NAMESPACE_END(math)

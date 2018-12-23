@@ -122,10 +122,10 @@ struct RaySample {
 // ----------------------------------------------------------------------------
 
 struct LightSample {
-	Vec3 wo;	// Sampled direction
-	Float d;    // Distance to the sampled position
-	Vec3 fs;    // Evaluated Le
-	Float p;    // Evaluated probablity
+	Vec3 wo;	  // Sampled direction
+	Float d;      // Distance to the sampled position
+	Vec3 weight;  // Evaluated contribution divided by probability
+			      // in projected solid angle measure
 };
 
 // ----------------------------------------------------------------------------
@@ -213,7 +213,7 @@ public:
 	/*!
 		\brief Evaluate extended BSDF.
 	*/
-	virtual Vec3 evalFs(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const = 0;
+	virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate endpoint contribution.
