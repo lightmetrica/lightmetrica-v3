@@ -53,6 +53,7 @@ public:
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
         const auto [x, y, w, h] = window.data.data;
         return RaySample(
+
             SurfacePoint(position_),
             primaryRay({x+w*rng.u(), y+h*rng.u()}).d,
             Vec3(1_f)

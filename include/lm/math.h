@@ -320,21 +320,22 @@ static Vec3 sampleCosineWeighted(Rng& rng) {
     return { x, y, safeSqrt(1_f - x*x - y*y) };
 }
 
-/*!
-	\brief Compute normal transform matrix.
-*/
-static Mat3 normalTransform(Mat4 transform) {
-	return Mat3(glm::transpose(glm::inverse(transform)));
-}
-
-/*!
-	\brief Apply transform to a point.
-*/
-static Vec3 applyTransform(Vec3 p, Mat4 transform) {
-	return Vec3(transform * Vec4(p, 1_f));
-}
-
 LM_NAMESPACE_END(math)
+
+// ----------------------------------------------------------------------------
+
+/*!
+	\brief Transform.
+*/
+struct Transform {
+	Mat4 M;				// Transform associated to the primitive
+	Mat3 normalM;		// Transform for normals
+	Float J;			// J := |det(M_lin)| where M_lin is linear component of M
+	Transform(const Mat4& M) : M(M) {
+		normalM = Mat3(glm::transpose(glm::inverse(M)));
+		J = std::abs(glm::determinant(Mat3(M)));
+	}
+};
 
 // ----------------------------------------------------------------------------
 

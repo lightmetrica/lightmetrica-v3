@@ -245,7 +245,7 @@ struct type_caster<glm::mat<C, R, T, Q>> {
 
         // Transpose the copied values because
         // glm is column major on the other hand numpy is row major.
-        glm::transpose(value);
+		value = glm::transpose(value);
 
         return true;
     }
@@ -255,13 +255,12 @@ struct type_caster<glm::mat<C, R, T, Q>> {
         LM_UNUSED(policy, parent);
 
 		// Always copy the value irrespective to the return value policy
-		auto* src_copy = new MatT(src);
+		auto* src_copy = new MatT(glm::transpose(src));
 		capsule base(src_copy, [](void* o) {
 			delete static_cast<MatT*>(o);
 		});
 
         // Create numpy array from MatT
-        const auto srcTrans = glm::transpose(src);
         array a(
             {R, C},                    // Shapes
             {R*sizeof(T), sizeof(T)},  // Strides

@@ -35,8 +35,14 @@ static void bind(pybind11::module& m) {
 	m.def("rotate", [](Float angle, Vec3 axis) -> Mat4 {
 		return glm::rotate(angle, axis);
 	});
-	m.def("radians", &glm::radians<Float>);
-	m.def("make_vec3", [](Float v1, Float v2, Float v3) -> Vec3 {
+	m.def("translate", [](Vec3 v) -> Mat4 {
+		return glm::translate(v);
+	});
+	m.def("scale", [](Vec3 s) -> Mat4 {
+		return glm::scale(s);
+	});
+	m.def("rad", &glm::radians<Float>);
+	m.def("v3", [](Float v1, Float v2, Float v3) -> Vec3 {
 		return Vec3(v1, v2, v3);
 	});
 

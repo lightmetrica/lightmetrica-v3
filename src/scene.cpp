@@ -18,8 +18,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct Primitive {
     int index;					// Primitive index
-    Mat4 transform;				// Transform associated to the primitive
-	Mat3 normalTransform;		// Transform for normals
+	Transform transform;		// Transform associated to the primitive
     const Mesh* mesh;			// Underlying assets
     const Material* material;
     const Light* light;
@@ -29,7 +28,7 @@ struct Primitive {
 class Scene_ final : public Scene {
 private:
 	std::vector<Primitive> primitives_;
-	Component::Ptr<Accel> accel_;
+	Ptr<Accel> accel_;
 	int camera_;			   // Camera primitive index
 	std::vector<int> lights_;  // Light primitive indices
 
@@ -64,8 +63,7 @@ public:
 		// Add a primitive entry
         primitives_.push_back(Primitive{
             int(primitives_.size()),
-            transform,
-			math::normalTransform(transform),
+            Transform(transform),
             mesh,
             material,
             light,
@@ -88,8 +86,7 @@ public:
         model->createPrimitives([&](Component* mesh, Component* material, Component* light) {
             primitives_.push_back(Primitive{
                 int(primitives_.size()),
-                transform,
-				math::normalTransform(transform),
+				Transform(transform),
                 dynamic_cast<Mesh*>(mesh),
                 dynamic_cast<Material*>(material),
                 dynamic_cast<Light*>(light),
@@ -108,9 +105,9 @@ public:
                 processTriangle(
                     primitive.index,
                     face,
-                    Vec3(primitive.transform * Vec4(p1, 1_f)),
-                    Vec3(primitive.transform * Vec4(p2, 1_f)),
-                    Vec3(primitive.transform * Vec4(p3, 1_f))
+					primitive.transform.M * Vec4(p1, 1_f),
+					primitive.transform.M * Vec4(p2, 1_f),
+					primitive.transform.M * Vec4(p3, 1_f)
                 );
             });
         }
@@ -132,14 +129,13 @@ public:
             return {};
         }
         const auto [t, uv, primitiveIndex, face] = *hit;
-		const auto* primitive = primitives_.at(primitiveIndex);
-        const auto* mesh = primitive.mesh;
-        const auto p = mesh->surfacePoint(face, uv);
+		const auto& primitive = primitives_.at(primitiveIndex);
+        const auto p = primitive.mesh->surfacePoint(face, uv);
 		return SurfacePoint(
 			primitiveIndex,
 			-1,
-			math::applyTransform(p.p, primitive->transform),
-			math::applyTransform(p.n, primitive->normalTransform),
+			primitive.transform.M * Vec4(p.p, 1_f),
+			primitive.transform.normalM * p.n,
 			p.t);
     }
 
@@ -188,7 +184,8 @@ public:
 		const auto pL = 1_f / n;
 		
 		// Sample a position on the light
-		return primitives_.at(i).light->sampleLight(rng, sp);
+		const auto& primitive = primitives_.at(lights_[i]);
+		return primitive.light->sampleLight(rng, sp, primitive.transform);
 	}
 	
 	// ------------------------------------------------------------------------
