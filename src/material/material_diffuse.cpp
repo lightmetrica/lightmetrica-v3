@@ -53,7 +53,7 @@ public:
         if (sp.opposite(wi, wo)) {
             return {};
         }
-        const auto a = mapKd_ ? mapKd_->evalAlpha(sp.t) : 1_f;
+        const auto a = (mapKd_ && mapKd_->hasAlpha()) ? mapKd_->evalAlpha(sp.t) : 1_f;
         return (mapKd_ ? mapKd_->eval(sp.t) : Kd_) * (a / Pi);
     }
 };

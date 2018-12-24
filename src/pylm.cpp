@@ -14,6 +14,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 static void bind(pybind11::module& m) {
     using namespace pybind11::literals;
 
+	// ------------------------------------------------------------------------
+
+	// Build parameters
+	m.attr("Debug") = LM_DEBUG_MODE ? true : false;
+
     // ------------------------------------------------------------------------
 
     // math.h

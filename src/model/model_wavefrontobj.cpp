@@ -419,40 +419,36 @@ public:
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
-        if (glass_ >= 0 || mirror_ >= 0) {
-            // Glass or mirror
-            int comp = mirror_ < 0 ? glass_ : mirror_;
-            auto s = materials_.at(comp)->sampleRay(rng, sp, wi);
-            if (!s) { return {}; }
-            return s->asComp(comp);
-        }
-        else {
-            // Diffuse or glossy or mask
-            const auto* diffuse = materials_.at(diffuse_).get();
-            const auto* glossy  = materials_.at(glossy_).get();
-            const auto wd = [&]() {
-                const auto wd = glm::compMax(*diffuse->reflectance(sp));
-                const auto ws = glm::compMax(*glossy->reflectance(sp));
-                return wd == 0_f && ws == 0_f ? 1_f : wd / (wd + ws);
-            }();
-            if (rng.u() < wd) {
-                if (maskTex_ && rng.u() > maskTex_->evalAlpha(sp.t)) { // Mask
-                    auto s = materials_.at(mask_)->sampleRay(rng, sp, wi);
-                    if (!s) { return {}; }
-                    return s->asComp(mask_).multWeight(1_f/wd);
-                }
-                else { // Diffuse
-                    auto s = diffuse->sampleRay(rng, sp, wi);
-                    if (!s) { return {}; }
-                    return s->asComp(diffuse_).multWeight(1_f/wd);
-                }
-            }
-            else { // Glossy
-                auto s = glossy->sampleRay(rng, sp, wi);
-                if (!s) { return {}; }
-                return s->asComp(glossy_).multWeight(1_f/(1_f-wd));
-            }
-        }
+		// Select component
+		const auto [compIndex, weight] = [&]() -> std::tuple<int, Float> {
+			// Glass or mirror
+			if (glass_ >= 0 || mirror_ >= 0) {
+				return { mirror_ < 0 ? glass_ : mirror_, 1_f };
+			}
+
+			// Diffuse or glossy or mask
+			const auto* D = materials_.at(diffuse_).get();
+			const auto* G = materials_.at(glossy_).get();
+			const auto wd = [&]() {
+				const auto wd = glm::compMax(*D->reflectance(sp));
+				const auto ws = glm::compMax(*G->reflectance(sp));
+				return wd == 0_f && ws == 0_f ? 1_f : wd / (wd + ws);
+			}();
+			if (rng.u() < wd) {
+				if (maskTex_ && rng.u() > maskTex_->evalAlpha(sp.t)) {
+					return { mask_, 1_f/wd };
+				}
+				return { diffuse_, 1_f/wd };
+			}
+			return { glossy_, 1_f/(1_f-wd) };
+		}();
+
+		// Sample a ray
+		auto s = materials_.at(compIndex)->sampleRay(rng, sp, wi);
+		if (!s) {
+			return {};
+		}
+		return s->asComp(compIndex).multWeight(weight);
     }
 
     virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const {

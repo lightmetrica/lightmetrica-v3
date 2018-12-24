@@ -92,6 +92,9 @@ public:
                 dynamic_cast<Light*>(light),
                 nullptr
             });
+			if (primitives_.back().light) {
+				lights_.push_back(primitives_.back().index);
+			}
         });
         return true;
     }

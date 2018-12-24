@@ -75,10 +75,8 @@ public:
 						if (scene->intersect(Ray{s->sp.p, sL->wo}, Eps, sL->d*(1_f-Eps))) {
 							return;
 						}
-
 						// Evaluate and accumulate contribution
-						const auto f = scene->evalBsdf(s->sp, wi, sL->wo);
-						L += throughput * f * sL->weight;
+						L += throughput * scene->evalBsdf(s->sp, wi, sL->wo) * sL->weight;
 					}();
 
                     // Intersection to next surface
