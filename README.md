@@ -69,17 +69,6 @@ $ cmake -G "Visual Studio 15 2017 Win64" ..
 $ start lightmetrica.sln
 ```
 
-### Build (docker)
-
-```bash
-> docker build -t lm3_dev -f Dockerfile_dev .
-> docker run --rm --user root -v ${PWD}:/usr/src/lightmetrica-v3 -it lm3_dev /bin/bash
-$ cd /usr/src/lightmetrica-v3
-$ mkdir build && cd build
-$ cmake -DCMAKE_BUILD_TYPE=Release ..
-$ make -j
-```
-
 ### Run pytest
 
 Execute following commands after build:
