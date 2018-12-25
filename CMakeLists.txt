@@ -139,6 +139,7 @@ target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/MP>)
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/fp:strict /fp:except>)
 # filesystem
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:GNU>:-lstdc++fs>)
+set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 set_target_properties(${_PROJECT_NAME} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
