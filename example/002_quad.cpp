@@ -8,7 +8,13 @@
 int main() {
     try {
         // Initialize the framework
-        lm::init();
+		lm::init({
+			#if LM_DEBUG_MODE
+			{"numThreads", 1}
+			#else
+			{"numThreads", -1}
+			#endif
+		});
 
         // --------------------------------------------------------------------
 
