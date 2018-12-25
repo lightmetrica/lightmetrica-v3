@@ -17,6 +17,7 @@ function(lm_add_plugin)
     # MODULE library for the dynamic loaded library
     add_library(${_ARG_NAME} MODULE ${_ARG_HEADERS} ${_ARG_SOURCES})
     target_link_libraries(${_ARG_NAME} PRIVATE liblm ${_ARG_NAME}_interface)
+    set_target_properties(${_ARG_NAME} PROPERTIES PREFIX "")
     set_target_properties(${_ARG_NAME} PROPERTIES FOLDER "lm/plugin")
     set_target_properties(${_ARG_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     source_group("Header Files" FILES ${_ARG_HEADERS})
