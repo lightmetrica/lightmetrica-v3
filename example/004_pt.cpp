@@ -5,18 +5,24 @@
 
 #include <lm/lm.h>
 
-// Example of rendering an image with path tracing,
-// which explains basic usage of user APIs.
+// Example of rendering an image with path tracing explaining basic usage of user APIs.
+/*
+./004_pt ./scenes/fireplace_room/fireplace_room.obj result.pfm \
+         10 20 1920 1080 \
+         5.101118 1.083746 -2.756308 \
+         4.167568 1.078925 -2.397892 \
+         43.001194
+*/
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
-        lm::init({
-            #if LM_DEBUG_MODE
-            {"numThreads", -1}
-            #else
-            {"numThreads", -1}
-            #endif
-        });
+		lm::init({
+			#if LM_DEBUG_MODE
+			{"numThreads", 1}
+			#else
+			{"numThreads", -1}
+			#endif
+			});
 
         // Parse command line arguments
         const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{

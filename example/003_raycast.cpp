@@ -5,10 +5,23 @@
 
 #include <lm/lm.h>
 
+/*
+./003_raycast ./scenes/fireplace_room/fireplace_room.obj result.pfm \
+              1920 1080 \
+              5.101118 1.083746 -2.756308 \
+              4.167568 1.078925 -2.397892 \
+              43.001194
+*/
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
-        lm::init({{"numThreads", -1}});
+		lm::init({
+			#if LM_DEBUG_MODE
+			{"numThreads", 1}
+			#else
+			{"numThreads", -1}
+			#endif
+		});
 
         // Parse command line arguments
         const auto opt = lm::parsePositionalArgs<11>(argc, argv, R"({{
