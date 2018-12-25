@@ -59,7 +59,7 @@ private:
 
     // Load a ppm or a pfm texture
     template <typename T>
-    bool loadpxm(std::vector<Float>& c, const std::string& p_) {
+	bool loadpxm(std::vector<Float>& c, const std::string& p_, bool errorOnFailure = true) {
 		const auto p = sanitizeDirectorySeparator(p_);
         LM_INFO("Loading texture [path='{}']", p);
 		LM_INDENT();
@@ -71,8 +71,11 @@ private:
         f = fopen(p.c_str(), "rb");
         #endif
         if (!f) {
-			LM_ERROR("Failed to load texture [path='{}']", p);
-            return false;
+			if (errorOnFailure) {
+				LM_ERROR("Failed to load texture [path='{}']", p);
+				return false;
+			}
+			return true;
         }
         double e;
         #if LM_COMPILER_MSVC
@@ -106,7 +109,7 @@ public:
         auto b = std::filesystem::path(p);
         auto pc = b.replace_extension(".ppm").string();
         auto pa = (b.parent_path() / std::filesystem::path(b.stem().string() + "_alpha.ppm")).string();
-        return loadpxm<uint8_t>(cs, pc) && loadpxm<uint8_t>(as, pa);
+        return loadpxm<uint8_t>(cs, pc) && loadpxm<uint8_t>(as, pa, false);
     }
 
     // Evaluate the texture on the given pixel coordinate
