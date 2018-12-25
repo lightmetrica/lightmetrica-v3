@@ -58,6 +58,7 @@ private:
         f = fopen(p.c_str(), "rb");
         #endif
         if (!f) {
+			LM_ERROR("Failed to load texture [path='{}']", p);
             return false;
         }
         double e;
