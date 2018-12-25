@@ -44,6 +44,11 @@ int main() {
             }}
         });
 
+		// Material
+		lm::asset("material1", "material::diffuse", {
+			{"Kd", {1,1,1}}
+		});
+
         // --------------------------------------------------------------------
 
         // Define scene primitives
@@ -52,7 +57,10 @@ int main() {
         lm::primitive(lm::Mat4(1), {{"camera", "camera1"}});
 
         // Mesh
-        lm::primitive(lm::Mat4(1), {{"mesh", "mesh1"}});
+        lm::primitive(lm::Mat4(1), {
+			{"mesh", "mesh1"},
+			{"material", "material1"}
+		});
 
         // --------------------------------------------------------------------
 

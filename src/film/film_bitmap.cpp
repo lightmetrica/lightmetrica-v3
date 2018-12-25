@@ -74,10 +74,7 @@ public:
                 }
             }
         }
-        #if LM_COMPILER_MSVC
-        #else
-        fwrite(d.data(), 4, d.size(), f);
-        #endif
+		fwrite(d.data(), 4, d.size(), f);
         fclose(f);
         return true;
     }
