@@ -49,10 +49,10 @@ public:
         };
 
 		// Underlying components of primitive
-		const auto* mesh = getAssetRefBy("mesh")->cast<Mesh>();
-		const auto* material = getAssetRefBy("material")->cast<Material>();
-		const auto* light = getAssetRefBy("light")->cast<Light>();
-		const auto* camera = getAssetRefBy("camera")->cast<Camera>();
+		const auto* mesh     = dynamic_cast<Mesh*>(getAssetRefBy("mesh"));
+		const auto* material = dynamic_cast<Material*>(getAssetRefBy("material"));
+		const auto* light    = dynamic_cast<Light*>(getAssetRefBy("light"));
+		const auto* camera   = dynamic_cast<Camera*>(getAssetRefBy("camera"));
 
 		// Primitive cannot be both camera and light
 		if (camera && light) {
