@@ -7,13 +7,24 @@
 #include <lm/texture.h>
 #include <lm/logger.h>
 
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
 #if LM_COMPILER_MSVC
 int bswap(int x) { return _byteswap_ulong(x); }
 #elif LM_COMPILER_GCC
 int bswap(int x) { return __builtin_bswap32(x); }
 #endif
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+#if LM_PLATFORM_WINDOWS
+std::string sanitizeDirectorySeparator(std::string p) {
+	return p;
+}
+#else
+std::string sanitizeDirectorySeparator(std::string p) {
+	std::replace(p.begin(), p.end(), '\\', '/');
+	return p;
+}
+#endif
 
 class Bitmap_PXM {
 private:
@@ -49,7 +60,7 @@ private:
     // Load a ppm or a pfm texture
     template <typename T>
     bool loadpxm(std::vector<Float>& c, const std::string& p_) {
-		const auto p = std::filesystem::path(p_).make_preferred().string();
+		const auto p = sanitizeDirectorySeparator(p_);
         LM_INFO("Loading texture [path='{}']", p);
 		LM_INDENT();
         static std::vector<T> ct;
