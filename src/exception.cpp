@@ -82,8 +82,8 @@ public:
     }
 
 private:
+	#if LM_PLATFORM_WINDOWS
     unsigned int setFPExState(unsigned int state) const {
-        #if LM_PLATFORM_WINDOWS
         // Get current floating-point control word
         unsigned int old;
         _controlfp_s(&old, 0, 0);
@@ -94,11 +94,8 @@ private:
         LM_UNUSED(current);
 
         return old;
-        #else
-        LM_TBA_RUNTIME();
-        return {};
-        #endif
     }
+	#endif
 
 public:
     virtual bool construct(const Json& prop) override {
@@ -110,16 +107,12 @@ public:
     virtual void enableFPEx() override {
         #if LM_PLATFORM_WINDOWS
         setFPExState((unsigned int)(~(_EM_INVALID | _EM_ZERODIVIDE)));
-        #else
-        LM_TBA_RUNTIME();
         #endif
     }
 
     virtual void disableFPEx() override {
         #if LM_PLATFORM_WINDOWS
         setFPExState(_CW_DEFAULT);
-        #else
-        LM_TBA_RUNTIME();
         #endif
     }
 
