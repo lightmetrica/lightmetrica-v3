@@ -50,6 +50,7 @@ private:
     template <typename T>
     bool loadpxm(std::vector<Float>& c, const std::string& p) {
         LM_INFO("Loading texture [path='{}']", p);
+		LM_INDENT();
         static std::vector<T> ct;
         FILE *f;
         #if LM_COMPILER_MSVC
