@@ -48,7 +48,8 @@ private:
 
     // Load a ppm or a pfm texture
     template <typename T>
-    bool loadpxm(std::vector<Float>& c, const std::string& p) {
+    bool loadpxm(std::vector<Float>& c, const std::string& p_) {
+		const auto p = std::filesystem::path(p_).make_preferred().string();
         LM_INFO("Loading texture [path='{}']", p);
 		LM_INDENT();
         static std::vector<T> ct;
