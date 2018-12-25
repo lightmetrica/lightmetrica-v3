@@ -48,7 +48,7 @@ private:
 
     // Load a ppm or a pfm texture
     template <typename T>
-    void loadpxm(std::vector<Float>& c, const std::string& p) {
+    bool loadpxm(std::vector<Float>& c, const std::string& p) {
         LM_INFO("Loading texture [path='{}']", p);
         static std::vector<T> ct;
         FILE *f;
@@ -58,7 +58,7 @@ private:
         f = fopen(p.c_str(), "rb");
         #endif
         if (!f) {
-            return;
+            return false;
         }
         double e;
         #if LM_COMPILER_MSVC
@@ -78,21 +78,21 @@ private:
             c[i] = postprocess(i, Float(e), ct);
         }
         std::fclose(f);
+		return true;
     }
 
 public:
     // Load pfm texture
-    void loadpfm(const std::string& p) {
-        loadpxm<float>(cs, p);
+    bool loadpfm(const std::string& p) {
+        return loadpxm<float>(cs, p);
     }
 
     // Load ppm texture
-    void loadppm(const std::string& p) {
+    bool loadppm(const std::string& p) {
         auto b = std::filesystem::path(p);
         auto pc = b.replace_extension(".ppm").string();
         auto pa = (b.parent_path() / std::filesystem::path(b.stem().string() + "_alpha.ppm")).string();
-        loadpxm<uint8_t>(cs, pc);
-        loadpxm<uint8_t>(as, pa);
+        return loadpxm<uint8_t>(cs, pc) && loadpxm<uint8_t>(as, pa);
     }
 
     // Evaluate the texture on the given pixel coordinate
@@ -125,8 +125,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        bitmap_.loadppm(prop["path"]);
-        return true;
+        return bitmap_.loadppm(prop["path"]);
     }
 
     virtual Vec3 eval(Vec2 t) const override {
