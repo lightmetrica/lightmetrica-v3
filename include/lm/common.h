@@ -209,6 +209,8 @@
 // ----------------------------------------------------------------------------
 
 // Unused macro
+// Only use this macro to specify variables being used.
+// Using this macro for expressions might lead unexpected behavior.
 // https://stackoverflow.com/questions/1486904/how-do-i-best-silence-a-warning-about-unused-variables/44106902
 #define LM_UNUSED(...) { (decltype(LM_NAMESPACE::detail::unused(__VA_ARGS__)))0; }
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

@@ -63,38 +63,61 @@ private:
 		const auto p = sanitizeDirectorySeparator(p_);
         LM_INFO("Loading texture [path='{}']", p);
 		LM_INDENT();
-        static std::vector<T> ct;
+
+		// Open image file
         FILE *f;
-        #if LM_COMPILER_MSVC
-        fopen_s(&f, p.c_str(), "rb");
-        #else
-        f = fopen(p.c_str(), "rb");
-        #endif
-        if (!f) {
-			if (errorOnFailure) {
-				LM_ERROR("Failed to load texture [path='{}']", p);
+		{
+			#if LM_COMPILER_MSVC
+			fopen_s(&f, p.c_str(), "rb");
+			#else
+			f = fopen(p.c_str(), "rb");
+			#endif
+			if (!f) {
+				if (errorOnFailure) {
+					LM_ERROR("Failed to load texture [path='{}']", p);
+					return false;
+				}
+				return true;
+			}
+		}
+
+		// Read header
+        double e;
+		{
+			#if LM_COMPILER_MSVC
+			const auto ret = fscanf_s(f, "%*s %d %d %lf%*c", &w, &h, &e);
+			#else
+			const auto ret = fscanf(f, "%*s %d %d %lf%*c", &w, &h, &e);
+			#endif
+			if (ret != 3) {
+				LM_ERROR("Invalid PXM header [path='{}']", p);
 				return false;
 			}
-			return true;
-        }
-        double e;
-        #if LM_COMPILER_MSVC
-        fscanf_s(f, "%*s %d %d %lf%*c", &w, &h, &e);
-        #else
-        fscanf(f, "%*s %d %d %lf%*c", &w, &h, &e);
-        #endif
-        const int sz = w * h * 3;
-        ct.assign(sz, 0);
-        c.assign(sz, 0);
-        #if LM_COMPILER_MSVC
-        fread_s(ct.data(), sz*sizeof(T), sizeof(T), sz, f);
-        #else
-        fread(ct.data(), sizeof(T), sz, f);
-        #endif
+		}
+
+		// Read data
+		const int sz = w * h * 3;
+		static std::vector<T> ctemp;
+		{
+			ctemp.assign(sz, 0);
+			c.assign(sz, 0);
+			#if LM_COMPILER_MSVC
+			const auto ret = fread_s(ctemp.data(), sz*sizeof(T), sizeof(T), sz, f);
+			#else
+			const auto ret = fread(ctemp.data(), sizeof(T), sz, f);
+			#endif
+			if (ret != sz) {
+				LM_ERROR("Invalid data [path='{}']", p);
+				return false;
+			}
+		}
+		
+		// Postprocess
         for (int i = 0; i < sz; i++) {
-            c[i] = postprocess(i, Float(e), ct);
+            c[i] = postprocess(i, Float(e), ctemp);
         }
-        std::fclose(f);
+
+        fclose(f);
 		return true;
     }
 
