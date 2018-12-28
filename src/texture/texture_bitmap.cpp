@@ -81,7 +81,7 @@ private:
         #if LM_COMPILER_MSVC
         fscanf_s(f, "%*s %d %d %lf%*c", &w, &h, &e);
         #else
-        LM_UNUSED(fscanf(f, "%*s %d %d %lf%*c", &w, &h, &e));
+        fscanf(f, "%*s %d %d %lf%*c", &w, &h, &e);
         #endif
         const int sz = w * h * 3;
         ct.assign(sz, 0);
@@ -89,7 +89,7 @@ private:
         #if LM_COMPILER_MSVC
         fread_s(ct.data(), sz*sizeof(T), sizeof(T), sz, f);
         #else
-        LM_UNUSED(fread(ct.data(), sizeof(T), sz, f));
+        fread(ct.data(), sizeof(T), sz, f);
         #endif
         for (int i = 0; i < sz; i++) {
             c[i] = postprocess(i, Float(e), ct);
