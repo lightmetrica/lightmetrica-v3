@@ -143,7 +143,7 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 set_target_properties(${_PROJECT_NAME} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # -----------------------------------------------------------------------------
