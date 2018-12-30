@@ -108,6 +108,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/material/material_glossy.cpp"
     "${_SOURCE_DIR}/material/material_mirror.cpp"
     "${_SOURCE_DIR}/material/material_mask.cpp"
+    "${_SOURCE_DIR}/material/material_proxy.cpp"
     "${_SOURCE_DIR}/film/film_bitmap.cpp"
     "${_SOURCE_DIR}/accel/accel_sahbvh.cpp"
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"

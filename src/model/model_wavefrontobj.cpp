@@ -527,7 +527,9 @@ public:
             [&](const MTLMatParams& m) -> bool {
                 if (const auto it = prop.find("base_material"); it != prop.end()) {
                     // Use user-specified material
-                    auto mat = comp::create<Material>(*it, this, {});
+					auto mat = lm::comp::create<Material>("material::proxy", this, {
+						{"ref", *it}
+					});
                     if (!mat) {
                         return false;
                     }
