@@ -17,7 +17,21 @@ static void bind(pybind11::module& m) {
 	// ------------------------------------------------------------------------
 
 	// Build parameters
+	// Debug or Release mode
 	m.attr("Debug") = LM_DEBUG_MODE ? true : false;
+
+	// Supported floating point type
+	enum class FloatPrecisionType {
+		Float32,
+		Float64
+	};
+	pybind11::enum_<FloatPrecisionType>(m, "FloatPrecisionType")
+		.value("Float32", FloatPrecisionType::Float32)
+		.value("Float64", FloatPrecisionType::Float64)
+		.export_values();
+	m.attr("FloatPrecision") = LM_SINGLE_PRECISION
+		? FloatPrecisionType::Float32
+		: FloatPrecisionType::Float64;
 
     // ------------------------------------------------------------------------
 

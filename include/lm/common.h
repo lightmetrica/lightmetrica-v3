@@ -252,7 +252,15 @@ LM_FORWARD_DECLARE_WITH_NAMESPACE(detail, class ComponentAccess)
 // ----------------------------------------------------------------------------
 
 // Default floating point type
+#define LM_SINGLE_PRECISION 0
+#define LM_DOUBLE_PRECISION 1
+#if LM_SINGLE_PRECISION
 using Float = float;
+#elif LM_DOUBLE_PRECISION
+using Float = double;
+#else
+#error "Invalid precision mode"
+#endif
 
 // ----------------------------------------------------------------------------
 
