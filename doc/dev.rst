@@ -1,4 +1,9 @@
-Note for developers
+Developer's guide
+############
+
+
+
+Notes
 =====================
 
 doxygen

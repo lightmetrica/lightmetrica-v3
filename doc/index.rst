@@ -3,8 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Lightmetrica -- Research-oriented rendering framework
+Lightmetrica -- Research-oriented renderer
 ======================
+
+This project is under development for the initial release of Version 3.
 
 .. toctree::
    :maxdepth: 1
@@ -14,15 +16,10 @@ Lightmetrica -- Research-oriented rendering framework
 
 .. toctree::
    :maxdepth: 2
-   :caption: User's guide
-
-   install
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Developer's guide
+   :caption: Contents
 
    build
+   tutorial
    api
    note
 

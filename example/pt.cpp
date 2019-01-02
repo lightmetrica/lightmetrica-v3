@@ -4,48 +4,32 @@
 */
 
 #include <lm/lm.h>
-#include <iostream>
 
-// ----------------------------------------------------------------------------
-
-class Material_VisualizeNormal final : public lm::Material {
-public:
-    virtual bool construct(const lm::Json& prop) override {
-        LM_UNUSED(prop);
-        return true;
-    }
-
-    virtual std::optional<lm::RaySample> sampleRay(lm::Rng& rng, const lm::SurfacePoint& sp, lm::Vec3 wi) const override {
-        LM_UNUSED(rng, sp, wi);
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual std::optional<lm::Vec3> reflectance(const lm::SurfacePoint& sp) const override {
-        return glm::abs(sp.n);
-    }
-};
-
-LM_COMP_REG_IMPL(Material_VisualizeNormal, "material::visualize_normal");
-
-// ----------------------------------------------------------------------------
-
-// This example illustrates how to extend features of Lightmetrica
-// by creating simple material extension.
+// Example of rendering an image with path tracing explaining basic usage of user APIs.
+/*
+./004_pt ./scenes/fireplace_room/fireplace_room.obj result.pfm \
+         10 20 1920 1080 \
+         5.101118 1.083746 -2.756308 \
+         4.167568 1.078925 -2.397892 \
+         43.001194
+*/
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
         lm::init({
             #if LM_DEBUG_MODE
-            {"numThreads", -1}
+            {"numThreads", 1}
             #else
             {"numThreads", -1}
             #endif
-        });
+            });
 
         // Parse command line arguments
         const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
+            "spp": {},
+            "len": {},
             "w": {},
             "h": {},
             "eye": [{},{},{}],
@@ -73,11 +57,7 @@ int main(int argc, char** argv) {
         });
 
         // OBJ model
-        // Replace all materials to diffuse and use our checker texture
-        lm::asset("obj1", "model::wavefrontobj", {
-            {"path", opt["obj"]},
-            {"base_material", "material::visualize_normal"}
-        });
+        lm::asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
 
         // --------------------------------------------------------------------
 
@@ -93,10 +73,13 @@ int main(int argc, char** argv) {
 
         // Render an image
         lm::build("accel::sahbvh");
-        lm::render("renderer::raycast", {
+		// _begin_render
+        lm::render("renderer::pt", {
             {"output", "film1"},
-            {"use_constant_color", true}
+            {"spp", opt["spp"]},
+            {"maxLength", opt["len"]}
         });
+        // _end_render
 
         // Save rendered image
         lm::save("film1", opt["out"]);

@@ -6,7 +6,7 @@ About this project
 
 .. General introduction. Briefly describe the purpose of this project.
 
-**Lightmetrica** is a research-oriented rendering framework. The development of the framework is motivated by the goal to provide a practical environment for rendering research and development, where the researchers and developers need to tackle various challenging requirements through the development process.
+**Lightmetrica** is a research-oriented renderer. The development of the framework is motivated by the goal to provide a practical environment for rendering research and development, where the researchers and developers need to tackle various challenging requirements through the development process.
 
 .. Background and motivation of this project.
 
@@ -57,7 +57,7 @@ Current major version is **3**. Upon the major update, we have redesigned most o
   - Differential rendering
   - Pause and resume rendering 
   - Standard scene formats (Wavefront OBJ, Mitsuba, PBRT)
-  - Various (hopefully) correct implementation of rendering techniques
+  - Various implementation of rendering techniques
 
 - Extension support
 
@@ -91,7 +91,7 @@ You can use the following BibTex entry:
 
     @misc{lightmetrica-v3,
         author = {Hisanari Otsu},
-        title = {Lightmetrica -- Research-oriented rendering framework (Version 3)},
+        title = {Lightmetrica -- Research-oriented renderer (Version 3)},
         note = {http://lightmetrica.org},
-        year = {2018},
+        year = {2019},
     }

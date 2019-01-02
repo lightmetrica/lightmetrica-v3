@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.abspath('../build/bin/Release'))
 # -- Project information -----------------------------------------------------
 
 project = 'Lightmetrica Version 3'
-copyright = '2018, Hisanari Otsu'
+copyright = '2019, Hisanari Otsu'
 author = 'Hisanari Otsu'
 
 # The short X.Y version

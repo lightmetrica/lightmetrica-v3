@@ -10,10 +10,23 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*!
+    \addtogroup user
+    @{
+*/
+
 // ----------------------------------------------------------------------------
 
 /*!
     \brief Initializes the renderer.
+    \param prop Properties for configuration.
+    \see `example/blank.cpp`
+
+    \rst
+    The framework must be initialized with this function before any use of other APIs.
+    The properties are passed as JSON format and used to initialize
+    the internal subsystems of the framework.
+    \endrst
 */
 LM_PUBLIC_API void init(const Json& prop = {});
 
@@ -24,6 +37,9 @@ LM_PUBLIC_API void shutdown();
 
 /*!
     \brief Create an asset.
+    \param name Identifier of the asset.
+    \param implKey Name of aset to create.
+    \param prop Properties for configuration.
 */
 LM_PUBLIC_API void asset(const std::string& name,
     const std::string& implKey, const Json& prop);
@@ -65,8 +81,6 @@ LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(detail)
-
 /*!
     \brief Scoped guard of `init` and `shutdown` functions.
 */
@@ -77,5 +91,8 @@ public:
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
 
-LM_NAMESPACE_END(detail)
+/*!
+    @}
+*/
+
 LM_NAMESPACE_END(LM_NAMESPACE)

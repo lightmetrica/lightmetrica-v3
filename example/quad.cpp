@@ -8,18 +8,17 @@
 int main() {
     try {
         // Initialize the framework
-		lm::init({
-			#if LM_DEBUG_MODE
-			{"numThreads", -1}
-			#else
-			{"numThreads", -1}
-			#endif
-		});
+        // _begin_init
+        lm::init({
+            {"numThreads", -1}
+        });
+        // _end_init
 
         // --------------------------------------------------------------------
 
         // Define assets
 
+        // _begin_assets
         // Film for the rendered image
         lm::asset("film1", "film::bitmap", {{"w", 1920}, {"h", 1080}});
 
@@ -44,35 +43,40 @@ int main() {
             }}
         });
 
-		// Material
-		lm::asset("material1", "material::diffuse", {
-			{"Kd", {1,1,1}}
-		});
+        // Material
+        lm::asset("material1", "material::diffuse", {
+            {"Kd", {1,1,1}}
+        });
+        // _end_assets
 
         // --------------------------------------------------------------------
 
         // Define scene primitives
 
+        // _begin_primitive
         // Camera
         lm::primitive(lm::Mat4(1), {{"camera", "camera1"}});
 
         // Mesh
         lm::primitive(lm::Mat4(1), {
-			{"mesh", "mesh1"},
-			{"material", "material1"}
-		});
+            {"mesh", "mesh1"},
+            {"material", "material1"}
+        });
+        // _end_primitive
 
         // --------------------------------------------------------------------
 
         // Render an image
+        // _begin_render
         lm::build("accel::sahbvh");
         lm::render("renderer::raycast", {
             {"output", "film1"},
             {"color", {0,0,0}}
         });
+        // _end_render
 
         // Save rendered image
-        lm::save("film1", "result.pfm");
+        lm::save("film1", "quad.pfm");
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());

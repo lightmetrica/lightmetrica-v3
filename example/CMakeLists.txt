@@ -18,9 +18,9 @@ endfunction()
 
 # -----------------------------------------------------------------------------
 
-lm_add_example(NAME 001_blank SOURCES "001_blank.cpp")
-lm_add_example(NAME 002_quad SOURCES "002_quad.cpp")
-lm_add_example(NAME 003_raycast SOURCES "003_raycast.cpp")
-lm_add_example(NAME 004_pt SOURCES "004_pt.cpp")
-lm_add_example(NAME 005_custom_material SOURCES "005_custom_material.cpp")
-lm_add_example(NAME 006_custom_renderer SOURCES "006_custom_renderer.cpp")
+lm_add_example(NAME blank SOURCES "blank.cpp")
+lm_add_example(NAME quad SOURCES "quad.cpp")
+lm_add_example(NAME raycast SOURCES "raycast.cpp")
+lm_add_example(NAME pt SOURCES "pt.cpp")
+lm_add_example(NAME custom_material SOURCES "custom_material.cpp")
+lm_add_example(NAME custom_renderer SOURCES "custom_renderer.cpp")

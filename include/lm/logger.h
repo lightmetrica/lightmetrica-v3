@@ -11,6 +11,11 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(log)
 
+/*!
+    \addtogroup log
+    @{
+*/
+
 // ----------------------------------------------------------------------------
 
 //! Default logger type
@@ -20,12 +25,12 @@ constexpr const char* DefaultType = "logger::default";
     \brief Log level.
 */
 enum class LogLevel {
-    Debug,
-    Info,
-    Warn,
-    Err,
-    Progress,
-    ProgressEnd,
+    Debug,          //!< Debug
+    Info,           //!< Information
+    Warn,           //!< Warning
+    Err,            //!< Error
+    Progress,       //!< Progress message
+    ProgressEnd,    //!< End of progress
 };
 
 /*!
@@ -88,10 +93,19 @@ LM_NAMESPACE_END(detail)
 
 // ----------------------------------------------------------------------------
 
+/*!
+    @}
+*/
+
 LM_NAMESPACE_END(log)
 LM_NAMESPACE_END(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
+
+/*!
+    \addtogroup log
+    @{
+*/
 
 /*!
     \brief Log error message.
@@ -164,3 +178,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 #define LM_INDENT() LM_NAMESPACE::log::LogIndenter \
     LM_TOKENPASTE2(logIndenter_, __LINE__)
+
+/*!
+    @}
+*/

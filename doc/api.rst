@@ -3,22 +3,26 @@ API reference
 
 .. ----------------------------------------------------------------------------
 
+User
+===========
+
+.. doxygengroup:: user
+   :content-only:
+   :members:
+
+.. ----------------------------------------------------------------------------
+
+Log
+===========
+
+.. doxygengroup:: log
+   :content-only:
+   :members:
+
+.. ----------------------------------------------------------------------------
+
 Component
-===============
-
-*Component* is responsible for object handling in Lightmetrica. 
-
-Features
--------------
-
-- **Dependency-injection**:
-  An implementation is perfectly decoupled from the interface. We provide a simple factory |   function to create instances.
-- **Native/Python plugin support**:
-  An developer can easily extend features with dynamically loaded native plugins, or even with python scripts.
-- **Assembly agnostic**:
-  An component implementation can be accessible from the same interface irrespective to the assembly where the implementation is defined.
-- **Serialization/deserialization**:
-  We provide an interface for serialization/deserialization of component instances, simple yet sufficient to handle practical cases with dependent instances.
+=============
 
 API
 -------------
@@ -72,38 +76,3 @@ Native plugin
 Python plugin
 """""""""""""
 
-.. ----------------------------------------------------------------------------
-
-Log
-===========
-
-*Log* is responsible for logging in Lightmetrica.
-
-.. doxygendefine:: LM_ERROR
-.. doxygendefine:: LM_WARN
-.. doxygendefine:: LM_INFO
-.. doxygendefine:: LM_DEBUG
-.. doxygendefine:: LM_INDENT
-
-.. ----------------------------------------------------------------------------
-
-User API
-===============
-
-.. testsetup:: *
-
-   import pylm
-
-
-API
----------
-
-.. tabs::
-
-   .. group-tab:: C++
-
-      .. doxygenfunction:: lm::primitive
-
-   .. group-tab:: Python
-
-      .. autofunction:: pylm.primitive

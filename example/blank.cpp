@@ -3,6 +3,7 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
+// _begin_example
 #include <lm/lm.h>
 
 int main() {
@@ -21,7 +22,7 @@ int main() {
         });
 
         // Save rendered image
-        lm::save("film", "result.pfm");
+        lm::save("film", "blank.pfm");
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());
@@ -29,3 +30,4 @@ int main() {
 
     return 0;
 }
+// _end_example
