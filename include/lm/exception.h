@@ -12,6 +12,11 @@ LM_NAMESPACE_BEGIN(exception)
 
 // ----------------------------------------------------------------------------
 
+/*!
+    \addtogroup exception
+    @{
+*/
+
 //! Default exception type
 constexpr const char* DefaultType = "exception::default";
 
@@ -61,16 +66,32 @@ public:
     LM_DISABLE_COPY_AND_MOVE(ScopedDisableFPEx)
 };
 
+/*!
+    @}
+*/
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
 
+/*!
+    \addtogroup exception
+    @{
+*/
+
+/*!
+    \brief Exception context.
+*/
 class ExceptionContext : public Component {
 public:
     virtual void enableFPEx() = 0;
     virtual void disableFPEx() = 0;
     virtual void stackTrace() = 0;
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(detail)
 

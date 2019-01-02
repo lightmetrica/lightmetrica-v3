@@ -11,12 +11,12 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(log)
 
+// ----------------------------------------------------------------------------
+
 /*!
     \addtogroup log
     @{
 */
-
-// ----------------------------------------------------------------------------
 
 //! Default logger type
 constexpr const char* DefaultType = "logger::default";
@@ -79,23 +79,35 @@ public:
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
 
+/*!
+    @}
+*/
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
 
+/*!
+    \addtogroup log
+    @{
+*/
+
+/*!
+    \brief Logger context.
+*/
 class LoggerContext : public Component {
 public:
     virtual void log(LogLevel level, const char* filename, int line, const char* message) = 0;
     virtual void updateIndentation(int n) = 0;
 };
 
-LM_NAMESPACE_END(detail)
-
-// ----------------------------------------------------------------------------
-
 /*!
     @}
 */
+
+LM_NAMESPACE_END(detail)
+
+// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(log)
 LM_NAMESPACE_END(LM_NAMESPACE)

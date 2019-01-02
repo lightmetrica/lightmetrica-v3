@@ -21,6 +21,11 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*!
+    \addtogroup math
+    @{
+*/
+
 // ----------------------------------------------------------------------------
 
 // Default math types deligated to glm library
@@ -113,6 +118,10 @@ struct Bound {
     }
 };
 
+/*!
+    @}
+*/
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
@@ -170,6 +179,11 @@ public:
 };
 
 LM_NAMESPACE_END(detail)
+
+/*!
+    \addtogroup math
+    @{
+*/
 
 /*!
     \brief Random number generator.
@@ -247,9 +261,18 @@ struct Dist2 {
     }
 };
 
+/*!
+    @}
+*/
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(math)
+
+/*!
+    \addtogroup math
+    @{
+*/
 
 /*!
     \brief Compute orthogonal basis [Duff et al. 2017].
@@ -320,9 +343,18 @@ static Vec3 sampleCosineWeighted(Rng& rng) {
     return { x, y, safeSqrt(1_f - x*x - y*y) };
 }
 
+/*!
+    @}
+*/
+
 LM_NAMESPACE_END(math)
 
 // ----------------------------------------------------------------------------
+
+/*!
+    \addtogroup math
+    @{
+*/
 
 /*!
 	\brief Transform.
@@ -336,6 +368,10 @@ struct Transform {
 		J = std::abs(glm::determinant(Mat3(M)));
 	}
 };
+
+/*!
+    @}
+*/
 
 // ----------------------------------------------------------------------------
 

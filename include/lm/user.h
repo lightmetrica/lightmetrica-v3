@@ -50,7 +50,7 @@ LM_PUBLIC_API void shutdown();
     \see `example/blank.cpp`
 
     \rst
-    Asset represents a basic component of the scene object like meshes or materials.
+    Asset represents a basic component of the scene object such as meshes or materials.
     We use assets as building blocks to construct the scene of the framework.
     This function creates an instance of an asset and register it to the framework
     by a given identifier. ``name`` is used as a reference by other APIs.
@@ -108,21 +108,53 @@ LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName);
 
 /*!
     \brief Build acceleration structure.
+    \param accelName Type of acceleration structure.
+    \see `example/raycast.cpp`
+    
+    \rst
+    Some renderers require acceleration structure for ray-scene intersections.
+    This function internally creates and registers an acceleration structure
+    used by other parts of the framework.
+    You may specify the acceleration structure type by ``accel::<type>`` format.
+    \endrst
 */
 LM_PUBLIC_API void build(const std::string& accelName);
 
 /*!
     \brief Render image based on current configuration.
+    \param rendererName Type of renderer.
+    \param prop Property for configuration.
+    \see `example/raycast.cpp`
+
+    \rst
+    Once you have completed all configuration of the scene,
+    you may start rendering using this function.
+    You may specify the renderer type by ``renderer::<type>`` format.
+    \endrst
 */
 LM_PUBLIC_API void render(const std::string& rendererName, const Json& prop);
 
 /*!
     \brief Save an image.
+    \param filmName Identifier of a film asset.
+    \param outpath Output path.
+    \see `example/blank.cpp`
+
+    \rst
+    This function saves the film to the specified output path.
+    The behavior of the save depends on the asset type specified in ``filmName``.
+    \endrst
 */
 LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath);
 
 /*!
     \brief Get buffer of an image.
+    \param filmName Identifier of a film asset.
+    \return Film buffer.
+
+    \rst
+    This function obtains the buffer to the film asset specified by ``filmName``.
+    \endrst
 */
 LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
 
@@ -130,6 +162,19 @@ LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
 
 /*!
     \brief Scoped guard of `init` and `shutdown` functions.
+    \rst
+    Example:
+
+    .. code-block:: cpp
+
+       {
+            ScopedInit init_;
+            // Do something using API
+            // ...
+       }
+       // Now the framework was safely shutdown.
+       // All API calls generates errors.
+    \endrst
 */
 class ScopedInit {
 public:

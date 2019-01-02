@@ -13,11 +13,20 @@
 // ----------------------------------------------------------------------------
 
 /*!
+    \addtogroup json
+    @{
+*/
+
+/*!
     \brief String literal for JSON types.
 */
 inline lm::Json operator "" _lmJson(const char* s, size_t n) {
     return lm::Json::parse(s, s + n);
 }
+
+/*!
+    @}
+*/
 
 // ----------------------------------------------------------------------------
 
@@ -72,6 +81,11 @@ LM_NAMESPACE_END(detail)
 // ----------------------------------------------------------------------------
 
 /*!
+    \addtogroup json
+    @{
+*/
+
+/*!
     \brief Parse positional command line arguments.
 */
 template <size_t N>
@@ -89,5 +103,9 @@ T valueOr(const Json& j, const std::string& name, T&& def) {
     }
     return def;
 }
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)

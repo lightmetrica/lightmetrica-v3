@@ -9,6 +9,11 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
+    \addtogroup texture
+    @{
+*/
+
+/*!
     \brief Texture component interface.
 */
 class Texture : public Component {
@@ -28,5 +33,9 @@ public:
     */
     virtual bool hasAlpha() const { return false; }
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)

@@ -10,6 +10,11 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
+    \addtogroup assets
+    @{
+*/
+
+/*!
     \brief Collection of assets.
 */
 class Assets : public Component {
@@ -20,5 +25,9 @@ public:
     virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
 
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)

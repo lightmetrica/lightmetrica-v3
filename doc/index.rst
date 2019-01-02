@@ -21,7 +21,6 @@ This project is under development for the initial release of Version 3.
    build
    tutorial
    api
-   note
 
 Indices and tables
 -------------------

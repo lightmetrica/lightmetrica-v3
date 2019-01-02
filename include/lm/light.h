@@ -11,6 +11,11 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
+    \addtogroup light
+    @{
+*/
+
+/*!
     \brief Light.
 */
 class Light : public Component {
@@ -35,5 +40,9 @@ public:
     */
     virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const = 0;
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)

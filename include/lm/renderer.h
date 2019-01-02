@@ -10,6 +10,11 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
+    \addtogroup renderer
+    @{
+*/
+
+/*!
     \brief Renderer component interface.
 */
 class Renderer : public Component {
@@ -19,5 +24,9 @@ public:
     */
     virtual void render(const Scene* scene) const = 0;
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)

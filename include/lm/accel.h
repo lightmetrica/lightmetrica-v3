@@ -11,6 +11,11 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
+    \addtogroup accel
+    @{
+*/
+
+/*!
     \brief Ray-triangles acceleration structure.
 */
 class Accel : public Component {
@@ -31,5 +36,9 @@ public:
     };
     virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) const = 0;
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)

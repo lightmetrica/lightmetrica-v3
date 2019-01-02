@@ -11,6 +11,11 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
+    \addtogroup mesh
+    @{
+*/
+
+/*!
     \brief Triangle mesh.
 */
 class Mesh : public Component {
@@ -37,5 +42,9 @@ public:
     };
     virtual Point surfacePoint(int face, Vec2 uv) const = 0;
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)

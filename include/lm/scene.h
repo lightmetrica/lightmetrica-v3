@@ -14,6 +14,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // ----------------------------------------------------------------------------
 
 /*!
+    \addtogroup scene
+    @{
+*/
+
+/*!
     \brief Scene surface point.
     Represents single point on the scene surface, which contains
     geometry information around a point and a weak reference to
@@ -231,6 +236,10 @@ public:
     */
     virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const = 0;
 };
+
+/*!
+    @}
+*/
 
 // ----------------------------------------------------------------------------
 

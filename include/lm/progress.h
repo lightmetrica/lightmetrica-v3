@@ -10,6 +10,11 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(progress)
 
+/*!
+    \addtogroup progress
+    @{
+*/
+
 //! Default progress reporter type
 constexpr const char* DefaultType = "progress::default";
 
@@ -48,16 +53,32 @@ public:
     LM_DISABLE_COPY_AND_MOVE(ScopedReport)
 };
 
+/*!
+    @}
+*/
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
 
+/*!
+    \addtogroup progress
+    @{
+*/
+
+/*!
+    \brief Progress context.
+*/
 class ProgressContext : public Component {
 public:
     virtual void start(long long total) = 0;
     virtual void update(long long processed) = 0;
     virtual void end() = 0;
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(detail)
 

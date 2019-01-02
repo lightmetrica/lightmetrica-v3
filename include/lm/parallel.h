@@ -13,6 +13,11 @@ LM_NAMESPACE_BEGIN(parallel)
 
 // ----------------------------------------------------------------------------
 
+/*!
+    \addtogroup parallel
+    @{
+*/
+
 //! Default parallel context type
 constexpr const char* DefaultType = "parallel::openmp";
 
@@ -42,16 +47,32 @@ LM_PUBLIC_API bool mainThread();
 using ParallelProcessFunc = std::function<void(long long index, int threadId)>;
 LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& processFunc);
 
+/*!
+    @}
+*/
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
 
+/*!
+    \addtogroup parallel
+    @{
+*/
+
+/*!
+    \brief Parallel context.
+*/
 class ParallelContext : public Component {
 public:
     virtual int numThreads() const = 0;
     virtual bool mainThread() const = 0;
     virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc) const = 0;
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(detail)
 

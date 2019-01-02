@@ -11,6 +11,11 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
+    \addtogroup material
+    @{
+*/
+
+/*!
     \brief Material.
 */
 class Material : public Component {
@@ -48,5 +53,9 @@ public:
         LM_UNUSED(sp, wi, wo); LM_UNREACHABLE_RETURN();
     }
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)

@@ -14,6 +14,11 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*!
+    \addtogroup comp
+    @{
+*/
+
 // ----------------------------------------------------------------------------
 
 /*!
@@ -200,6 +205,12 @@ struct ComponentDeleter {
 
 // ----------------------------------------------------------------------------
 
+/*!
+    @}
+*/
+
+// We are using old style of nested namespace in headers
+// because doxygen doesn't support nested namespace in C++17.
 LM_NAMESPACE_BEGIN(comp)
 LM_NAMESPACE_BEGIN(detail)
 
@@ -222,6 +233,11 @@ struct KeyGen<T<Ts...>> {
         return s + "<" + std::string(typeid(TypeHolder<Ts...>).name()) + ">";
     }
 };
+
+/*!
+    \addtogroup comp
+    @{
+*/
 
 /*!
     \brief Create component instance.
@@ -254,9 +270,18 @@ LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string&
 // Print registered component names.
 LM_PUBLIC_API void printRegistered();
 
+/*!
+    @}
+*/
+
 LM_NAMESPACE_END(detail)
 
 // ----------------------------------------------------------------------------
+
+/*!
+    \addtogroup comp
+    @{
+*/
 
 /*!
     \brief Upcast/downcast of component types. 
@@ -321,7 +346,16 @@ static Component* getCurrentOrUnderlying(const std::string& r, Component* p) {
 
 // ----------------------------------------------------------------------------
 
+/*!
+    @}
+*/
+
 LM_NAMESPACE_BEGIN(detail)
+
+/*!
+    \addtogroup comp
+    @{
+*/
 
 /*!
     \brief Create component instance directly with constructor.
@@ -424,11 +458,20 @@ public:
     }
 };
 
+/*!
+    @}
+*/
+
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(comp)
 LM_NAMESPACE_END(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
+
+/*!
+    \addtogroup comp
+    @{
+*/
 
 /*!
     \brief Register implementation.
@@ -445,3 +488,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
             RegEntry_Init_<ImplT>::reg_ = \
                 LM_NAMESPACE::comp::detail::RegEntry<ImplT>::instance(Key); \
     }
+
+/*!
+    @}
+*/

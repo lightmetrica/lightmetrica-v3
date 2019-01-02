@@ -1,16 +1,12 @@
 API reference
 #############
 
-.. ----------------------------------------------------------------------------
-
 User
 ===========
 
 .. doxygengroup:: user
    :content-only:
    :members:
-
-.. ----------------------------------------------------------------------------
 
 Log
 ===========
@@ -19,60 +15,121 @@ Log
    :content-only:
    :members:
 
-.. ----------------------------------------------------------------------------
+Exception
+===========
+
+.. doxygengroup:: exception
+   :content-only:
+   :members:
+
+Parallel
+===========
+
+.. doxygengroup:: parallel
+   :content-only:
+   :members:
+
+Progress
+===========
+
+.. doxygengroup:: progress
+   :content-only:
+   :members:
+
+Json
+===========
+
+.. doxygengroup:: json
+   :content-only:
+   :members:
+
+Math
+===========
+
+.. doxygengroup:: math
+   :content-only:
+   :members:
 
 Component
-=============
+===========
 
-API
--------------
+.. doxygengroup:: comp
+   :content-only:
+   :members:
 
-.. doxygenclass:: lm::Component
-.. doxygenfunction:: lm::comp::create(const std::string&, Component *)
-.. doxygenfunction:: lm::comp::create(const std::string&, Component *, const Json&)
-.. doxygendefine:: LM_COMP_REG_IMPL
+Acceleration structure
+===========
 
-Notes
--------------
+.. doxygengroup:: accel
+   :content-only:
+   :members:
 
-Component instance and module boundary
-"""""""""""""""""""""""""""""""""""""""""
+Scene
+===========
 
-A component instance might be instantiated inside another module boundary (e.g., dynamic link library, shared library). ``lm::comp::create`` returns unique_ptr so the user do not need to care about where the component is instantiated [] as long as ``lm::comp::create`` is used. A problem, however, arises when you want to manage raw pointers of components, because the deletion of the instance must happen in the same module. For this purpose, we provide ``lm::comp::detail::releaseFunc`` to get implementation-specific deleter function.
+.. doxygengroup:: scene
+   :content-only:
+   :members:
 
-Examples
--------------
+Renderer
+===========
 
-Basic instance creation
-"""""""""""""""""""""""
+.. doxygengroup:: renderer
+   :content-only:
+   :members:
 
-In this example, we will define a simple interface ``A``
-and its implementation ``A1``. The component interface must inherit ``lm::Component``
-and the component implementation must be registered to the framework via ``LM_COMP_REG_IMPL``.
+Asset management
+===========
 
-.. literalinclude:: ../test/test_component.cpp
-   :language: cpp
-   :start-after: // _begin_snippet: A
-   :end-before: // _end_snippet: A
-   :linenos:
+.. doxygengroup:: assets
+   :content-only:
+   :members:
 
-Having registered the implementation, we can instantiate the component using ``lm::comp::create`` via the name that we specified; in this example, ``test::comp::a1``. ``lm::comp::create`` returns unique_ptr of the component interface type with proper release function.
+Camera
+===========
 
-.. literalinclude:: ../test/test_component.cpp
-   :language: cpp
-   :start-after: // _begin_snippet: A_impl
-   :end-before: // _end_snippet: A_impl
-   :linenos:
-   :lines: 1,3-4
-   :dedent: 8
+.. doxygengroup:: camera
+   :content-only:
+   :members:
 
+Film
+===========
 
-Native plugin 
-"""""""""""""
+.. doxygengroup:: film
+   :content-only:
+   :members:
 
-.. note:: Unlike Lightmetrica Version 2, ``Component`` does not support ABI-compatible plugins.
-   Native component plugins must be compiled with the ABI-compatible compilers to the main library.
+Light
+===========
 
-Python plugin
-"""""""""""""
+.. doxygengroup:: light
+   :content-only:
+   :members:
 
+Material
+===========
+
+.. doxygengroup:: material
+   :content-only:
+   :members:
+
+Texture
+===========
+
+.. doxygengroup:: texture
+   :content-only:
+   :members:
+
+Mesh
+===========
+
+.. doxygengroup:: mesh
+   :content-only:
+   :members:
+
+Model
+===========
+
+.. doxygengroup:: model
+   :content-only:
+   :members:

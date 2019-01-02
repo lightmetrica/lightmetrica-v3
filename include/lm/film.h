@@ -10,11 +10,22 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*!
+    \addtogroup film
+    @{
+*/
+
+/*!
+    \brief Film size.
+*/
 struct FilmSize {
     int w;
     int h;
 };
 
+/*!
+    \brief Film buffer.
+*/
 struct FilmBuffer {
     int w;
     int h;
@@ -54,5 +65,9 @@ public:
     */
     virtual FilmBuffer buffer() = 0;
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)
