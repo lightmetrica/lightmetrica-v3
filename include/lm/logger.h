@@ -23,10 +23,36 @@ constexpr const char* DefaultType = "logger::default";
 
 /*!
     \brief Log level.
+
+    \rst
+    Log messages have their own importance levels.
+    When you want to categorize the log messages according to the importance,
+    you can use convenience macros to generate messages with corresponding 
+    importance levels. For instance, :func:`LM_ERROR` macro generates a message
+    with ``Err`` log level.
+    \endrst
 */
 enum class LogLevel {
-    Debug,          //!< Debug
-    Info,           //!< Information
+    /*!
+        \rst
+        Debug message.
+        You may use this level to specify the error messages
+        are only emitted in a Debug session.
+        You can generate a log message with this type by :func:`LM_DEBUG` macro.
+        \endrst
+    */
+    Debug,
+    /*!
+        \rst
+        Information message.
+        You may use this level to notice something to the user. 
+        Typical usage is to indicate the execution flow of the application
+        before/after the execution enters/leaves the codes of heavy computation or IO.
+        You can generate a log message with this type by :func:`LM_INFO` macro.
+        \endrst
+    */
+    Info,
+    
     Warn,           //!< Warning
     Err,            //!< Error
     Progress,       //!< Progress message
