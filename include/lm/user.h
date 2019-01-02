@@ -173,7 +173,7 @@ LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
             // ...
        }
        // Now the framework was safely shutdown.
-       // All API calls generates errors.
+       // All API calls after this line generates errors.
     \endrst
 */
 class ScopedInit {

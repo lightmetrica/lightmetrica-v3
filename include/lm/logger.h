@@ -45,37 +45,105 @@ enum class LogLevel {
     /*!
         \rst
         Information message.
-        You may use this level to notice something to the user. 
+        You may use this level to notice information to the user. 
         Typical usage is to indicate the execution flow of the application
         before/after the execution enters/leaves the codes of heavy computation or IO.
         You can generate a log message with this type by :func:`LM_INFO` macro.
         \endrst
     */
     Info,
-    
-    Warn,           //!< Warning
-    Err,            //!< Error
-    Progress,       //!< Progress message
-    ProgressEnd,    //!< End of progress
+    /*!
+        \rst
+        Warning message.
+        You may use this level to give warning to the user. 
+        Usage might be to convey inconsistent yet continuable state of the execution
+        such as handling of default arguments.
+        \endrst
+    */
+    Warn,
+    /*!
+        \rst
+        Error message.
+        This error level notifies you an error happens in the execution.
+        The error often comes along with immediate shutdown of the renderer.
+        \endrst
+    */
+    Err,
+    /*!
+        \rst
+        Progress message.
+        The messages of this log level indicates special message type
+        used in the progress update where the message are used specifically
+        for the interactive update of the progress report.
+        \endrst
+    */
+    Progress,
+    /*!
+        \rst
+        End of progress message.
+        The message indicates special message type
+        used in the end of the progress message.
+        \endrst
+    */
+    ProgressEnd,
 };
 
 /*!
     \brief Initialize logger context.
+    \param type Type of logger.
+    \param prop Properties for configuration.
+
+    \rst
+    This function initializes the logger subsystem specified by logger type ``type``.
+    The function is implicitly called by the framework
+    so the user do not want to explicitly call this function.
+    \endrst
 */
 LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop = {});
 
 /*!
     \brief Shutdown logger context.
+
+    \rst
+    This function shutdowns the logger sybsystem.
+    You do not want to call this function because 
+    it is called implicitly by the framework. 
+    You may consider to use :class:`ScopedInit` class if you want to explicitly shutdown
+    the subsystem at the \end of the scope, instead of call this function directly.
+    \endrst
 */
 LM_PUBLIC_API void shutdown();
 
 /*!
     \brief Write log message.
+    \param level Log level.
+    \param filename Filename where the log message are generated.
+    \param line Line of the code where the log message are generated.
+    \param message Log message.
+
+    \rst
+    This function posts a log message of specific log level to the logger subsystem.
+    The behavior of this function depends on the implementation of the logger.
+    You may want to use convenience macros instead of this function
+    because the macros automatically extracts filename and line number for you.
+    \endrst
 */
 LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const char* message);
 
 /*!
     \brief Write log message with formatting.
+    \param level Log level.
+    \param filename Filename where the log message are generated.
+    \param line Line of the code where the log message are generated.
+    \param message Log message.
+    \param args List of arguments to be replaced according to format in the log message.
+
+    \rst
+    This version of the log function posts a log message with formatting.
+    The specification follows replacement-based format API by `fmt library`_.
+
+    .. _fmt library: https://github.com/fmtlib/fmt
+    \endrst
 */
 template <typename... Args>
 void log(LogLevel level, const char* filename, int line, const std::string& message, Args&&... args) {
@@ -84,11 +152,23 @@ void log(LogLevel level, const char* filename, int line, const std::string& mess
 
 /*!
     \brief Update indentation.
+    \param n Increase / decrease of the indentration.
+
+    \rst
+    The log messages can be indented for better visibility.
+    This function controls the indentation level by increment or decrement
+    of the indentation by an integer. For instance, ``-1`` subtracts one indentation level.
+    \endrst
 */
 LM_PUBLIC_API void updateIndentation(int n);
 
 /*!
     \brief Log indent contol.
+
+    \rst
+    The class controls the indentation level according to the scopes.
+    You want to use convenience macro :func:`LM_INDENT` instead of this function.
+    \endrst
 */
 struct LogIndenter {
     LogIndenter()  { updateIndentation(1); }
@@ -97,6 +177,20 @@ struct LogIndenter {
 
 /*!
     Scoped guard of `init` and `shutdown` functions.
+    \rst
+    Example:
+
+    .. code-block:: cpp
+
+       {
+            ScopedInit init_;
+            // Logger subsystem is initialized.
+            // You can use any log API inside the scope.
+            // ...
+       }
+       // Now the subsystem was safely shutdown.
+       // All log API calls after this line generates errors.
+    \endrst
 */
 class ScopedInit {
 public:
@@ -120,6 +214,12 @@ LM_NAMESPACE_BEGIN(detail)
 
 /*!
     \brief Logger context.
+    
+    \rst
+    You may implement this interface to implement user-specific log subsystem.
+    Each virtual function corresponds to API call with a free function
+    inside ``log`` namespace.
+    \endrst
 */
 class LoggerContext : public Component {
 public:
@@ -146,7 +246,9 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 
 /*!
-    \brief Log error message.
+    \brief Post a log message with error level.
+    \param message Log message.
+    \param ... Parameters for the format in the log message.
 */
 #if LM_COMPILER_MSVC
 #define LM_ERROR(message, ...) LM_NAMESPACE::log::log( \
@@ -157,7 +259,9 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 #endif
 
 /*!
-    \brief Log warning message.
+    \brief Post a log message with warning level.
+    \param message Log message.
+    \param ... Parameters for the format in the log message.
 */
 #if LM_COMPILER_MSVC
 #define LM_WARN(message, ...) LM_NAMESPACE::log::log( \
@@ -168,7 +272,9 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 #endif
 
 /*!
-    \brief Log info message.
+    \brief Post a log message with information level.
+    \param message Log message.
+    \param ... Parameters for the format in the log message.
 */
 #if LM_COMPILER_MSVC
 #define LM_INFO(message, ...) LM_NAMESPACE::log::log( \
@@ -179,7 +285,9 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 #endif
 
 /*!
-    \brief Log debug message.
+    \brief Post a log message with debug level.
+    \param message Log message.
+    \param ... Parameters for the format in the log message.
 */
 #if LM_COMPILER_MSVC
 #define LM_DEBUG(message, ...) LM_NAMESPACE::log::log( \
@@ -191,6 +299,8 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 /*!
     \brief Log progress outputs.
+    \param message Log message.
+    \param ... Parameters for the format in the log message.
 */
 #if LM_COMPILER_MSVC
 #define LM_PROGRESS(message, ...) LM_NAMESPACE::log::log( \
@@ -202,6 +312,8 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 /*!
     \brief Log end of progress outputs.
+    \param message Log message.
+    \param ... Parameters for the format in the log message.
 */
 #if LM_COMPILER_MSVC
 #define LM_PROGRESS_END(message, ...) LM_NAMESPACE::log::log( \
@@ -213,6 +325,21 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 /*!
     \brief Adds an indentation in the current scope.
+    \rst
+    Example:
+    
+    .. code-block:: cpp
+
+       // Indentation = 0. Produces " message 1"
+       LM_INFO("message 1");
+       {
+           // Indentation = 1. Produces ".. message 2"
+           LM_INDENT();
+           LM_INFO("message 2");
+       }
+       // Indentation = 0. Produces " message 3"
+       LM_INFO("message 3");
+    \endrst
 */
 #define LM_INDENT() LM_NAMESPACE::log::LogIndenter \
     LM_TOKENPASTE2(logIndenter_, __LINE__)
