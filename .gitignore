@@ -19,7 +19,7 @@ experimental/
 external/
 dist*/
 .idea/
-doc/_*
+doc/_build
 jupyter
 
 # https://github.com/github/gitignore/blob/master/Python.gitignore
