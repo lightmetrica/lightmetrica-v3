@@ -59,7 +59,8 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
     "${_SOURCE_DIR}/renderer/renderer_raycast.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
-    "${_SOURCE_DIR}/renderer/renderer_ptdirect.cpp")
+    "${_SOURCE_DIR}/renderer/renderer_ptdirect.cpp"
+    "${_SOURCE_DIR}/ext/rang.hpp")
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
@@ -73,8 +74,7 @@ target_link_libraries(${_PROJECT_NAME}
             $<$<CXX_COMPILER_ID:GNU>:atomic>)
 target_include_directories(${_PROJECT_NAME}
     PUBLIC  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-    PRIVATE "${_PCH_DIR}"
-            "${PROJECT_SOURCE_DIR}/external/rang/include")
+    PRIVATE "${_PCH_DIR}")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 # Enable warning level 4, treat warning as errors, enable SEH
