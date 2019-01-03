@@ -90,7 +90,7 @@ enum class LogLevel {
 
 /*!
     \brief Initialize logger context.
-    \param type Type of logger.
+    \param type Type of log subsystem.
     \param prop Properties for configuration.
 
     \rst
@@ -105,11 +105,11 @@ LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop 
     \brief Shutdown logger context.
 
     \rst
-    This function shutdowns the logger sybsystem.
+    This function shutdowns the logger subsystem.
     You do not want to call this function because 
     it is called implicitly by the framework. 
     You may consider to use :class:`ScopedInit` class if you want to explicitly shutdown
-    the subsystem at the \end of the scope, instead of call this function directly.
+    the subsystem at the end of the scope, instead of call this function directly.
     \endrst
 */
 LM_PUBLIC_API void shutdown();
@@ -176,21 +176,7 @@ struct LogIndenter {
 };
 
 /*!
-    Scoped guard of `init` and `shutdown` functions.
-    \rst
-    Example:
-
-    .. code-block:: cpp
-
-       {
-            ScopedInit init_;
-            // Logger subsystem is initialized.
-            // You can use any log API inside the scope.
-            // ...
-       }
-       // Now the subsystem was safely shutdown.
-       // All log API calls after this line generates errors.
-    \endrst
+    \brief Scoped guard of `init` and `shutdown` functions.
 */
 class ScopedInit {
 public:
