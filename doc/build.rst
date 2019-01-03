@@ -8,7 +8,7 @@ This section describes build process of Lightmetrica.
 Prerequisites
 =============
 
-We need CMake_ (>= 3.12) and Python_ (>=3) to build and use the framework.
+We need CMake_ (>= 3.10) and Python_ (>=3) to build and use the framework.
 Optionally, we need doxygen_ to generate documentation.
 
 .. _CMake: https://cmake.org/
