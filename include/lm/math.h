@@ -29,11 +29,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // ----------------------------------------------------------------------------
 
 // Default math types deligated to glm library
-using Vec2 = glm::tvec2<Float>;
-using Vec3 = glm::tvec3<Float>;
-using Vec4 = glm::tvec4<Float>;
-using Mat3 = glm::tmat3x3<Float>;
-using Mat4 = glm::tmat4x4<Float>;
+using Vec2 = glm::tvec2<Float>;     //!< 2d vector
+using Vec3 = glm::tvec3<Float>;     //!< 3d vector
+using Vec4 = glm::tvec4<Float>;     //!< 4d vector
+using Mat3 = glm::tmat3x3<Float>;   //!< 3x3 matrix
+using Mat4 = glm::tmat4x4<Float>;   //!< 4x4 matrix
 
 // Floating point literals
 LM_NAMESPACE_BEGIN(literals)
@@ -45,9 +45,9 @@ LM_NAMESPACE_END(literals)
 using namespace literals;
 
 // Math constants
-constexpr Float Inf = 1e+10_f;
-constexpr Float Eps = 1e-4_f;
-constexpr Float Pi  = 3.14159265358979323846_f;
+constexpr Float Inf = 1e+10_f;                  //!< Big number 
+constexpr Float Eps = 1e-4_f;                   //!< Error tolerance 
+constexpr Float Pi  = 3.14159265358979323846_f; //!< Value of Pi
 
 // ----------------------------------------------------------------------------
 
@@ -55,25 +55,32 @@ constexpr Float Pi  = 3.14159265358979323846_f;
     \brief Ray.
 */
 struct Ray {
-    Vec3 o;     // Origin
-    Vec3 d;     // Direction
+    Vec3 o;     //!< Origin
+    Vec3 d;     //!< Direction
 };
 
 /*!
     \brief Axis-aligned bounding box
 */
 struct Bound {
-    Vec3 mi = Vec3(Inf);
-    Vec3 ma = Vec3(-Inf);
+    Vec3 mi = Vec3(Inf);    //!< Minimum coordinates
+    Vec3 ma = Vec3(-Inf);   //!< Maximum coordinates
+    
+    /*!
+        \brief Index operator.
+        \return 0: minimum coordinates, 1: maximum coordinates.
+    */
     Vec3 operator[](int i) const { return (&mi)[i]; }
 
     /*!
-        \brief Centroid of the bound.
+        \brief Return centroid of the bound.
+        \return Centroid.
     */
     Vec3 center() const { return (mi + ma) * .5_f; }
 
     /*!
         \brief Surface area of the bound.
+        \return Surface area.
     */
     Float surfaceArea() const {
         const auto d = ma - mi;
@@ -82,9 +89,16 @@ struct Bound {
 
     /*!
         \brief Check intersection to the ray.
+        \param r Ray.
+        \param tmin Minimum valid range along with the ray from origin.
+        \param tmax Maximum valid range along with the ray from origin.
+        
+        \rst
         Floating point exceptions must be disabled because for performance
-        the function facilitates operations on Inf or NaN.
-        cf. http://psgraphics.blogspot.de/2016/02/new-simple-ray-box-test-from-andrew.html
+        the function facilitates operations on Inf or NaN (`ref`_).
+
+        .. _ref: http://psgraphics.blogspot.de/2016/02/new-simple-ray-box-test-from-andrew.html
+        \endrst
     */
     bool isect(Ray r, Float tmin, Float tmax) const {
         for (int i = 0; i < 3; i++) {

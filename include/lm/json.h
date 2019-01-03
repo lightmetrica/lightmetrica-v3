@@ -87,6 +87,17 @@ LM_NAMESPACE_END(detail)
 
 /*!
     \brief Parse positional command line arguments.
+    \param argc Number of arguments.
+    \param argv Vector of arguments.
+    \param temp Json object with templates.
+    \see `example/raycast.cpp`
+
+    \rst
+    Convenience function to parse positional command line arguments.
+    The format can be specified by Json object with formats.
+    A sequence of ``{}`` inside the string ``temp`` are replaced with
+    positional command line arguments and parsed as a Json object.
+    \endrst
 */
 template <size_t N>
 Json parsePositionalArgs(int argc, char** argv, const std::string& temp) {
@@ -95,6 +106,9 @@ Json parsePositionalArgs(int argc, char** argv, const std::string& temp) {
 
 /*!
     \brief Get the value inside the element with default.
+    \param j Json object.
+    \param name Name of the element.
+    \param def Default value.
 */
 template <typename T>
 T valueOr(const Json& j, const std::string& name, T&& def) {
