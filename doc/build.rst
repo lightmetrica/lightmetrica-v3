@@ -48,12 +48,14 @@ Using find_package
 
 To use this strategy, you need to install the dependencies externally
 using package management system or install the libraries from sources.
-This strategy is recommended in Linux environments.
-For instance, when you are using Ubuntu, you can use ``apt`` command to install dependencies by
 
-.. code-block:: bash
+.. note::
+   Lightmetrica's CMake script always tries to find packages with `config mode`_.
+   Unfortunately, some libraries did not expose well-defined configuration files.
+   This may result to a failure in configuration step when we execute the cmake command.
 
-   $ apt install pybind11-dev nlohmann-json-dev libglm-dev doctest-dev libfmt-dev libcereal-dev 
+   .. _config mode: https://cmake.org/cmake/help/latest/command/find_package.html#full-signature-and-config-mode
+   
 
 .. ----------------------------------------------------------------------------
 
@@ -64,8 +66,8 @@ Windows
 -------------
 
 Tested with Visual Studio 2017 Version 15.9.
-
-You can generate solution for Visual Studio with the following commands. To build Python binding, be sure to activate the previously-created Python environment and start Visual Studio from the same shell.
+You can generate solution for Visual Studio with the following commands.
+To build Python binding, be sure to activate the previously-created Python environment and start Visual Studio from the same shell.
 
 .. code-block:: bash
 
