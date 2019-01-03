@@ -1,5 +1,5 @@
 /*
-    lightmetrica - copyright (c) 2018 hisanari otsu
+    Lightmetrica - Copyright (c) 2019 Hisanari Otsu
     distributed under mit license. see license file for details.
 */
 
