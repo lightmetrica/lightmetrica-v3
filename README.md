@@ -1,85 +1,53 @@
-Lightmetrica Version 3
+Lightmetrica -- A research-oriented renderer
 ====================
 
-A research-oriented renderer.
+*This project is under development for the initial release of Version 3.*
 
-## Setup
+![teaser](doc/_static/example/pt_fireplace_room.jpg)
 
-### Prerequisites
+**Lightmetrica** is a research-oriented renderer. The development of the framework is motivated by the goal to provide a practical environment for rendering research and development, where the researchers and developers need to tackle various challenging requirements through the development process.
 
-- doxygen
-- miniconda
+## Quick start
 
-### Create python environment
+## Documentation
 
-```bash
-$ conda create -n lm3 python=3.6
-```
+You can find tutorials and API references from [here](http://lightmetrica.org/doc).
 
-### Install required packages
+## Features
 
-```bash
-$ source activate lm3
-$ conda install -c conda-forge sphinx jupyter matplotlib
-$ pip install sphinx-autobuild sphinx_rtd_theme breathe sphinx_tabs pytest tqdm
-```
+- Basic rendering support
 
-Optionally, you can install Jupyter notebook for some examples:
+  - Easy-to-use API for rendering
+  - Parameter configuration as Json type
+  - Tristimulus/spectral rendering
+  - Volume rendering
+  - Network rendering
+  - Differential rendering
+  - Pause and resume rendering 
+  - Standard scene formats (Wavefront OBJ, Mitsuba, PBRT)
+  - Various implementation of rendering techniques
 
-```bash
-$ conda install -c conda-forge jupyter ipywidgets
-```
+- Extension support
 
-### Display and edit documentation
+  - Component object model that allows to extend any interfaces as plugins
+  - Serialization of component objects
+  - Position-agnostic plugins
 
-Access `http://127.0.0.1:8000` after
+- Verification support
 
-```
-$ sphinx-autobuild doc doc/_build/html
-```
+  - Visual debugger
+  - Performance measurements
+  - Statistical verification
 
-### Update Doxygen-generated files
+- Orchestration support
 
-```bash
-$ cd doc
-$ doxygen
-```
+  - Complete set of Python API
+  - Jupyter notebook integration
 
-### Build
+## Author
 
-Install external libraries
+Hisanari Otsu ([Personal site](http://lightmetrica.org/h-otsu/), [Twitter](https://twitter.com/hisanari_otsu))
 
-```bash
-$ cd external
-$ git clone --depth 1 git@github.com:pybind/pybind11.git
-$ git clone --depth 1 git@github.com:nlohmann/json.git
-$ git clone --depth 1 git@github.com:g-truc/glm.git
-$ git clone --depth 1 git@github.com:onqtam/doctest.git
-$ git clone --depth 1 git@github.com:fmtlib/fmt.git
-$ git clone --depth 1 git@github.com:USCiLab/cereal.git
-$ git clone --depth 1 git@github.com:agauniyal/rang.git
-```
+## License
 
-Build library
-
-```bash
-$ source activate lm3
-$ mkdir build && cd build
-$ cmake -G "Visual Studio 15 2017 Win64" ..
-$ start lightmetrica.sln
-```
-
-### Run pytest
-
-Execute following commands after build:
-
-```bash
-$ python -m pytest --lm <Binary directory of lightmetrica> lm/pytest
-```
-
-For instance, if you want to use Debug build, run
-
-```bash
-$ python -m pytest --lm build/bin/Debug pytest
-```
-
+This software is distributed under MIT License. For details, see LICENCE file.

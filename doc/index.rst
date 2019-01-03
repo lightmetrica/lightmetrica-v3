@@ -6,7 +6,7 @@
 Lightmetrica -- Research-oriented renderer
 ======================
 
-This project is under development for the initial release of Version 3.
+`This project is under development for the initial release of Version 3.`
 
 .. toctree::
    :maxdepth: 1

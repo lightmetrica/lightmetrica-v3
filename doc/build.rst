@@ -3,7 +3,6 @@ Build
 
 This section describes build process of Lightmetrica.
 
-
 Windows
 ==================
 
