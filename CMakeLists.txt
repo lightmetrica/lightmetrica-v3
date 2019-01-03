@@ -41,7 +41,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external")
     # cereal
     option(JUST_INSTALL_CEREAL "" ON)
     add_subdirectory(external/cereal)
-elseif()
+else()
     find_package(json REQUIRED)
     find_package(glm REQUIRED)
     find_package(doctest REQUIRED)

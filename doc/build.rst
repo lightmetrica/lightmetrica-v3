@@ -47,7 +47,8 @@ Using find_package
 -------------
 
 To use this strategy, you need to install the dependencies externally
-using package management system or installing the libraries from source.
+using package management system or install the libraries from sources.
+This strategy is recommended in Linux environments.
 For instance, when you are using Ubuntu, you can use ``apt`` command to install dependencies by
 
 .. code-block:: bash
