@@ -16,7 +16,6 @@ You can find tutorials and API references from [here](http://lightmetrica.org/do
 ## Features
 
 - Basic rendering support
-
   - Easy-to-use API for rendering
   - Parameter configuration as Json type
   - Tristimulus/spectral rendering
@@ -26,21 +25,15 @@ You can find tutorials and API references from [here](http://lightmetrica.org/do
   - Pause and resume rendering 
   - Standard scene formats (Wavefront OBJ, Mitsuba, PBRT)
   - Various implementation of rendering techniques
-
 - Extension support
-
   - Component object model that allows to extend any interfaces as plugins
   - Serialization of component objects
   - Position-agnostic plugins
-
 - Verification support
-
   - Visual debugger
   - Performance measurements
   - Statistical verification
-
 - Orchestration support
-
   - Complete set of Python API
   - Jupyter notebook integration
 
