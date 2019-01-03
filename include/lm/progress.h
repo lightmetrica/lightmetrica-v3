@@ -20,31 +20,66 @@ constexpr const char* DefaultType = "progress::default";
 
 /*!
     \brief Initialize progress reporter context.
+    \param type Type of progress reporter subsystem.
+    \param prop Properties for configuration.
+
+    \rst
+    This function initializes exception subsystem of the framework.
+    The function is implicitly called by the framework
+    so the user do not want to explicitly call this function.
+    \endrst
 */
 LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop = {});
 
 /*!
     \brief Shutdown progress reporter context.
+
+    \rst
+    This function shutdowns the exception subsystem.
+    You do not want to call this function because it is called implicitly by the framework. 
+    \endrst
 */
 LM_PUBLIC_API void shutdown();
 
 /*!
     \brief Start progress reporting.
+    \param total Total number of iterations.
+
+    \rst
+    This function specifies the start of the progress reporting.
+    The argument ``total`` is necessary to calculate the ratio of progress
+    over the entire workload.
+    You may use :class:`ScopedReport` class to automatically enable/disable
+    the floating point exception inside a scope.
+    \endrst
 */
 LM_PUBLIC_API void start(long long total);
 
 /*!
     \brief End progress reporting.
+
+    \rst
+    This function specifies the end of the progress reporting.
+    You may use :class:`ScopedReport` class to automatically enable/disable
+    the floating point exception inside a scope.
+    \endrst
 */
 LM_PUBLIC_API void end();
 
 /*!
-    \brief Update progress with specific values in [0,1].
+    \brief Update progress.
+    \param processed Processed iterations.
+
+    \rst
+    This function notifies the update of the progress to the subsystem.
+    ``processed`` must be between 0 to ``total`` specified
+    in the :func:`lm::progress::start` function.
+    \endrst
 */
 LM_PUBLIC_API void update(long long processed);
 
 /*!
-    Scoped guard of `start` and `end` functions.
+    \brief Scoped guard of `start` and `end` functions.
 */
 class ScopedReport {
 public:
@@ -68,6 +103,12 @@ LM_NAMESPACE_BEGIN(detail)
 
 /*!
     \brief Progress context.
+    
+    \rst
+    You may implement this interface to implement user-specific progress reporting subsystem.
+    Each virtual function corresponds to API call with a free function
+    inside ``progress`` namespace.
+    \endrst
 */
 class ProgressContext : public Component {
 public:
