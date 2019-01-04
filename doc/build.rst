@@ -22,15 +22,13 @@ Installing dependencies
 
 First you want to setup the external dependencies.
 The external dependencies of the framework is all header-only libraries.
-We suppose two different strategies to utilize dependencies
-based on CMake's ``add_subdirectory`` or ``find_package`` commands.
+We suppose two strategies to introduce dependencies based on whether to use 1) in-project directory or 2) pre-installed packages.
 
-Using add_subdirectory
+Using in-project directory
 -------------
 
-To use this strategy, you want to create ``external`` directory in the project root 
-and download all dependencies into the directory.
-The build script automatically uses this strategy if it finds ``external`` directory in the project root.
+This strategy uses in-project ``external`` directory to manage dependencies. To use this strategy, you want to create ``external`` directory in the project root and download all dependencies into the directory.
+The build script automatically uses the dependencies if it finds ``external`` directory in the project root.
 The following commands illustrates the steps.
 
 .. code-block:: bash
@@ -43,20 +41,26 @@ The following commands illustrates the steps.
    $ git clone --depth 1 git@github.com:fmtlib/fmt.git
    $ git clone --depth 1 git@github.com:USCiLab/cereal.git
 
-Using find_package
+.. note::
+   This strategy internally uses on CMake's ``add_subdirectory`` to find dependencies.
+
+Using pre-installed packages
 -------------
 
 To use this strategy, you need to install the dependencies externally
 using package management system or install the libraries from sources.
+For instance, our Dockerfile adopts this strategy.
+Please refer to the file for the detailed proceidure.
 
 .. note::
-   Lightmetrica's CMake script always tries to find packages with `config mode`_.
-   Unfortunately, some libraries did not expose well-defined configuration files.
-   This may result to a failure in configuration step when we execute the cmake command.
+   This strategy internally uses on CMake's ``find_package`` to find dependencies.
+   Plus, Lightmetrica's CMake script always tries to find packages with `config mode`_.
+   Unfortunately, some libraries did not expose well-defined configuration files. This may result to a failure in configuration step when we execute the cmake command.
 
    .. _config mode: https://cmake.org/cmake/help/latest/command/find_package.html#full-signature-and-config-mode
-   
 
+.. note::
+   This strategy is mandatory when Lightmetrica is used as a library and integrated into the user's CMakefile with ``find_package`` command. This is because Lightmetrica's configuration script recursively calls ``find_package`` command to resolve transitive dependencies.
 .. ----------------------------------------------------------------------------
 
 Building the framework
@@ -103,7 +107,7 @@ Install dependencies
    $ conda install -c conda-forge sphinx
    $ pip install sphinx-autobuild sphinx_rtd_theme breathe sphinx_tabs
 
-You can access the documentation from ``http://127.0.0.1:8000`` with the following command. It is useful to use sphinx-autobuild plugin if you want to get immediate visual update on editing. Note that the documentation extracted from C++ sources are not updated automatically. Make sure to execute ``doxygen`` command again if you want to update the information.
+Then you can access the documentation from ``http://127.0.0.1:8000`` with the following command. It is useful to use sphinx-autobuild plugin if you want to get immediate visual update on editing. Note that the documentation extracted from C++ sources are not updated automatically. Make sure to execute ``doxygen`` command again if you want to update the information.
 
 .. code-block:: bash
 
@@ -113,15 +117,15 @@ You can access the documentation from ``http://127.0.0.1:8000`` with the followi
 
 .. ----------------------------------------------------------------------------
 
-Working with Jupyter notebook
-=============
+.. Working with Jupyter notebook
+.. =============
 
-Install dependencies
+.. Install dependencies
 
-.. code-block:: bash
+.. .. code-block:: bash
 
-   $ conda install -c conda-forge jupyter matplotlib imageio
-   $ pip install tqdm 
+..    $ conda install -c conda-forge jupyter matplotlib imageio
+..    $ pip install tqdm 
 
 .. ----------------------------------------------------------------------------
 
