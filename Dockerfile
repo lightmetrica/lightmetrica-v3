@@ -7,6 +7,7 @@ RUN apt update && apt install -y \
     build-essential \
     cmake \
     curl \
+    ninja-build \
     python3-dev \
     python3-distutils \
     python3-pip \
@@ -56,8 +57,6 @@ RUN git clone --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git
 WORKDIR /fmt
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DFMT_DOC=OFF -DFMT_TEST=OFF && \
     cmake --build _build --target install
-
-RUN apt install ninja-build
 
 COPY . /lightmetrica-v3
 WORKDIR /lightmetrica-v3
