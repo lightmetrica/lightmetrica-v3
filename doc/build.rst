@@ -49,8 +49,10 @@ Using pre-installed packages
 
 To use this strategy, you need to install the dependencies externally
 using package management system or install the libraries from sources.
-For instance, our Dockerfile adopts this strategy.
+For instance, our `Dockerfile`_ adopts this strategy.
 Please refer to the file for the detailed procedure.
+
+.. _Dockerfile: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/Dockerfile
 
 .. note::
    This strategy internally uses on CMake's ``find_package`` to find dependencies.
@@ -61,6 +63,7 @@ Please refer to the file for the detailed procedure.
 
 .. note::
    This strategy is mandatory when Lightmetrica is used as a library and integrated into the user's CMakefile with ``find_package`` command. This is because Lightmetrica's configuration script recursively calls ``find_package`` command to resolve transitive dependencies.
+
 .. ----------------------------------------------------------------------------
 
 Building the framework
@@ -83,17 +86,20 @@ To build Python binding, be sure to activate the previously-created Python envir
 Linux
 -------------
 
-Tested with GCC 8.3.
+Tested with GCC 8.3 and `Ninja`_. The following commands generates the binaries under ``build/bin`` directory.
+
+.. _Ninja: https://ninja-build.org/
+
+.. code-block:: bash
+
+   $ mkdir build && cd build
+   $ cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release ..
+   $ ninja
 
 .. ----------------------------------------------------------------------------
 
-Using Lightmetrica as external library
-=============
-
-We provide two different ways.
-
-transitive dependencies.
-note that lightmetrica has
+.. Using Lightmetrica as external library
+.. =============
 
 .. ----------------------------------------------------------------------------
 
