@@ -68,7 +68,7 @@ if (MSVC)
     add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
 endif()
 target_link_libraries(${_PROJECT_NAME}
-    PUBLIC nlohmann_json glm fmt-header-only cereal
+    PUBLIC nlohmann_json glm fmt::fmt-header-only cereal
     PRIVATE OpenMP::OpenMP_CXX
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
             $<$<CXX_COMPILER_ID:GNU>:atomic>)

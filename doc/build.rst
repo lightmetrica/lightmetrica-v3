@@ -50,7 +50,7 @@ Using pre-installed packages
 To use this strategy, you need to install the dependencies externally
 using package management system or install the libraries from sources.
 For instance, our Dockerfile adopts this strategy.
-Please refer to the file for the detailed proceidure.
+Please refer to the file for the detailed procedure.
 
 .. note::
    This strategy internally uses on CMake's ``find_package`` to find dependencies.
@@ -83,7 +83,7 @@ To build Python binding, be sure to activate the previously-created Python envir
 Linux
 -------------
 
-
+Tested with GCC 8.3.
 
 .. ----------------------------------------------------------------------------
 

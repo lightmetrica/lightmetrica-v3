@@ -27,17 +27,25 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external")
     option(JSON_BuildTests "" OFF)
     option(JSON_MultipleHeaders "" OFF)
     add_subdirectory(external/json)
+
     # glm
     option(GLM_TEST_ENABLE "" OFF)
     add_subdirectory(external/glm)
+
     # doctest
     option(DOCTEST_WITH_TESTS "" OFF)
     option(DOCTEST_NO_INSTALL "" ON)
     add_subdirectory(external/doctest)
+    # We need this line because exported target uses doctest::doctest
+    # while add_subdirectory only finds doctest target.
+    add_library(doctest::doctest ALIAS doctest)
+
     # pybind11
     add_subdirectory(external/pybind11)
+
     # fmt
     add_subdirectory(external/fmt)
+
     # cereal
     option(JUST_INSTALL_CEREAL "" ON)
     add_subdirectory(external/cereal)
