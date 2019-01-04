@@ -3,6 +3,7 @@ MAINTAINER Hisanari Otsu <hi2p.perim@gmail.com>
 
 RUN apt update && apt install -y \
     git \
+    git-lfs \
     software-properties-common \
     build-essential \
     cmake \

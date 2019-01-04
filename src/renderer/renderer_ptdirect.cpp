@@ -46,9 +46,9 @@ public:
                 // Path throughput
                 Vec3 throughput(1_f);
 
-				// Incident direction and current surface point
-				Vec3 wi;
-				SurfacePoint sp;
+                // Incident direction and current surface point
+                Vec3 wi;
+                SurfacePoint sp;
 
                 // Initial sampleRay function
                 std::function<std::optional<RaySample>()> sampleRay = [&]() {
@@ -64,20 +64,20 @@ public:
                         break;
                     }
 
-					// Sample a NEE edge
-					const bool enableNEE = length > 0 && !scene->isSpecular(s->sp);
-					if (enableNEE) [&] {
-						// Sample a light
-						const auto sL = scene->sampleLight(rng, s->sp);
-						if (!sL) {
-							return;
-						}
-						if (scene->intersect(Ray{s->sp.p, sL->wo}, Eps, sL->d*(1_f-Eps))) {
-							return;
-						}
-						// Evaluate and accumulate contribution
-						L += throughput * scene->evalBsdf(s->sp, wi, sL->wo) * sL->weight;
-					}();
+                    // Sample a NEE edge
+                    const bool enableNEE = length > 0 && !scene->isSpecular(s->sp);
+                    if (enableNEE) [&] {
+                        // Sample a light
+                        const auto sL = scene->sampleLight(rng, s->sp);
+                        if (!sL) {
+                            return;
+                        }
+                        if (scene->intersect(Ray{s->sp.p, sL->wo}, Eps, sL->d*(1_f-Eps))) {
+                            return;
+                        }
+                        // Evaluate and accumulate contribution
+                        L += throughput * scene->evalBsdf(s->sp, wi, sL->wo) * sL->weight;
+                    }();
 
                     // Intersection to next surface
                     const auto hit = scene->intersect(s->ray());
@@ -85,8 +85,8 @@ public:
                         break;
                     }
 
-					// Update throughput
-					throughput *= s->weight;
+                    // Update throughput
+                    throughput *= s->weight;
 
                     // Accumulate contribution from light
                     //if (scene->isLight(*hit)) {
@@ -103,8 +103,8 @@ public:
                     }
 
                     // Update
-					wi = -s->wo;
-					sp = *hit;
+                    wi = -s->wo;
+                    sp = *hit;
                     sampleRay = [&]() {
                         return scene->sampleRay(rng, sp, wi);
                     };
