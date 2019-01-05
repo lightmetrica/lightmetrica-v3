@@ -132,7 +132,9 @@ Using find_package
 
 The second approach uses ``find_package`` with config-file mode to find a dependency to Lightmetrica. 
 To use this approach, we need to use second option to install the dependencies, because the transitive dependencies must be also searchable via ``find_package``. 
-Please find our `Dockerfile`_ where we build some examples externally using this strategy.
+Please find `example/ext`_ directory where we build some examples externally using Lightmetrica.
+
+.. _`example/ext`: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/ext/CMakeLists.txt
 
 .. code-block:: cmake
     :emphasize-lines: 3
