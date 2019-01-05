@@ -96,10 +96,58 @@ Tested with GCC 8.3 and `Ninja`_. The following commands generates the binaries 
    $ cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release ..
    $ ninja
 
+Additionally, execute the following command to install Lightmetrica to your system. If you want to change installation directory, add ``-DCMAKE_INSTALL_PREFIX=<install dir>`` to the ``cmake`` command.
+
+.. code-block:: bash
+
+   $ ninja install
+
 .. ----------------------------------------------------------------------------
 
-.. Using Lightmetrica as external library
-.. =============
+Using Lightmetrica as external library
+=============
+
+To use Lightmetrica as external library, you need to 
+configure Lightmetrica as a dependency inside your own ``CMakeLists.txt``.
+We again have two approaches, whether to use ``add_subdirectory`` or ``find_package``.
+
+Using add_subdirectory
+-------------
+
+The first approach directly includes Lightmetrica's source directory via ``add_subdirectory``. You can use both options in :ref:`Installing dependencies` for the transitive dependencies. 
+The following ``CMakeLists.txt`` shows minimum example of this approach. 
+Once you include the directory, you can use ``lightmetrica::liblm`` target to link main library to your application.
+
+.. code-block:: cmake
+    :emphasize-lines: 3
+
+    cmake_minimum_required(VERSION 3.10)
+    project(your_renderer)
+    add_subdirectory(lightmetrica)
+    add_executable(your_renderer "your_renderer.cpp")
+    target_link_libraries(your_renderer PRIVATE lightmetrica::liblm)
+
+Using find_package
+-------------
+
+The second approach uses ``find_package`` with config-file mode to find a dependency to Lightmetrica. 
+To use this approach, we need to use second option to install the dependencies, because the transitive dependencies must be also searchable via ``find_package``. 
+Please find our `Dockerfile`_ where we build some examples externally using this strategy.
+
+.. code-block:: cmake
+    :emphasize-lines: 3
+
+    cmake_minimum_required(VERSION 3.10)
+    project(your_renderer)
+    find_package(lightmetrica REQUIRED)
+    add_executable(your_renderer "your_renderer.cpp")
+    target_link_libraries(your_renderer PRIVATE lightmetrica::liblm)
+
+.. note::
+
+   When the configuation for Lightmetrica is not located in `standard search locations`_, we need explicitly add ``-Dlightmetrica_DIR=<install dir>`` option to your ``cmake`` command. 
+
+   .. _standard search locations: https://cmake.org/cmake/help/latest/command/find_package.html#search-procedure
 
 .. ----------------------------------------------------------------------------
 
