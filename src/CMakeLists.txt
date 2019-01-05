@@ -61,19 +61,30 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
     "${_SOURCE_DIR}/renderer/renderer_ptdirect.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
+# Add a shared library
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
+# Alias to match the target included by add_subdirectory to the exported target
+add_library(lightmetrica::liblm ALIAS liblm)
+# Source group for Visual Studio IDE
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
+# Precompiled header
 if (MSVC)
     add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
 endif()
+# Configure dependency
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt::fmt-header-only cereal
     PRIVATE OpenMP::OpenMP_CXX
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
             $<$<CXX_COMPILER_ID:GNU>:atomic>)
+# Include directories
 target_include_directories(${_PROJECT_NAME}
-    PUBLIC  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+    PUBLIC  # Use generator expression to support different include directories
+            # whether the target is exporterd or not.
+            "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+            # Use relative directory to make the exported package relocatable
+            "$<INSTALL_INTERFACE:include>"
     PRIVATE "${_PCH_DIR}")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
@@ -85,12 +96,27 @@ target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/MP>)
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/fp:strict /fp:except>)
 # filesystem
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:GNU>:-lstdc++fs>)
+# Remove `lib` prefix of the output library name in Linux enviroment
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "")
+# Folder name for Visual Studio IDE where the project is
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
+# Output directories
 set_target_properties(${_PROJECT_NAME} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+# Add targets to the target group
+# Note that install(TARGET) must be written here because
+# adding target defined in different directory requires CMake>=3.13.
+# https://gitlab.kitware.com/cmake/cmake/merge_requests/2152
+if (LM_INSTALL)
+    install(
+        TARGETS liblm
+        EXPORT ${PROJECT_NAME}Targets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+endif()    
 
 # -----------------------------------------------------------------------------
 
