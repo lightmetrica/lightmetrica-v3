@@ -62,7 +62,7 @@ RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DFMT_DOC=OFF -DFMT_TEST=OFF &
 COPY . /lightmetrica-v3
 WORKDIR /lightmetrica-v3
 RUN cmake -G "Ninja" -H. -B_build -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build _build --target install
+    cmake --build _build --target install -- -j 4
 
 WORKDIR /lightmetrica-v3/_build/bin
 RUN LD_LIBRARY_PATH=. ./lm_test

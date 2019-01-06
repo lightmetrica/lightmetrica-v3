@@ -9,6 +9,19 @@ Lightmetrica -- A research-oriented renderer
 
 ## Quick start
 
+Installation:
+
+```bash
+$ pip install lightmetrica
+```
+
+Create a Python script and run:
+
+```python
+import lightmetrica as lm
+print(lm.version())
+```
+
 ## Documentation
 
 You can find tutorials and API references from [here](http://lightmetrica.org/doc).

@@ -98,7 +98,7 @@ static void bind(pybind11::module& m) {
     // ------------------------------------------------------------------------
 
     // user.h
-    m.def("init", &init);
+    m.def("init", &init, "prop"_a = Json{});
     m.def("shutdown", &shutdown);
     m.def("asset", &asset);
     m.def("getAsset", &getAsset, pybind11::return_value_policy::reference);

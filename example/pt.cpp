@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
             #else
             {"numThreads", -1}
             #endif
-            });
+        });
 
         // Parse command line arguments
         const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{

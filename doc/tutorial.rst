@@ -35,7 +35,7 @@ Let's start to use Lightmetrica by rendering a blank image:
          :end-before: # _end_example
 
 For C++, the first line includes everything necessary to use Lightmetrica.
-For Python, we import the ``pylm`` library, where we use ``lm`` as an alias of ``pylm`` for simplicity.
+For Python, we import the ``lightmetrica`` module, where we use ``lm`` as an alias of ``lightmetrica`` for simplicity.
 
 
 .. tabs::
@@ -145,38 +145,82 @@ This section describes how to render a simple scene containing a quad represente
 
 The code starts again with :func:`lm::init` function. Yet in this time, we specify the number of threads used for parallel processes by ``numThread`` parameter. The negative number configures the number of threads deducted from the maximum number of threads. For instance, if we specify ``-1`` on the machine with the maximum number of threads ``32``, the function configures the number of threads by ``31``. 
 
-.. literalinclude:: ../example/quad.cpp
-   :language: cpp
-   :start-after: // _begin_init
-   :end-before: // _end_init
-   :dedent: 8
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/quad.cpp
+         :language: cpp
+         :start-after: // _begin_init
+         :end-before: // _end_init
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/quad.py
+         :language: python
+         :start-after: # _begin_init
+         :end-before: # _end_init
 
 Next we define the assets. In addition to ``film``, we define ``camera``, ``mesh``, and ``material``. Although the types of assets are different, we can use consistent interface to define the assets. Here we prepare for a pinhole camera (``camera::pinhole``), a raw mesh (``mesh::raw``), and a diffuse material (``material::diffuse``) with the corrsponding parameters. Please refer to the corresponding pages for the detailed description of the parameters.
 
-.. literalinclude:: ../example/quad.cpp
-   :language: cpp
-   :start-after: // _begin_assets
-   :end-before: // _end_assets
-   :dedent: 8
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/quad.cpp
+         :language: cpp
+         :start-after: // _begin_assets
+         :end-before: // _end_assets
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/quad.py
+         :language: python
+         :start-after: # _begin_assets
+         :end-before: # _end_assets
 
 The scene of Lightmetrica is defined by a set of ``primitives``. A primitive specifies an object inside the scene by associating geometries and materials with transformation. We can define a primitive by :func:`lm::primitive` function where we specifies transformation matrix and associating assets as arguments.
 In this example we define two pritimives; one for camera and the other for quad mesh with diffuse material. Transformation is given by 4x4 matrix. Here we specified identify matrix meaning no transformation.
 
-.. literalinclude:: ../example/quad.cpp
-   :language: cpp
-   :start-after: // _begin_primitive
-   :end-before: // _end_primitive
-   :dedent: 8
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/quad.cpp
+         :language: cpp
+         :start-after: // _begin_primitive
+         :end-before: // _end_primitive
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/quad.py
+         :language: python
+         :start-after: # _begin_primitive
+         :end-before: # _end_primitive
 
 For this example we used ``renderer::raycast`` for rendering. 
 This renderer internally uses acceleration structure for ray-scene intersections. 
 The acceleration structure can be given by :func:`lm::build` function. In this example we used ``accel::sahbvh``.
 
-.. literalinclude:: ../example/quad.cpp
-   :language: cpp
-   :start-after: // _begin_render
-   :end-before: // _end_render
-   :dedent: 8
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/quad.cpp
+         :language: cpp
+         :start-after: // _begin_render
+         :end-before: // _end_render
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/quad.py
+         :language: python
+         :start-after: # _begin_render
+         :end-before: # _end_render
 
 Executing the code will produce the following image.
 
@@ -192,27 +236,61 @@ Raycasting a scene with OBJ models
 
 This example demonstrates how to render a scene with OBJ models using raycasting. In order to support parametrized rendering by the command line arguments, we provided a simple helper function :func:`lm::parsePositionalArgs` to parse positional arguments with specified values as a JSON format. 
 
-.. literalinclude:: ../example/raycast.cpp
-   :language: cpp
-   :start-after: // _begin_parse_args
-   :end-before: // _end_parse_args
-   :dedent: 8
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/raycast.cpp
+         :language: cpp
+         :start-after: // _begin_parse_args
+         :end-before: // _end_parse_args
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/raycast.py
+         :language: python
+         :start-after: # _begin_parse_args
+         :end-before: # _end_parse_args
 
 Following is the definition of assets. We used the aforementioned command line arguments to parametrize the assets. To load an OBJ model, we can use ``model::wavefrontobj`` asset. This asset internally creates meshes and materials by reading the associated MTL file.
 
-.. literalinclude:: ../example/raycast.cpp
-   :language: cpp
-   :start-after: // _begin_asset
-   :end-before: // _end_asset
-   :dedent: 8
+
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/raycast.cpp
+         :language: cpp
+         :start-after: // _begin_asset
+         :end-before: // _end_asset
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/raycast.py
+         :language: python
+         :start-after: # _begin_asset
+         :end-before: # _end_asset
 
 We can create primitives from the loaded ``model::wavefrontobj`` asset by using :func:`lm::primitives` function. 
 
-.. literalinclude:: ../example/raycast.cpp
-   :language: cpp
-   :start-after: // _begin_primitives
-   :end-before: // _end_primitives
-   :dedent: 8
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/raycast.cpp
+         :language: cpp
+         :start-after: // _begin_primitives
+         :end-before: // _end_primitives
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/raycast.py
+         :language: python
+         :start-after: # _begin_primitives
+         :end-before: # _end_primitives
 
 Executing the renderer will produce the following image.
 For command line parameters, please refer to ``example/run_all.py``.
@@ -237,11 +315,22 @@ This section describes how to render the scene with path tracing. Path tracing i
 
 The use of the renderer is straightforward; we just need to specify ``renderer::pt`` with :func:`lm::render` function with some renderer-specific parameters. Thanks to the modular design of the framework, the most of the code can be the same as the case of ray casting. 
 
-.. literalinclude:: ../example/pt.cpp
-   :language: cpp
-   :start-after: // _begin_render
-   :end-before: // _end_render
-   :dedent: 8
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/pt.cpp
+         :language: cpp
+         :start-after: // _begin_render
+         :end-before: // _end_render
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/pt.py
+         :language: python
+         :start-after: # _begin_render
+         :end-before: # _end_render
 
 Rendered images:
 

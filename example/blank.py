@@ -1,7 +1,7 @@
-"""Example: Rendering blank image"""
+"""Rendering blank image"""
 
 # _begin_example
-import pylm as lm
+import lightmetrica as lm
 
 # Initialize the framework
 lm.init()
@@ -17,5 +17,5 @@ lm.render('renderer::blank', {
 })
 
 # Save rendered image
-lm.save('film', 'blank.pfm')
+lm.save('film', 'blank_py.pfm')
 # _end_example
