@@ -1,7 +1,7 @@
 Lightmetrica -- A research-oriented renderer
 ====================
 
-*This project is under development for the initial release of Version 3.*
+*This project is under development for the initial release of Version 3. Please be careful to use the versions in development because they might incur abrupt API changes.*
 
 ![teaser](doc/_static/example/pt_fireplace_room.jpg)
 
