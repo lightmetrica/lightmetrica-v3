@@ -12,8 +12,11 @@ We refer to the functions by the convension of C++ APIs if both C++ and Python A
 Rendering blank image
 =============
 
-- C++:  ``example/blank.cpp``
-- Python: ``example/blank.py``
+- C++:  `example/blank.cpp`_
+- Python: `example/blank.py`_
+
+.. _example/blank.cpp: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/blank.cpp
+.. _example/blank.py: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/blank.py
 
 Let's start to use Lightmetrica by rendering a blank image:
 
@@ -138,8 +141,11 @@ Note that the image was converted to JPG image from PFM.
 Rendering quad
 =============
 
-- C++:  ``example/quad.cpp``
-- Python: ``example/quad.py``
+- C++:  `example/quad.cpp`_
+- Python: `example/quad.py`_
+
+.. _example/quad.cpp: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/quad.cpp
+.. _example/quad.py: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/quad.py
 
 This section describes how to render a simple scene containing a quad represented by two triangles. From this example we do not provide the full source code inside this page. Please follow the files inside ``example`` directory if necessary.
 
@@ -231,8 +237,11 @@ Executing the code will produce the following image.
 Raycasting a scene with OBJ models
 =============
 
-- C++:  ``example/raycast.cpp``
-- Python: ``example/raycast.py``
+- C++:  `example/raycast.cpp`_
+- Python: `example/raycast.py`_
+
+.. _example/raycast.cpp: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/raycast.cpp
+.. _example/raycast.py: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/raycast.py
 
 This example demonstrates how to render a scene with OBJ models using raycasting. In order to support parametrized rendering by the command line arguments, we provided a simple helper function :func:`lm::parsePositionalArgs` to parse positional arguments with specified values as a JSON format. 
 
@@ -308,8 +317,11 @@ For command line parameters, please refer to ``example/run_all.py``.
 Rendering with path tracing
 =============
 
-- C++:  ``example/pt.cpp``
-- Python: ``example/pt.py``
+- C++:  `example/pt.cpp`_
+- Python: `example/pt.py`_
+
+.. _example/pt.cpp: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/pt.cpp
+.. _example/pt.py: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/pt.py
 
 This section describes how to render the scene with path tracing. Path tracing is a rendering technique based on Monte Carlo method and notably one of the most basic (yet practical) rendering algorithms taking global illumination into account. Our framework implements path tracing as ``renderer::pt`` renderer. 
 
