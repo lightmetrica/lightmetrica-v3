@@ -24,7 +24,7 @@ print(lm.version())
 
 ## Documentation
 
-You can find tutorials and API references from [here](http://lightmetrica.org/doc).
+You can find tutorials and API references from [here](https://hi2p-perim.github.io/lightmetrica-v3-doc/).
 
 ## Features
 

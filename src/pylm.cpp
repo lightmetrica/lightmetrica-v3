@@ -14,24 +14,24 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 static void bind(pybind11::module& m) {
     using namespace pybind11::literals;
 
-	// ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
-	// Build parameters
-	// Debug or Release mode
-	m.attr("Debug") = LM_DEBUG_MODE ? true : false;
+    // Build parameters
+    // Debug or Release mode
+    m.attr("Debug") = LM_DEBUG_MODE ? true : false;
 
-	// Supported floating point type
-	enum class FloatPrecisionType {
-		Float32,
-		Float64
-	};
-	pybind11::enum_<FloatPrecisionType>(m, "FloatPrecisionType")
-		.value("Float32", FloatPrecisionType::Float32)
-		.value("Float64", FloatPrecisionType::Float64)
-		.export_values();
-	m.attr("FloatPrecision") = LM_SINGLE_PRECISION
-		? FloatPrecisionType::Float32
-		: FloatPrecisionType::Float64;
+    // Supported floating point type
+    enum class FloatPrecisionType {
+        Float32,
+        Float64
+    };
+    pybind11::enum_<FloatPrecisionType>(m, "FloatPrecisionType")
+        .value("Float32", FloatPrecisionType::Float32)
+        .value("Float64", FloatPrecisionType::Float64)
+        .export_values();
+    m.attr("FloatPrecision") = LM_SINGLE_PRECISION
+        ? FloatPrecisionType::Float32
+        : FloatPrecisionType::Float64;
 
     // ------------------------------------------------------------------------
 
@@ -47,23 +47,23 @@ static void bind(pybind11::module& m) {
         .def_readwrite("o", &Ray::o)
         .def_readwrite("d", &Ray::d);
 
-	// Helper functions
-	m.def("identity", []() -> Mat4 {
-		return Mat4(1_f);
-	});
-	m.def("rotate", [](Float angle, Vec3 axis) -> Mat4 {
-		return glm::rotate(angle, axis);
-	});
-	m.def("translate", [](Vec3 v) -> Mat4 {
-		return glm::translate(v);
-	});
-	m.def("scale", [](Vec3 s) -> Mat4 {
-		return glm::scale(s);
-	});
-	m.def("rad", &glm::radians<Float>);
-	m.def("v3", [](Float v1, Float v2, Float v3) -> Vec3 {
-		return Vec3(v1, v2, v3);
-	});
+    // Helper functions
+    m.def("identity", []() -> Mat4 {
+        return Mat4(1_f);
+    });
+    m.def("rotate", [](Float angle, Vec3 axis) -> Mat4 {
+        return glm::rotate(angle, axis);
+    });
+    m.def("translate", [](Vec3 v) -> Mat4 {
+        return glm::translate(v);
+    });
+    m.def("scale", [](Vec3 s) -> Mat4 {
+        return glm::scale(s);
+    });
+    m.def("rad", &glm::radians<Float>);
+    m.def("v3", [](Float v1, Float v2, Float v3) -> Vec3 {
+        return Vec3(v1, v2, v3);
+    });
 
     // ------------------------------------------------------------------------
 
@@ -98,7 +98,7 @@ static void bind(pybind11::module& m) {
     // ------------------------------------------------------------------------
 
     // user.h
-    m.def("init", &init, "prop"_a = Json{});
+    m.def("init", &init);
     m.def("shutdown", &shutdown);
     m.def("asset", &asset);
     m.def("getAsset", &getAsset, pybind11::return_value_policy::reference);
