@@ -136,6 +136,16 @@ public:
         return film->buffer();
     }
 
+    void serialize(const std::string& path) {
+        LM_UNUSED(path);
+        LM_TBA_RUNTIME();
+    }
+
+    void deserialize(const std::string& path) {
+        LM_UNUSED(path);
+        LM_TBA_RUNTIME();
+    }
+
 private:
     Component::Ptr<Assets> assets_;
     Component::Ptr<Scene> scene_;
@@ -184,6 +194,14 @@ LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath)
 
 LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName) {
     return Context::instance().buffer(filmName);
+}
+
+LM_PUBLIC_API void serialize(const std::string& path) {
+    Context::instance().serialize(path);
+}
+
+LM_PUBLIC_API void deserialize(const std::string& path) {
+    Context::instance().deserialize(path);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

@@ -158,6 +158,18 @@ LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath)
 */
 LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
 
+/*!
+    \brief Serialize the internal state of the framework to a file.
+    \param path Output file path.
+*/
+LM_PUBLIC_API void serialize(const std::string& path);
+
+/*!
+    \brief Deserialize the internal state of the framework from a file.
+    \param path Input file path.
+*/
+LM_PUBLIC_API void deserialize(const std::string& path);
+
 // ----------------------------------------------------------------------------
 
 /*!

@@ -28,7 +28,7 @@ constexpr const char* DefaultType = "logger::default";
     Log messages have their own importance levels.
     When you want to categorize the log messages according to the importance,
     you can use convenience macros to generate messages with corresponding 
-    importance levels. For instance, :func:`LM_ERROR` macro generates a message
+    importance levels. For instance, :c:func:`LM_ERROR` macro generates a message
     with ``Err`` log level.
     \endrst
 */
