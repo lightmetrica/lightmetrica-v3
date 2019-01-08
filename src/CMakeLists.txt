@@ -32,7 +32,8 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/renderer.h"
     "${_INCLUDE_DIR}/json.h"
     "${_INCLUDE_DIR}/common.h"
-    "${_INCLUDE_DIR}/component.h")
+    "${_INCLUDE_DIR}/component.h"
+    "${_INCLUDE_DIR}/serial.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/user.cpp"
@@ -41,6 +42,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/exception.cpp"
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/progress.cpp"
+    "${_SOURCE_DIR}/serial.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
