@@ -115,7 +115,7 @@ TEST_CASE("Construction") {
 
 // ----------------------------------------------------------------------------
 
-TEST_CASE("Serialization") {
+TEST_CASE("Serialization of component") {
     lm::log::ScopedInit init;
 
     SUBCASE("Simple") {

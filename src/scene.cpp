@@ -18,7 +18,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct Primitive {
     int index;					// Primitive index
-	Transform transform;		// Transform associated to the primitive
+    Transform transform;		// Transform associated to the primitive
     const Mesh* mesh;			// Underlying assets
     const Material* material;
     const Light* light;
@@ -27,14 +27,14 @@ struct Primitive {
 
 class Scene_ final : public Scene {
 private:
-	std::vector<Primitive> primitives_;
-	Ptr<Accel> accel_;
-	int camera_;			   // Camera primitive index
-	std::vector<int> lights_;  // Light primitive indices
+    std::vector<Primitive> primitives_;
+    Ptr<Accel> accel_;
+    int camera_;			   // Camera primitive index
+    std::vector<int> lights_;  // Light primitive indices
 
 public:
     virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) override {
-		// Helper function to find an asset by property name
+        // Helper function to find an asset by property name
         const auto getAssetRefBy = [&](const std::string& propName) -> Component* {
             if (propName.empty()) {
                 return nullptr;
@@ -48,19 +48,19 @@ public:
             return assetGroup.underlying(it.value().get<std::string>().c_str());
         };
 
-		// Underlying components of primitive
-		const auto* mesh     = dynamic_cast<Mesh*>(getAssetRefBy("mesh"));
-		const auto* material = dynamic_cast<Material*>(getAssetRefBy("material"));
-		const auto* light    = dynamic_cast<Light*>(getAssetRefBy("light"));
-		const auto* camera   = dynamic_cast<Camera*>(getAssetRefBy("camera"));
+        // Underlying components of primitive
+        const auto* mesh     = dynamic_cast<Mesh*>(getAssetRefBy("mesh"));
+        const auto* material = dynamic_cast<Material*>(getAssetRefBy("material"));
+        const auto* light    = dynamic_cast<Light*>(getAssetRefBy("light"));
+        const auto* camera   = dynamic_cast<Camera*>(getAssetRefBy("camera"));
 
-		// Primitive cannot be both camera and light
-		if (camera && light) {
-			LM_ERROR("Primitive cannot be both camera and light");
-			return false;
-		}
+        // Primitive cannot be both camera and light
+        if (camera && light) {
+            LM_ERROR("Primitive cannot be both camera and light");
+            return false;
+        }
 
-		// Add a primitive entry
+        // Add a primitive entry
         primitives_.push_back(Primitive{
             int(primitives_.size()),
             Transform(transform),
@@ -72,9 +72,9 @@ public:
         if (primitives_.back().camera) {
             camera_ = primitives_.back().index;
         }
-		if (primitives_.back().light) {
-			lights_.push_back(primitives_.back().index);
-		}
+        if (primitives_.back().light) {
+            lights_.push_back(primitives_.back().index);
+        }
         return true;
     }
 
@@ -86,15 +86,15 @@ public:
         model->createPrimitives([&](Component* mesh, Component* material, Component* light) {
             primitives_.push_back(Primitive{
                 int(primitives_.size()),
-				Transform(transform),
+                Transform(transform),
                 dynamic_cast<Mesh*>(mesh),
                 dynamic_cast<Material*>(material),
                 dynamic_cast<Light*>(light),
                 nullptr
             });
-			if (primitives_.back().light) {
-				lights_.push_back(primitives_.back().index);
-			}
+            if (primitives_.back().light) {
+                lights_.push_back(primitives_.back().index);
+            }
         });
         return true;
     }
@@ -108,9 +108,9 @@ public:
                 processTriangle(
                     primitive.index,
                     face,
-					primitive.transform.M * Vec4(p1, 1_f),
-					primitive.transform.M * Vec4(p2, 1_f),
-					primitive.transform.M * Vec4(p3, 1_f)
+                    primitive.transform.M * Vec4(p1, 1_f),
+                    primitive.transform.M * Vec4(p2, 1_f),
+                    primitive.transform.M * Vec4(p3, 1_f)
                 );
             });
         }
@@ -132,14 +132,14 @@ public:
             return {};
         }
         const auto [t, uv, primitiveIndex, face] = *hit;
-		const auto& primitive = primitives_.at(primitiveIndex);
+        const auto& primitive = primitives_.at(primitiveIndex);
         const auto p = primitive.mesh->surfacePoint(face, uv);
-		return SurfacePoint(
-			primitiveIndex,
-			-1,
-			primitive.transform.M * Vec4(p.p, 1_f),
-			primitive.transform.normalM * p.n,
-			p.t);
+        return SurfacePoint(
+            primitiveIndex,
+            -1,
+            primitive.transform.M * Vec4(p.p, 1_f),
+            primitive.transform.normalM * p.n,
+            p.t);
     }
 
     // ------------------------------------------------------------------------
@@ -180,30 +180,30 @@ public:
         return rs->asPrimitive(camera_).asEndpoint(true);
     }
 
-	virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
-		// Sample a light
-		const int n  = int(lights_.size());
-		const int i  = glm::clamp(int(rng.u() * n), 0, n-1);
-		const auto pL = 1_f / n;
-		
-		// Sample a position on the light
-		const auto& primitive = primitives_.at(lights_[i]);
-		return primitive.light->sampleLight(rng, sp, primitive.transform);
-	}
-	
-	// ------------------------------------------------------------------------
+    virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+        // Sample a light
+        const int n  = int(lights_.size());
+        const int i  = glm::clamp(int(rng.u() * n), 0, n-1);
+        const auto pL = 1_f / n;
+        
+        // Sample a position on the light
+        const auto& primitive = primitives_.at(lights_[i]);
+        return primitive.light->sampleLight(rng, sp, primitive.transform);
+    }
+    
+    // ------------------------------------------------------------------------
 
-	virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-		if (sp.endpoint) {
-			if (sp.primitive == camera_) {
-				return primitives_.at(sp.primitive).camera->eval(sp, wo);
-			}
-			else {
-				return primitives_.at(sp.primitive).light->eval(sp, wo);
-			}
-		}
-		return primitives_.at(sp.primitive).material->eval(sp, wi, wo);
-	}
+    virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+        if (sp.endpoint) {
+            if (sp.primitive == camera_) {
+                return primitives_.at(sp.primitive).camera->eval(sp, wo);
+            }
+            else {
+                return primitives_.at(sp.primitive).light->eval(sp, wo);
+            }
+        }
+        return primitives_.at(sp.primitive).material->eval(sp, wi, wo);
+    }
 
     virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
         const auto& primitive = primitives_.at(sp.primitive);
