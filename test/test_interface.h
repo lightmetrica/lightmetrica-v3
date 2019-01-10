@@ -145,11 +145,11 @@ struct F1 final : public F {
         v2_ = v - 1;
         return true;
     }
-    virtual void load(std::istream& stream) override {
+    virtual void load(InputArchive& ar) override {
         cereal::PortableBinaryInputArchive ar(stream);
         ar(v1_, v2_);
     }
-    virtual void save(std::ostream& stream) const override {
+    virtual void save(OutputArchive& ar) const override {
         cereal::PortableBinaryOutputArchive ar(stream);
         ar(v1_, v2_);
     }
@@ -165,12 +165,12 @@ struct F2 final : public F {
         v_ = prop["v"];
         return true;
     }
-    virtual void load(std::istream& stream) override {
+    virtual void load(InputArchive& ar) override {
         cereal::PortableBinaryInputArchive ar(stream);
         ar(v_);
         f_ = parent()->cast<F>();
     }
-    virtual void save(std::ostream& stream) const override {
+    virtual void save(OutputArchive& ar) const override {
         cereal::PortableBinaryOutputArchive ar(stream);
         ar(v_);
     }

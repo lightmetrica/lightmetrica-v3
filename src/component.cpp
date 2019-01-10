@@ -139,17 +139,16 @@ public:
     }
 
 public:
-    Component* createComp(const std::string& key, Component* parent) {
+    Component* createComp(const std::string& key) {
         auto it = funcMap_.find(key);
         if (it == funcMap_.end()) {
             LM_ERROR("Missing component [key='{}']", key);
             return nullptr;
         }
         auto* p = it->second.createFunc();
-        p->key_ = key;
-        p->createFunc_ = it->second.createFunc;
-        p->releaseFunc_ = it->second.releaseFunc;
-        p->setParent(parent);
+        Access::key(p) = key;
+        Access::createFunc(p) = it->second.createFunc;
+        Access::releaseFunc(p) = it->second.releaseFunc;
         return p;
     }
 
@@ -261,8 +260,8 @@ private:
 
 // ----------------------------------------------------------------------------
 
-LM_PUBLIC_API Component* createComp(const std::string& key, Component* parent) {
-    return Impl::instance().createComp(key, parent);
+LM_PUBLIC_API Component* createComp(const std::string& key) {
+    return Impl::instance().createComp(key);
 }
 
 LM_PUBLIC_API void reg(

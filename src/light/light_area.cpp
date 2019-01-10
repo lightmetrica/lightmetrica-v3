@@ -8,6 +8,7 @@
 #include <lm/mesh.h>
 #include <lm/scene.h>
 #include <lm/json.h>
+#include <lm/user.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -29,7 +30,7 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         Ke_ = prop["Ke"];
-        mesh_ = parent()->underlying<Mesh>(prop, "mesh");
+        mesh_ = lm::getAsset<Mesh>(prop["mesh"]);
         
         // Construct CDF for surface sampling
 		// Note we construct the CDF before transformation

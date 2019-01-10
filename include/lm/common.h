@@ -182,7 +182,7 @@
 
 #define LM_DISABLE_CONSTRUCT(TypeName) \
     TypeName() = delete; \
-    LM_DISABLE_COPY_AND_MOVE(TypeName)
+    LM_DISABLE_COPY_AND_MOVE(TypeName);
 
 #define LM_TBA() LM_PRAGMA(error ("TBA"))
 #define LM_TBA_RUNTIME() throw std::runtime_error("TBA")
@@ -227,6 +227,10 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 #include <nlohmann/json.hpp>
 #pragma warning(pop)
 
+// cereal library
+#include <cereal/cereal.hpp>
+#include <cereal/archives/portable_binary.hpp>
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
@@ -246,8 +250,7 @@ struct RaySample;
 struct LightSample;
 class Scene;
 class Renderer;           // renderer.h
-LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, class Impl)  // Some detailed classes
-LM_FORWARD_DECLARE_WITH_NAMESPACE(detail, class ComponentAccess)
+LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, struct Access)
 
 // ----------------------------------------------------------------------------
 
@@ -275,6 +278,13 @@ using Json = nlohmann::basic_json<
     Float,              // Floating point type
     std::allocator,
     nlohmann::adl_serializer>;
+
+// ----------------------------------------------------------------------------
+
+// Default input archive deligated to cereal library.
+using InputArchive = cereal::PortableBinaryInputArchive;
+// Default output archive deligated to cereal library.
+using OutputArchive = cereal::PortableBinaryOutputArchive;
 
 // ----------------------------------------------------------------------------
 
