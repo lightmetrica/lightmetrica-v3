@@ -29,8 +29,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Component {
 private:
-    friend class comp::detail::Impl;
-    friend class detail::ComponentAccess;
+    friend struct comp::detail::Access;
     friend struct ComponentDeleter;
 
 public:
@@ -57,27 +56,10 @@ private:
     //! Underlying reference to owner object (if any)
     std::any ownerRef_;
 
-    //! Parent component (if any)
-    Component* parent_ = nullptr;
-
 public:
     Component() = default;
     virtual ~Component() = default;
     LM_DISABLE_COPY_AND_MOVE(Component)
-
-public:
-    /*!
-        \brief Parent component.
-    */
-    Component* parent() const { return parent_; }
-
-    /*!
-        \brief Set parent.
-    */
-    void setParent(Component* p) {
-        if (!p) { return; }
-        parent_ = p;
-    }
 
 public:
     /*!
@@ -101,12 +83,12 @@ public:
     /*!
         \brief Deserialize a component.
     */
-    virtual void load(std::istream& stream) { LM_UNUSED(stream); }
+    virtual void load(InputArchive& ar) { LM_UNUSED(ar); }
 
     /*!
         \brief Serialize a component.
     */
-    virtual void save(std::ostream& stream) const { LM_UNUSED(stream); }
+    virtual void save(OutputArchive& ar) const { LM_UNUSED(ar); }
     
 public:
     /*!
@@ -214,6 +196,17 @@ struct ComponentDeleter {
 LM_NAMESPACE_BEGIN(comp)
 LM_NAMESPACE_BEGIN(detail)
 
+// Accessor for private members of Component
+struct Access {
+    LM_DISABLE_CONSTRUCT(Access)
+    static std::string& key(Component* p) { return p->key_; }
+    static const std::string& key(const Component* p) { return p->key_; }
+    static Component::CreateFunction& createFunc(Component* p) { return p->createFunc_; }
+    static const Component::CreateFunction& createFunc(const Component* p) { return p->createFunc_; }
+    static Component::ReleaseFunction& releaseFunc(Component* p) { return p->releaseFunc_; }
+    static const Component::ReleaseFunction& releaseFunc(const Component* p) { return p->releaseFunc_; }
+};
+
 // Type holder
 template <typename... Ts>
 struct TypeHolder {};
@@ -242,9 +235,8 @@ struct KeyGen<T<Ts...>> {
 /*!
     \brief Create component instance.
     \param key Name of the implementation.
-    \param parent Parent component.
 */
-LM_PUBLIC_API Component* createComp(const std::string& key, Component* parent);
+LM_PUBLIC_API Component* createComp(const std::string& key);
 
 // Register a component.
 LM_PUBLIC_API void reg(
@@ -296,12 +288,11 @@ InterfaceT* cast(Component* p) {
     \brief Create component with specific interface type.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
-    \param parent Parent component.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(const std::string& key, Component* parent) {
+Component::Ptr<InterfaceT> create(const std::string& key) {
     auto* inst = detail::createComp(
-        detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str(), parent);
+        detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str());
     if (!inst) {
         return {};
     }
@@ -313,13 +304,10 @@ Component::Ptr<InterfaceT> create(const std::string& key, Component* parent) {
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
     \param prop Properties.
-    \param parent Parent component.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(
-    const std::string& key, Component* parent, const Json& prop)
-{
-    auto inst = create<InterfaceT>(key, parent);
+Component::Ptr<InterfaceT> create(const std::string& key, const Json& prop) {
+    auto inst = create<InterfaceT>(key);
     if (!inst || !inst->construct(prop)) {
         return {};
     }
@@ -363,13 +351,10 @@ LM_NAMESPACE_BEGIN(detail)
     directly with the visibile component type.
 */
 template <typename ComponentT, typename... Ts>
-Component::Ptr<ComponentT> createDirect(Component* parent, Ts&&... args) {
+Component::Ptr<ComponentT> createDirect(Ts&&... args) {
     auto comp = std::make_unique<ComponentT>(std::forward<Ts>(args)...);
-    comp->setParent(parent);
     return Component::Ptr<ComponentT>(comp.release());
 }
-
-// ----------------------------------------------------------------------------
 
 /*!
     \brief Singleton for a context component.
@@ -477,6 +462,21 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     \brief Register implementation.
     \param ImplT Component implemenation type.
     \param Key Name of the implementation.
+
+    \rst
+    This macro registers an implementation of a component object into the framework.
+    This macro can be placed under any translation unit irrespective to the kind of binaries it belongs,
+    like a shared libraries or an user's application code.
+
+    .. note::
+       According to the C++ specification `[basic.start.dynamic]/5`_, dependening on the implementation, 
+       the dynamic initalization of an object inside a namespace scope `can be defered`
+       until it is used in the context that its definition must be presented (odr-used).
+       This macro workarounded this issue by expliciting instantiating an singleton ``RegEntry<>``
+       defined for each implementation type.
+
+       .. _[basic.start.dynamic]/5: http://eel.is/c++draft/basic#start.dynamic-5
+    \endrst
 */
 #define LM_COMP_REG_IMPL(ImplT, Key) \
 	namespace { \

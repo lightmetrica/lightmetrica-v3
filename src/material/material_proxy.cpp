@@ -16,7 +16,7 @@ private:
 
 public:
 	virtual bool construct(const Json& prop) override {
-		ref_ = dynamic_cast<Material*>(lm::getAsset(prop["ref"]));
+		ref_ = lm::getAsset<Material>(prop["ref"]);
 		return ref_;
 	}
 

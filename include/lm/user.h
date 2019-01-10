@@ -76,6 +76,18 @@ LM_PUBLIC_API void asset(const std::string& name,
 LM_PUBLIC_API Component* getAsset(const std::string& name);
 
 /*!
+    \brief Get an asset by name with specific component interface type.
+*/
+template <typename T>
+T* getAsset(const std::string& name) {
+    auto* p = getAsset(name);
+    if (!p) {
+        return nullptr;
+    }
+    return dynamic_cast<T*>(getAsset(name));
+}
+
+/*!
     \brief Create a primitive and add it to the scene.
     \param transform Transformation matrix.
     \param prop Properties for configuration.

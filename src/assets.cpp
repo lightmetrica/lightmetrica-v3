@@ -12,13 +12,20 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Assets_ final : public Assets {
 public:
     virtual Component* underlying(const std::string& name) const override {
+        // Take first element inside `name`
+        const auto [first, remaining] = comp::splitFirst(name);
+
         // Finds underlying asset
-        auto it = assetIndexMap_.find(name);
+        auto it = assetIndexMap_.find(first);
         if (it == assetIndexMap_.end()) {
-            LM_ERROR("Asset [name = '{}'] is not found", name);
+            LM_ERROR("Asset [name = '{}'] is not found", first);
             return nullptr;
         }
-        return assets_.at(it->second).get();
+
+        // Try to find nested asset. If not found, return as it is.
+        auto* comp = assets_.at(it->second).get();
+        auto* nested = comp->underlying(remaining);
+        return nested ? nested : comp;
     }
 
     virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
@@ -32,12 +39,16 @@ public:
         }
 
         // Create an instance of the asset
-        auto p = comp::create<Component>(implKey, this);
+        auto p = comp::create<Component>(implKey);
         if (!p) {
             LM_ERROR("Failed to create component [name='{}', key='{}']", name, implKey);
             return false;
         }
-        if (!p->construct(prop)) {
+        // Construct the asset where it appends `_name` element representing
+        // the name of the asset we are registering.
+        Json propTmp(prop);
+        propTmp["_name"] = name;
+        if (!p->construct(propTmp)) {
             LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
             return false;
         }

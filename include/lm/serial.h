@@ -4,19 +4,68 @@
 */
 
 #include "component.h"
-#include <cereal/cereal.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
-#include <cereal/archives/portable_binary.hpp>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(serial)
 
-//! Default input archive deligated to cereal library.
-using InputArchive = cereal::PortableBinaryInputArchive;
-//! Default output archive deligated to cereal library.
-using OutputArchive = cereal::PortableBinaryOutputArchive;
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(detail)
+
+/*!
+    \brief Save function specialized for component pointer.
+    \tparam Archive Output archive type.
+    \tparam T Component interface type.
+*/
+template <class Archive, class T>
+void save(Archive& ar, const Component::Ptr<T>& p) {
+    // Save an additional information if the pointer is nullptr
+    if (!p) {
+        // The pointer is invalid
+        ar(CEREAL_NVP_("valid", uint8_t(0));
+    }
+    else {
+        // The pointer is valid
+        ar(CEREAL_NVP_("valid", uint8_t(1));
+        
+        // Meta information needed to recreate the instance
+        ar(CEREAL_NVP_("key", comp::detail::Access::key(p->get()));
+
+        // Save the contants with Component::save() function.
+        // We don't use cereal's polymorphinc class support
+        // because their features can be achievable with our component system.
+        p->save(ar);
+    }
+}
+
+/*!
+    \brief Load function specialized for component pointer.
+    \tparam Archive Output archive type.
+    \tparam T Component interface type. 
+*/
+template <class Archive, class T>
+void load(Archive& ar, Component::Ptr<T>& p) {
+    uint8_t valid;
+    ar(CEREAL_NVP_("valid", valid));
+    if (valid) {
+        p.reset(nullptr, nullptr);
+    }
+    else {
+        // Load key
+        std::string key;
+        ar(CEREAL_NVP_("key", key));
+        
+        // Create component instance
+        auto p = comp::create<T>(key, );
+    }
+}
+
+LM_NAMESPACE_END(detail)
+
+// ----------------------------------------------------------------------------
 
 /*!
     \brief Serialize an object with given type.
@@ -35,6 +84,8 @@ void load(std::istream& is, T& v) {
     InputArchive ar(is);
     ar(v);
 }
+
+// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(serial)
 LM_NAMESPACE_END(LM_NAMESPACE)

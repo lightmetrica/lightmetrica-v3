@@ -36,16 +36,20 @@ void checkSaveAndLoadRoundTrip(T&& orig) {
     // Serialize the input value
     std::stringstream ss1;
     lm::serial::save(ss1, std::forward<T>(orig));
+
     // Deserialize it
     std::decay_t<T> loaded;
     lm::serial::load(ss1, loaded);
+
     // If T is equality-comparable, check orig == loaded
     if constexpr (is_equality_comparable<T>::value) {
         CHECK(orig == loaded);
     }
+
     // Serialize again with different stream
     std::stringstream ss2;
     lm::serial::save(ss2, loaded);
+
     // Compare two streams
     const auto s1 = ss1.str();
     const auto s2 = ss2.str();
@@ -79,11 +83,11 @@ struct TestSerial_SimpleComponent : public lm::Component {
         v2 = prop["v2"];
         return true;
     }
-    virtual void load(std::istream& stream) {
-        LM_UNUSED(stream);
+    virtual void load(lm::InputArchive& ar) {
+        LM_UNUSED(ar);
     }
-    virtual void save(std::ostream& stream) {
-        LM_UNUSED(stream);
+    virtual void save(lm::OutputArchive& ar) {
+        LM_UNUSED(ar);
     }
 };
 
@@ -124,16 +128,16 @@ TEST_CASE("Serialization") {
         }
     }
 
-    //SUBCASE("Component") {
-    //    SUBCASE("Unique pointer") {
-    //        auto orig = lm::comp::create<lm::Component>("testserial_simplecomponent", nullptr, {
-    //            { "v1", 42 },
-    //            { "v2", 32 }
-    //        });
-    //        std::stringstream ss;
-    //        lm::serial::save(ss, orig);
-    //    }
-    //}
+    SUBCASE("Component") {
+        SUBCASE("Unique pointer") {
+            auto orig = lm::comp::create<lm::Component>("testserial_simplecomponent", {
+                { "v1", 42 },
+                { "v2", 32 }
+            });
+            std::stringstream ss;
+            lm::serial::save(ss, orig);
+        }
+    }
 }
 
 LM_NAMESPACE_END(LM_TEST_NAMESPACE)
