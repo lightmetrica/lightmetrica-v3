@@ -205,6 +205,8 @@ struct Access {
     static const Component::CreateFunction& createFunc(const Component* p) { return p->createFunc_; }
     static Component::ReleaseFunction& releaseFunc(Component* p) { return p->releaseFunc_; }
     static const Component::ReleaseFunction& releaseFunc(const Component* p) { return p->releaseFunc_; }
+    static std::any& ownerRef(Component* p) { return p->ownerRef_; }
+    static const std::any& ownerRef(const Component* p) { return p->ownerRef_; }
 };
 
 // Type holder
@@ -377,7 +379,7 @@ public:
     }
 
     static void init(const std::string& type, const Json& prop) {
-        instance().context = comp::create<ContextComponentT>(type, nullptr, prop);
+        instance().context = comp::create<ContextComponentT>(type, prop);
     }
 
     static void shutdown() {

@@ -66,9 +66,8 @@ public:
                 progress::init(progress::DefaultType);
             }
         }
-        //progress::init(valueOr<std::string>(prop, "progress", progress::DefaultType));
-        assets_ = comp::create<Assets>("assets::default", this);
-        scene_  = comp::create<Scene>("scene::default", this);
+        assets_ = comp::create<Assets>("assets::default");
+        scene_  = comp::create<Scene>("scene::default");
     }
 
     void shutdown() {
@@ -108,7 +107,7 @@ public:
     }
 
     void render(const std::string& rendererName, const Json& prop) {
-        renderer_ = lm::comp::create<Renderer>(rendererName, this, prop);
+        renderer_ = lm::comp::create<Renderer>(rendererName, prop);
         if (!renderer_) {
             LM_ERROR("Failed to render [renderer='{}']", rendererName);
             THROW_RUNTIME_ERROR();

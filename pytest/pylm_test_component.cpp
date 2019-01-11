@@ -69,6 +69,7 @@ public:
 
         // --------------------------------------------------------------------
 
+#if 0
         struct E_Py final : public E {
             virtual bool construct(const lm::Json& prop) override {
                 PYBIND11_OVERLOAD(bool, E, construct, prop);
@@ -81,17 +82,18 @@ public:
             .def(py::init<>())
             .def("f", &E::f)
             .PYLM_DEF_COMP_BIND(E);
+#endif
 
         // --------------------------------------------------------------------
 
         m.def("createA1", []() {
             return dynamic_cast<A*>(
-                lm::comp::detail::createComp("test::comp::a1", nullptr));
+                lm::comp::detail::createComp("test::comp::a1"));
         });
 
         m.def("createTestPlugin", []() {
             // Use .release() as pybind11 does not support direct conversion of Ptr<T> types
-            return lm::comp::create<TestPlugin>("testplugin::default", nullptr).release();
+            return lm::comp::create<TestPlugin>("testplugin::default").release();
         });
 
         m.def("useA", [](A* a) -> int {
@@ -102,7 +104,7 @@ public:
             // test::comp::a4 should be defined inside Python script
             int v1, v2;
             {
-                auto p = lm::comp::create<A>("test::comp::a4", nullptr);
+                auto p = lm::comp::create<A>("test::comp::a4");
                 v1 = p->f1();
                 v2 = p->f2(2, 3);
             }
@@ -112,7 +114,7 @@ public:
         m.def("createA5AndCallFuncs", []() -> std::tuple<int, int> {
             int v1, v2;
             {
-                auto p = lm::comp::create<A>("test::comp::a5", nullptr, {{"v", 7}});
+                auto p = lm::comp::create<A>("test::comp::a5", {{"v", 7}});
                 v1 = p->f1();
                 v2 = p->f2(1, 2);
             }

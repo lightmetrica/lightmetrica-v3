@@ -8,6 +8,7 @@
 #include <lm/scene.h>
 #include <lm/texture.h>
 #include <lm/json.h>
+#include <lm/user.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -18,7 +19,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        mapKd_ = parent()->underlying<Texture>(prop, "mapKd");
+        mapKd_ = lm::getAsset<Texture>(prop["mapKd"]);
         if (!mapKd_) {
             Kd_ = valueOr<Vec3>(prop, "Kd", Vec3(1_f));
         }

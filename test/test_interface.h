@@ -92,6 +92,7 @@ LM_COMP_REG_IMPL(D1, "test::comp::d1");
 
 // ----------------------------------------------------------------------------
 
+#if 0
 struct E : public lm::Component {
     virtual int f() = 0;
 };
@@ -128,9 +129,11 @@ struct E2 final : public E {
 LM_COMP_REG_IMPL(E1, "test::comp::e1");
 LM_COMP_REG_IMPL(E2, "test::comp::e2");
 #endif
+#endif
 
 // ----------------------------------------------------------------------------
 
+#if 0
 struct F : public lm::Component {
     virtual int f1() const = 0;
     virtual int f2() const = 0;
@@ -181,6 +184,7 @@ struct F2 final : public F {
 #ifdef LM_TEST_INTERFACE_REG_IMPL
 LM_COMP_REG_IMPL(F1, "test::comp::f1");
 LM_COMP_REG_IMPL(F2, "test::comp::f2");
+#endif
 #endif
 
 // ----------------------------------------------------------------------------
