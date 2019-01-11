@@ -118,8 +118,8 @@ public:
 
     // ------------------------------------------------------------------------
 
-    virtual void build(const std::string& name) override {
-        accel_ = comp::create<Accel>(name, this);
+    virtual void build(const std::string& name, const Json& prop) override {
+        accel_ = comp::create<Accel>(name, this, prop);
         if (!accel_) {
             return;
         }

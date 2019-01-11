@@ -333,8 +333,8 @@ static void bind(pybind11::module& m) {
         virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, foreachTriangle, processTriangle);
         }
-        virtual void build(const std::string& name) override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, build, name);
+        virtual void build(const std::string& name, const Json& prop) override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
         }
         virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin, Float tmax) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<SurfacePoint>, Scene, intersect, ray, tmin, tmax);

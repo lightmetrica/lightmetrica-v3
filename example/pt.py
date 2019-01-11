@@ -58,7 +58,7 @@ lm.primitive(lm.identity(), {'camera': 'camera1'})
 lm.primitives(lm.identity(), 'obj1')
 
 # Render an image
-lm.build('accel::sahbvh')
+lm.build('accel::sahbvh', {})
 # _begin_render
 lm.render('renderer::pt', {
     'output': 'film1',

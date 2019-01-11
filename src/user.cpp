@@ -103,8 +103,8 @@ public:
         }
     }
 
-    void build(const std::string& accelName) {
-        scene_->build(accelName);
+    void build(const std::string& accelName, const Json& prop) {
+        scene_->build(accelName, prop);
     }
 
     void render(const std::string& rendererName, const Json& prop) {
@@ -180,8 +180,8 @@ LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName) {
     Context::instance().primitives(transform, modelName);
 }
 
-LM_PUBLIC_API void build(const std::string& accelName) {
-    Context::instance().build(accelName);
+LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
+    Context::instance().build(accelName, prop);
 }
 
 LM_PUBLIC_API void render(const std::string& rendererName, const Json& prop) {

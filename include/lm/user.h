@@ -109,6 +109,7 @@ LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName);
 /*!
     \brief Build acceleration structure.
     \param accelName Type of acceleration structure.
+    \param prop Property for configuration.
     \see `example/raycast.cpp`
     
     \rst
@@ -118,7 +119,7 @@ LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName);
     You may specify the acceleration structure type by ``accel::<type>`` format.
     \endrst
 */
-LM_PUBLIC_API void build(const std::string& accelName);
+LM_PUBLIC_API void build(const std::string& accelName, const Json& prop = {});
 
 /*!
     \brief Render image based on current configuration.

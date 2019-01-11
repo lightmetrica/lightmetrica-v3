@@ -164,8 +164,10 @@ public:
 
     /*!
         \brief Build acceleration structure.
+        \param name Name of the acceleration structure.
+        \param prop Property for configuration.
     */
-    virtual void build(const std::string& name) = 0;
+    virtual void build(const std::string& name, const Json& prop) = 0;
 
     /*!
         \brief Compute closest intersection point.

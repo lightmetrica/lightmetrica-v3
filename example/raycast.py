@@ -61,7 +61,7 @@ lm.primitives(lm.identity(), 'obj1')
 # _end_primitives
 
 # Render an image
-lm.build('accel::sahbvh')
+lm.build('accel::sahbvh', {})
 lm.render('renderer::raycast', {
     'output': 'film1',
     'color': [0,0,0]
