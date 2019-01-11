@@ -14,10 +14,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct Tri {
     Vec3 p1;        // One vertex of the triangle
-    Vec3 e1, e2;    // Two edges indident to p1
+    Vec3 e1, e2;    // Two edges incident to p1
     Bound b;        // Bound of the triangle
     Vec3 c;         // Center of the bound
-    int primitive;  // Primitive index associted to the triangle
+    int primitive;  // Primitive index associated to the triangle
     int face;       // Face index of the mesh associated to the triangle
 
     Tri(Vec3 p1, Vec3 p2, Vec3 p3, int primitive, int face)
@@ -33,7 +33,7 @@ struct Tri {
     // Hit information
     struct Hit {
         Float t;     // Distance to the triangle
-        Float u, v;  // Hitpoint in barycentric coodinates
+        Float u, v;  // Hitpoint in barycentric coordinates
     };
 
     // Checks intersection with a ray [Möller & Trumbore 1997]
