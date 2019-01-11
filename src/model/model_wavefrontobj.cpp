@@ -337,7 +337,7 @@ private:
     const Texture* maskTex_ = nullptr;
 
 public:
-    Material_WavefrontObj(const std::string& modelName, MTLMatParams& m)
+    Material_WavefrontObj(const std::string& modelName, const MTLMatParams& m)
         : modelName_(modelName), objmat_(m) {}
 
 public:
@@ -484,6 +484,9 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
+        // Name of the asset
+        const std::string assetName = prop["_name"];
+
         // Texture asset name
         const auto textureAssetName = valueOr<std::string>(prop, "texture", "texture::bitmap");
 
@@ -505,7 +508,7 @@ public:
                 if (glm::compMax(m.Ke) > 0_f) {
                     auto light = comp::create<Light>("light::area", {
                         {"Ke", m.Ke},
-                        {"mesh", prop["_name"] + "." + m.name}
+                        {"mesh", assetName + "." + m.name}
                     });
                     if (!light) {
                         return false;
@@ -534,7 +537,7 @@ public:
                 }
                 else {
                     // Default mixture material
-                    auto mat = comp::detail::createDirect<Material_WavefrontObj>(prop["_name"], m);
+                    auto mat = comp::detail::createDirect<Material_WavefrontObj>(assetName, m);
                     if (!mat) {
                         return false;
                     }

@@ -56,6 +56,26 @@ void checkSaveAndLoadRoundTrip(T&& orig) {
     CHECK(s1 == s2);
 }
 
+template <typename T>
+void checkSaveAndLoadRoundTripLoaded(T&& orig) {
+    // Serialize the input value
+    std::stringstream ss1;
+    lm::serial::save(ss1, std::forward<T>(orig));
+
+    // Deserialize it
+    std::decay_t<T> loaded;
+    lm::serial::load(ss1, loaded);
+
+    // Serialize again with different stream
+    std::stringstream ss2;
+    lm::serial::save(ss2, loaded);
+
+    // Compare two streams
+    const auto s1 = ss1.str();
+    const auto s2 = ss2.str();
+    CHECK(s1 == s2);
+}
+
 // ----------------------------------------------------------------------------
 
 struct TestSerial_SimpleStruct {
@@ -75,19 +95,19 @@ struct TestSerial_SimpleNestedStruct {
     }
 };
 
-struct TestSerial_SimpleComponent : public lm::Component {
+struct TestSerial_SimpleComponent final : public lm::Component {
     int v1;
     int v2;
-    virtual bool construct(const lm::Json& prop) {
+    virtual bool construct(const lm::Json& prop) override {
         v1 = prop["v1"];
         v2 = prop["v2"];
         return true;
     }
-    virtual void load(lm::InputArchive& ar) {
-        LM_UNUSED(ar);
+    virtual void load(lm::InputArchive& ar) override {
+        ar(v1, v2);
     }
-    virtual void save(lm::OutputArchive& ar) {
-        LM_UNUSED(ar);
+    virtual void save(lm::OutputArchive& ar) const override {
+        ar(v1, v2);
     }
 };
 
@@ -134,8 +154,22 @@ TEST_CASE("Serialization") {
                 { "v1", 42 },
                 { "v2", 32 }
             });
-            std::stringstream ss;
-            lm::serial::save(ss, orig);
+            checkSaveAndLoadRoundTripLoaded(orig);
+        }
+
+        SUBCASE("Vector of unique pointer") {
+            auto v1 = lm::comp::create<lm::Component>("testserial_simplecomponent", {
+                { "v1", 42 },
+                { "v2", 32 }
+            });
+            auto v2 = lm::comp::create<lm::Component>("testserial_simplecomponent", {
+                { "v1", 1 },
+                { "v2", 2 }
+            });
+            std::vector<lm::Component::Ptr<lm::Component>> orig;
+            orig.push_back(std::move(v1));
+            orig.push_back(std::move(v2));
+            checkSaveAndLoadRoundTripLoaded(orig);
         }
     }
 }

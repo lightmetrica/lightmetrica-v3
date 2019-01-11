@@ -79,7 +79,6 @@ static void bind(pybind11::module& m) {
     pybind11::class_<Component, Component_Py, Component::Ptr<Component>>(m, "Component")
         .def(pybind11::init<>())
         .def("construct", &Component::construct)
-        .def("parent", &Component::parent)
         .PYLM_DEF_COMP_BIND(Component);
 
     {
@@ -101,7 +100,7 @@ static void bind(pybind11::module& m) {
     m.def("init", &init);
     m.def("shutdown", &shutdown);
     m.def("asset", &asset);
-    m.def("getAsset", &getAsset, pybind11::return_value_policy::reference);
+    m.def("getAsset", (Component* (*)(const std::string&)) &getAsset, pybind11::return_value_policy::reference);
     m.def("primitive", &primitive);
     m.def("primitives", &primitives);
     m.def("build", &build);

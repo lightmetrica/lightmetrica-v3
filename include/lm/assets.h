@@ -23,16 +23,6 @@ public:
         \brief Loads an asset.
     */
     virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
-
-    /*!
-        \brief Register an asset by pointer.
-
-        \rst
-        Ownership of the pointer is managed by this class.
-        \endrst
-    */
-    virtual void registerAsset() = 0;
-
 };
 
 /*!
