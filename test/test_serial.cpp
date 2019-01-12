@@ -95,7 +95,7 @@ struct TestSerial_SimpleNestedStruct {
     }
 };
 
-struct TestSerial_SimpleComponent final : public lm::Component {
+struct TestSerial_Simple final : public lm::Component {
     int v1;
     int v2;
     virtual bool construct(const lm::Json& prop) override {
@@ -103,15 +103,95 @@ struct TestSerial_SimpleComponent final : public lm::Component {
         v2 = prop["v2"];
         return true;
     }
-    virtual void load(lm::InputArchive& ar) override {
-        ar(v1, v2);
-    }
-    virtual void save(lm::OutputArchive& ar) const override {
+    LM_SERIALIZE_IMPL(ar) {
         ar(v1, v2);
     }
 };
 
-LM_COMP_REG_IMPL(TestSerial_SimpleComponent, "testserial_simplecomponent");
+LM_COMP_REG_IMPL(TestSerial_Simple, "testserial_simple");
+
+struct TestSerial_Nested final : public lm::Component {
+    Component::Ptr<Component> p;
+    TestSerial_Nested() {
+        p = lm::comp::create<Component>("testserial_simple", "", {
+            { "v1", 42 },
+            { "v2", 32 }
+        });
+    }
+    LM_SERIALIZE_IMPL(ar) {
+        ar(p);
+    }
+};
+
+LM_COMP_REG_IMPL(TestSerial_Nested, "testserial_nested");
+
+struct TestSerial_Ref final : public lm::Component {
+    Component* p;
+    virtual bool construct(const lm::Json& prop) {
+        p = lm::comp::get<Component>(prop["ref"]);
+        return true;
+    }
+    LM_SERIALIZE_IMPL(ar) {
+        ar(p);
+    }
+};
+
+LM_COMP_REG_IMPL(TestSerial_Ref, "testserial_ref");
+
+struct TestSerial_Container final : public lm::Component {
+    std::vector<Component::Ptr<Component>> v;
+    std::unordered_map<std::string, int> m;
+
+    // Add a component to the container
+    void add(const std::string& name, const std::string& key, const lm::Json& prop) {
+        auto p = lm::comp::create<lm::Component>(key, makeLoc(loc(), name), prop);
+        CHECK(p);
+        m[name] = int(v.size());
+        v.push_back(std::move(p));
+    }
+
+    virtual Component* underlying(const std::string& name) const {
+        // This function is called via lm::comp::underlying()
+        const auto [s, r] = lm::comp::splitFirst(name);
+        return r.empty() ? v[m.at(s)].get() : v[m.at(s)]->underlying(r);
+    }
+
+    LM_SERIALIZE_IMPL(ar) {
+        // Order of the argument is critical
+        ar(m, v);
+    }
+};
+
+LM_COMP_REG_IMPL(TestSerial_Container, "testserial_container");
+
+// Imitating root component
+struct TestSerial_Root final : public lm::Component {
+    // Underlying component
+    Component::Ptr<Component> p;
+    TestSerial_Root() {
+        // Register this component as root
+        lm::comp::detail::registerRootComp(this);
+    }
+    virtual Component* underlying(const std::string& name) const {
+        // Redirect all
+        return p->underlying(name);
+    }
+    // Clear state. Returns old underlying component.
+    Component::Ptr<Component> clear() {
+        return Component::Ptr<Component>(p.release());
+    }
+    // Save current state to string
+    std::string saveState() const {
+        std::stringstream ss;
+        lm::serial::save(ss, p);
+        return ss.str();
+    }
+    // Load state from string
+    void loadState(const std::string& state) {
+        std::stringstream ss(state);
+        lm::serial::load(ss, p);
+    }
+};
 
 // ----------------------------------------------------------------------------
 
@@ -150,7 +230,7 @@ TEST_CASE("Serialization") {
 
     SUBCASE("Component") {
         SUBCASE("Unique pointer") {
-            auto orig = lm::comp::create<lm::Component>("testserial_simplecomponent", {
+            auto orig = lm::comp::create<lm::Component>("testserial_simple", "", {
                 { "v1", 42 },
                 { "v2", 32 }
             });
@@ -158,11 +238,11 @@ TEST_CASE("Serialization") {
         }
 
         SUBCASE("Vector of unique pointer") {
-            auto v1 = lm::comp::create<lm::Component>("testserial_simplecomponent", {
+            auto v1 = lm::comp::create<lm::Component>("testserial_simple", "", {
                 { "v1", 42 },
                 { "v2", 32 }
             });
-            auto v2 = lm::comp::create<lm::Component>("testserial_simplecomponent", {
+            auto v2 = lm::comp::create<lm::Component>("testserial_simple", "", {
                 { "v1", 1 },
                 { "v2", 2 }
             });
@@ -170,6 +250,83 @@ TEST_CASE("Serialization") {
             orig.push_back(std::move(v1));
             orig.push_back(std::move(v2));
             checkSaveAndLoadRoundTripLoaded(orig);
+        }
+
+        SUBCASE("Nested component") {
+            auto orig = lm::comp::create<lm::Component>("testserial_nested", "");
+            checkSaveAndLoadRoundTripLoaded(orig);
+        }
+
+        SUBCASE("Weak reference to another component instance") {
+            // Register TestSerial_Container as root component for this specific test
+            TestSerial_Container container;
+            container.add("p1", "testserial_simple", { { "v1", 1 }, { "v2", 2 } });
+            lm::comp::detail::registerRootComp(&container);
+            
+            // Check serialization of Component*
+            auto* orig = lm::comp::get<lm::Component>("p1");
+            CHECK(orig);
+                        
+            // Round-trip test
+            checkSaveAndLoadRoundTripLoaded(orig);
+
+            // Check values
+            std::stringstream ss;
+            lm::serial::save(ss, orig);
+            lm::Component* loaded;
+            lm::serial::load(ss, loaded);
+            
+            auto* p1 = dynamic_cast<TestSerial_Simple*>(loaded);
+            CHECK(p1->v1 == 1);
+            CHECK(p1->v2 == 2);
+        }
+
+        SUBCASE("Nested container") {
+            /*
+                This will test more advanced case. Here we try to serialize a component
+                containing two nested container components where one container only
+                contains references to the instances inside the other container.  
+            */
+
+            // Root component
+            TestSerial_Root root;
+            root.p = lm::comp::create<TestSerial_Container>("testserial_container", "");
+            auto* c = root.p->cast<TestSerial_Container>();
+            
+            // Add nested containers
+            c->add("instances", "testserial_container", {});
+            c->add("references", "testserial_container", {});
+
+            // Add instances to `instances`
+            auto* instances = lm::comp::get<TestSerial_Container>("instances");
+            instances->add("p1", "testserial_simple", { {"v1", 1}, {"v2", 2} });
+            instances->add("p2", "testserial_simple", { {"v1", 3}, {"v2", 4} });
+            
+            // Add references to `references`
+            auto* refs = lm::comp::get<TestSerial_Container>("references");
+            refs->add("r1", "testserial_ref", { {"ref", "instances.p1"} });
+            refs->add("r2", "testserial_ref", { {"ref", "instances.p2"} });
+            
+            // Save current state
+            auto s1 = root.saveState();
+ 
+            // Dirty hack.
+            // We repeat load/save twice because cereal changes
+            // byte order of some containers in a cycle.
+            std::string s2 = s1;
+            for (int i = 0; i < 2; i++) {
+                // Clear root
+                root.clear();
+
+                // Load root from the saved state
+                root.loadState(s2);
+
+                // Save again
+                s2 = root.saveState();
+            }
+
+            // Compare s1 and s2
+            CHECK(s1 == s2);
         }
     }
 }

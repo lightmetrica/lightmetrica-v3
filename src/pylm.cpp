@@ -100,7 +100,7 @@ static void bind(pybind11::module& m) {
     m.def("init", &init);
     m.def("shutdown", &shutdown);
     m.def("asset", &asset);
-    m.def("getAsset", (Component* (*)(const std::string&)) &getAsset, pybind11::return_value_policy::reference);
+    //m.def("getAsset", (Component* (*)(const std::string&)) &getAsset, pybind11::return_value_policy::reference);
     m.def("primitive", &primitive);
     m.def("primitives", &primitives);
     m.def("build", &build);

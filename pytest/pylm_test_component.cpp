@@ -93,7 +93,7 @@ public:
 
         m.def("createTestPlugin", []() {
             // Use .release() as pybind11 does not support direct conversion of Ptr<T> types
-            return lm::comp::create<TestPlugin>("testplugin::default").release();
+            return lm::comp::create<TestPlugin>("testplugin::default", "").release();
         });
 
         m.def("useA", [](A* a) -> int {
@@ -104,7 +104,7 @@ public:
             // test::comp::a4 should be defined inside Python script
             int v1, v2;
             {
-                auto p = lm::comp::create<A>("test::comp::a4");
+                auto p = lm::comp::create<A>("test::comp::a4", "");
                 v1 = p->f1();
                 v2 = p->f2(2, 3);
             }
@@ -114,7 +114,7 @@ public:
         m.def("createA5AndCallFuncs", []() -> std::tuple<int, int> {
             int v1, v2;
             {
-                auto p = lm::comp::create<A>("test::comp::a5", {{"v", 7}});
+                auto p = lm::comp::create<A>("test::comp::a5", "", {{"v", 7}});
                 v1 = p->f1();
                 v2 = p->f2(1, 2);
             }

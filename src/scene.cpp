@@ -119,7 +119,7 @@ public:
     // ------------------------------------------------------------------------
 
     virtual void build(const std::string& name) override {
-        accel_ = comp::create<Accel>(name);
+        accel_ = comp::create<Accel>(name, "");
         if (!accel_) {
             return;
         }

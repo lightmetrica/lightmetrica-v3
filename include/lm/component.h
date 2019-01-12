@@ -47,6 +47,9 @@ private:
     //! Name of the component instance.
     std::string key_;
 
+    //! Global locator of this component if accessible.
+    std::string loc_;
+
     //! Factory function of the component instance.
     CreateFunction  createFunc_ = nullptr;
 
@@ -60,6 +63,37 @@ public:
     Component() = default;
     virtual ~Component() = default;
     LM_DISABLE_COPY_AND_MOVE(Component)
+
+public:
+    /*!
+        \brief Get locator of the component.
+    */
+    const std::string& loc() const { return loc_; }
+    
+    /*!
+        \brief Get parent locator.
+        
+        \rst
+        This function returns parent locator of the component.
+        If this or parent component is root, the function returns empty string.
+        For instance, if the current locator is ``aaa.bbb.ccc``, this function returns ``aaa.bbb``.
+        If the current locator is ``aaa``, this function returns empty string.
+        \endif
+    */
+    const std::string parentLoc() const {
+        const auto i = loc_.find_last_of('.');
+        if (i == std::string::npos) {
+            return "";
+        }
+        return loc_.substr(0, i);
+    }
+
+    /*!
+        \brief Make locator by appending string.
+    */
+    const std::string makeLoc(const std::string& base, const std::string& child) const {
+        return base.empty() ? child : (base + "." + child);
+    }
 
 public:
     /*!
@@ -88,7 +122,7 @@ public:
     /*!
         \brief Serialize a component.
     */
-    virtual void save(OutputArchive& ar) const { LM_UNUSED(ar); }
+    virtual void save(OutputArchive& ar) { LM_UNUSED(ar); }
     
 public:
     /*!
@@ -201,6 +235,8 @@ struct Access {
     LM_DISABLE_CONSTRUCT(Access)
     static std::string& key(Component* p) { return p->key_; }
     static const std::string& key(const Component* p) { return p->key_; }
+    static std::string& loc(Component* p) { return p->loc_; }
+    static const std::string& loc(const Component* p) { return p->loc_; }
     static Component::CreateFunction& createFunc(Component* p) { return p->createFunc_; }
     static const Component::CreateFunction& createFunc(const Component* p) { return p->createFunc_; }
     static Component::ReleaseFunction& releaseFunc(Component* p) { return p->releaseFunc_; }
@@ -240,29 +276,53 @@ struct KeyGen<T<Ts...>> {
 */
 LM_PUBLIC_API Component* createComp(const std::string& key);
 
-// Register a component.
+/*!
+    Register a component.
+*/
 LM_PUBLIC_API void reg(
     const std::string& key,
     const Component::CreateFunction& createFunc,
     const Component::ReleaseFunction& releaseFunc);
 
-// Unregister a component.
+/*!
+    \brief Unregister a component.
+*/
 LM_PUBLIC_API void unreg(const std::string& key);
 
-// Load a plugin.
+/*!
+    \brief Load a plugin.
+*/
 LM_PUBLIC_API bool loadPlugin(const std::string& path);
 
-// Load plugins inside a given directory.
+/*!
+    Load plugins inside a given directory.
+*/
 LM_PUBLIC_API void loadPlugins(const std::string& directory);
 
-// Unload loaded plugins.
+/*!
+    \brief Unload loaded plugins.
+*/
 LM_PUBLIC_API void unloadPlugins();
 
-// Iterate registered component names.
+/*!
+    \brief Iterate registered component names.
+*/
 LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func);
 
-// Print registered component names.
+/*!
+    \brief Print registered component names.
+*/
 LM_PUBLIC_API void printRegistered();
+
+/*!
+    \brief Register root component.
+*/
+LM_PUBLIC_API void registerRootComp(Component* p);
+
+/*!
+    \brief Get underlying component of root by name.
+*/
+LM_PUBLIC_API Component* get(const std::string& name);
 
 /*!
     @}
@@ -278,6 +338,15 @@ LM_NAMESPACE_END(detail)
 */
 
 /*!
+    \brief Get underlying component of root by name and type.
+    \tparam T Component interface type.
+*/
+template <typename T>
+T* get(const std::string& name) {
+    return dynamic_cast<T*>(detail::get(name));
+}
+
+/*!
     \brief Upcast/downcast of component types. 
     Use this class if the component instance can be nullptr.
 */
@@ -290,14 +359,21 @@ InterfaceT* cast(Component* p) {
     \brief Create component with specific interface type.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
+    \param loc Global locator of the instance.
+
+    \rst
+    You want to specify ``loc`` if the object can be accessible via
+    :func:`lm::comp::detail::underlying` function.
+    \endrst
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(const std::string& key) {
+Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc) {
     auto* inst = detail::createComp(
         detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str());
     if (!inst) {
         return {};
     }
+    detail::Access::loc(inst) = loc;
     return Component::Ptr<InterfaceT>(dynamic_cast<InterfaceT*>(inst));
 }
 
@@ -305,11 +381,12 @@ Component::Ptr<InterfaceT> create(const std::string& key) {
     \brief Create component with construction with given properties.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
+    \param loc Global locator of the instance.
     \param prop Properties.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(const std::string& key, const Json& prop) {
-    auto inst = create<InterfaceT>(key);
+Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc, const Json& prop) {
+    auto inst = create<InterfaceT>(key, loc);
     if (!inst || !inst->construct(prop)) {
         return {};
     }
@@ -349,19 +426,27 @@ LM_NAMESPACE_BEGIN(detail)
 
 /*!
     \brief Create component instance directly with constructor.
+    \param loc Global locator of the instance.
+
+    \rst
     Use this function when you want to construct a component instance
     directly with the visibile component type.
+    \endrst
 */
 template <typename ComponentT, typename... Ts>
-Component::Ptr<ComponentT> createDirect(Ts&&... args) {
+Component::Ptr<ComponentT> createDirect(const std::string& loc, Ts&&... args) {
     auto comp = std::make_unique<ComponentT>(std::forward<Ts>(args)...);
+    detail::Access::loc(comp.get()) = loc;
     return Component::Ptr<ComponentT>(comp.release());
 }
 
 /*!
     \brief Singleton for a context component.
+
+    \rst
     This singleton holds the ownership the context component where
     we manages the component hierarchy under the context.
+    \endrst
 */
 template <typename ContextComponentT>
 class ContextInstance {
@@ -379,7 +464,7 @@ public:
     }
 
     static void init(const std::string& type, const Json& prop) {
-        instance().context = comp::create<ContextComponentT>(type, prop);
+        instance().context = comp::create<ContextComponentT>(type, "", prop);
     }
 
     static void shutdown() {

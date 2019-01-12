@@ -245,6 +245,18 @@ public:
         }
     }
 
+    void registerRootComp(Component* p) {
+        root_ = p;
+    }
+
+    Component* get(const std::string& name) {
+        if (!root_) {
+            LM_WARN("Root component has not registered [name='{}'].", name);
+            return nullptr;
+        }
+        return root_->underlying(name);
+    }
+
 private:
     // Registered implementations
     struct CreateAndReleaseFunctions
@@ -256,6 +268,9 @@ private:
 
     // Loaded plugins
     std::vector<std::unique_ptr<SharedLibrary>> plugins_;
+
+    // Root component
+    Component* root_ = nullptr;
 };
 
 // ----------------------------------------------------------------------------
@@ -293,6 +308,14 @@ LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string&
 
 LM_PUBLIC_API void printRegistered() {
     Impl::instance().printRegistered();
+}
+
+LM_PUBLIC_API void registerRootComp(Component* p) {
+    Impl::instance().registerRootComp(p);
+}
+
+LM_PUBLIC_API Component* get(const std::string& name) {
+    return Impl::instance().get(name);
 }
 
 // ----------------------------------------------------------------------------

@@ -16,7 +16,7 @@ private:
 
 public:
 	virtual bool construct(const Json& prop) override {
-		ref_ = lm::getAsset<Material>(prop["ref"]);
+		ref_ = comp::get<Material>(prop["ref"]);
 		return ref_;
 	}
 

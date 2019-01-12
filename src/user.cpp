@@ -66,8 +66,8 @@ public:
                 progress::init(progress::DefaultType);
             }
         }
-        assets_ = comp::create<Assets>("assets::default");
-        scene_  = comp::create<Scene>("scene::default");
+        assets_ = comp::create<Assets>("assets::default", makeLoc(loc(), "assets"));
+        scene_  = comp::create<Scene>("scene::default", makeLoc(loc(), "scene"));
     }
 
     void shutdown() {
@@ -86,9 +86,11 @@ public:
         }
     }
 
+#if 0
     Component* getAsset(const std::string& name) {
         return assets_->underlying(name);
     }
+#endif
 
     void primitive(Mat4 transform, const Json& prop) {
         if (!scene_->loadPrimitive(*assets_.get(), transform, prop)) {
@@ -107,7 +109,7 @@ public:
     }
 
     void render(const std::string& rendererName, const Json& prop) {
-        renderer_ = lm::comp::create<Renderer>(rendererName, prop);
+        renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc(loc(), "renderer"), prop);
         if (!renderer_) {
             LM_ERROR("Failed to render [renderer='{}']", rendererName);
             THROW_RUNTIME_ERROR();
@@ -167,9 +169,11 @@ LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, co
     Context::instance().asset(name, implKey, prop);
 }
 
+#if 0
 LM_PUBLIC_API Component* getAsset(const std::string& name) {
     return Context::instance().getAsset(name);
 }
+#endif
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
     Context::instance().primitive(transform, prop);

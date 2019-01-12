@@ -53,7 +53,7 @@ LM_COMP_REG_IMPL(TestAsset2, "test::testasset2");
 TEST_CASE("Assets") {
     lm::log::ScopedInit init;
 
-    auto assets = lm::comp::create<lm::Assets>("assets::default", nullptr);
+    auto assets = lm::comp::create<lm::Assets>("assets::default", "");
     REQUIRE(assets);
 
     SUBCASE("Load asset without properties") {
