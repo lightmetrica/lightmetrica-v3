@@ -229,7 +229,12 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 // cereal library
 #include <cereal/cereal.hpp>
+#define LM_USE_JSON_ARCHIVE 0
+#if LM_USE_JSON_ARCHIVE
+#include <cereal/archives/json.hpp>
+#else
 #include <cereal/archives/portable_binary.hpp>
+#endif
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -281,10 +286,14 @@ using Json = nlohmann::basic_json<
 
 // ----------------------------------------------------------------------------
 
-// Default input archive deligated to cereal library.
+// Default input/output archives deligated to cereal library.
+#if LM_USE_JSON_ARCHIVE
+using InputArchive = cereal::JSONInputArchive;
+using OutputArchive = cereal::JSONOutputArchive;
+#else
 using InputArchive = cereal::PortableBinaryInputArchive;
-// Default output archive deligated to cereal library.
 using OutputArchive = cereal::PortableBinaryOutputArchive;
+#endif
 
 // ----------------------------------------------------------------------------
 

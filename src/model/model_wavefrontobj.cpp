@@ -317,9 +317,6 @@ public:
 
 class Material_WavefrontObj : public Material {
 private:
-    // Name of the model asset
-    std::string modelName_;
-
     // Material parameters of MLT file
     MTLMatParams objmat_;
 
@@ -337,8 +334,8 @@ private:
     const Texture* maskTex_ = nullptr;
 
 public:
-    Material_WavefrontObj(const std::string& modelName, const MTLMatParams& m)
-        : modelName_(modelName), objmat_(m) {}
+    Material_WavefrontObj(const MTLMatParams& m)
+        : objmat_(m) {}
 
 public:
     virtual bool construct(const Json& prop) override {
@@ -351,7 +348,7 @@ public:
         // Make parent component as a parent for the newly created components
         if (objmat_.illum == 7) {
             // Glass material
-            auto p = comp::create<Material>(glassMaterialName, {
+            auto p = comp::create<Material>(glassMaterialName, "", {
                 {"Ni", objmat_.Ni}
             });
             if (!p) {
@@ -362,7 +359,7 @@ public:
         }
         else if (objmat_.illum == 5) {
             // Mirror material
-            auto p = comp::create<Material>(mirrorMaterialName);
+            auto p = comp::create<Material>(mirrorMaterialName, "");
             if (!p) {
                 return false;
             }
@@ -371,9 +368,9 @@ public:
         }
         else {
             // Diffuse material
-            auto diffuse = comp::create<Material>(diffuseMaterialName, {
+            auto diffuse = comp::create<Material>(diffuseMaterialName, "", {
                 {"Kd", objmat_.Kd},
-                {"mapKd", modelName_ + "." + objmat_.mapKd}
+                {"mapKd", makeLoc(parentLoc(), objmat_.mapKd)}
             });
             if (!diffuse) {
                 return false;
@@ -384,7 +381,7 @@ public:
             // Glossy material
             const auto r = 2_f / (2_f + objmat_.Ns);
             const auto as = math::safeSqrt(1_f - objmat_.an * .9_f);
-            auto glossy = comp::create<Material>(glossyMaterialName, {
+            auto glossy = comp::create<Material>(glossyMaterialName, "", {
                 {"Ks", objmat_.Ks},
                 {"ax", std::max(1e-3_f, r / as)},
                 {"ay", std::max(1e-3_f, r * as)}
@@ -397,9 +394,9 @@ public:
 
             // Mask texture
             if (!objmat_.mapKd.empty()) {
-                const auto* texture = lm::getAsset<Texture>(modelName_ + "." + objmat_.mapKd);
+                const auto* texture = lm::comp::get<Texture>(makeLoc(parentLoc(), objmat_.mapKd));
                 if (texture->hasAlpha()) {
-                    auto mask = comp::create<Material>("material::mask");
+                    auto mask = comp::create<Material>("material::mask", "");
                     maskTex_ = texture;
                     if (!mask || !maskTex_) {
                         return false;
@@ -483,10 +480,11 @@ private:
     std::vector<std::tuple<int, int, int>> groups_;
 
 public:
-    virtual bool construct(const Json& prop) override {
-        // Name of the asset
-        const std::string assetName = prop["_name"];
+    virtual Component* underlying(const std::string& name) const override {
+        return assets_[assetsMap_.at(name)].get();
+    }
 
+    virtual bool construct(const Json& prop) override {
         // Texture asset name
         const auto textureAssetName = valueOr<std::string>(prop, "texture", "texture::bitmap");
 
@@ -496,19 +494,20 @@ public:
             // Process mesh
             [&](const std::vector<OBJMeshFaceIndex>& fs, const MTLMatParams& m) -> std::optional<int> {
                 // Create mesh
-                auto mesh = comp::detail::createDirect<Mesh_WavefrontObj>(geo_, fs);
+                auto mesh = comp::detail::createDirect<Mesh_WavefrontObj>(makeLoc(loc(), m.name), geo_, fs);
                 if (!mesh) {
                     return false;
                 }
                 int meshIndex = int(assets_.size());
+                assetsMap_[m.name] = int(assets_.size());
                 assets_.push_back(std::move(mesh));
 
                 // Create area light if Ke > 0
                 int lightIndex = -1;
                 if (glm::compMax(m.Ke) > 0_f) {
-                    auto light = comp::create<Light>("light::area", {
+                    auto light = comp::create<Light>("light::area", "", {
                         {"Ke", m.Ke},
-                        {"mesh", assetName + "." + m.name}
+                        {"mesh", makeLoc(loc(), m.name)}
                     });
                     if (!light) {
                         return false;
@@ -526,7 +525,7 @@ public:
             [&](const MTLMatParams& m) -> bool {
                 if (const auto it = prop.find("base_material"); it != prop.end()) {
                     // Use user-specified material
-					auto mat = comp::create<Material>("material::proxy", {
+					auto mat = comp::create<Material>("material::proxy", makeLoc(loc(), m.name), {
 						{"ref", *it}
 					});
                     if (!mat) {
@@ -537,7 +536,7 @@ public:
                 }
                 else {
                     // Default mixture material
-                    auto mat = comp::detail::createDirect<Material_WavefrontObj>(assetName, m);
+                    auto mat = comp::detail::createDirect<Material_WavefrontObj>(makeLoc(loc(), m.name), m);
                     if (!mat) {
                         return false;
                     }
@@ -551,7 +550,7 @@ public:
             },
             // Process texture
             [&](const MTLTextureParams& tex) -> bool {
-                auto texture = comp::create<Texture>(textureAssetName, {
+                auto texture = comp::create<Texture>(textureAssetName, makeLoc(loc(), tex.name), {
                     {"path", tex.path}
                 });
                 if (!texture) {

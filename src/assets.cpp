@@ -13,18 +13,18 @@ class Assets_ final : public Assets {
 public:
     virtual Component* underlying(const std::string& name) const override {
         // Take first element inside `name`
-        const auto [first, remaining] = comp::splitFirst(name);
+        const auto [s, r] = comp::splitFirst(name);
 
         // Finds underlying asset
-        auto it = assetIndexMap_.find(first);
+        auto it = assetIndexMap_.find(s);
         if (it == assetIndexMap_.end()) {
-            LM_ERROR("Asset [name = '{}'] is not found", first);
+            LM_ERROR("Asset [name = '{}'] is not found", s);
             return nullptr;
         }
 
         // Try to find nested asset. If not found, return as it is.
         auto* comp = assets_.at(it->second).get();
-        auto* nested = comp->underlying(remaining);
+        auto* nested = comp->underlying(r);
         return nested ? nested : comp;
     }
 
@@ -39,16 +39,12 @@ public:
         }
 
         // Create an instance of the asset
-        auto p = comp::create<Component>(implKey);
+        auto p = comp::create<Component>(implKey, makeLoc(loc(), name));
         if (!p) {
             LM_ERROR("Failed to create component [name='{}', key='{}']", name, implKey);
             return false;
         }
-        // Construct the asset where it appends `_name` element representing
-        // the name of the asset we are registering.
-        Json propTmp(prop);
-        propTmp["_name"] = name;
-        if (!p->construct(propTmp)) {
+        if (!p->construct(prop)) {
             LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
             return false;
         }

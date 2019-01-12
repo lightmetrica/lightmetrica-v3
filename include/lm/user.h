@@ -63,6 +63,7 @@ LM_PUBLIC_API void shutdown();
 LM_PUBLIC_API void asset(const std::string& name,
     const std::string& implKey, const Json& prop);
 
+#if 0
 /*!
     \brief Get an asset by name.
     \param name Identifier of the asset.
@@ -86,6 +87,7 @@ T* getAsset(const std::string& name) {
     }
     return dynamic_cast<T*>(getAsset(name));
 }
+#endif
 
 /*!
     \brief Create a primitive and add it to the scene.

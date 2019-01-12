@@ -30,7 +30,7 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         Ke_ = prop["Ke"];
-        mesh_ = lm::getAsset<Mesh>(prop["mesh"]);
+        mesh_ = comp::get<Mesh>(prop["mesh"]);
         
         // Construct CDF for surface sampling
 		// Note we construct the CDF before transformation

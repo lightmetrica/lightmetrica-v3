@@ -27,7 +27,7 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
-        film_ = lm::getAsset<Film>(prop["film"]);   // Film
+        film_ = comp::get<Film>(prop["film"]);      // Film
         aspect_ = film_->aspectRatio();             // Aspect ratio
         position_ = prop["position"];               // Camera position
         const Vec3 center = prop["center"];         // Look-at position

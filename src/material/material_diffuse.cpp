@@ -19,7 +19,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        mapKd_ = lm::getAsset<Texture>(prop["mapKd"]);
+        mapKd_ = comp::get<Texture>(prop["mapKd"]);
         if (!mapKd_) {
             Kd_ = valueOr<Vec3>(prop, "Kd", Vec3(1_f));
         }

@@ -21,7 +21,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        film_ = comp::cast<lm::Film>(lm::getAsset(prop["output"].get<std::string>()));
+        film_ = comp::get<Film>(prop["output"]);
         if (!film_) {
             return false;
         }
