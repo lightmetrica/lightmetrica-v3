@@ -173,13 +173,8 @@ LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName) {
     Instance::get().primitives(transform, modelName);
 }
 
-<<<<<<< HEAD
 LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
-    Context::instance().build(accelName, prop);
-=======
-LM_PUBLIC_API void build(const std::string& accelName) {
-    Instance::get().build(accelName);
->>>>>>> serialization support
+    Instance::get().build(accelName, prop);
 }
 
 LM_PUBLIC_API void render(const std::string& rendererName, const Json& prop) {

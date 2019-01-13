@@ -298,7 +298,7 @@ public:
     virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
     virtual void primitive(Mat4 transform, const Json& prop) = 0;
     virtual void primitives(Mat4 transform, const std::string& modelName) = 0;
-    virtual void build(const std::string& accelName) = 0;
+    virtual void build(const std::string& accelName, const Json& prop) = 0;
     virtual void render(const std::string& rendererName, const Json& prop) = 0;
     virtual void save(const std::string& filmName, const std::string& outpath) = 0;
     virtual FilmBuffer buffer(const std::string& filmName) = 0;
