@@ -5,6 +5,7 @@
 
 #include <pch.h>
 #include <lm/mesh.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -12,6 +13,11 @@ struct MeshFaceIndex {
     int p = -1;   // Index of position
     int t = -1;   // Index of texture coordinates
     int n = -1;   // Index of normal
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(p, t, n);
+    }
 };
 
 class Mesh_Raw final : public Mesh {
@@ -20,6 +26,11 @@ private:
     std::vector<Vec3> ns_;           // Normals
     std::vector<Vec2> ts_;           // Texture coordinates
     std::vector<MeshFaceIndex> fs_;  // Faces
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(ps_, ns_, ts_, fs_);
+    }
 
 public:
     virtual bool construct(const Json& prop) override {

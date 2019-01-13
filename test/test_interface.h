@@ -92,6 +92,7 @@ LM_COMP_REG_IMPL(D1, "test::comp::d1");
 
 // ----------------------------------------------------------------------------
 
+#if 0
 struct E : public lm::Component {
     virtual int f() = 0;
 };
@@ -128,9 +129,11 @@ struct E2 final : public E {
 LM_COMP_REG_IMPL(E1, "test::comp::e1");
 LM_COMP_REG_IMPL(E2, "test::comp::e2");
 #endif
+#endif
 
 // ----------------------------------------------------------------------------
 
+#if 0
 struct F : public lm::Component {
     virtual int f1() const = 0;
     virtual int f2() const = 0;
@@ -145,11 +148,11 @@ struct F1 final : public F {
         v2_ = v - 1;
         return true;
     }
-    virtual void load(std::istream& stream) override {
+    virtual void load(InputArchive& ar) override {
         cereal::PortableBinaryInputArchive ar(stream);
         ar(v1_, v2_);
     }
-    virtual void save(std::ostream& stream) const override {
+    virtual void save(OutputArchive& ar) const override {
         cereal::PortableBinaryOutputArchive ar(stream);
         ar(v1_, v2_);
     }
@@ -165,12 +168,12 @@ struct F2 final : public F {
         v_ = prop["v"];
         return true;
     }
-    virtual void load(std::istream& stream) override {
+    virtual void load(InputArchive& ar) override {
         cereal::PortableBinaryInputArchive ar(stream);
         ar(v_);
         f_ = parent()->cast<F>();
     }
-    virtual void save(std::ostream& stream) const override {
+    virtual void save(OutputArchive& ar) const override {
         cereal::PortableBinaryOutputArchive ar(stream);
         ar(v_);
     }
@@ -181,6 +184,7 @@ struct F2 final : public F {
 #ifdef LM_TEST_INTERFACE_REG_IMPL
 LM_COMP_REG_IMPL(F1, "test::comp::f1");
 LM_COMP_REG_IMPL(F2, "test::comp::f2");
+#endif
 #endif
 
 // ----------------------------------------------------------------------------

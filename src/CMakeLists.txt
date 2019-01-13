@@ -89,6 +89,7 @@ target_include_directories(${_PROJECT_NAME}
             "$<INSTALL_INTERFACE:include>"
     PRIVATE "${_PCH_DIR}")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
+target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS )
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 # Enable warning level 4, treat warning as errors, enable SEH
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHa>)
@@ -111,7 +112,7 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES
 # Note that install(TARGET) must be written here because
 # adding target defined in different directory requires CMake>=3.13.
 # https://gitlab.kitware.com/cmake/cmake/merge_requests/2152
-if (LM_INSTALL AND NOT EXISTS LM_EXTERNAL_DIR)
+if (LM_INSTALL AND NOT EXISTS ${LM_EXTERNAL_DIR})
     install(
         TARGETS liblm
         EXPORT ${PROJECT_NAME}Targets

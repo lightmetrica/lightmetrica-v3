@@ -9,6 +9,7 @@
 #include <lm/scene.h>
 #include <lm/film.h>
 #include <lm/parallel.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -20,8 +21,13 @@ private:
     int rngSeed_ = 42;
 
 public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(film_, spp_, maxLength_, rngSeed_);
+    }
+
+public:
     virtual bool construct(const Json& prop) override {
-        film_ = comp::cast<lm::Film>(lm::getAsset(prop["output"].get<std::string>()));
+        film_ = comp::get<Film>(prop["output"]);
         if (!film_) {
             return false;
         }

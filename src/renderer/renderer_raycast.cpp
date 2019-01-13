@@ -11,6 +11,7 @@
 #include <lm/parallel.h>
 #include <lm/json.h>
 #include <lm/logger.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -21,10 +22,15 @@ private:
     Film* film_;
 
 public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(bgColor_, useConstantColor_, film_);
+    }
+
+public:
     virtual bool construct(const Json& prop) override {
-        bgColor_ = valueOr(prop, "bg_color", Vec3(0_f));
-        useConstantColor_ = valueOr(prop, "use_constant_color", false);
-        film_ = comp::cast<lm::Film>(lm::getAsset(prop["output"].get<std::string>()));
+        bgColor_ = json::valueOr(prop, "bg_color", Vec3(0_f));
+        useConstantColor_ = json::valueOr(prop, "use_constant_color", false);
+        film_ = getAsset<Film>(prop, "output");
         if (!film_) {
             return false;
         }

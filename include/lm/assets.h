@@ -23,7 +23,6 @@ public:
         \brief Loads an asset.
     */
     virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
-
 };
 
 /*!

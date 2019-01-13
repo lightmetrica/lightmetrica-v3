@@ -286,17 +286,6 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, lm::Component::Ptr<T>, false);
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(detail)
 
-// Allows to access private members of Component
-class ComponentAccess {
-public:
-    static std::any& ownerRef(Component& comp) {
-        return comp.ownerRef_;
-    }
-    static Component::ReleaseFunction& releaseFunc(Component& comp) {
-        return comp.releaseFunc_;
-    }
-};
-
 /*!
     \brief Wraps registration of component instance.
 */
@@ -310,7 +299,7 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             // to manage lifetime of the instance
             auto instCpp = instPy.cast<InterfaceT*>();
             // Assignment to std::any increments ref counter.
-            detail::ComponentAccess::ownerRef(*instCpp) = instPy;
+            comp::detail::Access::ownerRef(instCpp) = instPy;
             // Destruction of instPy decreases ref counter.
             return instCpp;
         },
@@ -319,10 +308,10 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             // Note we need one extra deref because one reference is still hold by ownerRef_.
             // The pointer of component is associated with instPy
             // and it will be destructed when it is deallocated by GC.
-            auto instPy = std::any_cast<pybind11::object>(detail::ComponentAccess::ownerRef(*p));
+            auto instPy = std::any_cast<pybind11::object>(comp::detail::Access::ownerRef(p));
             instPy.dec_ref();
             // Prevent further invocation of release function
-            detail::ComponentAccess::releaseFunc(*p) = nullptr;
+            comp::detail::Access::releaseFunc(p) = nullptr;
         });
 }
 
@@ -337,7 +326,7 @@ static pybind11::object castToPythonObject(Component* inst) {
     // Instead we associate lifetime of the object with python object.
 
     // Extract owner if available
-    auto& ownerRef = detail::ComponentAccess::ownerRef(*inst);
+    auto& ownerRef = comp::detail::Access::ownerRef(inst);
     if (ownerRef.has_value()) {
         // Returning instantiated pointer incurs another wrapper for the pointer inside pybind.
         // To avoid this, if the instance was created inside python, extract the underlying
@@ -355,11 +344,12 @@ static pybind11::object castToPythonObject(Component* inst) {
     \brief Wraps creation of component instance.
 */
 template <typename InterfaceT>
-static pybind11::object createCompWrap(const char* name, Component* parent) {
-    auto inst = lm::comp::detail::createComp(name, parent);
+static pybind11::object createCompWrap(const char* name, const char* loc) {
+    auto inst = lm::comp::detail::createComp(name);
     if (!inst) {
         return pybind11::object();
     }
+    lm::comp::detail::Access::loc(inst) = loc;
     return castToPythonObject<InterfaceT>(inst);
 }
 
@@ -367,9 +357,13 @@ static pybind11::object createCompWrap(const char* name, Component* parent) {
     \brief Creation of component instance with construction.
 */
 template <typename InterfaceT>
-static pybind11::object createCompWrap(const char* name, Component* parent, const Json& prop) {
-    auto inst = lm::comp::detail::createComp(name, parent);
-    if (!inst || !inst->construct(prop)) {
+static pybind11::object createCompWrap(const char* name, const char* loc, const Json& prop) {
+    auto inst = lm::comp::detail::createComp(name);
+    if (!inst) {
+        return pybind11::object();
+    }
+    lm::comp::detail::Access::loc(inst) = loc;
+    if (!inst->construct(prop)) {
         return pybind11::object();
     }
     return castToPythonObject<InterfaceT>(inst);
@@ -390,10 +384,10 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
      def_static("reg", &LM_NAMESPACE::detail::regCompWrap<InterfaceT>) \
     .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg) \
     .def_static("create", \
-        pybind11::overload_cast<const char*, LM_NAMESPACE::Component*>( \
+        pybind11::overload_cast<const char*, const char*>( \
             &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
     .def_static("create", \
-        pybind11::overload_cast<const char*, LM_NAMESPACE::Component*, const LM_NAMESPACE::Json&>( \
+        pybind11::overload_cast<const char*, const char*, const LM_NAMESPACE::Json&>( \
             &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
     .def_static("castFrom", \
         &LM_NAMESPACE::detail::castFrom<InterfaceT>, \

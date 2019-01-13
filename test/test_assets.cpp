@@ -28,6 +28,7 @@ struct TestAsset1 final : public TestAsset {
     }
 };
 
+#if 0
 struct TestAsset2 final : public TestAsset {
     int v;
     virtual bool construct(const lm::Json& prop) override {
@@ -40,16 +41,19 @@ struct TestAsset2 final : public TestAsset {
         return v;
     }
 };
+#endif
 
 LM_COMP_REG_IMPL(TestAsset1, "test::testasset1");
+#if 0
 LM_COMP_REG_IMPL(TestAsset2, "test::testasset2");
+#endif
 
 // ----------------------------------------------------------------------------
 
 TEST_CASE("Assets") {
     lm::log::ScopedInit init;
 
-    auto assets = lm::comp::create<lm::Assets>("assets::default", nullptr);
+    auto assets = lm::comp::create<lm::Assets>("assets::default", "");
     REQUIRE(assets);
 
     SUBCASE("Load asset without properties") {
@@ -67,6 +71,7 @@ TEST_CASE("Assets") {
         CHECK(a1->f() == 42);
     }
 
+#if 0
     SUBCASE("Load asset dependent on an other asset") {
         CHECK(assets->loadAsset("asset1", "test::testasset1", { {"v", 42} }));
         CHECK(assets->loadAsset("asset2", "test::testasset2", {}));
@@ -74,6 +79,7 @@ TEST_CASE("Assets") {
         REQUIRE(a2);
         CHECK(a2->f() == 43);
     }
+#endif
 }
 
 LM_NAMESPACE_END(LM_TEST_NAMESPACE)

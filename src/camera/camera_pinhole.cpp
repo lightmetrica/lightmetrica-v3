@@ -8,6 +8,8 @@
 #include <lm/film.h>
 #include <lm/json.h>
 #include <lm/scene.h>
+#include <lm/user.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -20,20 +22,28 @@ private:
     Float aspect_;    // Aspect ratio
 
 public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(film_, position_, u_, v_, w_, tf_, aspect_);
+    }
+
+public:
     virtual Component* underlying(const std::string& name) const {
         LM_UNUSED(name);
         return film_;
     }
 
     virtual bool construct(const Json& prop) override {
-        film_ = parent()->underlying<Film>(prop["film"]);  // Film
-        aspect_ = film_->aspectRatio();                    // Aspect ratio
-        position_ = prop["position"];                      // Camera position
-        const Vec3 center = prop["center"];                // Look-at position
-        const Vec3 up = prop["up"];                        // Up vector
-        const Float fv = prop["vfov"];                     // Vertical FoV
-        tf_ = tan(fv * Pi / 180_f * .5_f);                 // Precompute half of screen height
-        w_ = glm::normalize(position_ - center);           // Compute basis
+        film_ = getAsset<Film>(prop["film"]);       // Film
+        if (!film_) {
+            return false;
+        }
+        aspect_ = film_->aspectRatio();             // Aspect ratio
+        position_ = prop["position"];               // Camera position
+        const Vec3 center = prop["center"];         // Look-at position
+        const Vec3 up = prop["up"];                 // Up vector
+        const Float fv = prop["vfov"];              // Vertical FoV
+        tf_ = tan(fv * Pi / 180_f * .5_f);          // Precompute half of screen height
+        w_ = glm::normalize(position_ - center);    // Compute basis
         u_ = glm::normalize(glm::cross(up, w_));
         v_ = cross(w_, u_);
         return true;
@@ -53,7 +63,6 @@ public:
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
         const auto [x, y, w, h] = window.data.data;
         return RaySample(
-
             SurfacePoint(position_),
             primaryRay({x+w*rng.u(), y+h*rng.u()}).d,
             Vec3(1_f)

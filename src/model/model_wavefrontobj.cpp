@@ -13,6 +13,8 @@
 #include <lm/light.h>
 #include <lm/scene.h>
 #include <lm/json.h>
+#include <lm/user.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -23,6 +25,11 @@ struct OBJSurfaceGeometry {
     std::vector<Vec3> ps;   // Positions
     std::vector<Vec3> ns;   // Normals
     std::vector<Vec2> ts;   // Texture coordinates
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(ps, ns, ts);
+    }
 };
 
 // Face indices
@@ -30,7 +37,15 @@ struct OBJMeshFaceIndex {
     int p = -1;         // Index of position
     int t = -1;         // Index of texture coordinates
     int n = -1;         // Index of normal
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(p, t, n);
+    }
 };
+
+// Face
+using OBJMeshFace = std::vector<OBJMeshFaceIndex>;
 
 // Texture parameters
 struct MTLTextureParams {
@@ -45,10 +60,15 @@ struct MTLMatParams {
     Vec3 Kd;            // Diffuse reflectance
     Vec3 Ks;            // Specular reflectance
     Vec3 Ke;            // Luminance
-    int mapKd = -1;     // Texture index for Kd
+    std::string mapKd;  // Name of texture for Kd
     Float Ni;           // Index of refraction
     Float Ns;           // Specular exponent for phong shading
     Float an;           // Anisotropy
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(name, illum, Kd, Ks, Ke, mapKd, Ni, Ns, an);
+    }
 };
 
 // Wavefront OBJ/MTL file parser
@@ -64,7 +84,7 @@ private:
 public:
     // Callback functions
     using ProcessMeshFunc = std::function<
-        std::optional<int>(const std::vector<OBJMeshFaceIndex>& fs, const MTLMatParams& m)>;
+        std::optional<int>(const OBJMeshFace& fs, const MTLMatParams& m)>;
     using ProcessMaterialFunc = std::function<
         bool(const MTLMatParams& m)>;
     using ProcessTextureFunc = std::function<
@@ -240,15 +260,14 @@ private:
             else if (command(t, "illum", 5))  { m.illum = nextInt(t += 6); }
             else if (command(t, "map_Kd", 6)) {
                 nextString(t += 7, name);
+                // Use filename as an identifi]er
+                const auto id = std::filesystem::path(name).stem().string();
+                m.mapKd = id;
                 // Check if the texture is alread loaded
-                auto it = tsmap_.find(name);
-                if (it != tsmap_.end()) {
-                    m.mapKd = it->second;
-                }
-                else {
+                auto it = tsmap_.find(id);
+                if (it == tsmap_.end()) {
                     // Register a new texture
-                    m.mapKd = tsmap_[name] = int(ts_.size());
-                    ts_.push_back({name, (std::filesystem::path(p).remove_filename()/name).string()});
+                    ts_.push_back({id, (std::filesystem::path(p).remove_filename()/name).string()});
                 }
             }
         }
@@ -269,16 +288,171 @@ private:
 
 // ----------------------------------------------------------------------------
 
+class Mesh_WavefrontObj;
+class Material_WavefrontObj;
+
+class Model_WavefrontObj : public Model {
+private:
+    friend class Mesh_WavefrontObj;
+    friend class Material_WavefrontObj;
+
+private:
+    // Surface geometry
+    OBJSurfaceGeometry geo_;
+
+    // Underlying assets
+    std::vector<Component::Ptr<Component>> assets_;
+    std::unordered_map<std::string, int> assetsMap_;
+
+    // Mesh group which assocites a mesh and a material
+    struct Group {
+        int mesh;
+        int material;
+        int light;
+
+        template <typename Archive>
+        void serialize(Archive& ar) {
+            ar(mesh, material, light);
+        }
+    };
+    std::vector<Group> groups_;
+
+    // Temporary parameters accessed from underlying assets
+    // Origial material parameters
+    MTLMatParams currentMatParams_;
+    // Face indices
+    OBJMeshFace currentFs_;
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(geo_, groups_, assetsMap_, assets_);
+    }
+
+public:
+    virtual Component* underlying(const std::string& name) const override {
+        return assets_[assetsMap_.at(name)].get();
+    }
+
+    virtual bool construct(const Json& prop) override {
+        WavefrontOBJParser parser;
+        return parser.parse(prop["path"], geo_,
+            // Process mesh}
+            [&](const OBJMeshFace& fs, const MTLMatParams& m) -> std::optional<int> {
+                currentFs_ = fs;
+
+                // Create mesh
+                const std::string meshName = fmt::format("mesh{}", assets_.size());
+                auto mesh = comp::create<Mesh>(
+                    "mesh::wavefrontobj", makeLoc(loc(), meshName),
+                    json::merge(prop, {
+                        {"model_", loc()}
+                    }
+                ));
+                if (!mesh) {
+                    return false;
+                }
+                assetsMap_[meshName] = int(assets_.size());
+                assets_.push_back(std::move(mesh));
+
+                // Create area light if Ke > 0
+                int lightIndex = -1;
+                if (glm::compMax(m.Ke) > 0_f) {
+                    auto light = comp::create<Light>("light::area", "", {
+                        {"Ke", m.Ke},
+                        {"mesh", "global:" + makeLoc(loc(), meshName)}
+                    });
+                    if (!light) {
+                        return false;
+                    }
+                    lightIndex = int(assets_.size());
+                    assets_.push_back(std::move(light));
+                }
+
+                // Create mesh group
+                groups_.push_back({ assetsMap_[meshName], assetsMap_[m.name], lightIndex });
+
+                return true;
+            },
+            // Process material
+            [&](const MTLMatParams& m) -> bool {
+                if (const auto it = prop.find("base_material"); it != prop.end()) {
+                    // Use user-specified material
+					auto mat = comp::create<Material>("material::proxy", makeLoc(loc(), m.name), {
+						{"ref", *it}
+					});
+                    if (!mat) {
+                        return false;
+                    }
+                    assetsMap_[m.name] = int(assets_.size());
+                    assets_.push_back(std::move(mat));
+                }
+                else {
+                    // Default mixture material
+                    currentMatParams_ = m;
+                    auto mat = comp::create<Material>(
+                        "material::wavefrontobj", makeLoc(loc(), m.name),
+                        json::merge(prop, {
+                            {"model_", loc()}
+                        }
+                    ));
+                    if (!mat) {
+                        return false;
+                    }
+                    assetsMap_[m.name] = int(assets_.size());
+                    assets_.push_back(std::move(mat));
+                }
+                return true;
+            },
+            // Process texture
+            [&](const MTLTextureParams& tex) -> bool {
+                const auto textureAssetName = json::valueOr<std::string>(prop, "texture", "texture::bitmap");
+                auto texture = comp::create<Texture>(textureAssetName, makeLoc(loc(), tex.name), {
+                    {"path", tex.path}
+                });
+                if (!texture) {
+                    return false;
+                }
+                assetsMap_[tex.name] = int(assets_.size());
+                assets_.push_back(std::move(texture));
+                return true;
+            });
+    }
+    
+    virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const override {
+        for (auto [mesh, material, light] : groups_) {
+            auto* meshp = assets_.at(mesh).get();
+            auto* materialp = assets_.at(material).get();
+            createPrimitive(
+                meshp,
+                materialp,
+                light < 0 ? nullptr : assets_.at(light).get());
+        }
+    }
+};
+
+LM_COMP_REG_IMPL(Model_WavefrontObj, "model::wavefrontobj");
+
+// ----------------------------------------------------------------------------
+
 class Mesh_WavefrontObj : public Mesh {
 private:
-    OBJSurfaceGeometry& geo_;
+    Model_WavefrontObj* model_;
     std::vector<OBJMeshFaceIndex> fs_;
 
 public:
-    Mesh_WavefrontObj(OBJSurfaceGeometry& geo, const std::vector<OBJMeshFaceIndex>& fs)
-        : geo_(geo), fs_(fs) {}
-    
+    LM_SERIALIZE_IMPL(ar) {
+        ar(model_, fs_);
+    }
+
+public:
+    virtual bool construct(const Json& prop) override {
+        model_ = comp::get<Model_WavefrontObj>(prop["model_"]);
+        fs_ = model_->currentFs_;
+        return true;
+    }
+
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
+        const auto& geo_ = model_->geo_;
         for (int fi = 0; fi < int(fs_.size()); fi += 3) {
             const auto p1 = geo_.ps[fs_[fi].p];
             const auto p2 = geo_.ps[fs_[fi + 1].p];
@@ -288,6 +462,7 @@ public:
     }
 
 	virtual Tri triangleAt(int face) const override {
+        const auto& geo_ = model_->geo_;
 		const auto p1 = geo_.ps[fs_[3*face].p];
 		const auto p2 = geo_.ps[fs_[3*face + 1].p];
 		const auto p3 = geo_.ps[fs_[3*face + 2].p];
@@ -295,6 +470,7 @@ public:
 	}
 
     virtual Point surfacePoint(int face, Vec2 uv) const override {
+        const auto& geo_ = model_->geo_;
         const auto i1 = fs_[face];
         const auto i2 = fs_[face + 1];
         const auto i3 = fs_[face + 2];
@@ -315,10 +491,15 @@ public:
     }
 };
 
+LM_COMP_REG_IMPL(Mesh_WavefrontObj, "mesh::wavefrontobj");
+
 // ----------------------------------------------------------------------------
 
 class Material_WavefrontObj : public Material {
 private:
+    // Model asset
+    Model_WavefrontObj* model_;
+
     // Material parameters of MLT file
     MTLMatParams objmat_;
 
@@ -336,78 +517,82 @@ private:
     const Texture* maskTex_ = nullptr;
 
 public:
-    Material_WavefrontObj(const MTLMatParams& m) : objmat_(m) {}
-
-public:
-    virtual Component* underlyingAt(int index) const {
-        // Deligate to parent component
-        return parent()->underlyingAt(index);
+    LM_SERIALIZE_IMPL(ar) {
+        ar(objmat_, materials_,
+           diffuse_, glossy_, glass_, mirror_, mask_,
+           maskTex_);
     }
 
+private:
+    int addMaterial(const std::string& name, const Json& prop) {
+        auto p = comp::create<Material>(name, "", prop);
+        if (!p) {
+            return -1;
+        }
+        int index = int(materials_.size());
+        materials_.push_back(std::move(p));
+        return index;
+    }
+
+public:
     virtual bool construct(const Json& prop) override {
-        // Underlying assets name
-        const auto glassMaterialName   = valueOr<std::string>(prop, "glass", "material::glass");
-        const auto mirrorMaterialName  = valueOr<std::string>(prop, "mirror", "material::mirror");
-        const auto diffuseMaterialName = valueOr<std::string>(prop, "diffuse", "material::diffuse");
-        const auto glossyMaterialName  = valueOr<std::string>(prop, "glossy", "material::glossy");
+        // Model asset
+        model_ = comp::get<Model_WavefrontObj>(prop["model_"]);
+        objmat_ = model_->currentMatParams_;
 
         // Make parent component as a parent for the newly created components
         if (objmat_.illum == 7) {
             // Glass material
-            auto p = comp::create<Material>(glassMaterialName, this, {
+            const auto glassMaterialName = json::valueOr<std::string>(prop, "glass", "material::glass");
+            glass_ = addMaterial(glassMaterialName, {
                 {"Ni", objmat_.Ni}
             });
-            if (!p) {
+            if (glass_ < 0) {
                 return false;
             }
-            glass_ = int(materials_.size());
-            materials_.push_back(std::move(p));
         }
         else if (objmat_.illum == 5) {
             // Mirror material
-            auto p = comp::create<Material>(mirrorMaterialName, this);
-            if (!p) {
+            const auto mirrorMaterialName = json::valueOr<std::string>(prop, "mirror", "material::mirror");
+            mirror_ = addMaterial(mirrorMaterialName, {});
+            if (mirror_ < 0) {
                 return false;
             }
-            mirror_ = int(materials_.size());
-            materials_.push_back(std::move(p));
         }
         else {
             // Diffuse material
-            auto diffuse = comp::create<Material>(diffuseMaterialName, this, {
+            const auto diffuseMaterialName = json::valueOr<std::string>(prop, "diffuse", "material::diffuse");
+            diffuse_ = addMaterial(diffuseMaterialName, {
                 {"Kd", objmat_.Kd},
-                {"mapKd", objmat_.mapKd < 0 ? Json{} : Json(objmat_.mapKd)}
+                {"mapKd", objmat_.mapKd.empty()
+                    ? "" : "global:" + makeLoc(parentLoc(), objmat_.mapKd)}
             });
-            if (!diffuse) {
+            if (diffuse_ < 0) {
                 return false;
             }
-            diffuse_ = int(materials_.size());
-            materials_.push_back(std::move(diffuse));
 
             // Glossy material
+            const auto glossyMaterialName = json::valueOr<std::string>(prop, "glossy", "material::glossy");
             const auto r = 2_f / (2_f + objmat_.Ns);
             const auto as = math::safeSqrt(1_f - objmat_.an * .9_f);
-            auto glossy = comp::create<Material>(glossyMaterialName, this, {
+            glossy_ = addMaterial(glossyMaterialName, {
                 {"Ks", objmat_.Ks},
                 {"ax", std::max(1e-3_f, r / as)},
                 {"ay", std::max(1e-3_f, r * as)}
             });
-            if (!glossy) {
+            if (glossy_ < 0) {
                 return false;
             }
-            glossy_ = int(materials_.size());
-            materials_.push_back(std::move(glossy));
 
             // Mask texture
-            if (objmat_.mapKd >= 0) {
-                if (const auto* texture = parent()->underlyingAt<Texture>(objmat_.mapKd); texture->hasAlpha()) {
-                    auto mask = comp::create<Material>("material::mask", this);
+            if (!objmat_.mapKd.empty()) {
+                const auto* texture = lm::comp::get<Texture>(makeLoc(parentLoc(), objmat_.mapKd));
+                if (texture->hasAlpha()) {
                     maskTex_ = texture;
-                    if (!mask || !maskTex_) {
+                    mask_ = addMaterial("material::mask", {});
+                    if (mask_ < 0) {
                         return false;
                     }
-                    mask_ = int(materials_.size());
-                    materials_.push_back(std::move(mask));
                 }
             }
         }
@@ -438,7 +623,9 @@ public:
 				if (maskTex_ && rng.u() > maskTex_->evalAlpha(sp.t)) {
 					return { mask_, 1_f/wd };
 				}
-				return { diffuse_, 1_f/wd };
+                else {
+                    return { diffuse_, 1_f / wd };
+                }
 			}
 			return { glossy_, 1_f/(1_f-wd) };
 		}();
@@ -470,111 +657,6 @@ public:
     }
 };
 
-// ----------------------------------------------------------------------------
-
-class Model_WavefrontObj : public Model {
-private:
-    // Surface geometry
-    OBJSurfaceGeometry geo_;
-    // Underlying assets
-    std::vector<Component::Ptr<Component>> assets_;
-    std::unordered_map<std::string, int> assetsMap_;
-    // Mesh group which assocites a mesh and a material
-    std::vector<std::tuple<int, int, int>> groups_;
-
-public:
-    virtual Component* underlyingAt(int index) const {
-        return assets_.at(index).get();
-    }
-
-    virtual bool construct(const Json& prop) override {
-        // Texture asset name
-        const auto textureAssetName = valueOr<std::string>(prop, "texture", "texture::bitmap");
-
-        // Paruse OBJ/MLT file
-        WavefrontOBJParser parser;
-        return parser.parse(prop["path"], geo_,
-            // Process mesh
-            [&](const std::vector<OBJMeshFaceIndex>& fs, const MTLMatParams& m) -> std::optional<int> {
-                // Create mesh
-                auto mesh = comp::detail::createDirect<Mesh_WavefrontObj>(this, geo_, fs);
-                if (!mesh) {
-                    return false;
-                }
-                int meshIndex = int(assets_.size());
-                assets_.push_back(std::move(mesh));
-
-                // Create area light if Ke > 0
-                int lightIndex = -1;
-                if (glm::compMax(m.Ke) > 0_f) {
-                    auto light = comp::create<Light>("light::area", this, {
-                        {"Ke", m.Ke},
-                        {"mesh", meshIndex}
-                    });
-                    if (!light) {
-                        return false;
-                    }
-                    lightIndex = int(assets_.size());
-                    assets_.push_back(std::move(light));
-                }
-
-                // Create mesh group
-                groups_.push_back({ meshIndex, assetsMap_[m.name], lightIndex });
-
-                return true;
-            },
-            // Process material
-            [&](const MTLMatParams& m) -> bool {
-                if (const auto it = prop.find("base_material"); it != prop.end()) {
-                    // Use user-specified material
-					auto mat = lm::comp::create<Material>("material::proxy", this, {
-						{"ref", *it}
-					});
-                    if (!mat) {
-                        return false;
-                    }
-                    assetsMap_[m.name] = int(assets_.size());
-                    assets_.push_back(std::move(mat));
-                }
-                else {
-                    // Default mixture material
-                    auto mat = comp::detail::createDirect<Material_WavefrontObj>(this, m);
-                    if (!mat) {
-                        return false;
-                    }
-                    if (!mat->construct(prop)) {
-                        return false;
-                    }
-                    assetsMap_[m.name] = int(assets_.size());
-                    assets_.push_back(std::move(mat));
-                }
-                return true;
-            },
-            // Process texture
-            [&](const MTLTextureParams& tex) -> bool {
-                auto texture = comp::create<Texture>(textureAssetName, this, {
-                    {"path", tex.path}
-                });
-                if (!texture) {
-                    return false;
-                }
-                assets_.push_back(std::move(texture));
-                return true;
-            });
-    }
-    
-    virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const override {
-        for (auto [mesh, material, light] : groups_) {
-            auto* meshp = assets_.at(mesh).get();
-            auto* materialp = assets_.at(material).get();
-            createPrimitive(
-                meshp,
-                materialp,
-                light < 0 ? nullptr : assets_.at(light).get());
-        }
-    }
-};
-
-LM_COMP_REG_IMPL(Model_WavefrontObj, "model::wavefrontobj");
+LM_COMP_REG_IMPL(Material_WavefrontObj, "material::wavefrontobj");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

@@ -6,6 +6,7 @@
 #include <pch.h>
 #include <lm/texture.h>
 #include <lm/logger.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -32,6 +33,12 @@ private:
     int h;                  // Height of the texture
     std::vector<Float> cs;  // Colors
     std::vector<Float> as;  // Alphas
+
+public:
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(w, h, cs, as);
+    }
     
 private:
     // Calculate pixel coordinate of the vertically-flipped image
@@ -162,6 +169,11 @@ public:
 class Texture_Bitmap final : public Texture {
 private:
     Bitmap_PXM bitmap_;
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(bitmap_);
+    }
 
 public:
     virtual bool construct(const Json& prop) override {

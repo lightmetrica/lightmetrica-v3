@@ -17,7 +17,7 @@ private:
 
 public:
     virtual bool construct(const lm::Json& prop) override {
-        film_ = lm::comp::cast<lm::Film>(lm::getAsset(prop["output"].get<std::string>()));
+        film_ = lm::getAsset<lm::Film>(prop, "output");
         if (!film_) {
             return false;
         }
@@ -56,7 +56,7 @@ LM_COMP_REG_IMPL(Renderer_AO, "renderer::ao");
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
-        lm::init({
+        lm::init("user::default", {
             #if LM_DEBUG_MODE
             {"numThreads", -1}
             #else
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
         });
 
         // Parse command line arguments
-        const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{
+        const auto opt = lm::json::parsePositionalArgs<13>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
             "spp": {},

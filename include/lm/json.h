@@ -62,6 +62,9 @@ LM_NAMESPACE_END(nlohmann)
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+LM_NAMESPACE_BEGIN(json)
+
+// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
 
@@ -84,6 +87,26 @@ LM_NAMESPACE_END(detail)
     \addtogroup json
     @{
 */
+
+/*!
+    \brief Merge two parameters.
+    
+    \rst
+    If the same key is used, the value in `j1` has priority.
+    \endrst
+*/
+LM_INLINE Json merge(const Json& j1, const Json& j2) {
+    assert(j1.is_object());
+    assert(j2.is_object());
+    Json t(j1);
+    for (const auto& e : j2.items()) {
+        if (t.find(e.key()) != t.end()) {
+            continue;
+        }
+        t[e.key()] = e.value();
+    }
+    return t;
+}
 
 /*!
     \brief Parse positional command line arguments.
@@ -122,4 +145,5 @@ T valueOr(const Json& j, const std::string& name, T&& def) {
     @}
 */
 
+LM_NAMESPACE_END(json)
 LM_NAMESPACE_END(LM_NAMESPACE)

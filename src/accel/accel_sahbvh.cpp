@@ -9,6 +9,7 @@
 #include <lm/mesh.h>
 #include <lm/logger.h>
 #include <lm/exception.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -19,6 +20,13 @@ struct Tri {
     Vec3 c;         // Center of the bound
     int primitive;  // Primitive index associated to the triangle
     int face;       // Face index of the mesh associated to the triangle
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(p1, e1, e2, b, c, primitive, face);
+    }
+
+    Tri() {}
 
     Tri(Vec3 p1, Vec3 p2, Vec3 p3, int primitive, int face)
         : p1(p1), primitive(primitive), face(face) {
@@ -57,19 +65,30 @@ struct Tri {
     }
 };
 
+// BVH node
+struct Node {
+    Bound b;        // Bound of the node
+    bool leaf = 0;  // True if the node is leaf
+    int s, e;       // Range of triangle indices (valid only in leaf nodes)
+    int c1, c2;     // Index to the child nodes
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(b, leaf, s, e, c1, c2);
+    }
+};
+
 class Accel_SAHBVH final : public Accel {
 private:
-    // BVH node
-    struct Node {
-        Bound b;        // Bound of the node
-        bool leaf = 0;  // True if the node is leaf
-        int s, e;       // Range of triangle indices (valid only in leaf nodes)
-        int c1, c2;     // Index to the child nodes
-    };
     std::vector<Node> nodes_;   // Nodes
     std::vector<Tri> trs_;      // Triangles
     std::vector<int> indices_;  // Triangle indices
     
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(nodes_, trs_, indices_);
+    }
+
 public:
     virtual void build(const Scene& scene) override {
         // Setup triangle list
