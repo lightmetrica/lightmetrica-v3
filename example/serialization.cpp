@@ -47,6 +47,9 @@ int main(int argc, char** argv) {
         // Create primitives from model asset
         lm::primitives(lm::Mat4(1), "obj1");
 
+        // Build acceleration structure
+        lm::build("accel::sahbvh");
+
         // --------------------------------------------------------------------
         
         // _begin_serialize
@@ -70,7 +73,6 @@ int main(int argc, char** argv) {
         // --------------------------------------------------------------------
 
         // Render an image
-        lm::build("accel::sahbvh");
         lm::render("renderer::raycast", {
             {"output", "film1"},
             {"color", {0,0,0}}
