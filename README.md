@@ -1,6 +1,8 @@
 Lightmetrica -- A research-oriented renderer
 ====================
 
+[![Build Status](https://travis-ci.com/hi2p-perim/lightmetrica-v3.svg?token=qWCh3XHt8zyjBpssoHD5&branch=master)](https://travis-ci.com/hi2p-perim/lightmetrica-v3)
+
 *This project is under development for the initial release of Version 3. Please be careful to use the versions in development because they might incur abrupt API changes.*
 
 ![teaser](doc/_static/example/pt_fireplace_room.jpg)
