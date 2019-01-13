@@ -123,91 +123,44 @@ void load(Archive& ar, lm::Component::Ptr<T>& p) {
     to generate error message for the unsupported T* types.
     To supress this unexpected error message, we specialize the function here.
 */
-//template <typename Archive>
-//void serialize(Archive& ar, lm::Component*& p) {
-//    LM_UNUSED(ar, p);
-//    if constexpr (std::is_same_v<Archive, lm::OutputArchive>) {
-//        // save
-//        using Access = lm::comp::detail::Access;
-//        if (!p) {
-//            ar(CEREAL_NVP_("valid", uint8_t(0)));
-//        }
-//        else {
-//            ar(CEREAL_NVP_("valid", uint8_t(1)));
-//            ar(CEREAL_NVP_("loc", Access::loc(p)));
-//        }
-//    }
-//    if constexpr (std::is_same_v<Archive, lm::InputArchive>) {
-//        // load
-//        uint8_t valid;
-//        ar(CEREAL_NVP_("valid", valid));
-//        if (!valid) {
-//            p = nullptr;
-//        }
-//        else {
-//            std::string loc;
-//            ar(CEREAL_NVP_("loc", loc));
-//            p = lm::comp::get<lm::Component>(loc);
-//        }
-//    }
-//}
 
-template <typename Archive, typename T>
-void serialize(Archive& ar, T*& p) {
-    LM_UNUSED(ar, p);
-    if constexpr (std::is_same_v<Archive, lm::OutputArchive>) {
-        // save
-        using Access = lm::comp::detail::Access;
-        if (!p) {
-            ar(CEREAL_NVP_("valid", uint8_t(0)));
-        }
-        else {
-            ar(CEREAL_NVP_("valid", uint8_t(1)));
-            ar(CEREAL_NVP_("loc", Access::loc(p)));
-        }
+// Overload for OutputArchive corresponding save()
+template <typename T>
+std::enable_if_t<
+    std::is_base_of_v<lm::Component, T>,
+    void
+>
+serialize(lm::OutputArchive& ar, T*& p) {
+    using Archive = lm::OutputArchive;
+    using Access = lm::comp::detail::Access;
+    if (!p) {
+        ar(CEREAL_NVP_("valid", uint8_t(0)));
     }
-    if constexpr (std::is_same_v<Archive, lm::InputArchive>) {
-        // load
-        uint8_t valid;
-        ar(CEREAL_NVP_("valid", valid));
-        if (!valid) {
-            p = nullptr;
-        }
-        else {
-            std::string loc;
-            ar(CEREAL_NVP_("loc", loc));
-            p = lm::comp::get<T>(loc);
-        }
+    else {
+        ar(CEREAL_NVP_("valid", uint8_t(1)));
+        ar(CEREAL_NVP_("loc", Access::loc(p)));
     }
 }
 
-//template <typename Archive, typename T>
-//std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
-//save(Archive& ar, const T*& p) {
-//    using Access = lm::comp::detail::Access;
-//    if (!p) {
-//        ar(CEREAL_NVP_("valid", uint8_t(0)));
-//    }
-//    else {
-//        ar(CEREAL_NVP_("valid", uint8_t(1)));
-//        ar(CEREAL_NVP_("loc", Access::loc(p)));
-//    }
-//}
-//
-//template <typename Archive, typename T>
-//std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
-//load(Archive& ar, T*& p) {
-//    uint8_t valid;
-//    ar(CEREAL_NVP_("valid", valid));
-//    if (!valid) {
-//        p = nullptr;
-//    }
-//    else {
-//        std::string loc;
-//        ar(CEREAL_NVP_("loc", loc));
-//        p = lm::comp::get<T>(loc);
-//    }
-//}
+// Overload for InputArchive corresponding load()
+template <typename T>
+std::enable_if_t<
+    std::is_base_of_v<lm::Component, T>,
+    void
+>
+serialize(lm::InputArchive& ar, T*& p) {
+    using Archive = lm::InputArchive;
+    uint8_t valid;
+    ar(CEREAL_NVP_("valid", valid));
+    if (!valid) {
+        p = nullptr;
+    }
+    else {
+        std::string loc;
+        ar(CEREAL_NVP_("loc", loc));
+        p = lm::comp::get<T>(loc);
+    }
+}
 
 LM_NAMESPACE_END(cereal)
 
