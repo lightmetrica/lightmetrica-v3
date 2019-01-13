@@ -131,7 +131,7 @@ endif()
 # -----------------------------------------------------------------------------
 
 # Install
-if (LM_INSTALL AND NOT EXISTS LM_EXTERNAL_DIR)
+if (LM_INSTALL AND NOT EXISTS ${LM_EXTERNAL_DIR})
     # Install include directory
     install(DIRECTORY include/lm DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
     

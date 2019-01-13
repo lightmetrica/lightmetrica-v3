@@ -204,7 +204,7 @@ Additionally, you can execute the Python tests with the following commands.
 
    $ conda install -c conda-forge pytest
    $ cd <root directory of lightmetrica>
-   $ python -m pytest --lm <lightmetrica binary dir> lm/pytest
+   $ python -m pytest --lm <lightmetrica binary dir> pytest
 
 Running examples
 -------------

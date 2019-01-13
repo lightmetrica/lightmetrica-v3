@@ -17,7 +17,7 @@ PYBIND11_MODULE(pylm_test, m) {
         // Find the name matched with 'pytestbinder::*'
         std::smatch match;
         if (std::regex_match(name, match, reg)) {
-            auto binder = lm::comp::create<PyTestBinder>(name, nullptr);
+            auto binder = lm::comp::create<PyTestBinder>(name, "");
             auto submodule = m.def_submodule(match[1].str().c_str());
             binder->bind(submodule);
         }

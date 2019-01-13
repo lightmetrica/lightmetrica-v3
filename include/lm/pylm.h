@@ -344,11 +344,12 @@ static pybind11::object castToPythonObject(Component* inst) {
     \brief Wraps creation of component instance.
 */
 template <typename InterfaceT>
-static pybind11::object createCompWrap(const char* name) {
+static pybind11::object createCompWrap(const char* name, const char* loc) {
     auto inst = lm::comp::detail::createComp(name);
     if (!inst) {
         return pybind11::object();
     }
+    lm::comp::detail::Access::loc(inst) = loc;
     return castToPythonObject<InterfaceT>(inst);
 }
 
@@ -356,9 +357,13 @@ static pybind11::object createCompWrap(const char* name) {
     \brief Creation of component instance with construction.
 */
 template <typename InterfaceT>
-static pybind11::object createCompWrap(const char* name, const Json& prop) {
+static pybind11::object createCompWrap(const char* name, const char* loc, const Json& prop) {
     auto inst = lm::comp::detail::createComp(name);
-    if (!inst || !inst->construct(prop)) {
+    if (!inst) {
+        return pybind11::object();
+    }
+    lm::comp::detail::Access::loc(inst) = loc;
+    if (!inst->construct(prop)) {
         return pybind11::object();
     }
     return castToPythonObject<InterfaceT>(inst);
@@ -379,10 +384,10 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
      def_static("reg", &LM_NAMESPACE::detail::regCompWrap<InterfaceT>) \
     .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg) \
     .def_static("create", \
-        pybind11::overload_cast<const char*>( \
+        pybind11::overload_cast<const char*, const char*>( \
             &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
     .def_static("create", \
-        pybind11::overload_cast<const char*, const LM_NAMESPACE::Json&>( \
+        pybind11::overload_cast<const char*, const char*, const LM_NAMESPACE::Json&>( \
             &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
     .def_static("castFrom", \
         &LM_NAMESPACE::detail::castFrom<InterfaceT>, \
