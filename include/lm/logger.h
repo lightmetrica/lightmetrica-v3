@@ -203,8 +203,7 @@ LM_NAMESPACE_BEGIN(detail)
     
     \rst
     You may implement this interface to implement user-specific log subsystem.
-    Each virtual function corresponds to API call with a free function
-    inside ``log`` namespace.
+    Each virtual function corresponds to API call with functions inside ``log`` namespace.
     \endrst
 */
 class LoggerContext : public Component {

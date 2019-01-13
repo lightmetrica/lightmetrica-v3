@@ -20,7 +20,7 @@ public:
     virtual bool construct(const Json& prop) override {
         LM_INFO("Initializing parallel context [name='openmp']");
         LM_INDENT();
-        numThreads_ = valueOr(prop, "numThreads", std::thread::hardware_concurrency());
+        numThreads_ = json::valueOr(prop, "numThreads", std::thread::hardware_concurrency());
         if (numThreads_ <= 0) {
             numThreads_ = std::thread::hardware_concurrency() + numThreads_;
         }

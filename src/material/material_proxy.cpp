@@ -7,6 +7,7 @@
 #include <lm/material.h>
 #include <lm/scene.h>
 #include <lm/user.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -15,8 +16,13 @@ private:
 	Material* ref_;
 
 public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(ref_);
+    }
+
+public:
 	virtual bool construct(const Json& prop) override {
-		ref_ = comp::get<Material>(prop["ref"]);
+		ref_ = getAsset<Material>(prop, "ref");
 		return ref_;
 	}
 

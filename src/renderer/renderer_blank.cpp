@@ -9,6 +9,7 @@
 #include <lm/scene.h>
 #include <lm/film.h>
 #include <lm/json.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -18,9 +19,14 @@ private:
     Film* film_;
 
 public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(color_, film_);
+    }
+
+public:
     virtual bool construct(const Json& prop) override {
         color_ = prop["color"];
-        film_ = comp::get<Film>(prop["output"]);
+        film_ = getAsset<Film>(prop, "output");
         if (!film_) {
             return false;
         }

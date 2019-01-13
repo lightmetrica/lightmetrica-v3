@@ -6,6 +6,7 @@
 #include <pch.h>
 #include <lm/film.h>
 #include <lm/logger.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -16,11 +17,25 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 template <typename T>
 struct AtomicWrapper {
     std::atomic<T> v_;
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(v_);
+    }
+
     AtomicWrapper() = default;
-    AtomicWrapper(T& v) : v_(v) {}
-    AtomicWrapper(const std::atomic<T>& v) : v_(v.load()) {}
-    AtomicWrapper(const AtomicWrapper& o) : v_(o.v_.load()) {}
-    AtomicWrapper& operator=(const AtomicWrapper& o) { v_.store(o.v_.load()); return *this; }
+    AtomicWrapper(T& v)
+        : v_(v) {}
+    AtomicWrapper(const std::atomic<T>& v)
+        : v_(v.load()) {}
+    AtomicWrapper(const AtomicWrapper& o)
+        : v_(o.v_.load()) {}
+
+    AtomicWrapper& operator=(const AtomicWrapper& o) {
+        v_.store(o.v_.load());
+        return *this;
+    }
+    
     void update(const T& src) {
         auto expected = v_.load();
         while (!v_.compare_exchange_weak(expected, src));
@@ -33,6 +48,11 @@ private:
     int h_;
     std::vector<AtomicWrapper<Vec3>> data_;
     std::vector<Vec3> dataTemp_;  // Temporary buffer for external reference
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(w_, h_, data_);
+    }
 
 public:
     virtual bool construct(const Json& prop) override {

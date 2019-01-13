@@ -7,6 +7,7 @@
 
 #include "component.h"
 #include "json.h"
+#include "serial.h"
 #include "user.h"
 #include "logger.h"
 #include "progress.h"

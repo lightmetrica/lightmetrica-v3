@@ -9,7 +9,7 @@ int main() {
     try {
         // Initialize the framework
         // _begin_init
-        lm::init({
+        lm::init("user::default", {
             {"numThreads", -1}
         });
         // _end_init

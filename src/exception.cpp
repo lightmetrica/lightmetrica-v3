@@ -99,8 +99,8 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        start_  = valueOr(prop, "start", 3);
-        stacks_ = valueOr(prop, "stacks", 0);
+        start_  = json::valueOr(prop, "start", 3);
+        stacks_ = json::valueOr(prop, "stacks", 0);
         return true;
     }
 

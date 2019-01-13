@@ -4,18 +4,17 @@
 */
 
 #include <lm/lm.h>
+#include <fstream>
 
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
-        lm::init({ {"numThreads", -1} });
+        lm::init("user::default", { {"numThreads", -1} });
 
         // Parse command line arguments
-        const auto opt = lm::parsePositionalArgs<13>(argc, argv, R"({{
+        const auto opt = lm::json::parsePositionalArgs<11>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
-            "spp": {},
-            "len": {},
             "w": {},
             "h": {},
             "eye": [{},{},{}],
@@ -51,12 +50,21 @@ int main(int argc, char** argv) {
         // --------------------------------------------------------------------
         
         // _begin_serialize
-        // Serialize the internal states to a file on disk
-        lm::serialize("lm.serialized");
+        // Serialize the internal state to a file on disk
+        {
+            std::ofstream os("lm.serialized", std::ios::out | std::ios::binary);
+            lm::serialize(os);
+        }
+
         // Reset the framework
-        lm::init();
-        // Deserialize the states
-        lm::deserialize("lm.serialized");
+        lm::shutdown();
+        lm::init("user::default", { {"numThreads", -1} });
+
+        // Deserialize the state
+        {
+            std::ifstream is("lm.serialized", std::ios::in | std::ios::binary);
+            lm::deserialize(is);
+        }
         // _end_serialize
 
         // --------------------------------------------------------------------

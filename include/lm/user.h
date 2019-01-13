@@ -10,12 +10,30 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(user)
+
 /*!
     \addtogroup user
     @{
 */
 
+//! Default user type
+constexpr const char* DefaultType = "user::default";
+
+/*!
+    @}
+*/
+
+LM_NAMESPACE_END(user)
+
 // ----------------------------------------------------------------------------
+
+/*!
+    \addtogroup user
+    @{
+*/
 
 /*!
     \brief Initialize the renderer.
@@ -28,7 +46,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     the internal subsystems of the framework.
     \endrst
 */
-LM_PUBLIC_API void init(const Json& prop = {});
+LM_PUBLIC_API void init(const std::string& type = user::DefaultType, const Json& prop = {});
 
 /*!
     \brief Shutdown the renderer.
@@ -60,8 +78,53 @@ LM_PUBLIC_API void shutdown();
     through logger system as well as runtime error exception.
     \endrst
 */
-LM_PUBLIC_API void asset(const std::string& name,
-    const std::string& implKey, const Json& prop);
+LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop);
+
+/*!
+    \brief Get an asset by name.
+    \tparam T Component type.
+    \param name Identifier of the asset.
+    \return Pointer to the registered asset. ``nullptr`` if not registered.
+
+    \rst
+    If the asset specified by ``name`` is not registered,
+    the function will generate an error on logger and return nullptr.
+    ``name`` can be asset locator or global locator.
+    If ``name`` starts with ``global:``, the locator after ``:``
+    are interpret as a global locator.
+    \endrst
+*/
+template <typename T>
+T* getAsset(const std::string& name) {
+    const auto locator = [&]() -> std::string {
+        std::regex reg(R"x(global:(.+))x");
+        std::smatch match;
+        if (std::regex_match(name, match, reg)) {    
+            return match[1];
+        }
+        return "assets." + name;
+    }();
+    return comp::get<T>(locator);
+}
+
+/*!
+    \brief Get an asset by name.
+    \tparam T Component type.
+    \param prop Property.
+    \param key Element key.
+    \return Pointer to the registered asset. ``nullptr`` if not registered.
+
+    \rst
+    This overload also checks if ``prop`` has ``name`` element.
+    \endrst
+*/
+template <typename T>
+T* getAsset(const Json& prop, const std::string& key) {
+    if (prop.find(key) != prop.end()) {
+        return getAsset<T>(prop[key]);
+    }
+    return nullptr;
+}
 
 #if 0
 /*!
@@ -173,18 +236,15 @@ LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath)
 LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
 
 /*!
-    \brief Serialize the internal state of the framework to a file.
-    \param path Output file path.
+    \brief Serialize the internal state of the framework to a stream.
 */
-LM_PUBLIC_API void serialize(const std::string& path);
+LM_PUBLIC_API void serialize(std::ostream& os);
 
 /*!
-    \brief Deserialize the internal state of the framework from a file.
+    \brief Deserialize the internal state of the framework from a stream.
     \param path Input file path.
 */
-LM_PUBLIC_API void deserialize(const std::string& path);
-
-// ----------------------------------------------------------------------------
+LM_PUBLIC_API void deserialize(std::istream& is);
 
 /*!
     \brief Scoped guard of `init` and `shutdown` functions.
@@ -212,5 +272,45 @@ public:
 /*!
     @}
 */
+
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(user)
+LM_NAMESPACE_BEGIN(detail)
+
+/*!
+    \addtogroup user
+    @{
+*/
+
+/*!
+    \brief User context.
+
+    \rst
+    You may implement this interface to replace user APIs.
+    Each virtual function corresponds to API call with functions above.
+    \endrst
+*/
+class UserContext : public Component {
+public:
+    virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
+    virtual void primitive(Mat4 transform, const Json& prop) = 0;
+    virtual void primitives(Mat4 transform, const std::string& modelName) = 0;
+    virtual void build(const std::string& accelName) = 0;
+    virtual void render(const std::string& rendererName, const Json& prop) = 0;
+    virtual void save(const std::string& filmName, const std::string& outpath) = 0;
+    virtual FilmBuffer buffer(const std::string& filmName) = 0;
+    virtual void serialize(std::ostream& os) = 0;
+    virtual void deserialize(std::istream& is) = 0;
+};
+
+/*!
+    @}
+*/
+
+LM_NAMESPACE_END(detail)
+LM_NAMESPACE_END(user)
+
+// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(LM_NAMESPACE)
