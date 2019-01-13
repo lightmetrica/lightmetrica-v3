@@ -66,6 +66,11 @@ struct Bound {
     Vec3 mi = Vec3(Inf);    //!< Minimum coordinates
     Vec3 ma = Vec3(-Inf);   //!< Maximum coordinates
     
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(mi, ma);
+    }
+
     /*!
         \brief Index operator.
         \return 0: minimum coordinates, 1: maximum coordinates.
@@ -238,6 +243,11 @@ using Rng = detail::RngImpl<Float>;
 struct Dist {
     std::vector<Float> c{ 0_f }; // CDF
 
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(c);
+    }
+
     /*!
         \brief Add a value to the distribution.
         \param v Value to be added.
@@ -285,6 +295,11 @@ struct Dist2 {
     std::vector<Dist> ds;   // Conditional distribution correspoinding to a row
     Dist m;                 // Marginal distribution
     int w, h;               // Size of the distribution
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(ds, m, w, h);
+    }
 
     /*!
         \brief Add values to the distribution.
@@ -459,6 +474,13 @@ struct Transform {
 	Mat4 M;				//!< Transform associated to the primitive
 	Mat3 normalM;		//!< Transform for normals
 	Float J;			//!< J := |det(M_lin)| where M_lin is linear component of M
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(M, normalM, J);
+    }
+
+    Transform() {}
 
     /*!
         \brief Construct the transform with 4x4 transformation matrix.

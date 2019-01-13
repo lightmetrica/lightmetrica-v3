@@ -9,6 +9,7 @@
 #include <lm/json.h>
 #include <lm/scene.h>
 #include <lm/user.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -21,13 +22,21 @@ private:
     Float aspect_;    // Aspect ratio
 
 public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(film_, position_, u_, v_, w_, tf_, aspect_);
+    }
+
+public:
     virtual Component* underlying(const std::string& name) const {
         LM_UNUSED(name);
         return film_;
     }
 
     virtual bool construct(const Json& prop) override {
-        film_ = comp::get<Film>(prop["film"]);      // Film
+        film_ = getAsset<Film>(prop["film"]);       // Film
+        if (!film_) {
+            return false;
+        }
         aspect_ = film_->aspectRatio();             // Aspect ratio
         position_ = prop["position"];               // Camera position
         const Vec3 center = prop["center"];         // Look-at position
@@ -54,7 +63,6 @@ public:
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
         const auto [x, y, w, h] = window.data.data;
         return RaySample(
-
             SurfacePoint(position_),
             primaryRay({x+w*rng.u(), y+h*rng.u()}).d,
             Vec3(1_f)

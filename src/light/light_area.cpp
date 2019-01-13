@@ -9,6 +9,7 @@
 #include <lm/scene.h>
 #include <lm/json.h>
 #include <lm/user.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -18,6 +19,11 @@ private:
     Dist dist_;         // For surface sampling of area lights
     Float invA_;        // Inverse area of area lights
     const Mesh* mesh_;  // Underlying mesh
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(Ke_, dist_, invA_, mesh_);
+    }
 
 private:
 	Float tranformedInvA(const Transform& transform) const {
@@ -30,7 +36,10 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         Ke_ = prop["Ke"];
-        mesh_ = comp::get<Mesh>(prop["mesh"]);
+        mesh_ = getAsset<Mesh>(prop, "mesh");
+        if (!mesh_) {
+            return false;
+        }
         
         // Construct CDF for surface sampling
 		// Note we construct the CDF before transformation

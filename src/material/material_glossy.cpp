@@ -7,6 +7,7 @@
 #include <lm/material.h>
 #include <lm/scene.h>
 #include <lm/json.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -14,6 +15,11 @@ class Material_Glossy : public Material {
 private:
     Vec3 Ks_;        // Specular reflectance
     Float ax_, ay_;  // Roughness (anisotropic)
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(Ks_, ax_, ay_);
+    }
 
 public:
     virtual bool construct(const Json& prop) override {

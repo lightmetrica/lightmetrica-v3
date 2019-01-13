@@ -6,10 +6,20 @@
 #include <pch.h>
 #include <lm/assets.h>
 #include <lm/logger.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Assets_ final : public Assets {
+private:
+    std::vector<Component::Ptr<Component>> assets_;
+    std::unordered_map<std::string, int> assetIndexMap_;
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(assetIndexMap_, assets_);
+    }
+
 public:
     virtual Component* underlying(const std::string& name) const override {
         // Take first element inside `name`
@@ -24,8 +34,7 @@ public:
 
         // Try to find nested asset. If not found, return as it is.
         auto* comp = assets_.at(it->second).get();
-        auto* nested = comp->underlying(r);
-        return nested ? nested : comp;
+        return r.empty() ? comp : comp->underlying(r);
     }
 
     virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
@@ -44,21 +53,22 @@ public:
             LM_ERROR("Failed to create component [name='{}', key='{}']", name, implKey);
             return false;
         }
-        if (!p->construct(prop)) {
-            LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
-            return false;
-        }
 
         // Register created asset
+        // Note that this must happen before construct() because
+        // the instance could be accessed by underlying() while initialization.
         assetIndexMap_[name] = int(assets_.size());
         assets_.push_back(std::move(p));
 
+        // Initialize the asset
+        if (!assets_.back()->construct(prop)) {
+            LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
+            assets_.pop_back();
+            return false;
+        }
+
         return true;
     }
-
-private:
-    std::vector<Component::Ptr<Component>> assets_;
-    std::unordered_map<std::string, int> assetIndexMap_;
 };
 
 LM_COMP_REG_IMPL(Assets_, "assets::default");

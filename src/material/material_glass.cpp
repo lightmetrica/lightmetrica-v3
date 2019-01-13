@@ -6,12 +6,18 @@
 #include <pch.h>
 #include <lm/material.h>
 #include <lm/scene.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Material_Glass : public Material {
 private:
     Float Ni_;
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(Ni_);
+    }
 
 public:
     virtual bool construct(const Json& prop) override {

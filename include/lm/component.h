@@ -92,6 +92,7 @@ public:
         \brief Make locator by appending string.
     */
     const std::string makeLoc(const std::string& base, const std::string& child) const {
+        assert(!child.empty());
         return base.empty() ? child : (base + "." + child);
     }
 
@@ -424,6 +425,7 @@ LM_NAMESPACE_BEGIN(detail)
     @{
 */
 
+#if 0
 /*!
     \brief Create component instance directly with constructor.
     \param loc Global locator of the instance.
@@ -439,6 +441,7 @@ Component::Ptr<ComponentT> createDirect(const std::string& loc, Ts&&... args) {
     detail::Access::loc(comp.get()) = loc;
     return Component::Ptr<ComponentT>(comp.release());
 }
+#endif
 
 /*!
     \brief Singleton for a context component.

@@ -9,6 +9,7 @@
 #include <lm/texture.h>
 #include <lm/json.h>
 #include <lm/user.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -18,10 +19,15 @@ private:
     const Texture* mapKd_ = nullptr;
 
 public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(Kd_, mapKd_);
+    }
+
+public:
     virtual bool construct(const Json& prop) override {
-        mapKd_ = comp::get<Texture>(prop["mapKd"]);
+        mapKd_ = getAsset<Texture>(prop, "mapKd");
         if (!mapKd_) {
-            Kd_ = valueOr<Vec3>(prop, "Kd", Vec3(1_f));
+            Kd_ = json::valueOr<Vec3>(prop, "Kd", Vec3(1_f));
         }
         return true;
     }

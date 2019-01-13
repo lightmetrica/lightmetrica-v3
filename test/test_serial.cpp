@@ -6,6 +6,7 @@
 #include <pch.h>
 #include "test_common.h"
 #include <lm/serial.h>
+#include <lm/math.h>
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
@@ -168,24 +169,29 @@ LM_COMP_REG_IMPL(TestSerial_Container, "testserial_container");
 struct TestSerial_Root final : public lm::Component {
     // Underlying component
     Component::Ptr<Component> p;
+
     TestSerial_Root() {
         // Register this component as root
         lm::comp::detail::registerRootComp(this);
     }
+
     virtual Component* underlying(const std::string& name) const {
         // Redirect all
         return p->underlying(name);
     }
+
     // Clear state. Returns old underlying component.
     Component::Ptr<Component> clear() {
         return Component::Ptr<Component>(p.release());
     }
+
     // Save current state to string
     std::string saveState() const {
         std::stringstream ss;
         lm::serial::save(ss, p);
         return ss.str();
     }
+
     // Load state from string
     void loadState(const std::string& state) {
         std::stringstream ss(state);
@@ -204,6 +210,14 @@ TEST_CASE("Serialization") {
         checkSaveAndLoadRoundTrip<double>(42.0);
         checkSaveAndLoadRoundTrip<float>(42.f);
         checkSaveAndLoadRoundTrip<std::string>("hai domo");
+    }
+
+    SUBCASE("Vector and matrix") {
+        checkSaveAndLoadRoundTrip<lm::Vec2>(lm::Vec2(1,2));
+        checkSaveAndLoadRoundTrip<lm::Vec3>(lm::Vec3(1,2,3));
+        checkSaveAndLoadRoundTrip<lm::Vec4>(lm::Vec4(1,2,3,4));
+        checkSaveAndLoadRoundTrip<lm::Mat3>(lm::Mat3(1,2,3,4,5,6,7,8,9));
+        checkSaveAndLoadRoundTrip<lm::Mat4>(lm::Mat4(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16));
     }
 
     SUBCASE("STL containers") {
@@ -327,6 +341,61 @@ TEST_CASE("Serialization") {
 
             // Compare s1 and s2
             CHECK(s1 == s2);
+        }
+
+        SUBCASE("Assets") {
+            // Round-trip tests for various assets
+            SUBCASE("Film") {
+                checkSaveAndLoadRoundTripLoaded(
+                    lm::comp::create<lm::Component>("film::bitmap", {}, {
+                        {"w", 200}, {"h", 100}
+                    })
+                );
+            }
+
+            SUBCASE("Mesh") {
+                checkSaveAndLoadRoundTripLoaded(
+                    lm::comp::create<lm::Component>("mesh::raw", {}, {
+                        {"ps", {-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1}},
+                        {"ns", {0,0,1}},
+                        {"ts", {0,0,1,0,1,1,0,1}},
+                        {"fs", {
+                            {"p", {0,1,2,0,2,3}},
+                            {"n", {0,0,0,0,0,0}},
+                            {"t", {0,1,2,0,2,3}}
+                        }}
+                    })
+                );
+            }
+
+            SUBCASE("Material") {
+                checkSaveAndLoadRoundTripLoaded(
+                    lm::comp::create<lm::Component>("material::diffuse", {}, {
+                        {"Kd", {.5,1,.2}}
+                    })
+                );
+                checkSaveAndLoadRoundTripLoaded(
+                    lm::comp::create<lm::Component>("material::glass", {}, {
+                        {"Ni", .5}
+                    })
+                );
+                checkSaveAndLoadRoundTripLoaded(
+                    lm::comp::create<lm::Component>("material::glossy", {}, {
+                        {"Ks", {1,0,.5}},
+                        {"ax", .5},
+                        {"ay", .2}
+                    })
+                );
+                checkSaveAndLoadRoundTripLoaded(
+                    lm::comp::create<lm::Component>("material::mask", {}, {})
+                );
+                checkSaveAndLoadRoundTripLoaded(
+                    lm::comp::create<lm::Component>("material::mirror", {}, {})
+                );
+                checkSaveAndLoadRoundTripLoaded(
+                    lm::comp::create<lm::Component>("material::proxy", {}, {})
+                );
+            }
         }
     }
 }

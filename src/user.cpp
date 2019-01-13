@@ -14,6 +14,7 @@
 #include <lm/exception.h>
 #include <lm/json.h>
 #include <lm/progress.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -22,38 +23,28 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
 
-namespace {
-
 /*
     \brief User API context.
     Manages all global states manipulated by user apis.
 */
-class Context : public Component {
+class UserContext_Default : public user::detail::UserContext {
 public:
-    static Context& instance() {
-        static Context instance;
-        return instance;
+    UserContext_Default() {
+        // User context is the root of the object tree
+        comp::detail::registerRootComp(this);
+    }
+
+    ~UserContext_Default() {
+        progress::shutdown();
+        parallel::shutdown();
+        log::shutdown();
+        exception::shutdown();
     }
 
 public:
-    virtual Component* underlying(const std::string& name) const {
-        const auto [s, r] = comp::splitFirst(name);
-        if (s == "assets") {
-            return comp::getCurrentOrUnderlying(r, assets_.get());
-        }
-        else if (s == "scene") {
-            return comp::getCurrentOrUnderlying(r, scene_.get());
-        }
-        else if (s == "renderer") {
-            return renderer_.get();
-        }
-        return nullptr;
-    }
-
-public:
-    void init(const Json& prop) {
+    virtual bool construct(const Json& prop) override {
         exception::init();
-        log::init(valueOr<std::string>(prop, "logger", log::DefaultType));
+        log::init(json::valueOr<std::string>(prop, "logger", log::DefaultType));
         LM_INFO("Initializing Lightmetrica [version='{}']");
         parallel::init("parallel::openmp", prop);
         {
@@ -68,37 +59,36 @@ public:
         }
         assets_ = comp::create<Assets>("assets::default", makeLoc(loc(), "assets"));
         scene_  = comp::create<Scene>("scene::default", makeLoc(loc(), "scene"));
+        return true;
     }
 
-    void shutdown() {
-        renderer_.reset();
-        scene_.reset();
-        assets_.reset();
-        progress::shutdown();
-        parallel::shutdown();
-        log::shutdown();
-        exception::shutdown();
+    virtual Component* underlying(const std::string& name) const override {
+        const auto[s, r] = comp::splitFirst(name);
+        if (s == "assets") {
+            return comp::getCurrentOrUnderlying(r, assets_.get());
+        }
+        else if (s == "scene") {
+            return comp::getCurrentOrUnderlying(r, scene_.get());
+        }
+        else if (s == "renderer") {
+            return renderer_.get();
+        }
+        return nullptr;
     }
 
-    void asset(const std::string& name, const std::string& implKey, const Json& prop) {
+    virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) override {
         if (!assets_->loadAsset(name, implKey, prop)) {
             THROW_RUNTIME_ERROR();
         }
     }
 
-#if 0
-    Component* getAsset(const std::string& name) {
-        return assets_->underlying(name);
-    }
-#endif
-
-    void primitive(Mat4 transform, const Json& prop) {
+    virtual void primitive(Mat4 transform, const Json& prop) override {
         if (!scene_->loadPrimitive(*assets_.get(), transform, prop)) {
             THROW_RUNTIME_ERROR();
         }
     }
 
-    void primitives(Mat4 transform, const std::string& modelName) {
+    virtual void primitives(Mat4 transform, const std::string& modelName) override {
         if (!scene_->loadPrimitives(*assets_.get(), transform, modelName)) {
             THROW_RUNTIME_ERROR();
         }
@@ -108,7 +98,7 @@ public:
         scene_->build(accelName, prop);
     }
 
-    void render(const std::string& rendererName, const Json& prop) {
+    virtual void render(const std::string& rendererName, const Json& prop) override {
         renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc(loc(), "renderer"), prop);
         if (!renderer_) {
             LM_ERROR("Failed to render [renderer='{}']", rendererName);
@@ -119,7 +109,7 @@ public:
         renderer_->render(scene_.get());
     }
 
-    void save(const std::string& filmName, const std::string& outpath) {
+    virtual void save(const std::string& filmName, const std::string& outpath) override {
         const auto* film = assets_->underlying<Film>(filmName);
         if (!film) {
             THROW_RUNTIME_ERROR();
@@ -129,7 +119,7 @@ public:
         }
     }
 
-    FilmBuffer buffer(const std::string& filmName) {
+    virtual FilmBuffer buffer(const std::string& filmName) override {
         auto* film = assets_->underlying<Film>(filmName);
         if (!film) {
             THROW_RUNTIME_ERROR();
@@ -137,14 +127,18 @@ public:
         return film->buffer();
     }
 
-    void serialize(const std::string& path) {
-        LM_UNUSED(path);
-        LM_TBA_RUNTIME();
+    virtual void serialize(std::ostream& os) override {
+        LM_INFO("Saving state");
+        serial::save(os, assets_);
+        serial::save(os, scene_);
+        serial::save(os, renderer_);
     }
 
-    void deserialize(const std::string& path) {
-        LM_UNUSED(path);
-        LM_TBA_RUNTIME();
+    virtual void deserialize(std::istream& is) override {
+        LM_INFO("Loading state");
+        serial::load(is, assets_);
+        serial::load(is, scene_);
+        serial::load(is, renderer_);
     }
 
 private:
@@ -153,58 +147,59 @@ private:
     Component::Ptr<Renderer> renderer_;
 };
 
-}
+LM_COMP_REG_IMPL(UserContext_Default, "user::default");
 
 // ----------------------------------------------------------------------------
 
-LM_PUBLIC_API void init(const Json& prop) {
-    Context::instance().init(prop);
+using Instance = comp::detail::ContextInstance<user::detail::UserContext>;
+
+LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
+    Instance::init(type, prop);
 }
 
 LM_PUBLIC_API void shutdown() {
-    Context::instance().shutdown();
+    Instance::shutdown();
 }
 
 LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop) {
-    Context::instance().asset(name, implKey, prop);
+    Instance::get().asset(name, implKey, prop);
 }
-
-#if 0
-LM_PUBLIC_API Component* getAsset(const std::string& name) {
-    return Context::instance().getAsset(name);
-}
-#endif
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
-    Context::instance().primitive(transform, prop);
+    Instance::get().primitive(transform, prop);
 }
 
 LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName) {
-    Context::instance().primitives(transform, modelName);
+    Instance::get().primitives(transform, modelName);
 }
 
+<<<<<<< HEAD
 LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
     Context::instance().build(accelName, prop);
+=======
+LM_PUBLIC_API void build(const std::string& accelName) {
+    Instance::get().build(accelName);
+>>>>>>> serialization support
 }
 
 LM_PUBLIC_API void render(const std::string& rendererName, const Json& prop) {
-    Context::instance().render(rendererName, prop);
+    Instance::get().render(rendererName, prop);
 }
 
 LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath) {
-    Context::instance().save(filmName, outpath);
+    Instance::get().save(filmName, outpath);
 }
 
 LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName) {
-    return Context::instance().buffer(filmName);
+    return Instance::get().buffer(filmName);
 }
 
-LM_PUBLIC_API void serialize(const std::string& path) {
-    Context::instance().serialize(path);
+LM_PUBLIC_API void serialize(std::ostream& os) {
+    Instance::get().serialize(os);
 }
 
-LM_PUBLIC_API void deserialize(const std::string& path) {
-    Context::instance().deserialize(path);
+LM_PUBLIC_API void deserialize(std::istream& is) {
+    Instance::get().deserialize(is);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

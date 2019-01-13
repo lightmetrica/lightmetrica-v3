@@ -13,6 +13,7 @@
 #include <lm/light.h>
 #include <lm/model.h>
 #include <lm/logger.h>
+#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -23,6 +24,11 @@ struct Primitive {
     const Material* material;
     const Light* light;
     const Camera* camera;
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(index, transform, mesh, material, light, camera);
+    }
 };
 
 class Scene_ final : public Scene {
@@ -31,6 +37,11 @@ private:
     Ptr<Accel> accel_;
     int camera_;			   // Camera primitive index
     std::vector<int> lights_;  // Light primitive indices
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(primitives_, accel_, camera_, lights_);
+    }
 
 public:
     virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) override {
