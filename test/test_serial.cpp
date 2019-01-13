@@ -33,7 +33,7 @@ struct is_equality_comparable<
     the type of orig or loaded might not have operator==().
 */
 template <typename T>
-void checkSaveAndLoadRoundTrip(T&& orig) {
+void checkSaveAndLoadRoundTripCompareValues(T&& orig) {
     // Serialize the input value
     std::stringstream ss1;
     lm::serial::save(ss1, std::forward<T>(orig));
@@ -46,35 +46,37 @@ void checkSaveAndLoadRoundTrip(T&& orig) {
     if constexpr (is_equality_comparable<T>::value) {
         CHECK(orig == loaded);
     }
+}
 
-    // Serialize again with different stream
-    std::stringstream ss2;
-    lm::serial::save(ss2, loaded);
+template <typename T>
+void checkSaveAndLoadRoundTripCompareLoaded(T&& orig) {
+    // Serialize the input value
+    std::stringstream ss1;
+    lm::serial::save(ss1, std::forward<T>(orig));
+    const auto s1 = ss1.str();
+
+    // Dirty hack: Repeat 4 times
+    auto s2 = s1;
+    for (int i = 0; i < 4; i++) {
+        // Deserialize it
+        std::stringstream ss2(s2);
+        std::decay_t<T> loaded;
+        lm::serial::load(ss2, loaded);
+
+        // Serialize again with different stream
+        std::stringstream ss3;
+        lm::serial::save(ss3, loaded);
+        s2 = ss3.str();
+    }
 
     // Compare two streams
-    const auto s1 = ss1.str();
-    const auto s2 = ss2.str();
     CHECK(s1 == s2);
 }
 
 template <typename T>
-void checkSaveAndLoadRoundTripLoaded(T&& orig) {
-    // Serialize the input value
-    std::stringstream ss1;
-    lm::serial::save(ss1, std::forward<T>(orig));
-
-    // Deserialize it
-    std::decay_t<T> loaded;
-    lm::serial::load(ss1, loaded);
-
-    // Serialize again with different stream
-    std::stringstream ss2;
-    lm::serial::save(ss2, loaded);
-
-    // Compare two streams
-    const auto s1 = ss1.str();
-    const auto s2 = ss2.str();
-    CHECK(s1 == s2);
+void checkSaveAndLoadRoundTrip(T&& orig) {
+    checkSaveAndLoadRoundTripCompareValues(std::forward<T>(orig));
+    checkSaveAndLoadRoundTripCompareLoaded(std::forward<T>(orig));
 }
 
 // ----------------------------------------------------------------------------
@@ -225,7 +227,8 @@ TEST_CASE("Serialization") {
         checkSaveAndLoadRoundTrip<std::unordered_map<std::string, int>>({
             { "A", 1 },
             { "B", 2 },
-            { "C", 3 }
+            { "C", 3 },
+            { "D", 4 }
         });
     }
 
@@ -248,7 +251,7 @@ TEST_CASE("Serialization") {
                 { "v1", 42 },
                 { "v2", 32 }
             });
-            checkSaveAndLoadRoundTripLoaded(orig);
+            checkSaveAndLoadRoundTripCompareLoaded(orig);
         }
 
         SUBCASE("Vector of unique pointer") {
@@ -263,12 +266,12 @@ TEST_CASE("Serialization") {
             std::vector<lm::Component::Ptr<lm::Component>> orig;
             orig.push_back(std::move(v1));
             orig.push_back(std::move(v2));
-            checkSaveAndLoadRoundTripLoaded(orig);
+            checkSaveAndLoadRoundTripCompareLoaded(orig);
         }
 
         SUBCASE("Nested component") {
             auto orig = lm::comp::create<lm::Component>("testserial_nested", "");
-            checkSaveAndLoadRoundTripLoaded(orig);
+            checkSaveAndLoadRoundTripCompareLoaded(orig);
         }
 
         SUBCASE("Weak reference to another component instance") {
@@ -282,7 +285,7 @@ TEST_CASE("Serialization") {
             CHECK(orig);
                         
             // Round-trip test
-            checkSaveAndLoadRoundTripLoaded(orig);
+            checkSaveAndLoadRoundTripCompareLoaded(orig);
 
             // Check values
             std::stringstream ss;
@@ -346,7 +349,7 @@ TEST_CASE("Serialization") {
         SUBCASE("Assets") {
             // Round-trip tests for various assets
             SUBCASE("Film") {
-                checkSaveAndLoadRoundTripLoaded(
+                checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("film::bitmap", {}, {
                         {"w", 200}, {"h", 100}
                     })
@@ -354,7 +357,7 @@ TEST_CASE("Serialization") {
             }
 
             SUBCASE("Mesh") {
-                checkSaveAndLoadRoundTripLoaded(
+                checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("mesh::raw", {}, {
                         {"ps", {-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1}},
                         {"ns", {0,0,1}},
@@ -369,30 +372,30 @@ TEST_CASE("Serialization") {
             }
 
             SUBCASE("Material") {
-                checkSaveAndLoadRoundTripLoaded(
+                checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("material::diffuse", {}, {
                         {"Kd", {.5,1,.2}}
                     })
                 );
-                checkSaveAndLoadRoundTripLoaded(
+                checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("material::glass", {}, {
                         {"Ni", .5}
                     })
                 );
-                checkSaveAndLoadRoundTripLoaded(
+                checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("material::glossy", {}, {
                         {"Ks", {1,0,.5}},
                         {"ax", .5},
                         {"ay", .2}
                     })
                 );
-                checkSaveAndLoadRoundTripLoaded(
+                checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("material::mask", {}, {})
                 );
-                checkSaveAndLoadRoundTripLoaded(
+                checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("material::mirror", {}, {})
                 );
-                checkSaveAndLoadRoundTripLoaded(
+                checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("material::proxy", {}, {})
                 );
             }

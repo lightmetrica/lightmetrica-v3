@@ -26,7 +26,7 @@ def execute_example(ex, params):
         print('Failure')
 
 # Number of samples per pixel
-spp = 1000
+spp = 10
 
 # Run all examples
 execute_example('blank', [])
@@ -78,4 +78,20 @@ execute_example('custom_renderer', [
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
     43.001194
+])
+execute_example('serialization', [
+    os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
+    'serialization_fireplace_room.pfm',
+    1920, 1080,
+    5.101118, 1.083746, -2.756308,
+    4.167568, 1.078925, -2.397892,
+    43.001194
+])
+execute_example('serialization', [
+    os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
+    'serialization_cornell_box.pfm',
+    1920, 1080,
+    0, 1, 5,
+    0, 1, 0,
+    30
 ])
