@@ -9,6 +9,8 @@ matrix:
 
   - os: windows
     dist: 1803-containers
+    before_install:
+    - choco install python3
     install:
     - |
       cd ${TRAVIS_BUILD_DIR}
