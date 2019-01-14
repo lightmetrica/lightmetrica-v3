@@ -1,7 +1,27 @@
 language: minimal
 
-services:
-  - docker
+matrix:
+  include:
+  - os: linux
+    services: docker
+    script:
+    - docker build -t lm3 .
 
-before_install:
-  - docker build -t lm3 .
+  - os: windows
+    install:
+    - |
+      cd ${TRAVIS_BUILD_DIR}
+      mkdir external && cd external
+      git clone --depth 1 --branch v2.2.4 https://github.com/pybind/pybind11.git
+      git clone --depth 1 --branch v3.5.0 https://github.com/nlohmann/json.git
+      git clone --depth 1 --branch 0.9.9.3 https://github.com/g-truc/glm.git
+      git clone --depth 1 --branch v1.2.2 https://github.com/USCiLab/cereal.git
+      git clone --depth 1 --branch 2.2.0 https://github.com/onqtam/doctest.git
+      git clone --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git
+    script:
+    - |
+      cd ${TRAVIS_BUILD_DIR}
+      cmake -G "Visual Studio 15 2017 Win64" -H. -B_build -DCMAKE_BUILD_TYPE=Release
+      cmake --build _build
+      cd _build/bin/Release
+      ./lm_test.exe
