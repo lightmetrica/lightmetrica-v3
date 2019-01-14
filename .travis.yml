@@ -1,4 +1,4 @@
-language: minimal
+language: bash
 
 matrix:
   include:
@@ -8,6 +8,7 @@ matrix:
     - docker build -t lm3 .
 
   - os: windows
+    dist: 1803-containers
     install:
     - |
       cd ${TRAVIS_BUILD_DIR}
