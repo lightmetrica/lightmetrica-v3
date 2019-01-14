@@ -3,7 +3,7 @@ Lightmetrica -- A research-oriented renderer
 
 [![Build Status](https://travis-ci.com/hi2p-perim/lightmetrica-v3.svg?token=qWCh3XHt8zyjBpssoHD5&branch=master)](https://travis-ci.com/hi2p-perim/lightmetrica-v3)
 [![Documentation](https://img.shields.io/badge/docs-Sphinx-blue.svg)](https://hi2p-perim.github.io/lightmetrica-v3-doc/)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/hi2p-perim/lightmetrica-v3/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/hi2p-perim/lightmetrica-v3/blob/master/LICENSE)
 <!-- [![GitHub Releases](https://img.shields.io/github/release/hi2p-perim/lightmetrica-v3.svg)](https://github.com/hi2p-perim/lightmetrica-v3/releases) -->
 
 *This project is under development for the initial release of Version 3. Please be careful to use the versions in development because they might incur abrupt API changes.*
