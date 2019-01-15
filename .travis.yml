@@ -15,7 +15,7 @@ matrix:
       /c/Tools/miniconda3/Scripts/conda update -y -n base -c defaults conda
       /c/Tools/miniconda3/Scripts/conda create -y -n lm3 python=3.6 
       source /c/Tools/miniconda3/Scripts/activate lm3
-      /c/Tools/miniconda3/Scripts/conda install -y pytest
+      /c/Tools/miniconda3/Scripts/conda install -y pytest numpy
     install:
     - |
       cd ${TRAVIS_BUILD_DIR}
