@@ -13,7 +13,7 @@ matrix:
     - |
       choco install miniconda3
       /c/Tools/miniconda3/Scripts/conda create -y -n lm3 python=3.6 
-      /c/Tools/miniconda3/Scripts/activate lm3
+      source /c/Tools/miniconda3/Scripts/activate lm3
     install:
     - |
       cd ${TRAVIS_BUILD_DIR}
