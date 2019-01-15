@@ -363,7 +363,8 @@ public:
                 // Create area light if Ke > 0
                 int lightIndex = -1;
                 if (glm::compMax(m.Ke) > 0_f) {
-                    auto light = comp::create<Light>("light::area", "", {
+                    const auto lightName = meshName + "_light";
+                    auto light = comp::create<Light>("light::area", makeLoc(loc(), lightName), {
                         {"Ke", m.Ke},
                         {"mesh", "global:" + makeLoc(loc(), meshName)}
                     });
@@ -371,6 +372,7 @@ public:
                         return false;
                     }
                     lightIndex = int(assets_.size());
+                    assetsMap_[lightName] = int(assets_.size());
                     assets_.push_back(std::move(light));
                 }
 

@@ -41,6 +41,10 @@ int main(int argc, char** argv) {
 
         // --------------------------------------------------------------------
 
+        #if LM_DEBUG_MODE
+        // Load internal state
+        lm::deserialize("lm.serialized");
+        #else
         // Define assets
 
         // Film for the rendered image
@@ -61,8 +65,6 @@ int main(int argc, char** argv) {
         // OBJ model
         lm::asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
 
-        // --------------------------------------------------------------------
-
         // Define scene primitives
 
         // Camera
@@ -71,10 +73,16 @@ int main(int argc, char** argv) {
         // Create primitives from model asset
         lm::primitives(lm::Mat4(1), "obj1");
 
+        // Build acceleration structure
+        lm::build("accel::sahbvh");
+
+        // Save internal state for the debug mode
+        lm::serialize("lm.serialized");
+        #endif
+
         // --------------------------------------------------------------------
 
         // Render an image
-        lm::build("accel::sahbvh");
 		// _begin_render
         lm::render("renderer::pt", {
             {"output", "film1"},
