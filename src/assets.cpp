@@ -27,6 +27,13 @@ public:
         }
     }
 
+private:
+    bool validAssetName(const std::string& name) const {
+        std::regex regex(R"x([\w_-]+)x");
+        std::smatch match;
+        return std::regex_match(name, match, regex);
+    }
+
 public:
     virtual Component* underlying(const std::string& name) const override {
         // Take first element inside `name`
@@ -47,6 +54,12 @@ public:
     virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
         LM_INFO("Loading asset [name='{}']", name);
         LM_INDENT();
+
+        // Check if asset name is valid
+        if (!validAssetName(name)) {
+            LM_ERROR("Invalid asset name [name='{}']", name);
+            return false;
+        }
 
         // Check if the asset with given name has been already loaded
         const auto it = assetIndexMap_.find(name);
