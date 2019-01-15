@@ -8,8 +8,9 @@
 #include <chrono>
 
 /*
-    This example illustrates how we can utilize serialization feature
+    This example illustrates how we can utilize serialization
     to reduce loading time in Debug mode.
+    Command line arguments are same as `raycast.cpp`.
 */
 int main(int argc, char** argv) {
     try {
@@ -35,7 +36,7 @@ int main(int argc, char** argv) {
             lm::asset("film1", "film::bitmap", {
                 {"w", opt["w"]},
                 {"h", opt["h"]}
-                });
+            });
             // Pinhole camera
             lm::asset("camera1", "camera::pinhole", {
                 {"film", "film1"},
@@ -43,7 +44,7 @@ int main(int argc, char** argv) {
                 {"center", opt["lookat"]},
                 {"up", {0,1,0}},
                 {"vfov", opt["vfov"]}
-                });
+            });
             // OBJ model
             lm::asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
 

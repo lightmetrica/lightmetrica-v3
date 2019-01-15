@@ -328,6 +328,12 @@ public:
         ar(geo_, groups_, assetsMap_, assets_);
     }
 
+    virtual void updateWeakRefs() override {
+        for (auto& asset : assets_) {
+            asset->updateWeakRefs();
+        }
+    }
+
 public:
     virtual Component* underlying(const std::string& name) const override {
         return assets_[assetsMap_.at(name)].get();
@@ -444,6 +450,10 @@ public:
         ar(model_, fs_);
     }
 
+    virtual void updateWeakRefs() override {
+        comp::updateWeakRef(model_);
+    }
+
 public:
     virtual bool construct(const Json& prop) override {
         model_ = comp::get<Model_WavefrontObj>(prop["model_"]);
@@ -521,6 +531,14 @@ public:
         ar(objmat_, materials_,
            diffuse_, glossy_, glass_, mirror_, mask_,
            maskTex_);
+    }
+
+    virtual void updateWeakRefs() override {
+        comp::updateWeakRef(model_);
+        comp::updateWeakRef(maskTex_);
+        for (auto& material : materials_) {
+            material->updateWeakRefs();
+        }
     }
 
 private:

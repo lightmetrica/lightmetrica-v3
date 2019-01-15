@@ -5,13 +5,15 @@
 
 #include <lm/lm.h>
 
-// Example of rendering an image with path tracing explaining basic usage of user APIs.
 /*
-./004_pt ./scenes/fireplace_room/fireplace_room.obj result.pfm \
-         10 20 1920 1080 \
-         5.101118 1.083746 -2.756308 \
-         4.167568 1.078925 -2.397892 \
-         43.001194
+    Example of rendering an image with path tracing explaining basic usage of user APIs.
+
+    Example:
+    $ ./004_pt ./scenes/fireplace_room/fireplace_room.obj result.pfm \
+               10 20 1920 1080 \
+               5.101118 1.083746 -2.756308 \
+               4.167568 1.078925 -2.397892 \
+               43.001194
 */
 int main(int argc, char** argv) {
     try {

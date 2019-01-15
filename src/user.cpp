@@ -128,17 +128,23 @@ public:
     }
 
     virtual void serialize(std::ostream& os) override {
-        LM_INFO("Saving state");
+        LM_INFO("Saving state to stream");
         serial::save(os, assets_);
         serial::save(os, scene_);
         serial::save(os, renderer_);
     }
 
     virtual void deserialize(std::istream& is) override {
-        LM_INFO("Loading state");
+        LM_INFO("Loading state from stream");
         serial::load(is, assets_);
         serial::load(is, scene_);
         serial::load(is, renderer_);
+    }
+
+    virtual void notifyUpdateWeakRefs() override {
+        if (assets_) { assets_->updateWeakRefs(); }
+        if (scene_) { scene_->updateWeakRefs(); }
+        if (renderer_) { renderer_->updateWeakRefs(); }
     }
 
 private:
@@ -195,6 +201,10 @@ LM_PUBLIC_API void serialize(std::ostream& os) {
 
 LM_PUBLIC_API void deserialize(std::istream& is) {
     Instance::get().deserialize(is);
+}
+
+LM_PUBLIC_API void notifyUpdateWeakRefs() {
+    Instance::get().notifyUpdateWeakRefs();
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

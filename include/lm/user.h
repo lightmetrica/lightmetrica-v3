@@ -8,6 +8,7 @@
 #include "component.h"
 #include "math.h"
 #include <regex>
+#include <fstream>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -249,6 +250,27 @@ LM_PUBLIC_API void serialize(std::ostream& os);
 LM_PUBLIC_API void deserialize(std::istream& is);
 
 /*!
+    \brief Serialize the internal state to a file.
+*/
+LM_INLINE void serialize(const std::string& path) {
+    std::ofstream os(path, std::ios::out | std::ios::binary);
+    serialize(os);
+}
+
+/*!
+    \brief Deserialize the internal state to a file.
+*/
+LM_INLINE void deserialize(const std::string& path) {
+    std::ifstream is(path, std::ios::in | std::ios::binary);
+    deserialize(is);
+}
+
+/*!
+    \brief Notify to update weak references (raw pointers) of components.
+*/
+LM_PUBLIC_API void notifyUpdateWeakRefs();
+
+/*!
     \brief Scoped guard of `init` and `shutdown` functions.
     \rst
     Example:
@@ -304,6 +326,7 @@ public:
     virtual FilmBuffer buffer(const std::string& filmName) = 0;
     virtual void serialize(std::ostream& os) = 0;
     virtual void deserialize(std::istream& is) = 0;
+    virtual void notifyUpdateWeakRefs() = 0;
 };
 
 /*!
