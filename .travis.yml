@@ -10,11 +10,12 @@ matrix:
   - os: windows
     dist: 1803-containers
     before_install:
-    - powershell
-    - choco install miniconda3 --params="'/AddToPath:1'"
-    - refreshenv
-    - conda create -n lm3 python=3.6 
-    - activate lm3
+    - |
+      powershell
+      choco install miniconda3 --params="'/AddToPath:1'"
+      refreshenv
+      conda create -n lm3 python=3.6 
+      activate lm3
     install:
     - |
       cd ${TRAVIS_BUILD_DIR}
