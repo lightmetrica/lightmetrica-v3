@@ -89,7 +89,8 @@ target_include_directories(${_PROJECT_NAME}
             "$<INSTALL_INTERFACE:include>"
     PRIVATE "${_PCH_DIR}")
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
-target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS )
+target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
+target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_CRT_SECURE_NO_WARNINGS)
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 # Enable warning level 4, treat warning as errors, enable SEH
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHa>)
