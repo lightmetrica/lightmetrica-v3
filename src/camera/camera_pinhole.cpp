@@ -26,6 +26,10 @@ public:
         ar(film_, position_, u_, v_, w_, tf_, aspect_);
     }
 
+    virtual void updateWeakRefs() override {
+        comp::updateWeakRef(film_);
+    }
+
 public:
     virtual Component* underlying(const std::string& name) const {
         LM_UNUSED(name);

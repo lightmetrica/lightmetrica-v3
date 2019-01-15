@@ -23,6 +23,10 @@ public:
         ar(Kd_, mapKd_);
     }
 
+    virtual void updateWeakRefs() override {
+        comp::updateWeakRef(mapKd_);
+    }
+
 public:
     virtual bool construct(const Json& prop) override {
         mapKd_ = getAsset<Texture>(prop, "mapKd");

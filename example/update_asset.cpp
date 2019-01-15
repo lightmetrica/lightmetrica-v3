@@ -4,34 +4,10 @@
 */
 
 #include <lm/lm.h>
-#include <iostream>
-
-// ----------------------------------------------------------------------------
-
-class Material_VisualizeNormal final : public lm::Material {
-public:
-    virtual bool construct(const lm::Json& prop) override {
-        LM_UNUSED(prop);
-        return true;
-    }
-
-    virtual std::optional<lm::RaySample> sampleRay(lm::Rng& rng, const lm::SurfacePoint& sp, lm::Vec3 wi) const override {
-        LM_UNUSED(rng, sp, wi);
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual std::optional<lm::Vec3> reflectance(const lm::SurfacePoint& sp) const override {
-        return glm::abs(sp.n);
-    }
-};
-
-LM_COMP_REG_IMPL(Material_VisualizeNormal, "material::visualize_normal");
-
-// ----------------------------------------------------------------------------
+#include <filesystem>
 
 /*
-    This example illustrates how to extend features of Lightmetrica
-    by creating simple material extension.
+    This example illustrats how to update the asset after initialization. 
     Command line arguments are same as `raycast.cpp`.
 */
 int main(int argc, char** argv) {
@@ -39,14 +15,14 @@ int main(int argc, char** argv) {
         // Initialize the framework
         lm::init("user::default", {
             #if LM_DEBUG_MODE
-            {"numThreads", 1}
+            {"numThreads", -1}
             #else
             {"numThreads", -1}
             #endif
         });
 
         // Parse command line arguments
-        const auto opt = lm::json::parsePositionalArgs<13>(argc, argv, R"({{
+        const auto opt = lm::json::parsePositionalArgs<11>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
             "w": {},
@@ -58,8 +34,11 @@ int main(int argc, char** argv) {
 
         // --------------------------------------------------------------------
 
-        // Define assets
-
+        // Define assets and primitives
+        #if LM_DEBUG_MODE
+        // Load internal state
+        lm::deserialize("lm.serialized");
+        #else
         // Film for the rendered image
         lm::asset("film1", "film::bitmap", {
             {"w", opt["w"]},
@@ -75,19 +54,16 @@ int main(int argc, char** argv) {
             {"vfov", opt["vfov"]}
         });
 
-		// Material to replace
-		lm::asset("visualize_normal_mat", "material::visualize_normal", {});
-
-        // OBJ model
-        // Replace all materials to diffuse and use our checker texture
-        lm::asset("obj1", "model::wavefrontobj", {
-            {"path", opt["obj"]},
-            {"base_material", "visualize_normal_mat"}
+		// Base material
+		lm::asset("obj_base_mat", "material::diffuse", {
+            {"Kd", {.8,.2,.2}}
         });
 
-        // --------------------------------------------------------------------
-
-        // Define scene primitives
+        // OBJ model
+        lm::asset("obj1", "model::wavefrontobj", {
+            {"path", opt["obj"]},
+            {"base_material", "obj_base_mat"}
+        });
 
         // Camera
         lm::primitive(lm::Mat4(1), { {"camera", "camera1"} });
@@ -95,17 +71,42 @@ int main(int argc, char** argv) {
         // Create primitives from model asset
         lm::primitives(lm::Mat4(1), "obj1");
 
+        // Build acceleration structure
+        lm::build("accel::sahbvh");
+
+        // Save internal state for the debug mode
+        lm::serialize("lm.serialized");
+        #endif
+
         // --------------------------------------------------------------------
 
-        // Render an image
-        lm::build("accel::sahbvh");
+        const auto appended = [&](const std::string& mod) -> std::string {
+            std::filesystem::path p(opt["out"].get<std::string>());
+            const auto p2 = (p.parent_path() / (p.stem().string() + mod)).replace_extension(p.extension());
+            return p2.string();
+        };
+
+        // --------------------------------------------------------------------
+
+        // Render and save
         lm::render("renderer::raycast", {
-            {"output", "film1"},
-            {"use_constant_color", true}
+            {"output", "film1"}
+        });
+        lm::save("film1", appended("_1"));
+
+        // Replace `obj_base_mat` with different color
+        // Note that this is not trivial, because `model::wavefrontobj`
+        // already holds a reference to the original material.
+        lm::asset("obj_base_mat", "material::diffuse", {
+            {"Kd", {.2,.8,.2}}
         });
 
-        // Save rendered image
-        lm::save("film1", opt["out"]);
+        // Render again
+        lm::render("renderer::raycast", {
+            {"output", "film1"}
+        });
+        lm::save("film1", appended("_2"));
+
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());

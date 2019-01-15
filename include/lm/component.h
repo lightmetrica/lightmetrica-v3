@@ -125,6 +125,11 @@ public:
     */
     virtual void save(OutputArchive& ar) { LM_UNUSED(ar); }
     
+    /*!
+        \brief Update weak references.
+    */
+    virtual void updateWeakRefs() {}
+
 public:
     /*!
         \brief Get underlying component instance.
@@ -345,6 +350,28 @@ LM_NAMESPACE_END(detail)
 template <typename T>
 T* get(const std::string& name) {
     return dynamic_cast<T*>(detail::get(name));
+}
+
+/*!
+    \brief Update weak reference.
+    \param p Reference to the component pointer.
+
+    \rst
+    Helper function to update weak reference of component instance.
+    This function is supposed to be used in :func:``Component::updateWeakRefs()`` function.
+    \endend
+*/
+template <typename T>
+std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
+updateWeakRef(T*& p) {
+    if (!p) {
+        return;
+    }
+    const auto loc = p->loc();
+    if (loc.empty()) {
+        return;
+    }
+    p = comp::get<T>(loc);
 }
 
 /*!
