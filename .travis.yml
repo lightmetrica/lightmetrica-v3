@@ -10,8 +10,7 @@ matrix:
   - os: windows
     dist: 1803-containers
     before_install:
-    - choco install miniconda
-    - conda
+    - choco install miniconda3 --params="'/AddToPath:1'"
     - conda create -n lm3 python=3.6 
     - source activate lm3
     install:
