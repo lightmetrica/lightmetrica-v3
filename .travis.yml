@@ -12,7 +12,7 @@ matrix:
     before_install:
     - |
       choco install miniconda3
-      /c/Tools/miniconda3/Scripts/conda create -n lm3 python=3.6 
+      /c/Tools/miniconda3/Scripts/conda create -y -n lm3 python=3.6 
       /c/Tools/miniconda3/Scripts/activate lm3
     install:
     - |
