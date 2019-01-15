@@ -5,6 +5,7 @@
 
 #include "component.h"
 #include "math.h"
+#include "logger.h"
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
@@ -139,6 +140,9 @@ serialize(lm::OutputArchive& ar, T*& p) {
     else {
         ar(CEREAL_NVP_("valid", uint8_t(1)));
         ar(CEREAL_NVP_("loc", Access::loc(p)));
+        if (Access::loc(p).empty()) {
+            LM_ERROR("Serializing weak reference requires global locator [key='{}']", Access::key(p));
+        }
     }
 }
 
@@ -159,6 +163,9 @@ serialize(lm::InputArchive& ar, T*& p) {
         std::string loc;
         ar(CEREAL_NVP_("loc", loc));
         p = lm::comp::get<T>(loc);
+        if (!p) {
+            LM_ERROR("Invalid global locator [locator='{}']", loc);
+        }
     }
 }
 
