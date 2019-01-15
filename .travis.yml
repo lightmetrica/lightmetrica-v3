@@ -30,7 +30,7 @@ matrix:
     - |
       cd ${TRAVIS_BUILD_DIR}
       cmake -G "Visual Studio 15 2017 Win64" -H. -B_build -DCMAKE_BUILD_TYPE=Release
-      cmake --build _build
+      cmake --build _build --config Release
       cd _build/bin/Release
       ./lm_test.exe
       python -m pytest --lm _build/bin/Release pytest
