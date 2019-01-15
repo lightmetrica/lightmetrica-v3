@@ -6,6 +6,10 @@
 #include <lm/lm.h>
 #include <fstream>
 
+/*
+    Serialize and deserialize the internal state.
+    Command line arguments are same as `raycast.cpp`.
+*/
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
