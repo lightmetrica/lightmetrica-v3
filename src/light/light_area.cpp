@@ -25,6 +25,10 @@ public:
         ar(Ke_, dist_, invA_, mesh_);
     }
 
+    virtual void updateWeakRefs() override {
+        comp::updateWeakRef(mesh_);
+    }
+
 private:
 	Float tranformedInvA(const Transform& transform) const {
 		// TODO: Handle degenerated axis

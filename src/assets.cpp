@@ -7,6 +7,7 @@
 #include <lm/assets.h>
 #include <lm/logger.h>
 #include <lm/serial.h>
+#include <lm/user.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -18,6 +19,19 @@ private:
 public:
     LM_SERIALIZE_IMPL(ar) {
         ar(assetIndexMap_, assets_);
+    }
+
+    virtual void updateWeakRefs() override {
+        for (auto& asset : assets_) {
+            asset->updateWeakRefs();
+        }
+    }
+
+private:
+    bool validAssetName(const std::string& name) const {
+        std::regex regex(R"x([\w_-]+)x");
+        std::smatch match;
+        return std::regex_match(name, match, regex);
     }
 
 public:
@@ -41,10 +55,17 @@ public:
         LM_INFO("Loading asset [name='{}']", name);
         LM_INDENT();
 
-        // Check if the asset with given name has been already loaded
-        if (assetIndexMap_.find(name) != assetIndexMap_.end()) {
-            LM_ERROR("Asset [name='{}'] has been already loaded", name);
+        // Check if asset name is valid
+        if (!validAssetName(name)) {
+            LM_ERROR("Invalid asset name [name='{}']", name);
             return false;
+        }
+
+        // Check if the asset with given name has been already loaded
+        const auto it = assetIndexMap_.find(name);
+        const bool found = it != assetIndexMap_.end();
+        if (found) {
+            LM_INFO("Asset [name='{}'] has been already loaded. Replacing..", name);
         }
 
         // Create an instance of the asset
@@ -57,11 +78,29 @@ public:
         // Register created asset
         // Note that this must happen before construct() because
         // the instance could be accessed by underlying() while initialization.
-        assetIndexMap_[name] = int(assets_.size());
-        assets_.push_back(std::move(p));
+        Component* asset;
+        if (found) {
+            // Move existing instance
+            // This must not be released until the end of this scope
+            // because weak references needs to find locator in the existing instance.
+            auto old = std::move(assets_[it->second]);
+
+            // Replace the existing instance
+            assets_[it->second] = std::move(p);
+
+            // Notify to update the weak references in the object tree
+            lm::notifyUpdateWeakRefs();
+            asset = assets_[it->second].get();
+        }
+        else {
+            // Register as a new asset
+            assetIndexMap_[name] = int(assets_.size());
+            assets_.push_back(std::move(p));
+            asset = assets_.back().get();
+        }
 
         // Initialize the asset
-        if (!assets_.back()->construct(prop)) {
+        if (!asset->construct(prop)) {
             LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
             assets_.pop_back();
             return false;

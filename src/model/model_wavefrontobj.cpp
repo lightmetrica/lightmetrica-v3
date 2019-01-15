@@ -328,6 +328,12 @@ public:
         ar(geo_, groups_, assetsMap_, assets_);
     }
 
+    virtual void updateWeakRefs() override {
+        for (auto& asset : assets_) {
+            asset->updateWeakRefs();
+        }
+    }
+
 public:
     virtual Component* underlying(const std::string& name) const override {
         return assets_[assetsMap_.at(name)].get();
@@ -357,7 +363,8 @@ public:
                 // Create area light if Ke > 0
                 int lightIndex = -1;
                 if (glm::compMax(m.Ke) > 0_f) {
-                    auto light = comp::create<Light>("light::area", "", {
+                    const auto lightName = meshName + "_light";
+                    auto light = comp::create<Light>("light::area", makeLoc(loc(), lightName), {
                         {"Ke", m.Ke},
                         {"mesh", "global:" + makeLoc(loc(), meshName)}
                     });
@@ -365,6 +372,7 @@ public:
                         return false;
                     }
                     lightIndex = int(assets_.size());
+                    assetsMap_[lightName] = int(assets_.size());
                     assets_.push_back(std::move(light));
                 }
 
@@ -444,6 +452,10 @@ public:
         ar(model_, fs_);
     }
 
+    virtual void updateWeakRefs() override {
+        comp::updateWeakRef(model_);
+    }
+
 public:
     virtual bool construct(const Json& prop) override {
         model_ = comp::get<Model_WavefrontObj>(prop["model_"]);
@@ -521,6 +533,14 @@ public:
         ar(objmat_, materials_,
            diffuse_, glossy_, glass_, mirror_, mask_,
            maskTex_);
+    }
+
+    virtual void updateWeakRefs() override {
+        comp::updateWeakRef(model_);
+        comp::updateWeakRef(maskTex_);
+        for (auto& material : materials_) {
+            material->updateWeakRefs();
+        }
     }
 
 private:

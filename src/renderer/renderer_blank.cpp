@@ -23,6 +23,10 @@ public:
         ar(color_, film_);
     }
 
+    virtual void updateWeakRefs() override {
+        comp::updateWeakRef(film_);
+    }
+
 public:
     virtual bool construct(const Json& prop) override {
         color_ = prop["color"];

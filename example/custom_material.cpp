@@ -29,14 +29,17 @@ LM_COMP_REG_IMPL(Material_VisualizeNormal, "material::visualize_normal");
 
 // ----------------------------------------------------------------------------
 
-// This example illustrates how to extend features of Lightmetrica
-// by creating simple material extension.
+/*
+    This example illustrates how to extend features of Lightmetrica
+    by creating simple material extension.
+    Command line arguments are same as `raycast.cpp`.
+*/
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
         lm::init("user::default", {
             #if LM_DEBUG_MODE
-            {"numThreads", -1}
+            {"numThreads", 1}
             #else
             {"numThreads", -1}
             #endif

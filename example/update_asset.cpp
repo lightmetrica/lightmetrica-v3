@@ -4,34 +4,27 @@
 */
 
 #include <lm/lm.h>
+#include <filesystem>
 
 /*
-    Example of rendering an image with path tracing explaining basic usage of user APIs.
-
-    Example:
-    $ ./004_pt ./scenes/fireplace_room/fireplace_room.obj result.pfm \
-               10 20 1920 1080 \
-               5.101118 1.083746 -2.756308 \
-               4.167568 1.078925 -2.397892 \
-               43.001194
+    This example illustrats how to update the asset after initialization. 
+    Command line arguments are same as `raycast.cpp`.
 */
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
         lm::init("user::default", {
             #if LM_DEBUG_MODE
-            {"numThreads", 1}
+            {"numThreads", -1}
             #else
             {"numThreads", -1}
             #endif
         });
 
         // Parse command line arguments
-        const auto opt = lm::json::parsePositionalArgs<13>(argc, argv, R"({{
+        const auto opt = lm::json::parsePositionalArgs<11>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
-            "spp": {},
-            "len": {},
             "w": {},
             "h": {},
             "eye": [{},{},{}],
@@ -41,12 +34,11 @@ int main(int argc, char** argv) {
 
         // --------------------------------------------------------------------
 
+        // Define assets and primitives
         #if LM_DEBUG_MODE
         // Load internal state
         lm::deserialize("lm.serialized");
         #else
-        // Define assets
-
         // Film for the rendered image
         lm::asset("film1", "film::bitmap", {
             {"w", opt["w"]},
@@ -62,10 +54,16 @@ int main(int argc, char** argv) {
             {"vfov", opt["vfov"]}
         });
 
-        // OBJ model
-        lm::asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
+		// Base material
+		lm::asset("obj_base_mat", "material::diffuse", {
+            {"Kd", {.8,.2,.2}}
+        });
 
-        // Define scene primitives
+        // OBJ model
+        lm::asset("obj1", "model::wavefrontobj", {
+            {"path", opt["obj"]},
+            {"base_material", "obj_base_mat"}
+        });
 
         // Camera
         lm::primitive(lm::Mat4(1), { {"camera", "camera1"} });
@@ -82,17 +80,33 @@ int main(int argc, char** argv) {
 
         // --------------------------------------------------------------------
 
-        // Render an image
-		// _begin_render
-        lm::render("renderer::pt", {
-            {"output", "film1"},
-            {"spp", opt["spp"]},
-            {"maxLength", opt["len"]}
-        });
-        // _end_render
+        const auto appended = [&](const std::string& mod) -> std::string {
+            std::filesystem::path p(opt["out"].get<std::string>());
+            const auto p2 = (p.parent_path() / (p.stem().string() + mod)).replace_extension(p.extension());
+            return p2.string();
+        };
 
-        // Save rendered image
-        lm::save("film1", opt["out"]);
+        // --------------------------------------------------------------------
+
+        // Render and save
+        lm::render("renderer::raycast", {
+            {"output", "film1"}
+        });
+        lm::save("film1", appended("_1"));
+
+        // Replace `obj_base_mat` with different color
+        // Note that this is not trivial, because `model::wavefrontobj`
+        // already holds a reference to the original material.
+        lm::asset("obj_base_mat", "material::diffuse", {
+            {"Kd", {.2,.8,.2}}
+        });
+
+        // Render again
+        lm::render("renderer::raycast", {
+            {"output", "film1"}
+        });
+        lm::save("film1", appended("_2"));
+
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());
