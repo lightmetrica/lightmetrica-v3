@@ -11,6 +11,12 @@ parser.add_argument(
     '--lm', type=str, required=True, help='Lightmetrica executable directory')
 parser.add_argument(
     '--scene', type=str, required=True, help='Scene directory')
+parser.add_argument(
+    '--spp', type=int, default=10, help='Number of samples per pixel')
+parser.add_argument(
+    '--width', type=int, default=1920, help='Width of rendererd images if configuable')
+parser.add_argument(
+    '--height', type=int, default=1080, help='Height of rendererd images if configuable')
 args = parser.parse_args()
 
 def execute_example(ex, params):
@@ -25,16 +31,13 @@ def execute_example(ex, params):
     else:
         print('Failure')
 
-# Number of samples per pixel
-spp = 10
-
 # Run all examples
 execute_example('blank', [])
 execute_example('quad', [])
 execute_example('raycast', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
     'raycast_fireplace_room.pfm',
-    1920, 1080,
+    args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
     43.001194
@@ -42,7 +45,7 @@ execute_example('raycast', [
 execute_example('raycast', [
     os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
     'raycast_cornell_box.pfm',
-    1920, 1080,
+    args.width, args.height,
     0, 1, 5,
     0, 1, 0,
     30
@@ -50,7 +53,7 @@ execute_example('raycast', [
 execute_example('pt', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
     'pt_fireplace_room.pfm',
-    spp, 20, 1920, 1080,
+    args.spp, 20, args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
     43.001194
@@ -58,7 +61,7 @@ execute_example('pt', [
 execute_example('pt', [
     os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
     'pt_cornell_box.pfm',
-    spp, 20, 1920, 1080,
+    args.spp, 20, args.width, args.height,
     0, 1, 5,
     0, 1, 0,
     30
@@ -66,7 +69,7 @@ execute_example('pt', [
 execute_example('custom_material', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
     'custom_material.pfm',
-    1920, 1080,
+    args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
     43.001194
@@ -74,7 +77,7 @@ execute_example('custom_material', [
 execute_example('custom_renderer', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
     'custom_renderer.pfm',
-    spp, 1920, 1080,
+    args.spp, args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
     43.001194
@@ -82,7 +85,7 @@ execute_example('custom_renderer', [
 execute_example('serialization', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
     'serialization_fireplace_room.pfm',
-    1920, 1080,
+    args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
     43.001194
@@ -90,7 +93,7 @@ execute_example('serialization', [
 execute_example('serialization', [
     os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
     'serialization_cornell_box.pfm',
-    1920, 1080,
+    args.width, args.height,
     0, 1, 5,
     0, 1, 0,
     30
