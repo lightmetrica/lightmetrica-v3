@@ -39,6 +39,7 @@ LM_NAMESPACE_END(user)
 
 /*!
     \brief Initialize the renderer.
+    \param type Type of user context.
     \param prop Properties for configuration.
     \see `example/blank.cpp`
 
@@ -240,17 +241,19 @@ LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
 
 /*!
     \brief Serialize the internal state of the framework to a stream.
+    \param os Output stream.
 */
 LM_PUBLIC_API void serialize(std::ostream& os);
 
 /*!
     \brief Deserialize the internal state of the framework from a stream.
-    \param path Input file path.
+    \param is Input stream.
 */
 LM_PUBLIC_API void deserialize(std::istream& is);
 
 /*!
     \brief Serialize the internal state to a file.
+    \param path Path to a file with serialized state.
 */
 LM_INLINE void serialize(const std::string& path) {
     std::ofstream os(path, std::ios::out | std::ios::binary);
@@ -259,6 +262,7 @@ LM_INLINE void serialize(const std::string& path) {
 
 /*!
     \brief Deserialize the internal state to a file.
+    \param path to a file with serialized state. 
 */
 LM_INLINE void deserialize(const std::string& path) {
     std::ifstream is(path, std::ios::in | std::ios::binary);

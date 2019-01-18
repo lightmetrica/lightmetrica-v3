@@ -78,7 +78,7 @@ public:
         If this or parent component is root, the function returns empty string.
         For instance, if the current locator is ``aaa.bbb.ccc``, this function returns ``aaa.bbb``.
         If the current locator is ``aaa``, this function returns empty string.
-        \endif
+        \endrst
     */
     const std::string parentLoc() const {
         const auto i = loc_.find_last_of('.');
@@ -359,7 +359,7 @@ T* get(const std::string& name) {
     \rst
     Helper function to update weak reference of component instance.
     This function is supposed to be used in :func:``Component::updateWeakRefs()`` function.
-    \endend
+    \endrst
 */
 template <typename T>
 std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
@@ -472,6 +472,7 @@ Component::Ptr<ComponentT> createDirect(const std::string& loc, Ts&&... args) {
 
 /*!
     \brief Singleton for a context component.
+    \tparam ContextComponentT Component type.
 
     \rst
     This singleton holds the ownership the context component where
@@ -509,7 +510,9 @@ public:
 
 // ----------------------------------------------------------------------------
 
-// Scope guard of `loadPlugins` and `loadPlugins`.
+/*!
+    \brief Scope guard of `loadPlugins` and `loadPlugins`.
+*/
 class ScopedLoadPlugin {
 private:
     bool valid_ = true;
@@ -531,7 +534,10 @@ public:
 
 // ----------------------------------------------------------------------------
 
-// Helps registration of a component implementation.
+/*!
+    \brief Registration entry for component implementation.
+    \tparam ImplType Type of component implementation.
+*/
 template <typename ImplType>
 class RegEntry {
 private:

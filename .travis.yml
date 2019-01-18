@@ -1,13 +1,43 @@
-language: bash
-
 matrix:
   include:
-  - os: linux
+  - name: "Documentation"
+    language: python
+    os: linux
+    python:
+      - "3.6"
+    addons:
+      apt:
+        packages:
+          - doxygen
+          - graphviz
+    install:
+      - pip install sphinx sphinx_rtd_theme breathe sphinx_tabs
+    script:
+      - |
+        cd doc
+        doxygen
+        make html
+        cd -
+    deploy:
+      provider: pages
+      repo: hi2p-perim/lightmetrica-v3-doc
+      local_dir: dox/_build/html
+      skip_cleanup: true
+      github_token: $GITHUB_TOKEN
+      keep_history: false
+      on:
+        branch: master
+
+  - name: "Build on Linux environment with Docker"
+    language: bash
+    os: linux
     services: docker
     script:
     - docker build -t lm3 .
 
-  - os: windows
+  - name: "Build on Windows environment"
+    language: bash
+    os: windows
     dist: 1803-containers
     before_install:
     - |

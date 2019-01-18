@@ -14,7 +14,8 @@ EXTRACT_ALL            = YES
 ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
 #EXPAND_ONLY_PREDEF     = YES
-PREDEFINED             = LM_PUBLIC_API=
+PREDEFINED             = "LM_PUBLIC_API=" \
+                         "LM_INLINE="
 #EXPAND_AS_DEFINED      = LM_NAMESPACE_BEGIN
 
 ALIASES                = "rst=\verbatim embed:rst"
