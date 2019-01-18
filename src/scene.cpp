@@ -18,12 +18,12 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct Primitive {
-    int index;					// Primitive index
-    Transform transform;		// Transform associated to the primitive
-    const Mesh* mesh;			// Underlying assets
-    const Material* material;
-    const Light* light;
-    const Camera* camera;
+    int index;				// Primitive index
+    Transform transform;    // Transform associated to the primitive
+    Mesh* mesh;			    // Underlying assets
+    Material* material;
+    Light* light;
+    Camera* camera;
 
     template <typename Archive>
     void serialize(Archive& ar) {
@@ -41,6 +41,16 @@ private:
 public:
     LM_SERIALIZE_IMPL(ar) {
         ar(primitives_, accel_, camera_, lights_);
+    }
+
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, accel_);
+        for (auto& primitive : primitives_) {
+            comp::visit(visit, primitive.mesh);
+            comp::visit(visit, primitive.material);
+            comp::visit(visit, primitive.light);
+            comp::visit(visit, primitive.camera);
+        }
     }
 
     virtual void updateWeakRefs() override {
@@ -69,10 +79,10 @@ public:
         };
 
         // Underlying components of primitive
-        const auto* mesh     = dynamic_cast<Mesh*>(getAssetRefBy("mesh"));
-        const auto* material = dynamic_cast<Material*>(getAssetRefBy("material"));
-        const auto* light    = dynamic_cast<Light*>(getAssetRefBy("light"));
-        const auto* camera   = dynamic_cast<Camera*>(getAssetRefBy("camera"));
+        auto* mesh     = dynamic_cast<Mesh*>(getAssetRefBy("mesh"));
+        auto* material = dynamic_cast<Material*>(getAssetRefBy("material"));
+        auto* light    = dynamic_cast<Light*>(getAssetRefBy("light"));
+        auto* camera   = dynamic_cast<Camera*>(getAssetRefBy("camera"));
 
         // Primitive cannot be both camera and light
         if (camera && light) {
@@ -139,7 +149,7 @@ public:
     // ------------------------------------------------------------------------
 
     virtual void build(const std::string& name, const Json& prop) override {
-        accel_ = comp::create<Accel>(name, "", prop);
+        accel_ = comp::create<Accel>(name, makeLoc(loc(), "accel"), prop);
         if (!accel_) {
             return;
         }

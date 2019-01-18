@@ -23,6 +23,10 @@ public:
         ar(color_, film_);
     }
 
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, film_);
+    }
+
     virtual void updateWeakRefs() override {
         comp::updateWeakRef(film_);
     }

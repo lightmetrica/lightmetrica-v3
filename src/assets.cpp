@@ -21,6 +21,12 @@ public:
         ar(assetIndexMap_, assets_);
     }
 
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        for (auto& asset : assets_) {
+            comp::visit(visit, asset);
+        }
+    }
+
     virtual void updateWeakRefs() override {
         for (auto& asset : assets_) {
             asset->updateWeakRefs();
@@ -89,7 +95,11 @@ public:
             assets_[it->second] = std::move(p);
 
             // Notify to update the weak references in the object tree
-            lm::notifyUpdateWeakRefs();
+            auto* root = comp::detail::getRoot();
+            if (root) {
+                root->updateWeakRefs();
+            }
+
             asset = assets_[it->second].get();
         }
         else {

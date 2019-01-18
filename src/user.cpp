@@ -62,6 +62,7 @@ public:
         return true;
     }
 
+public:
     virtual Component* underlying(const std::string& name) const override {
         const auto[s, r] = comp::splitFirst(name);
         if (s == "assets") {
@@ -76,6 +77,19 @@ public:
         return nullptr;
     }
 
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        lm::comp::visit(visit, assets_);
+        lm::comp::visit(visit, scene_);
+        lm::comp::visit(visit, renderer_);
+    }
+
+    virtual void updateWeakRefs() override {
+        if (assets_) { assets_->updateWeakRefs(); }
+        if (scene_) { scene_->updateWeakRefs(); }
+        if (renderer_) { renderer_->updateWeakRefs(); }
+    }
+
+public:
     virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) override {
         if (!assets_->loadAsset(name, implKey, prop)) {
             THROW_RUNTIME_ERROR();
@@ -141,12 +155,6 @@ public:
         serial::load(is, renderer_);
     }
 
-    virtual void notifyUpdateWeakRefs() override {
-        if (assets_) { assets_->updateWeakRefs(); }
-        if (scene_) { scene_->updateWeakRefs(); }
-        if (renderer_) { renderer_->updateWeakRefs(); }
-    }
-
 private:
     Component::Ptr<Assets> assets_;
     Component::Ptr<Scene> scene_;
@@ -201,10 +209,6 @@ LM_PUBLIC_API void serialize(std::ostream& os) {
 
 LM_PUBLIC_API void deserialize(std::istream& is) {
     Instance::get().deserialize(is);
-}
-
-LM_PUBLIC_API void notifyUpdateWeakRefs() {
-    Instance::get().notifyUpdateWeakRefs();
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

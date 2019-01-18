@@ -20,6 +20,10 @@ public:
         ar(ref_);
     }
 
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, ref_);
+    }
+
     virtual void updateWeakRefs() override {
         comp::updateWeakRef(ref_);
     }

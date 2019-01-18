@@ -270,11 +270,6 @@ LM_INLINE void deserialize(const std::string& path) {
 }
 
 /*!
-    \brief Notify to update weak references (raw pointers) of components.
-*/
-LM_PUBLIC_API void notifyUpdateWeakRefs();
-
-/*!
     \brief Scoped guard of `init` and `shutdown` functions.
     \rst
     Example:
@@ -330,7 +325,6 @@ public:
     virtual FilmBuffer buffer(const std::string& filmName) = 0;
     virtual void serialize(std::ostream& os) = 0;
     virtual void deserialize(std::istream& is) = 0;
-    virtual void notifyUpdateWeakRefs() = 0;
 };
 
 /*!

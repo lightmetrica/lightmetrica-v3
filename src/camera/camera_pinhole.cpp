@@ -26,6 +26,10 @@ public:
         ar(film_, position_, u_, v_, w_, tf_, aspect_);
     }
 
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, film_);
+    }
+
     virtual void updateWeakRefs() override {
         comp::updateWeakRef(film_);
     }
