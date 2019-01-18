@@ -19,6 +19,7 @@ matrix:
     script:
       - |
         cd doc
+        mkdir _build
         doxygen
         make html
         touch _build/html/.nojekyll
