@@ -29,8 +29,9 @@ matrix:
       skip_cleanup: true
       github_token: $GITHUB_TOKEN
       keep_history: false
+      target-branch: master
       on:
-        branch: master
+        all_branches: true
 
   - name: "Build on Linux environment with Docker"
     language: bash
