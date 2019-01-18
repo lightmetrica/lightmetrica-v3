@@ -21,12 +21,13 @@ matrix:
     deploy:
       provider: pages
       repo: hi2p-perim/lightmetrica-v3-doc
-      local_dir: dox/_build/html
+      local_dir: doc/_build/html
       skip_cleanup: true
       github_token: $GITHUB_TOKEN
       keep_history: false
       on:
         all_branches: true
+        branch: master
 
   - name: "Build on Linux environment with Docker"
     language: bash
