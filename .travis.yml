@@ -1,3 +1,5 @@
+language: bash
+
 matrix:
   include:
   - name: "Documentation"
@@ -36,14 +38,12 @@ matrix:
         all_branches: true
 
   - name: "Build on Linux environment with Docker"
-    language: bash
     os: linux
     services: docker
     script:
     - docker build -t lm3 .
 
   - name: "Build on Windows environment"
-    language: bash
     os: windows
     dist: 1803-containers
     before_install:
