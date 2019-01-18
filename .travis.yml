@@ -5,6 +5,10 @@ matrix:
     os: linux
     python:
       - "3.6"
+    branches:
+      only:
+        - master
+        - dev
     addons:
       apt:
         packages:
@@ -26,7 +30,6 @@ matrix:
       github_token: $GITHUB_TOKEN
       keep_history: false
       on:
-        all_branches: true
         branch: master
 
   - name: "Build on Linux environment with Docker"
