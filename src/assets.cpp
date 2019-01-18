@@ -27,12 +27,6 @@ public:
         }
     }
 
-    virtual void updateWeakRefs() override {
-        for (auto& asset : assets_) {
-            asset->updateWeakRefs();
-        }
-    }
-
 private:
     bool validAssetName(const std::string& name) const {
         std::regex regex(R"x([\w_-]+)x");
@@ -93,14 +87,21 @@ public:
 
             // Replace the existing instance
             assets_[it->second] = std::move(p);
+            asset = assets_[it->second].get();
 
             // Notify to update the weak references in the object tree
-            auto* root = comp::detail::getRoot();
-            if (root) {
-                root->updateWeakRefs();
-            }
-
-            asset = assets_[it->second].get();
+            const lm::Component::ComponentVisitor visit = [&](lm::Component*& comp, bool weak) {
+                if (!comp) {
+                    return;
+                }
+                if (!weak) {
+                    comp->foreachUnderlying(visit);
+                }
+                else {
+                    comp::updateWeakRef(comp);
+                }
+            };
+            comp::detail::foreachComponent(visit);
         }
         else {
             // Register as a new asset

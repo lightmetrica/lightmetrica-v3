@@ -30,10 +30,6 @@ public:
         comp::visit(visit, film_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(film_);
-    }
-
 public:
     virtual bool construct(const Json& prop) override {
         bgColor_ = json::valueOr(prop, "bg_color", Vec3(0_f));

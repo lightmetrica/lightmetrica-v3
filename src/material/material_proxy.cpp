@@ -24,10 +24,6 @@ public:
         comp::visit(visit, ref_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(ref_);
-    }
-
 public:
 	virtual bool construct(const Json& prop) override {
 		ref_ = getAsset<Material>(prop, "ref");

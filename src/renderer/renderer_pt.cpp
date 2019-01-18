@@ -29,10 +29,6 @@ public:
         comp::visit(visit, film_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(film_);
-    }
-
 public:
     virtual bool construct(const Json& prop) override {
         film_ = getAsset<Film>(prop, "output");

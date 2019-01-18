@@ -83,12 +83,6 @@ public:
         lm::comp::visit(visit, renderer_);
     }
 
-    virtual void updateWeakRefs() override {
-        if (assets_) { assets_->updateWeakRefs(); }
-        if (scene_) { scene_->updateWeakRefs(); }
-        if (renderer_) { renderer_->updateWeakRefs(); }
-    }
-
 public:
     virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) override {
         if (!assets_->loadAsset(name, implKey, prop)) {

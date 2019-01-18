@@ -132,11 +132,6 @@ public:
         \brief Serialize a component.
     */
     virtual void save(OutputArchive& ar) { LM_UNUSED(ar); }
-    
-    /*!
-        \brief Update weak references.
-    */
-    virtual void updateWeakRefs() {}
 
 public:
     /*!
@@ -378,7 +373,6 @@ T* get(const std::string& name) {
 
     \rst
     Helper function to update weak reference of component instance.
-    This function is supposed to be used in :func:``Component::updateWeakRefs()`` function.
     \endrst
 */
 template <typename T>

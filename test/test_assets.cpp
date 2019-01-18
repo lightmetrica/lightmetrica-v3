@@ -17,29 +17,36 @@ struct TestAsset : public lm::Component {
 
 struct TestAsset_Simple final : public TestAsset {
     int v = -1;
+
     virtual bool construct(const lm::Json& prop) override {
         if (prop.count("v")) {
             v = prop["v"];
         }
         return true;
     }
+
     virtual int f() const override {
         return v;
     }
 };
 
 struct TestAsset_Dependent final : public TestAsset {
-    int v;
+    TestAsset* other;
+
     virtual bool construct(const lm::Json& prop) override {
         // In this test an instance of Assets are registered as root component
         // thus we can access the underlying component via lm::comp::get function.
         LM_UNUSED(prop);
-        const auto* other = lm::comp::get<TestAsset>("asset1");
-        v = other->f() + 1;
+        other = lm::comp::get<TestAsset>("asset1");
         return true;
     }
+
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        lm::comp::visit(visit, other);
+    }
+
     virtual int f() const override {
-        return v;
+        return other->f() + 1;
     }
 };
 
@@ -60,41 +67,57 @@ TEST_CASE("Assets") {
     SUBCASE("Load asset without properties") {
         bool result = assets->loadAsset("asset1", "testasset::simple", lm::Json());
         CHECK(result);
-        auto* a1 = assets->underlying<TestAsset_Simple>("asset1");
-        REQUIRE(a1);
-        CHECK(a1->f() == -1);
+        auto* a = assets->underlying<TestAsset>("asset1");
+        REQUIRE(a);
+        CHECK(a->f() == -1);
     }
 
     SUBCASE("Load asset with properties") {
         CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
-        auto* a1 = assets->underlying<TestAsset_Simple>("asset1");
-        REQUIRE(a1);
-        CHECK(a1->f() == 42);
+        auto* a = assets->underlying<TestAsset>("asset1");
+        REQUIRE(a);
+        CHECK(a->f() == 42);
     }
 
     SUBCASE("Load asset dependent on an other asset") {
         CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
         CHECK(assets->loadAsset("asset2", "testasset::dependent", {}));
-        auto* a2 = assets->underlying<TestAsset_Dependent>("asset2");
-        REQUIRE(a2);
-        CHECK(a2->f() == 43);
+        auto* a = assets->underlying<TestAsset>("asset2");
+        REQUIRE(a);
+        CHECK(a->f() == 43);
     }
 
     SUBCASE("Replacing assets") {
-        // Load initial asset
+        {
+            // Load initial asset
+            CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
+            auto* a = assets->underlying<TestAsset>("asset1");
+            REQUIRE(a);
+            CHECK(a->f() == 42);
+        }
+        {
+            // Load another asset with same name
+            CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 43} }));
+            auto* a = assets->underlying<TestAsset>("asset1");
+            REQUIRE(a);
+            CHECK(a->f() == 43);
+        }
+    }
+
+    SUBCASE("Replacing dependent assets") {
         {
             CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
-            auto* a1 = assets->underlying<TestAsset_Simple>("asset1");
-            REQUIRE(a1);
-            CHECK(a1->f() == 42);
+            CHECK(assets->loadAsset("asset2", "testasset::dependent", {}));
+            auto* a = assets->underlying<TestAsset>("asset2");
+            REQUIRE(a);
+            CHECK(a->f() == 43);
         }
-
-        // Load another asset with same name
         {
-            CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 43} }));
-            auto* a1 = assets->underlying<TestAsset_Simple>("asset1");
-            REQUIRE(a1);
-            CHECK(a1->f() == 43);
+            // Replace asset1 referenced by asset2
+            CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 1} }));
+            auto* a = assets->underlying<TestAsset>("asset2");
+            REQUIRE(a);
+            CHECK(a->f() == 2);
         }
     }
 }

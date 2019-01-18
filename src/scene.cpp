@@ -53,15 +53,6 @@ public:
         }
     }
 
-    virtual void updateWeakRefs() override {
-        for (auto& primitive : primitives_) {
-            comp::updateWeakRef(primitive.mesh);
-            comp::updateWeakRef(primitive.material);
-            comp::updateWeakRef(primitive.light);
-            comp::updateWeakRef(primitive.camera);
-        }
-    }
-
 public:
     virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) override {
         // Helper function to find an asset by property name

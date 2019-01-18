@@ -30,10 +30,6 @@ public:
         comp::visit(visit, film_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(film_);
-    }
-
 public:
     virtual Component* underlying(const std::string& name) const {
         LM_UNUSED(name);

@@ -27,10 +27,6 @@ public:
         comp::visit(visit, film_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(film_);
-    }
-
 public:
     virtual bool construct(const Json& prop) override {
         color_ = prop["color"];
