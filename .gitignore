@@ -21,6 +21,7 @@ misc/
 resources/
 experimental/
 external/
+external
 dist*/
 .idea/
 doc/_build

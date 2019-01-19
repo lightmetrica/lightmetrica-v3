@@ -328,9 +328,9 @@ public:
         ar(geo_, groups_, assetsMap_, assets_);
     }
 
-    virtual void updateWeakRefs() override {
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
         for (auto& asset : assets_) {
-            asset->updateWeakRefs();
+            comp::visit(visit, asset);
         }
     }
 
@@ -452,8 +452,8 @@ public:
         ar(model_, fs_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(model_);
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, model_);
     }
 
 public:
@@ -526,7 +526,7 @@ private:
     int mask_ = -1;
 
     // Texture for the alpha mask
-    const Texture* maskTex_ = nullptr;
+    Texture* maskTex_ = nullptr;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -535,12 +535,27 @@ public:
            maskTex_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(model_);
-        comp::updateWeakRef(maskTex_);
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, model_);
+        comp::visit(visit, maskTex_);
         for (auto& material : materials_) {
-            material->updateWeakRefs();
+            comp::visit(visit, material);
         }
+    }
+
+    virtual Json underlyingValue(const std::string& query) const {
+        LM_UNUSED(query);
+        return {
+            { "name", objmat_.name },
+            { "illum", objmat_.illum },
+            { "Kd", objmat_.Kd },
+            { "Ks", objmat_.Ks },
+            { "Ke", objmat_.Ke },
+            { "mapKd", objmat_.mapKd },
+            { "Ni", objmat_.Ni },
+            { "Ns", objmat_.Ns },
+            { "an", objmat_.an },
+        };
     }
 
 private:
@@ -606,7 +621,7 @@ public:
 
             // Mask texture
             if (!objmat_.mapKd.empty()) {
-                const auto* texture = lm::comp::get<Texture>(makeLoc(parentLoc(), objmat_.mapKd));
+                auto* texture = lm::comp::get<Texture>(makeLoc(parentLoc(), objmat_.mapKd));
                 if (texture->hasAlpha()) {
                     maskTex_ = texture;
                     mask_ = addMaterial("material::mask", {});

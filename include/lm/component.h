@@ -43,6 +43,9 @@ public:
     template <typename InterfaceT>
     using Ptr = std::unique_ptr<InterfaceT, ComponentDeleter>;
 
+    //! Visitor function type.
+    using ComponentVisitor = std::function<void(Component*& p, bool weak)>;
+
 private:
     //! Name of the component instance.
     std::string key_;
@@ -65,6 +68,11 @@ public:
     LM_DISABLE_COPY_AND_MOVE(Component)
 
 public:
+    /*!
+        \brief Get name of component instance.
+    */
+    const std::string& key() const { return key_; }
+
     /*!
         \brief Get locator of the component.
     */
@@ -124,11 +132,6 @@ public:
         \brief Serialize a component.
     */
     virtual void save(OutputArchive& ar) { LM_UNUSED(ar); }
-    
-    /*!
-        \brief Update weak references.
-    */
-    virtual void updateWeakRefs() {}
 
 public:
     /*!
@@ -190,21 +193,19 @@ public:
     /*!
         \brief Process given function for each underlying component call.
     */
-    virtual void foreachUnderlying(const std::function<void(Component* p)>& processComponent) const {
-        LM_UNUSED(processComponent);
-    }
+    virtual void foreachUnderlying(const ComponentVisitor& visit) { LM_UNUSED(visit); }
 
     /*!
-        \brief Process given function for each underlying component call with specific interface type. 
+        \brief Get underlying value.
+        \param query Query string.
+
+        \rst
+        This function gets underlying values of the component.
+        The specification of the query string is implementation-dependent.
+        The return type must be serialized to Json type.
+        \endrst
     */
-    template <typename UnderlyingComponentT>
-    void foreachUnderlying(
-        const std::function<void(UnderlyingComponentT* p)>& processComponent) const
-    {
-        foreachUnderlying([&](Component* p) -> void {
-            processComponent(p->cast<UnderlyingComponentT>());
-        });
-    }
+    virtual Json underlyingValue(const std::string& query = "") const { LM_UNUSED(query); return {}; }
 };
 
 // ----------------------------------------------------------------------------
@@ -326,9 +327,19 @@ LM_PUBLIC_API void printRegistered();
 LM_PUBLIC_API void registerRootComp(Component* p);
 
 /*!
+    \brief Get root component.
+*/
+LM_PUBLIC_API Component* getRoot();
+
+/*!
     \brief Get underlying component of root by name.
 */
 LM_PUBLIC_API Component* get(const std::string& name);
+
+/*!
+    \brief Enumerate all component accessible from the root.
+*/
+LM_PUBLIC_API void foreachComponent(const Component::ComponentVisitor& visit);
 
 /*!
     @}
@@ -358,7 +369,6 @@ T* get(const std::string& name) {
 
     \rst
     Helper function to update weak reference of component instance.
-    This function is supposed to be used in :func:``Component::updateWeakRefs()`` function.
     \endrst
 */
 template <typename T>
@@ -372,6 +382,32 @@ updateWeakRef(T*& p) {
         return;
     }
     p = comp::get<T>(loc);
+}
+
+/*!
+    \brief Visit underlying asset overloaded for weak references.
+    \param visit Visitor function.
+    \param p Reference to component pointer.
+*/
+template <typename T>
+std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
+visit(const Component::ComponentVisitor& visit_, T*& p) {
+    Component* temp = p;
+    visit_(temp, true);
+    p = dynamic_cast<T*>(temp);
+}
+
+/*!
+    \brief Visit underlying asset overloaded for unique pointers.
+    \param name Name of variable.
+    \param visit Visitor function.
+    \param p Reference to component pointer.
+*/
+template <typename T>
+std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
+visit(const Component::ComponentVisitor& visit_, Component::Ptr<T>& p) {
+    Component* temp = p.get();
+    visit_(temp, false);
 }
 
 /*!

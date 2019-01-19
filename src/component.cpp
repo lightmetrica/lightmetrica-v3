@@ -249,12 +249,21 @@ public:
         root_ = p;
     }
 
+    Component* getRoot() {
+        return root_;
+    }
+
     Component* get(const std::string& name) {
         if (!root_) {
             LM_WARN("Root component has not registered [name='{}'].", name);
             return nullptr;
         }
         return root_->underlying(name);
+    }
+
+    virtual void foreachComponent(const Component::ComponentVisitor& visit) {
+        // root_ is a reference to singleton
+        visit(root_, false);
     }
 
 private:
@@ -314,8 +323,16 @@ LM_PUBLIC_API void registerRootComp(Component* p) {
     Impl::instance().registerRootComp(p);
 }
 
+LM_PUBLIC_API Component* getRoot() {
+    return Impl::instance().getRoot();
+}
+
 LM_PUBLIC_API Component* get(const std::string& name) {
     return Impl::instance().get(name);
+}
+
+LM_PUBLIC_API void foreachComponent(const Component::ComponentVisitor& visit) {
+    Impl::instance().foreachComponent(visit);
 }
 
 // ----------------------------------------------------------------------------

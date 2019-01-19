@@ -1,3 +1,5 @@
+language: bash
+
 matrix:
   include:
   - name: "Documentation"
@@ -36,23 +38,24 @@ matrix:
         all_branches: true
 
   - name: "Build on Linux environment with Docker"
-    language: bash
     os: linux
     services: docker
     script:
     - docker build -t lm3 .
 
   - name: "Build on Windows environment"
-    language: bash
     os: windows
     dist: 1803-containers
+    # Workaround for https://travis-ci.community/t/choco-install-hangs-forever/307/20
+    filter_secrets: false
     before_install:
     - |
       choco install miniconda3
-      /c/Tools/miniconda3/Scripts/conda update -y -n base -c defaults conda
-      /c/Tools/miniconda3/Scripts/conda create -y -n lm3 python=3.6 
-      source /c/Tools/miniconda3/Scripts/activate lm3
-      /c/Tools/miniconda3/Scripts/conda install -y pytest numpy
+      export PATH="/c/Tools/miniconda3/Scripts:$PATH"
+      conda update -y -n base -c defaults conda
+      conda create -y -n lm3 python=3.6 
+      source activate lm3
+      conda install -y pytest numpy
     install:
     - |
       cd ${TRAVIS_BUILD_DIR}

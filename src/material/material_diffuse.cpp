@@ -16,15 +16,15 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Material_Diffuse : public Material {
 private:
     Vec3 Kd_;
-    const Texture* mapKd_ = nullptr;
+    Texture* mapKd_ = nullptr;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
         ar(Kd_, mapKd_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(mapKd_);
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, mapKd_);
     }
 
 public:

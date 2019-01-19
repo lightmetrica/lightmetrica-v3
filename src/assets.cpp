@@ -21,9 +21,9 @@ public:
         ar(assetIndexMap_, assets_);
     }
 
-    virtual void updateWeakRefs() override {
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
         for (auto& asset : assets_) {
-            asset->updateWeakRefs();
+            comp::visit(visit, asset);
         }
     }
 
@@ -87,10 +87,21 @@ public:
 
             // Replace the existing instance
             assets_[it->second] = std::move(p);
+            asset = assets_[it->second].get();
 
             // Notify to update the weak references in the object tree
-            lm::notifyUpdateWeakRefs();
-            asset = assets_[it->second].get();
+            const lm::Component::ComponentVisitor visit = [&](lm::Component*& comp, bool weak) {
+                if (!comp) {
+                    return;
+                }
+                if (!weak) {
+                    comp->foreachUnderlying(visit);
+                }
+                else {
+                    comp::updateWeakRef(comp);
+                }
+            };
+            comp::detail::foreachComponent(visit);
         }
         else {
             // Register as a new asset

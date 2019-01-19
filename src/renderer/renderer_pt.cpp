@@ -25,8 +25,8 @@ public:
         ar(film_, spp_, maxLength_, rngSeed_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(film_);
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, film_);
     }
 
 public:

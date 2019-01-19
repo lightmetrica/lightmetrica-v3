@@ -15,18 +15,18 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Light_Area : public Light {
 private:
-    Vec3 Ke_;           // Luminance
-    Dist dist_;         // For surface sampling of area lights
-    Float invA_;        // Inverse area of area lights
-    const Mesh* mesh_;  // Underlying mesh
+    Vec3 Ke_;     // Luminance
+    Dist dist_;   // For surface sampling of area lights
+    Float invA_;  // Inverse area of area lights
+    Mesh* mesh_;  // Underlying mesh
 
 public:
     LM_SERIALIZE_IMPL(ar) {
         ar(Ke_, dist_, invA_, mesh_);
     }
 
-    virtual void updateWeakRefs() override {
-        comp::updateWeakRef(mesh_);
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, mesh_);
     }
 
 private:
