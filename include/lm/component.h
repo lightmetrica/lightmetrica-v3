@@ -193,23 +193,19 @@ public:
     /*!
         \brief Process given function for each underlying component call.
     */
-    virtual void foreachUnderlying(const ComponentVisitor& visit) {
-        LM_UNUSED(visit);
-    }
+    virtual void foreachUnderlying(const ComponentVisitor& visit) { LM_UNUSED(visit); }
 
-    #if 0
     /*!
-        \brief Process given function for each underlying component call with specific interface type. 
+        \brief Get underlying value.
+        \param query Query string.
+
+        \rst
+        This function gets underlying values of the component.
+        The specification of the query string is implementation-dependent.
+        The return type must be serialized to Json type.
+        \endrst
     */
-    template <typename UnderlyingComponentT>
-    void foreachUnderlying(
-        const std::function<void(UnderlyingComponentT* p)>& processComponent)
-    {
-        foreachUnderlying([&](Component* p) -> void {
-            processComponent(p->cast<UnderlyingComponentT>());
-        });
-    }
-    #endif
+    virtual Json underlyingValue(const std::string& query = "") const { LM_UNUSED(query); return {}; }
 };
 
 // ----------------------------------------------------------------------------

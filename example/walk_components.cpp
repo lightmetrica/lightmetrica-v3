@@ -53,15 +53,9 @@ int main(int argc, char** argv) {
             {"vfov", opt["vfov"]}
         });
 
-		// Base material
-		lm::asset("obj_base_mat", "material::diffuse", {
-            {"Kd", {.8,.2,.2}}
-        });
-
         // OBJ model
         lm::asset("obj1", "model::wavefrontobj", {
-            {"path", opt["obj"]},
-            {"base_material", "obj_base_mat"}
+            {"path", opt["obj"]}
         });
 
         // Camera
@@ -80,33 +74,66 @@ int main(int argc, char** argv) {
         // --------------------------------------------------------------------
 
         // Prints all registered components
-        {
-            LM_INFO("Registered components");
-            LM_INDENT();
-            lm::comp::detail::foreachRegistered([&](const std::string& name) {
-                LM_INFO(name);
-            });
-        }
+        LM_INFO("Registered components");
+        lm::comp::detail::foreachRegistered([&](const std::string& name) {
+            LM_INFO("- {}", name);
+        });
+
+        // --------------------------------------------------------------------
 
         // Prints object hierarchy of the framework
-        {
-            LM_INFO("Component hierarchy");
-            const lm::Component::ComponentVisitor visit = [&](lm::Component* comp, bool weak) {
-                if (!comp) {
-                    LM_INFO("- nullptr");
-                    return;
+        LM_INFO("Component hierarchy");
+        const lm::Component::ComponentVisitor visit = [&](lm::Component* comp, bool weak) {
+            if (!comp) {
+                LM_INFO("- nullptr");
+                return;
+            }
+            if (!weak) {
+                LM_INFO("- unique [key='{}', loc='{}']", comp->key(), comp->loc());
+                LM_INDENT();
+                comp->foreachUnderlying(visit);
+            }
+            else {
+                LM_INFO("-> weak [key='{}', loc='{}']", comp->key(), comp->loc());
+            }
+        };
+        lm::comp::detail::foreachComponent(visit);
+
+        // --------------------------------------------------------------------
+
+        // APIs for getting underlying information of a component
+        
+        // lm::comp::get() function can access component tree from the root component
+        // Root component is currently `user::default` and it has three underlying components.
+        auto* assets = lm::comp::get<lm::Assets>("assets");
+
+        // Component::underlying() function can access underlying component
+        auto* obj1 = assets->underlying<lm::Model>("obj1");
+
+        // Alternatively, the same component can be accessed
+        // directly by lm::comp::get() function with 'xxx.yyy.zzz' format.
+        auto* obj2 = lm::comp::get<lm::Model>("assets.obj1");
+        LM_UNUSED(obj2);
+        assert(obj1 == obj2);
+            
+        // We can iterate the underlying assets with Component::foreachUnderlying() function.
+        obj1->foreachUnderlying([](lm::Component* p, bool) {
+            // The implementation key of underlying assets can be
+            // obtained by Component::key() function.
+            const auto key = p->key();
+            if (key == "material::wavefrontobj") {
+                LM_INFO("Material");
+                LM_INDENT();
+
+                // Some component supports implementation-specific getter function of values
+                // where the values are serialized to Json format.
+                // For instance, `material::wavefrontobj` exposes underlying material parameters inside MLT file.
+                const auto v = p->underlyingValue();
+                for (const auto& e : v.items()) {
+                    LM_INFO("{}: {}", e.key(), e.value().dump());
                 }
-                if (!weak) {
-                    LM_INFO("- unique [key='{}', loc='{}']", comp->key(), comp->loc());
-                    LM_INDENT();
-                    comp->foreachUnderlying(visit);
-                }
-                else {
-                    LM_INFO("-> weak [key='{}', loc='{}']", comp->key(), comp->loc());
-                }
-            };
-            lm::comp::detail::foreachComponent(visit);
-        }
+            }
+        });
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());

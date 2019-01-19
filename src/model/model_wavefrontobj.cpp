@@ -543,6 +543,21 @@ public:
         }
     }
 
+    virtual Json underlyingValue(const std::string& query) const {
+        LM_UNUSED(query);
+        return {
+            { "name", objmat_.name },
+            { "illum", objmat_.illum },
+            { "Kd", objmat_.Kd },
+            { "Ks", objmat_.Ks },
+            { "Ke", objmat_.Ke },
+            { "mapKd", objmat_.mapKd },
+            { "Ni", objmat_.Ni },
+            { "Ns", objmat_.Ns },
+            { "an", objmat_.an },
+        };
+    }
+
 private:
     int addMaterial(const std::string& name, const Json& prop) {
         auto p = comp::create<Material>(name, "", prop);
