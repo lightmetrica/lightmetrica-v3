@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
         // Root component is currently `user::default` and it has three underlying components.
         auto* assets = lm::comp::get<lm::Assets>("assets");
 
-        // Component::underlying() function can access underlying component
+        // Component::underlying() function can access underlying component.
         auto* obj1 = assets->underlying<lm::Model>("obj1");
 
         // Alternatively, the same component can be accessed
@@ -125,9 +125,10 @@ int main(int argc, char** argv) {
                 LM_INFO("Material");
                 LM_INDENT();
 
-                // Some component supports implementation-specific getter function of values
+                // Some component supports implementation-specific getter function
                 // where the values are serialized to Json format.
-                // For instance, `material::wavefrontobj` exposes underlying material parameters inside MLT file.
+                // For instance, `material::wavefrontobj` exposes underlying material parameters
+                // for the correponding MLT file.
                 const auto v = p->underlyingValue();
                 for (const auto& e : v.items()) {
                     LM_INFO("{}: {}", e.key(), e.value().dump());
