@@ -18,12 +18,12 @@ int bswap(int x) { return __builtin_bswap32(x); }
 
 #if LM_PLATFORM_WINDOWS
 std::string sanitizeDirectorySeparator(std::string p) {
-	return p;
+    return p;
 }
 #else
 std::string sanitizeDirectorySeparator(std::string p) {
-	std::replace(p.begin(), p.end(), '\\', '/');
-	return p;
+    std::replace(p.begin(), p.end(), '\\', '/');
+    return p;
 }
 #endif
 
@@ -66,66 +66,66 @@ private:
 
     // Load a ppm or a pfm texture
     template <typename T>
-	bool loadpxm(std::vector<Float>& c, const std::string& p_, bool errorOnFailure = true) {
-		const auto p = sanitizeDirectorySeparator(p_);
+    bool loadpxm(std::vector<Float>& c, const std::string& p_, bool errorOnFailure = true) {
+        const auto p = sanitizeDirectorySeparator(p_);
         LM_INFO("Loading texture [path='{}']", p);
-		LM_INDENT();
+        LM_INDENT();
 
-		// Open image file
+        // Open image file
         FILE *f;
-		{
-			#if LM_COMPILER_MSVC
-			fopen_s(&f, p.c_str(), "rb");
-			#else
-			f = fopen(p.c_str(), "rb");
-			#endif
-			if (!f) {
-				if (errorOnFailure) {
-					LM_ERROR("Failed to load texture [path='{}']", p);
-					return false;
-				}
-				return true;
-			}
-		}
+        {
+            #if LM_COMPILER_MSVC
+            fopen_s(&f, p.c_str(), "rb");
+            #else
+            f = fopen(p.c_str(), "rb");
+            #endif
+            if (!f) {
+                if (errorOnFailure) {
+                    LM_ERROR("Failed to load texture [path='{}']", p);
+                    return false;
+                }
+                return true;
+            }
+        }
 
-		// Read header
+        // Read header
         double e;
-		{
-			#if LM_COMPILER_MSVC
-			const auto ret = fscanf_s(f, "%*s %d %d %lf%*c", &w, &h, &e);
-			#else
-			const auto ret = fscanf(f, "%*s %d %d %lf%*c", &w, &h, &e);
-			#endif
-			if (ret != 3) {
-				LM_ERROR("Invalid PXM header [path='{}']", p);
-				return false;
-			}
-		}
+        {
+            #if LM_COMPILER_MSVC
+            const auto ret = fscanf_s(f, "%*s %d %d %lf%*c", &w, &h, &e);
+            #else
+            const auto ret = fscanf(f, "%*s %d %d %lf%*c", &w, &h, &e);
+            #endif
+            if (ret != 3) {
+                LM_ERROR("Invalid PXM header [path='{}']", p);
+                return false;
+            }
+        }
 
-		// Read data
-		const int sz = w * h * 3;
-		static std::vector<T> ctemp;
-		{
-			ctemp.assign(sz, 0);
-			c.assign(sz, 0);
-			#if LM_COMPILER_MSVC
-			const auto ret = fread_s(ctemp.data(), sz*sizeof(T), sizeof(T), sz, f);
-			#else
-			const auto ret = fread(ctemp.data(), sizeof(T), sz, f);
-			#endif
-			if (ret != sz) {
-				LM_ERROR("Invalid data [path='{}']", p);
-				return false;
-			}
-		}
-		
-		// Postprocess
+        // Read data
+        const int sz = w * h * 3;
+        static std::vector<T> ctemp;
+        {
+            ctemp.assign(sz, 0);
+            c.assign(sz, 0);
+            #if LM_COMPILER_MSVC
+            const auto ret = fread_s(ctemp.data(), sz*sizeof(T), sizeof(T), sz, f);
+            #else
+            const auto ret = fread(ctemp.data(), sizeof(T), sz, f);
+            #endif
+            if (ret != sz) {
+                LM_ERROR("Invalid data [path='{}']", p);
+                return false;
+            }
+        }
+        
+        // Postprocess
         for (int i = 0; i < sz; i++) {
             c[i] = postprocess(i, Float(e), ctemp);
         }
 
         fclose(f);
-		return true;
+        return true;
     }
 
 public:

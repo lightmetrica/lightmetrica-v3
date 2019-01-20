@@ -385,9 +385,9 @@ public:
             [&](const MTLMatParams& m) -> bool {
                 if (const auto it = prop.find("base_material"); it != prop.end()) {
                     // Use user-specified material
-					auto mat = comp::create<Material>("material::proxy", makeLoc(loc(), m.name), {
-						{"ref", *it}
-					});
+                    auto mat = comp::create<Material>("material::proxy", makeLoc(loc(), m.name), {
+                        {"ref", *it}
+                    });
                     if (!mat) {
                         return false;
                     }
@@ -473,13 +473,13 @@ public:
         }
     }
 
-	virtual Tri triangleAt(int face) const override {
+    virtual Tri triangleAt(int face) const override {
         const auto& geo_ = model_->geo_;
-		const auto p1 = geo_.ps[fs_[3*face].p];
-		const auto p2 = geo_.ps[fs_[3*face + 1].p];
-		const auto p3 = geo_.ps[fs_[3*face + 2].p];
-		return { p1, p2, p3 };
-	}
+        const auto p1 = geo_.ps[fs_[3*face].p];
+        const auto p2 = geo_.ps[fs_[3*face + 1].p];
+        const auto p3 = geo_.ps[fs_[3*face + 2].p];
+        return { p1, p2, p3 };
+    }
 
     virtual Point surfacePoint(int face, Vec2 uv) const override {
         const auto& geo_ = model_->geo_;
@@ -639,38 +639,38 @@ public:
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
-		// Select component
-		const auto [compIndex, weight] = [&]() -> std::tuple<int, Float> {
-			// Glass or mirror
-			if (glass_ >= 0 || mirror_ >= 0) {
-				return { mirror_ < 0 ? glass_ : mirror_, 1_f };
-			}
+        // Select component
+        const auto [compIndex, weight] = [&]() -> std::tuple<int, Float> {
+            // Glass or mirror
+            if (glass_ >= 0 || mirror_ >= 0) {
+                return { mirror_ < 0 ? glass_ : mirror_, 1_f };
+            }
 
-			// Diffuse or glossy or mask
-			const auto* D = materials_.at(diffuse_).get();
-			const auto* G = materials_.at(glossy_).get();
-			const auto wd = [&]() {
-				const auto wd = glm::compMax(*D->reflectance(sp));
-				const auto ws = glm::compMax(*G->reflectance(sp));
-				return wd == 0_f && ws == 0_f ? 1_f : wd / (wd + ws);
-			}();
-			if (rng.u() < wd) {
-				if (maskTex_ && rng.u() > maskTex_->evalAlpha(sp.t)) {
-					return { mask_, 1_f/wd };
-				}
+            // Diffuse or glossy or mask
+            const auto* D = materials_.at(diffuse_).get();
+            const auto* G = materials_.at(glossy_).get();
+            const auto wd = [&]() {
+                const auto wd = glm::compMax(*D->reflectance(sp));
+                const auto ws = glm::compMax(*G->reflectance(sp));
+                return wd == 0_f && ws == 0_f ? 1_f : wd / (wd + ws);
+            }();
+            if (rng.u() < wd) {
+                if (maskTex_ && rng.u() > maskTex_->evalAlpha(sp.t)) {
+                    return { mask_, 1_f/wd };
+                }
                 else {
                     return { diffuse_, 1_f / wd };
                 }
-			}
-			return { glossy_, 1_f/(1_f-wd) };
-		}();
+            }
+            return { glossy_, 1_f/(1_f-wd) };
+        }();
 
-		// Sample a ray
-		auto s = materials_.at(compIndex)->sampleRay(rng, sp, wi);
-		if (!s) {
-			return {};
-		}
-		return s->asComp(compIndex).multWeight(weight);
+        // Sample a ray
+        auto s = materials_.at(compIndex)->sampleRay(rng, sp, wi);
+        if (!s) {
+            return {};
+        }
+        return s->asComp(compIndex).multWeight(weight);
     }
 
     virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const {

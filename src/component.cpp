@@ -122,7 +122,7 @@ private:
 private:
     
     #if LM_PLATFORM_WINDOWS
-	HMODULE handle;
+    HMODULE handle;
     #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
     void* handle;
     #endif

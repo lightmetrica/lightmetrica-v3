@@ -312,11 +312,11 @@ static void bind(pybind11::module& m) {
         .def_readwrite("wo", &RaySample::wo)
         .def_readwrite("weight", &RaySample::weight);
 
-	// LightSample
-	pybind11::class_<LightSample>(m, "LightSample")
-		.def_readwrite("wo", &LightSample::wo)
-		.def_readwrite("d", &LightSample::d)
-		.def_readwrite("weight", &LightSample::weight);
+    // LightSample
+    pybind11::class_<LightSample>(m, "LightSample")
+        .def_readwrite("wo", &LightSample::wo)
+        .def_readwrite("d", &LightSample::d)
+        .def_readwrite("weight", &LightSample::weight);
 
     // Scene
     class Scene_Py final : public Scene {
@@ -353,12 +353,12 @@ static void bind(pybind11::module& m) {
         virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, samplePrimaryRay, rng, window);
         }
-		virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
-			PYBIND11_OVERLOAD_PURE(std::optional<LightSample>, Scene, sampleLight, rng, sp);
-		}
-		virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-			PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalBsdf, sp, wi, wo);
-		}
+        virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<LightSample>, Scene, sampleLight, rng, sp);
+        }
+        virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalBsdf, sp, wi, wo);
+        }
         virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrbEndpoint, sp, wo);
         }

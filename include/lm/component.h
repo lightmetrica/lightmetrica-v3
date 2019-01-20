@@ -638,9 +638,9 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     \endrst
 */
 #define LM_COMP_REG_IMPL(ImplT, Key) \
-	namespace { \
-		template <typename T> class RegEntry_Init_; \
-		template <> class RegEntry_Init_<ImplT> { \
+    namespace { \
+        template <typename T> class RegEntry_Init_; \
+        template <> class RegEntry_Init_<ImplT> { \
             static const LM_NAMESPACE::comp::detail::RegEntry<ImplT>& reg_; \
         }; \
         const LM_NAMESPACE::comp::detail::RegEntry<ImplT>& \

@@ -35,10 +35,10 @@ public:
     */
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
 
-	/*!
-		\brief Evaluate importance.
-	*/
-	virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const = 0;
+    /*!
+        \brief Evaluate importance.
+    */
+    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const = 0;
 };
 
 /*!

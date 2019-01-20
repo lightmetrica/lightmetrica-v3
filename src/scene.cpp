@@ -18,9 +18,9 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct Primitive {
-    int index;				// Primitive index
+    int index;                // Primitive index
     Transform transform;    // Transform associated to the primitive
-    Mesh* mesh;			    // Underlying assets
+    Mesh* mesh;                // Underlying assets
     Material* material;
     Light* light;
     Camera* camera;
@@ -35,7 +35,7 @@ class Scene_ final : public Scene {
 private:
     std::vector<Primitive> primitives_;
     Ptr<Accel> accel_;
-    int camera_;			   // Camera primitive index
+    int camera_;               // Camera primitive index
     std::vector<int> lights_;  // Light primitive indices
 
 public:

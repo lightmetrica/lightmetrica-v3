@@ -54,8 +54,8 @@ int main(int argc, char** argv) {
             {"vfov", opt["vfov"]}
         });
 
-		// Base material
-		lm::asset("obj_base_mat", "material::diffuse", {
+        // Base material
+        lm::asset("obj_base_mat", "material::diffuse", {
             {"Kd", {.8,.2,.2}}
         });
 

@@ -75,8 +75,8 @@ int main(int argc, char** argv) {
             {"vfov", opt["vfov"]}
         });
 
-		// Material to replace
-		lm::asset("visualize_normal_mat", "material::visualize_normal", {});
+        // Material to replace
+        lm::asset("visualize_normal_mat", "material::visualize_normal", {});
 
         // OBJ model
         // Replace all materials to diffuse and use our checker texture

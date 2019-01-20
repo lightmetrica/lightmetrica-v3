@@ -468,12 +468,12 @@ LM_NAMESPACE_END(math)
 */
 
 /*!
-	\brief Transform.
+    \brief Transform.
 */
 struct Transform {
-	Mat4 M;				//!< Transform associated to the primitive
-	Mat3 normalM;		//!< Transform for normals
-	Float J;			//!< J := |det(M_lin)| where M_lin is linear component of M
+    Mat4 M;                //!< Transform associated to the primitive
+    Mat3 normalM;        //!< Transform for normals
+    Float J;            //!< J := |det(M_lin)| where M_lin is linear component of M
 
     template <typename Archive>
     void serialize(Archive& ar) {
@@ -486,10 +486,10 @@ struct Transform {
         \brief Construct the transform with 4x4 transformation matrix.
         \param M Transformation matrix.
     */
-	Transform(const Mat4& M) : M(M) {
-		normalM = Mat3(glm::transpose(glm::inverse(M)));
-		J = std::abs(glm::determinant(Mat3(M)));
-	}
+    Transform(const Mat4& M) : M(M) {
+        normalM = Mat3(glm::transpose(glm::inverse(M)));
+        J = std::abs(glm::determinant(Mat3(M)));
+    }
 };
 
 /*!
