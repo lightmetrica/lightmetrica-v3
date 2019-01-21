@@ -17,6 +17,7 @@ RUN apt update && apt install -y \
     
 RUN pip3 install --upgrade pip
 RUN pip install pytest
+RUN pip install imageio && imageio_download_bin freeimage
 
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test
 RUN apt update && apt install -y gcc-8 g++-8
