@@ -78,7 +78,7 @@ public:
         const auto parent = std::filesystem::path(outpath).parent_path();
         if (!std::filesystem::exists(parent)) {
             LM_INFO("Creating directory [path='{}']", parent.string());
-            if (!std::filesystem::create_directory(parent)) {
+            if (!std::filesystem::create_directories(parent)) {
                 LM_INFO("Failed to create directory [path='{}']", parent.string());
                 return false;
             }

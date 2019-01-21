@@ -24,18 +24,18 @@ args = parser.parse_args()
 
 # Run all examples
 blank.run(
-    out=os.path.join(args.outdir, 'blank.pfm'),    
+    out=os.path.join(args.outdir, 'blank_py.pfm'),    
     width=args.width,
     height=args.height
 )
 quad.run(
-    out=os.path.join(args.outdir, 'quad.pfm'),    
+    out=os.path.join(args.outdir, 'quad_py.pfm'),    
     width=args.width,
     height=args.height
 )
 raycast.run(
     obj=os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
-    out=os.path.join(args.outdir, 'raycast_fireplace_room.pfm'),
+    out=os.path.join(args.outdir, 'raycast_fireplace_room_py.pfm'),
     width=args.width,
     height=args.height,
     eye=[5.101118,1.083746,-2.756308],
@@ -44,7 +44,7 @@ raycast.run(
 )
 raycast.run(
     obj=os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
-    out=os.path.join(args.outdir, 'raycast_cornell_box.pfm'),
+    out=os.path.join(args.outdir, 'raycast_cornell_box_py.pfm'),
     width=args.width,
     height=args.height,
     eye=[0,1,5],
@@ -53,7 +53,7 @@ raycast.run(
 )
 pt.run(
     obj=os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
-    out=os.path.join(args.outdir, 'pt_fireplace_room.pfm'),
+    out=os.path.join(args.outdir, 'pt_fireplace_room_py.pfm'),
     spp=args.spp,
     len=20,
     width=args.width,
@@ -64,7 +64,7 @@ pt.run(
 )
 pt.run(
     obj=os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
-    out=os.path.join(args.outdir, 'pt_cornell_box.pfm'),
+    out=os.path.join(args.outdir, 'pt_cornell_box_py.pfm'),
     spp=args.spp,
     len=20,
     width=args.width,
