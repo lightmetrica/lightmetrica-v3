@@ -94,7 +94,7 @@ public:
                 }
             }
         }
-		fwrite(d.data(), 4, d.size(), f);
+        fwrite(d.data(), 4, d.size(), f);
         fclose(f);
         return true;
     }

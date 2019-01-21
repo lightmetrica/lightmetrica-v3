@@ -18,15 +18,15 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Texture : public Component {
 public:
-	/*!
-		\brief Evaluate color component of the texture.
-	*/
-	virtual Vec3 eval(Vec2 t) const = 0;
+    /*!
+        \brief Evaluate color component of the texture.
+    */
+    virtual Vec3 eval(Vec2 t) const = 0;
 
-	/*!
-		\brief Evaluate alpha component of the texture.
-	*/
-	virtual Float evalAlpha(Vec2 t) const { LM_UNUSED(t); return 0_f; }
+    /*!
+        \brief Evaluate alpha component of the texture.
+    */
+    virtual Float evalAlpha(Vec2 t) const { LM_UNUSED(t); return 0_f; }
 
     /*!
         \brief Check if texture has alpha component.

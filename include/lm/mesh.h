@@ -26,11 +26,11 @@ public:
     using ProcessTriangleFunc = std::function<void(int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const = 0;
 
-	/*!
-		\brief Get triangle by face index.
-	*/
-	struct Tri { Vec3 p1, p2, p3; };
-	virtual Tri triangleAt(int face) const = 0;
+    /*!
+        \brief Get triangle by face index.
+    */
+    struct Tri { Vec3 p1, p2, p3; };
+    virtual Tri triangleAt(int face) const = 0;
 
     /*!
         \brief Compute surface geometry information at a point.

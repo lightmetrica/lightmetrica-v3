@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
         // --------------------------------------------------------------------
 
         // Render an image
-		// _begin_render
+        // _begin_render
         lm::render("renderer::pt", {
             {"output", "film1"},
             {"spp", opt["spp"]},

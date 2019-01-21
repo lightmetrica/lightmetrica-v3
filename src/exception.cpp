@@ -82,7 +82,7 @@ public:
     }
 
 private:
-	#if LM_PLATFORM_WINDOWS
+    #if LM_PLATFORM_WINDOWS
     unsigned int setFPExState(unsigned int state) const {
         // Get current floating-point control word
         unsigned int old;
@@ -95,7 +95,7 @@ private:
 
         return old;
     }
-	#endif
+    #endif
 
 public:
     virtual bool construct(const Json& prop) override {
