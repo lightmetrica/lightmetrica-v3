@@ -44,8 +44,8 @@ matrix:
     - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git scenes
     script:
     - docker build -t lm3 .
-    - docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c 'cd /lightmetrica-v3 && python3 ./example/run_all.py --lm ./_build/bin --outdir /lm3/example_results --scene /lm3/scenes --spp 1 --width 320 --height 180'
-    - docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c 'cd /lightmetrica-v3 && python3 ./example/run_all_py.py --outdir /lm3/example_results --scene /lm3/scenes --spp 1 --width 320 --height 180'
+    - docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c 'cd /lightmetrica-v3 && python3 ./example/run_all.py --lm ./_build/bin --outdir /lm3/example_results --scene /lm3/scenes --spp 10 --width 640 --height 360'
+    - docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c 'cd /lightmetrica-v3 && python3 ./example/run_all_py.py --outdir /lm3/example_results --scene /lm3/scenes --spp 10 --width 640 --height 360'
     - docker run --rm -it -v ${PWD}:/lm3 lm3 bash -c "cd /lightmetrica-v3 && python3 ./example/compress_images.py --dir /lm3/example_results"
     deploy:
       provider: pages
