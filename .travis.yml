@@ -43,10 +43,9 @@ matrix:
     git:
       lfs_skip_smudge: true
     before_install:
-    - git lfs
     - git clone --depth 1 https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes.git scenes
     - cd scenes
-    - git lfs pull
+    - GIT_TRACE=1 git lfs pull
     - cd -
     script:
     - docker build -t lm3 .
