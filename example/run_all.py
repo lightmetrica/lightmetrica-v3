@@ -5,8 +5,7 @@ import subprocess as sp
 import argparse
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(
-    description='Execute all examples')
+parser = argparse.ArgumentParser(description='Execute all examples')
 parser.add_argument(
     '--lm', type=str, required=True, help='Lightmetrica executable directory')
 parser.add_argument(

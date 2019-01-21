@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
                 // Some component supports implementation-specific getter function
                 // where the values are serialized to Json format.
                 // For instance, `material::wavefrontobj` exposes underlying material parameters
-                // for the correponding MLT file.
+                // for the corresponding MLT file.
                 const auto v = p->underlyingValue();
                 for (const auto& e : v.items()) {
                     LM_INFO("{}: {}", e.key(), e.value().dump());

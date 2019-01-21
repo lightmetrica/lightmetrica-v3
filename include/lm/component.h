@@ -531,6 +531,10 @@ public:
     }
 
     static void init(const std::string& type, const Json& prop) {
+        // Implicitly call shutdown() if the singleton was already initialized
+        if (instance().context) {
+            shutdown();
+        }
         instance().context = comp::create<ContextComponentT>(type, "", prop);
     }
 
