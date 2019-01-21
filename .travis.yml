@@ -40,9 +40,9 @@ matrix:
   - name: "Build on Linux environment with Docker"
     os: linux
     services: docker
+    git:
+      lfs_skip_smudge: true
     before_install:
-    # Workaround for https://stackoverflow.com/questions/41716509/fail-to-clone-repository-with-git-lfs
-    - git lfs install --skip-smudge
     - git clone --depth 1 https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes.git scenes
     - cd scenes
     - git lfs pull
