@@ -135,6 +135,11 @@ int main(int argc, char** argv) {
                 }
             }
         });
+
+        // --------------------------------------------------------------------
+
+        // Shutdown the framework
+        lm::shutdown();
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());

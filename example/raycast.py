@@ -59,6 +59,9 @@ def run(**kwargs):
     # Save rendered image
     lm.save('film1', kwargs['out'])
 
+    # Shutdown the framework
+    lm.shutdown()
+
 if __name__ == '__main__':
     # _begin_parse_args
     parser = argparse.ArgumentParser()

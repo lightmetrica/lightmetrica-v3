@@ -29,10 +29,12 @@ def execute_example(ex, params):
     p = sp.Popen([
         os.path.join(args.lm, ex)
     ] + [str(v).replace('\\', '/') for v in params])
-    if p.wait() == 0:
+    ret = p.wait()
+    if ret == 0:
         print('Success')
     else:
         print('Failure')
+        print(ret)
 
 # Run all examples
 execute_example('blank', [

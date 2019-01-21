@@ -72,5 +72,4 @@ WORKDIR /lightmetrica-v3/example/ext
 RUN cmake -G "Ninja" -H. -B_build -DCMAKE_BUILD_TYPE=Release && \
     cmake --build _build
 
-WORKDIR /lightmetrica-v3/example/ext/_build
-RUN ./quad
+ENV PYTHONPATH="/lightmetrica-v3:/lightmetrica-v3/_build/bin"

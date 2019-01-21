@@ -31,6 +31,9 @@ int main(int argc, char** argv) {
 
         // Save rendered image
         lm::save("film", opt["out"]);
+
+        // Shutdown the framework
+        lm::shutdown();
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());
