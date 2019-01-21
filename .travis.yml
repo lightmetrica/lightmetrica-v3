@@ -45,6 +45,7 @@ matrix:
     before_install:
     - git clone --depth 1 https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes.git scenes
     - cd scenes
+    - git config lfs.allowincompletepush true
     - GIT_TRACE=1 git lfs pull
     - cd -
     script:
