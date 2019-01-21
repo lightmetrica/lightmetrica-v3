@@ -11,6 +11,8 @@ parser.add_argument(
 parser.add_argument(
     '--scene', type=str, required=True, help='Scene directory')
 parser.add_argument(
+    '--outdir', type=str, required=True, help='Output directory')
+parser.add_argument(
     '--spp', type=int, default=10, help='Number of samples per pixel')
 parser.add_argument(
     '--width', type=int, default=1920, help='Width of rendererd images if configuable')
@@ -22,20 +24,28 @@ def execute_example(ex, params):
     print('Executing example [name=%s]' % ex)
     sys.stdout.flush()
     # Execute the example executable
+    # We convert backslashes as path separator in Windows environment
+    # to slashes because subprocess might pass unescaped backslash.
     p = sp.Popen([
         os.path.join(args.lm, ex)
-    ] + [str(v) for v in params])
+    ] + [str(v).replace('\\', '/') for v in params])
     if p.wait() == 0:
         print('Success')
     else:
         print('Failure')
 
 # Run all examples
-execute_example('blank', [])
-execute_example('quad', [])
+execute_example('blank', [
+    os.path.join(args.outdir, 'blank.pfm'),
+    args.width, args.height
+])
+execute_example('quad', [
+    os.path.join(args.outdir, 'quad.pfm'),
+    args.width, args.height
+])
 execute_example('raycast', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
-    'raycast_fireplace_room.pfm',
+    os.path.join(args.outdir, 'raycast_fireplace_room.pfm'),
     args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
@@ -43,7 +53,7 @@ execute_example('raycast', [
 ])
 execute_example('raycast', [
     os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
-    'raycast_cornell_box.pfm',
+    os.path.join(args.outdir, 'raycast_cornell_box.pfm'),
     args.width, args.height,
     0, 1, 5,
     0, 1, 0,
@@ -51,7 +61,7 @@ execute_example('raycast', [
 ])
 execute_example('pt', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
-    'pt_fireplace_room.pfm',
+    os.path.join(args.outdir, 'pt_fireplace_room.pfm'),
     args.spp, 20, args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
@@ -59,7 +69,7 @@ execute_example('pt', [
 ])
 execute_example('pt', [
     os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
-    'pt_cornell_box.pfm',
+    os.path.join(args.outdir, 'pt_cornell_box.pfm'),
     args.spp, 20, args.width, args.height,
     0, 1, 5,
     0, 1, 0,
@@ -67,7 +77,7 @@ execute_example('pt', [
 ])
 execute_example('custom_material', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
-    'custom_material.pfm',
+    os.path.join(args.outdir, 'custom_material.pfm'),
     args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
@@ -75,7 +85,7 @@ execute_example('custom_material', [
 ])
 execute_example('custom_renderer', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
-    'custom_renderer.pfm',
+    os.path.join(args.outdir, 'custom_renderer.pfm'),
     args.spp, args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
@@ -83,7 +93,7 @@ execute_example('custom_renderer', [
 ])
 execute_example('serialization', [
     os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
-    'serialization_fireplace_room.pfm',
+    os.path.join(args.outdir, 'serialization_fireplace_room.pfm'),
     args.width, args.height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
@@ -91,7 +101,7 @@ execute_example('serialization', [
 ])
 execute_example('serialization', [
     os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
-    'serialization_cornell_box.pfm',
+    os.path.join(args.outdir, 'serialization_cornell_box.pfm'),
     args.width, args.height,
     0, 1, 5,
     0, 1, 0,

@@ -5,7 +5,7 @@
 
 #include <lm/lm.h>
 
-int main() {
+int main(int argc, char** argv) {
     try {
         // Initialize the framework
         // _begin_init
@@ -14,13 +14,20 @@ int main() {
         });
         // _end_init
 
+        // Parse command line arguments
+        const auto opt = lm::json::parsePositionalArgs<3>(argc, argv, R"({{
+            "out": "{}",
+            "w": {},
+            "h": {}
+        }})");
+
         // --------------------------------------------------------------------
 
         // Define assets
 
         // _begin_assets
         // Film for the rendered image
-        lm::asset("film1", "film::bitmap", {{"w", 1920}, {"h", 1080}});
+        lm::asset("film1", "film::bitmap", {{"w", opt["w"]}, {"h", opt["h"]}});
 
         // Pinhole camera
         lm::asset("camera1", "camera::pinhole", {
@@ -76,7 +83,7 @@ int main() {
         // _end_render
 
         // Save rendered image
-        lm::save("film1", "quad.pfm");
+        lm::save("film1", opt["out"]);
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());

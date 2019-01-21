@@ -1,8 +1,9 @@
 """Rendering quad"""
 
 import lightmetrica as lm
+import argparse
 
-def run():
+def run(**kwargs):
     # Initialize the framework
     # _begin_init
     lm.init('user::default', {
@@ -13,7 +14,10 @@ def run():
     # Define assets
     # _begin_assets
     # Film for the rendered image
-    lm.asset('film1', 'film::bitmap', {'w': 1920, 'h': 1080})
+    lm.asset('film1', 'film::bitmap', {
+        'w': kwargs['width'],
+        'h': kwargs['height']
+    })
 
     # Pinhole camera
     lm.asset('camera1', 'camera::pinhole', {
@@ -64,7 +68,13 @@ def run():
     # _end_render
 
     # Save rendered image
-    lm.save('film1', 'quad_py.pfm')
+    lm.save('film1', kwargs['out'])
 
 if __name__ == '__main__':
-    run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--out', type=str, required=True)
+    parser.add_argument('--width', type=int, required=True)
+    parser.add_argument('--height', type=int, required=True)
+    args = parser.parse_args()
+
+    run(**vars(args))
