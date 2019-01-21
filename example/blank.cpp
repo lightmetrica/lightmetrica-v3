@@ -5,15 +5,23 @@
 
 // _begin_example
 #include <lm/lm.h>
+#include <filesystem>
 
-int main() {
+int main(int argc, char** argv) {
     try {
         // Initialize the framework
         lm::init();
 
+        // Parse command line arguments
+        const auto opt = lm::json::parsePositionalArgs<3>(argc, argv, R"({{
+            "out": "{}",
+            "w": {},
+            "h": {}
+        }})");
+
         // Define assets
         // Film for the rendered image
-        lm::asset("film", "film::bitmap", {{"w", 1920}, {"h", 1080}});
+        lm::asset("film", "film::bitmap", {{"w", opt["w"]}, {"h", opt["h"]}});
 
         // Render an image
         lm::render("renderer::blank", {
@@ -22,7 +30,10 @@ int main() {
         });
 
         // Save rendered image
-        lm::save("film", "blank.pfm");
+        lm::save("film", opt["out"]);
+
+        // Shutdown the framework
+        lm::shutdown();
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());

@@ -17,6 +17,7 @@ RUN apt update && apt install -y \
     
 RUN pip3 install --upgrade pip
 RUN pip install pytest
+RUN pip install imageio && imageio_download_bin freeimage
 
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test
 RUN apt update && apt install -y gcc-8 g++-8
@@ -72,5 +73,4 @@ WORKDIR /lightmetrica-v3/example/ext
 RUN cmake -G "Ninja" -H. -B_build -DCMAKE_BUILD_TYPE=Release && \
     cmake --build _build
 
-WORKDIR /lightmetrica-v3/example/ext/_build
-RUN ./quad
+ENV PYTHONPATH="/lightmetrica-v3:/lightmetrica-v3/_build/bin"

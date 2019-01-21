@@ -107,6 +107,11 @@ int main(int argc, char** argv) {
         });
         lm::save("film1", appended("_2"));
 
+        // --------------------------------------------------------------------
+
+        // Shutdown the framework
+        lm::shutdown();
+
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());

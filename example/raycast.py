@@ -13,59 +13,66 @@ $ PYTHONPATH="../;../build/bin/Release" python raycast.py \
 import lightmetrica as lm
 import argparse
 
-# _begin_parse_args
-parser = argparse.ArgumentParser()
-parser.add_argument('--obj', type=str, required=True)
-parser.add_argument('--out', type=str, required=True)
-parser.add_argument('--width', type=int, required=True)
-parser.add_argument('--height', type=int, required=True)
-parser.add_argument('--eye', nargs=3, type=float, required=True)
-parser.add_argument('--lookat', nargs=3, type=float, required=True)
-parser.add_argument('--vfov', type=float, required=True)
-args = parser.parse_args()
-# _end_parse_args
+def run(**kwargs):
+    # Initialize the framework
+    lm.init('user::default', {
+        'numThreads': -1
+    })
 
-# Initialize the framework
-lm.init({
-    'numThreads': -1
-})
+    # Define assets
+    # _begin_asset
+    # Film for the rendered image
+    lm.asset('film1', 'film::bitmap', {
+        'w': kwargs['width'],
+        'h': kwargs['height']
+    })
 
-# Define assets
-# _begin_asset
-# Film for the rendered image
-lm.asset('film1', 'film::bitmap', {
-    'w': args.width,
-    'h': args.height
-})
+    # Pinhole camera
+    lm.asset('camera1', 'camera::pinhole', {
+        'film': 'film1',
+        'position': kwargs['eye'],
+        'center': kwargs['lookat'],
+        'up': [0,1,0],
+        'vfov': kwargs['vfov']
+    })
 
-# Pinhole camera
-lm.asset('camera1', 'camera::pinhole', {
-    'film': 'film1',
-    'position': args.eye,
-    'center': args.lookat,
-    'up': [0,1,0],
-    'vfov': args.vfov
-})
+    # OBJ model
+    lm.asset('obj1', 'model::wavefrontobj', {'path': kwargs['obj']})
+    # _end_asset
 
-# OBJ model
-lm.asset('obj1', 'model::wavefrontobj', {'path': args.obj})
-# _end_asset
+    # Define scene primitives
+    # _begin_primitives
+    # Camera
+    lm.primitive(lm.identity(), {'camera': 'camera1'})
 
-# Define scene primitives
-# _begin_primitives
-# Camera
-lm.primitive(lm.identity(), {'camera': 'camera1'})
+    # Create primitives from model asset
+    lm.primitives(lm.identity(), 'obj1')
+    # _end_primitives
 
-# Create primitives from model asset
-lm.primitives(lm.identity(), 'obj1')
-# _end_primitives
+    # Render an image
+    lm.build('accel::sahbvh', {})
+    lm.render('renderer::raycast', {
+        'output': 'film1',
+        'color': [0,0,0]
+    })
 
-# Render an image
-lm.build('accel::sahbvh', {})
-lm.render('renderer::raycast', {
-    'output': 'film1',
-    'color': [0,0,0]
-})
+    # Save rendered image
+    lm.save('film1', kwargs['out'])
 
-# Save rendered image
-lm.save('film1', args.out)
+    # Shutdown the framework
+    lm.shutdown()
+
+if __name__ == '__main__':
+    # _begin_parse_args
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--obj', type=str, required=True)
+    parser.add_argument('--out', type=str, required=True)
+    parser.add_argument('--width', type=int, required=True)
+    parser.add_argument('--height', type=int, required=True)
+    parser.add_argument('--eye', nargs=3, type=float, required=True)
+    parser.add_argument('--lookat', nargs=3, type=float, required=True)
+    parser.add_argument('--vfov', type=float, required=True)
+    args = parser.parse_args()
+    # _end_parse_args
+
+    run(**vars(args))
