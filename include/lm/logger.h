@@ -254,6 +254,21 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 
 /*!
+    \brief Post a log message with a user-defined severity.
+    \param message Log message.
+    \param ... Parameters for the format in the log message.
+*/
+#if LM_COMPILER_MSVC
+#define LM_LOG(severity, message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::Info, severity, \
+    __FILE__, __LINE__, message, __VA_ARGS__)
+#else
+#define LM_LOG(severity, message, ...) LM_NAMESPACE::log::log( \
+    LM_NAMESPACE::log::LogLevel::Info, severity, \
+    __FILE__, __LINE__, message, ## __VA_ARGS__)
+#endif
+
+/*!
     \brief Post a log message with error level.
     \param message Log message.
     \param ... Parameters for the format in the log message.
@@ -264,7 +279,8 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     __FILE__, __LINE__, message, __VA_ARGS__)
 #else
 #define LM_ERROR(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Err, __FILE__, __LINE__, message, ## __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Err, int(LM_NAMESPACE::log::LogLevel::Err), \
+    __FILE__, __LINE__, message, ## __VA_ARGS__)
 #endif
 
 /*!

@@ -67,6 +67,16 @@ int main() {
         LM_WARN("Warning message");
         LM_ERROR("Error message");
 
+        // We can also set user-defined severity
+        lm::log::setSeverity(10);
+        LM_LOG(10, "Severity 10");
+        LM_LOG(20, "Severity 20");
+        LM_LOG(30, "Severity 30");
+        lm::log::setSeverity(20);
+        LM_LOG(10, "Severity 10");
+        LM_LOG(20, "Severity 20");
+        LM_LOG(30, "Severity 30");
+
         // User-defined logger
         lm::init("user::default", {
             {"logger", "logger::user"}
