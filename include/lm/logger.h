@@ -32,7 +32,7 @@ constexpr const char* DefaultType = "logger::default";
     with ``Err`` log level.
     \endrst
 */
-enum class LogLevel {
+enum class LogLevel : int {
     /*!
         \rst
         Debug message.
@@ -41,7 +41,7 @@ enum class LogLevel {
         You can generate a log message with this type by :func:`LM_DEBUG` macro.
         \endrst
     */
-    Debug,
+    Debug = -10,
     /*!
         \rst
         Information message.
@@ -51,7 +51,7 @@ enum class LogLevel {
         You can generate a log message with this type by :func:`LM_INFO` macro.
         \endrst
     */
-    Info,
+    Info = 10,
     /*!
         \rst
         Warning message.
@@ -60,7 +60,7 @@ enum class LogLevel {
         such as handling of default arguments.
         \endrst
     */
-    Warn,
+    Warn = 20,
     /*!
         \rst
         Error message.
@@ -68,7 +68,7 @@ enum class LogLevel {
         The error often comes along with immediate shutdown of the renderer.
         \endrst
     */
-    Err,
+    Err = 30,
     /*!
         \rst
         Progress message.
@@ -77,7 +77,7 @@ enum class LogLevel {
         for the interactive update of the progress report.
         \endrst
     */
-    Progress,
+    Progress = 100,
     /*!
         \rst
         End of progress message.
@@ -85,7 +85,7 @@ enum class LogLevel {
         used in the end of the progress message.
         \endrst
     */
-    ProgressEnd,
+    ProgressEnd = 100,
 };
 
 /*!
@@ -115,8 +115,23 @@ LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop 
 LM_PUBLIC_API void shutdown();
 
 /*!
+    \brief Set severity of the log.
+    \param severity Severity.
+    
+    \rst
+    The log messages with severity value larger or equal to the given value will be rendered.
+    \endrst
+*/
+LM_PUBLIC_API void setSeverity(int severity);
+
+inline void setSeverity(LogLevel severity) {
+    return setSeverity(int(severity));
+}
+
+/*!
     \brief Write log message.
     \param level Log level.
+    \param severity Severity.
     \param filename Filename where the log message are generated.
     \param line Line of the code where the log message are generated.
     \param message Log message.
@@ -128,11 +143,12 @@ LM_PUBLIC_API void shutdown();
     because the macros automatically extracts filename and line number for you.
     \endrst
 */
-LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const char* message);
+LM_PUBLIC_API void log(LogLevel level, int severity, const char* filename, int line, const char* message);
 
 /*!
     \brief Write log message with formatting.
     \param level Log level.
+    \param severity Severity.
     \param filename Filename where the log message are generated.
     \param line Line of the code where the log message are generated.
     \param message Log message.
@@ -146,8 +162,14 @@ LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const cha
     \endrst
 */
 template <typename... Args>
-void log(LogLevel level, const char* filename, int line, const std::string& message, Args&&... args) {
-    log(level, filename, line, fmt::format(message, std::forward<Args>(args)...).c_str());
+void log(LogLevel level, int severity, const char* filename, int line, const std::string& message, Args&&... args) {
+    if constexpr (sizeof...(Args) == 0) {
+        // Avoid application of fmt::format() with no additional argument
+        log(level, severity, filename, line, message.c_str());
+    }
+    else {
+        log(level, severity, filename, line, fmt::format(message, std::forward<Args>(args)...).c_str());
+    }
 }
 
 /*!
@@ -208,8 +230,9 @@ LM_NAMESPACE_BEGIN(detail)
 */
 class LoggerContext : public Component {
 public:
-    virtual void log(LogLevel level, const char* filename, int line, const char* message) = 0;
+    virtual void log(LogLevel level, int severity, const char* filename, int line, const char* message) = 0;
     virtual void updateIndentation(int n) = 0;
+    virtual void setSeverity(int severity) = 0;
 };
 
 /*!
@@ -237,7 +260,8 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 #if LM_COMPILER_MSVC
 #define LM_ERROR(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Err, __FILE__, __LINE__, message, __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Err, int(LM_NAMESPACE::log::LogLevel::Err), \
+    __FILE__, __LINE__, message, __VA_ARGS__)
 #else
 #define LM_ERROR(message, ...) LM_NAMESPACE::log::log( \
     LM_NAMESPACE::log::LogLevel::Err, __FILE__, __LINE__, message, ## __VA_ARGS__)
@@ -250,10 +274,12 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 #if LM_COMPILER_MSVC
 #define LM_WARN(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Warn, __FILE__, __LINE__, message, __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Warn, int(LM_NAMESPACE::log::LogLevel::Warn), \
+    __FILE__, __LINE__, message, __VA_ARGS__)
 #else
 #define LM_WARN(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Warn, __FILE__, __LINE__, message, ## __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Warn, int(LM_NAMESPACE::log::LogLevel::Warn), \
+    __FILE__, __LINE__, message, ## __VA_ARGS__)
 #endif
 
 /*!
@@ -263,10 +289,12 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 #if LM_COMPILER_MSVC
 #define LM_INFO(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Info, __FILE__, __LINE__, message, __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Info, int(LM_NAMESPACE::log::LogLevel::Info), \
+    __FILE__, __LINE__, message, __VA_ARGS__)
 #else
 #define LM_INFO(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Info, __FILE__, __LINE__, message, ## __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Info, int(LM_NAMESPACE::log::LogLevel::Info), \
+    __FILE__, __LINE__, message, ## __VA_ARGS__)
 #endif
 
 /*!
@@ -276,10 +304,12 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 #if LM_COMPILER_MSVC
 #define LM_DEBUG(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Debug, __FILE__, __LINE__, message, __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Debug, int(LM_NAMESPACE::log::LogLevel::Debug), \
+     __FILE__, __LINE__, message, __VA_ARGS__)
 #else
 #define LM_DEBUG(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Debug, __FILE__, __LINE__, message, ## __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Debug, int(LM_NAMESPACE::log::LogLevel::Debug), \
+    __FILE__, __LINE__, message, ## __VA_ARGS__)
 #endif
 
 /*!
@@ -289,10 +319,12 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 #if LM_COMPILER_MSVC
 #define LM_PROGRESS(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Progress, __FILE__, __LINE__, message, __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Progress, int(LM_NAMESPACE::log::LogLevel::Progress), \
+    __FILE__, __LINE__, message, __VA_ARGS__)
 #else
 #define LM_PROGRESS(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::Progress, __FILE__, __LINE__, message, ## __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::Progress, int(LM_NAMESPACE::log::LogLevel::Progress), \
+    __FILE__, __LINE__, message, ## __VA_ARGS__)
 #endif
 
 /*!
@@ -302,10 +334,12 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 #if LM_COMPILER_MSVC
 #define LM_PROGRESS_END(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::ProgressEnd, __FILE__, __LINE__, message, __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::ProgressEnd, int(LM_NAMESPACE::log::LogLevel::ProgressEnd), \
+    __FILE__, __LINE__, message, __VA_ARGS__)
 #else
 #define LM_PROGRESS_END(message, ...) LM_NAMESPACE::log::log( \
-    LM_NAMESPACE::log::LogLevel::ProgressEnd, __FILE__, __LINE__, message, ## __VA_ARGS__)
+    LM_NAMESPACE::log::LogLevel::ProgressEnd, int(LM_NAMESPACE::log::LogLevel::ProgressEnd), \
+    __FILE__, __LINE__, message, ## __VA_ARGS__)
 #endif
 
 /*!

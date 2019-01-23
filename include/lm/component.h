@@ -521,6 +521,11 @@ private:
     Component::Ptr<ContextComponentT> context;
 
 public:
+    ~ContextInstance() {
+        shutdown();
+    }
+
+public:
     static ContextInstance& instance() {
         static ContextInstance instance;
         return instance;
