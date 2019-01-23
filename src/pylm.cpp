@@ -126,9 +126,11 @@ static void bind(pybind11::module& m) {
         // Log API
         sm.def("init", &log::init);
         sm.def("shutdown", &log::shutdown);
-        using LogFuncPtr = void(*)(log::LogLevel, const char*, int, const char*);
-        sm.def("log", (LogFuncPtr)&log::log);
+        using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
+        sm.def("log", (logFuncPtr)&log::log);
         sm.def("updateIndentation", &log::updateIndentation);
+        using setSeverityFuncPtr = void(*)(int);
+        sm.def("setSeverity", (setSeverityFuncPtr)&log::setSeverity);
 
         // Context
         using LoggerContext = log::detail::LoggerContext;
@@ -136,11 +138,14 @@ static void bind(pybind11::module& m) {
             virtual bool construct(const Json& prop) override {
                 PYBIND11_OVERLOAD(bool, LoggerContext, construct, prop);
             }
-            virtual void log(log::LogLevel level, const char* filename, int line, const char* message) override {
-                PYBIND11_OVERLOAD_PURE(void, LoggerContext, log, level, filename, line, message);
+            virtual void log(log::LogLevel level, int severity, const char* filename, int line, const char* message) override {
+                PYBIND11_OVERLOAD_PURE(void, LoggerContext, log, level, severity, filename, line, message);
             }
             virtual void updateIndentation(int n) override {
                 PYBIND11_OVERLOAD_PURE(void, LoggerContext, updateIndentation, n);
+            }
+            virtual void setSeverity(int severity) override {
+                PYBIND11_OVERLOAD_PURE(void, LoggerContext, setSeverity, severity);
             }
         };
         pybind11::class_<LoggerContext, LoggerContext_Py, Component::Ptr<LoggerContext>>(sm, "LoggerContext")

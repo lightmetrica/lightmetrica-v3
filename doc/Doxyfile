@@ -1,5 +1,5 @@
 PROJECT_NAME           = lightmetrica-v3
-INPUT                  = ../include/lm/ 
+INPUT                  = ../include/lm/ ../example/
 RECURSIVE              = YES
 EXAMPLE_PATH           = ../
 

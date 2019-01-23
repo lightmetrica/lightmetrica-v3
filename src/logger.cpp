@@ -13,6 +13,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::log::detail)
 
 class LoggerContext_Default : public LoggerContext {
 private:
+    #if LM_DEBUG_MODE
+    int severity_ = -100;
+    #else
+    int severity_ = 0;
+    #endif
     int indentation_ = 0;
     std::string indentationString_;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_ =
@@ -33,7 +38,12 @@ private:
     };
 
 public:
-    void log(LogLevel level, const char* filename, int line, const char* message) {
+    void log(LogLevel level, int severity, const char* filename, int line, const char* message) {
+        // Ignore message if the current severity is lower than that of message
+        if (severity_ > severity) {
+            return;
+        }
+
         std::unique_lock<std::mutex> lock(mutex_);
 
         // Elapsed time
@@ -55,41 +65,61 @@ public:
         const auto header = fmt::format("[{}|{:.3f}|{:<10}] ",
             style.name, elapsed.count() / 1000.0,
             lineAndFilename.substr(0, 10));
-        const auto body = fmt::format("{}{}",
-            indentationString_,
-            message);
 
-        // Calculate white spaces to hide already written message if necessary.
-        // Keep track of maximum message length for progress outputs.
-        static int maxProgressMessageLen = 0;
-        static std::string whitespaces;
+        // Case with progress message
+        // Progress message does not support multiline message.
         if (level == LogLevel::Progress || level == LogLevel::ProgressEnd) {
-            // Current message length
-            const int messageLen = int(header.size() + body.size());
+            // Message with indentation
+            const auto body = fmt::format("{}{}",
+                indentationString_,
+                message);
 
-            // If the current message is shorter than maximum,
-            // hide the message with white spaces.
-            if (maxProgressMessageLen > messageLen) {
-                whitespaces.assign(maxProgressMessageLen - messageLen, ' ');
+            // Calculate white spaces to hide already written message if necessary.
+            // Keep track of maximum message length for progress outputs.
+            static int maxProgressMessageLen = 0;
+            static std::string whitespaces;
+            if (level == LogLevel::Progress || level == LogLevel::ProgressEnd) {
+                // Current message length
+                const int messageLen = int(header.size() + body.size());
+
+                // If the current message is shorter than maximum,
+                // hide the message with white spaces.
+                if (maxProgressMessageLen > messageLen) {
+                    whitespaces.assign(maxProgressMessageLen - messageLen, ' ');
+                }
+                else {
+                    maxProgressMessageLen = messageLen;
+                }
             }
-            else {
-                maxProgressMessageLen = messageLen;
+
+            // Print formatted log message
+            std::cout << style.color << header
+                << rang::style::reset << body
+                << whitespaces << "\r"
+                << std::flush;
+
+            // ProgressEnd incurs newline so reset the cached values
+            if (level == LogLevel::ProgressEnd) {
+                maxProgressMessageLen = 0;
+                whitespaces.clear();
             }
         }
+        // Other message types
+        else {
+            // Split the mesagge by lines
+            std::stringstream ss(message);
+            std::string messageByLine;
+            while (std::getline(ss, messageByLine, '\n')) {
+                // Message with indentation
+                const auto body = fmt::format("{}{}",
+                    indentationString_,
+                    messageByLine);
 
-        // EOL
-        const auto eol = level == LogLevel::Progress ? "\r" : "\n";
-
-        // Print formatted log message
-        std::cout << style.color << header
-                  << rang::style::reset << body
-                  << whitespaces << eol
-                  << std::flush;
-
-        // ProgressEnd incurs newline so reset the cached values
-        if (level == LogLevel::ProgressEnd) {
-            maxProgressMessageLen = 0;
-            whitespaces.clear();
+                // Print formatted log message
+                std::cout << style.color << header
+                    << rang::style::reset << body << "\n"
+                    << std::flush;
+            }
         }
     }
 
@@ -103,6 +133,10 @@ public:
             indentation_ = 0;
             indentationString_ = "";
         }
+    }
+
+    void setSeverity(int severity) override {
+        severity_ = severity;
     }
 };
 
@@ -124,9 +158,15 @@ LM_PUBLIC_API void shutdown() {
     Instance::shutdown();
 }
 
-LM_PUBLIC_API void log(LogLevel level, const char* filename, int line, const char* message) {
+LM_PUBLIC_API void setSeverity(int severity) {
     if (Instance::initialized()) {
-        Instance::get().log(level, filename, line, message);
+        Instance::get().setSeverity(severity);
+    }
+}
+
+LM_PUBLIC_API void log(LogLevel level, int severity, const char* filename, int line, const char* message) {
+    if (Instance::initialized()) {
+        Instance::get().log(level, severity, filename, line, message);
     }
     else {
         // Fallback to stdout
