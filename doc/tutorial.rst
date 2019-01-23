@@ -10,7 +10,7 @@ We refer to the functions by the convension of C++ APIs if both C++ and Python A
 .. ----------------------------------------------------------------------------
 
 Rendering blank image
-=============
+==========================
 
 - C++:  `example/blank.cpp`_
 - Python: `example/blank.py`_
@@ -18,8 +18,7 @@ Rendering blank image
 .. _example/blank.cpp: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/blank.cpp
 .. _example/blank.py: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/blank.py
 
-Let's start to use Lightmetrica by rendering a blank image:
-
+Let's start to use Lightmetrica by rendering a blank image.
 
 .. tabs::
 
@@ -27,33 +26,35 @@ Let's start to use Lightmetrica by rendering a blank image:
 
       .. literalinclude:: ../example/blank.cpp
          :language: cpp
-         :start-after: // _begin_example
-         :end-before: // _end_example
+         :lines: 6-
 
    .. group-tab:: Python
 
       .. literalinclude:: ../example/blank.py
          :language: python
-         :start-after: # _begin_example
-         :end-before: # _end_example
+         :lines: 7-
+
+.. note::
+   You can ignore the comments starting from ``_begin_*`` and ``_end_*``. These comments are only used for the documentation purpose.
 
 For C++, the first line includes everything necessary to use Lightmetrica.
 For Python, we import the ``lightmetrica`` module, where we use ``lm`` as an alias of ``lightmetrica`` for simplicity.
 
-
 .. tabs::
 
    .. group-tab:: C++
 
       .. literalinclude:: ../example/blank.cpp
          :language: cpp
-         :lines: 7
+         :start-after: // _begin_include
+         :end-before: // _end_include
 
    .. group-tab:: Python
 
       .. literalinclude:: ../example/blank.py
          :language: python
-         :lines: 4
+         :start-after: # _begin_import
+         :end-before: # _end_import
 
 After including header, you can initialize the framwork by calling :cpp:func:`lm::init` function. You can pass various arguments to configure the framework to the funciton, but here we keep it empty so that everything is configured to be default.
 
@@ -63,14 +64,39 @@ After including header, you can initialize the framwork by calling :cpp:func:`lm
 
       .. literalinclude:: ../example/blank.cpp
          :language: cpp
-         :lines: 11-12
+         :start-after: // _begin_init
+         :end-before: // _end_init
          :dedent: 8
 
    .. group-tab:: Python
 
       .. literalinclude:: ../example/blank.py
          :language: python
-         :lines: 6-7
+         :start-after: # _begin_init
+         :end-before: # _end_init
+         :dedent: 4
+
+Next we parse the comment line argument to support parametrized execution of the examples. For C++ example, we provided a simple helper function :cpp:func:`lm::parsePositionalArgs` to parse positional arguments with specified values as a JSON format. 
+For Python example, we used ``argparse`` module.
+In this example, we load three parameters: the output image path, and width and height of the image.
+
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/blank.cpp
+         :language: cpp
+         :start-after: // _begin_parse_command_line
+         :end-before: // _end_parse_command_line
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/blank.py
+         :language: python
+         :start-after: # _begin_parse_command_line
+         :end-before: # _end_parse_command_line
+         :dedent: 4
 
 Next we define `assets` necessary to dispatch renderer, like materials, meshes, etc. In this example, we only need a `film` to which the renderer outputs the image. We can define assets by :cpp:func:`lm::asset` function. The first argument (``film``) specifies the name of the asset to be referenced. The second argument (``film::bitmap``) is given as the type of the assets formatted as ``<type of asset>::<implementation>`` where the last argument (``{...}``) specifies the parameters passed to the instance. ``film::bitmap`` takes two parameters ``w`` and ``h`` which respectively specify width and height of the film.
 
@@ -80,14 +106,17 @@ Next we define `assets` necessary to dispatch renderer, like materials, meshes, 
 
       .. literalinclude:: ../example/blank.cpp
          :language: cpp
-         :lines: 14-16
+         :start-after: // _begin_assets
+         :end-before: // _end_assets
          :dedent: 8
 
    .. group-tab:: Python
 
       .. literalinclude:: ../example/blank.py
          :language: python
-         :lines: 9-11
+         :start-after: # _begin_assets
+         :end-before: # _end_assets
+         :dedent: 4
 
 Now we are ready for rendering. :cpp:func:`lm::render` function dispatches rendering where we speficy type of the renderer and the parameters as arguments. ``renderer::blank`` is a toy renderer that only produces a blank image to the film specifies by ``film`` parameter where we can use predefined ID of the asset. Also, we can specify the background color by ``color`` parameter.
 
@@ -97,14 +126,17 @@ Now we are ready for rendering. :cpp:func:`lm::render` function dispatches rende
 
       .. literalinclude:: ../example/blank.cpp
          :language: cpp
-         :lines: 18-22
+         :start-after: // _begin_render
+         :end-before: // _end_render
          :dedent: 8
 
    .. group-tab:: Python
 
       .. literalinclude:: ../example/blank.py
          :language: python
-         :lines: 13-17
+         :start-after: # _begin_render
+         :end-before: # _end_render
+         :dedent: 4
 
 After rendering, the generated image is kept in ``film``. :cpp:func:`lm::save` function outputs this film to the disk as an image.
 
@@ -114,22 +146,46 @@ After rendering, the generated image is kept in ``film``. :cpp:func:`lm::save` f
 
       .. literalinclude:: ../example/blank.cpp
          :language: cpp
-         :lines: 24-25
+         :start-after: // _begin_save
+         :end-before: // _end_save
          :dedent: 8
 
    .. group-tab:: Python
 
       .. literalinclude:: ../example/blank.py
          :language: python
-         :lines: 19-20
+         :start-after: # _begin_save
+         :end-before: # _end_save
+         :dedent: 4
 
 For C++, we can additionally put exception handling code. When an unrecoverable error happens, Lightmetrica produces an exception of ``std::runtime_error`` containing the description useful for debugging. 
 :c:func:`LM_ERROR` macro is an convenience macro to produce error message through logger system. 
 
 .. literalinclude:: ../example/blank.cpp
    :language: cpp
-   :lines: 27-29
+   :start-after: // _begin_exception
+   :end-before: // _end_exception
    :dedent: 4
+
+Finally, we gracefully shutdown the framework with :cpp:func:`lm::shutdown` function.
+
+.. tabs::
+
+   .. group-tab:: C++
+
+      .. literalinclude:: ../example/blank.cpp
+         :language: cpp
+         :start-after: // _begin_shutdown
+         :end-before: // _end_shutdown
+         :dedent: 8
+
+   .. group-tab:: Python
+
+      .. literalinclude:: ../example/blank.py
+         :language: python
+         :start-after: # _begin_shutdown
+         :end-before: # _end_shutdown
+         :dedent: 4
 
 Executing the code will produce the following image.
 Note that the image was converted to JPG image from PFM.
@@ -139,7 +195,7 @@ Note that the image was converted to JPG image from PFM.
 .. ----------------------------------------------------------------------------
 
 Rendering quad
-=============
+==========================
 
 - C++:  `example/quad.cpp`_
 - Python: `example/quad.py`_
@@ -167,6 +223,7 @@ The code starts again with :cpp:func:`lm::init` function. Yet in this time, we s
          :language: python
          :start-after: # _begin_init
          :end-before: # _end_init
+         :dedent: 4
 
 Next we define the assets. In addition to ``film``, we define ``camera``, ``mesh``, and ``material``. Although the types of assets are different, we can use consistent interface to define the assets. Here we prepare for a pinhole camera (``camera::pinhole``), a raw mesh (``mesh::raw``), and a diffuse material (``material::diffuse``) with the corrsponding parameters. Please refer to the corresponding pages for the detailed description of the parameters.
 
@@ -186,6 +243,7 @@ Next we define the assets. In addition to ``film``, we define ``camera``, ``mesh
          :language: python
          :start-after: # _begin_assets
          :end-before: # _end_assets
+         :dedent: 4
 
 The scene of Lightmetrica is defined by a set of ``primitives``. A primitive specifies an object inside the scene by associating geometries and materials with transformation. We can define a primitive by :cpp:func:`lm::primitive` function where we specifies transformation matrix and associating assets as arguments.
 In this example we define two pritimives; one for camera and the other for quad mesh with diffuse material. Transformation is given by 4x4 matrix. Here we specified identify matrix meaning no transformation.
@@ -206,6 +264,7 @@ In this example we define two pritimives; one for camera and the other for quad 
          :language: python
          :start-after: # _begin_primitive
          :end-before: # _end_primitive
+         :dedent: 4
 
 For this example we used ``renderer::raycast`` for rendering. 
 This renderer internally uses acceleration structure for ray-scene intersections. 
@@ -227,6 +286,7 @@ The acceleration structure can be given by :cpp:func:`lm::build` function. In th
          :language: python
          :start-after: # _begin_render
          :end-before: # _end_render
+         :dedent: 4
 
 Executing the code will produce the following image.
 
@@ -235,7 +295,7 @@ Executing the code will produce the following image.
 .. ----------------------------------------------------------------------------
 
 Raycasting a scene with OBJ models
-=============
+=======================================
 
 - C++:  `example/raycast.cpp`_
 - Python: `example/raycast.py`_
@@ -243,7 +303,7 @@ Raycasting a scene with OBJ models
 .. _example/raycast.cpp: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/raycast.cpp
 .. _example/raycast.py: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/example/raycast.py
 
-This example demonstrates how to render a scene with OBJ models using raycasting. In order to support parametrized rendering by the command line arguments, we provided a simple helper function :cpp:func:`lm::parsePositionalArgs` to parse positional arguments with specified values as a JSON format. 
+This example demonstrates how to render a scene with OBJ models using raycasting. For preparation, we parsed command line arguments, which include the scene path, image size, and camera configuration.
 
 .. tabs::
 
@@ -261,6 +321,7 @@ This example demonstrates how to render a scene with OBJ models using raycasting
          :language: python
          :start-after: # _begin_parse_args
          :end-before: # _end_parse_args
+         :dedent: 4
 
 Following is the definition of assets. We used the aforementioned command line arguments to parametrize the assets. To load an OBJ model, we can use ``model::wavefrontobj`` asset. This asset internally creates meshes and materials by reading the associated MTL file.
 
@@ -281,6 +342,7 @@ Following is the definition of assets. We used the aforementioned command line a
          :language: python
          :start-after: # _begin_asset
          :end-before: # _end_asset
+         :dedent: 4
 
 We can create primitives from the loaded ``model::wavefrontobj`` asset by using :cpp:func:`lm::primitives` function. 
 
@@ -300,6 +362,7 @@ We can create primitives from the loaded ``model::wavefrontobj`` asset by using 
          :language: python
          :start-after: # _begin_primitives
          :end-before: # _end_primitives
+         :dedent: 4
 
 Executing the renderer will produce the following image.
 For command line parameters, please refer to ``example/run_all.py``.
@@ -315,7 +378,7 @@ For command line parameters, please refer to ``example/run_all.py``.
 .. ----------------------------------------------------------------------------
 
 Rendering with path tracing
-=============
+===========================
 
 - C++:  `example/pt.cpp`_
 - Python: `example/pt.py`_
@@ -343,6 +406,7 @@ The use of the renderer is straightforward; we just need to specify ``renderer::
          :language: python
          :start-after: # _begin_render
          :end-before: # _end_render
+         :dedent: 4
 
 Rendered images:
 

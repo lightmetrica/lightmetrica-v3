@@ -55,8 +55,7 @@ LM_PUBLIC_API void init(const std::string& type = user::DefaultType, const Json&
     \brief Shutdown the renderer.
 
     \rst
-    You don't need to explicitly call this function at the end of your application.
-    You want to call this function if you want explicit shutdown of the renderer.
+    Call this function if you want explicit shutdown of the renderer.
     If you want to use scoped initialization/shutdown,
     consider to use :class:`lm::ScopedInit`.
     \endrst

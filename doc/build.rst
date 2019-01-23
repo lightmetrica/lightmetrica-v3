@@ -18,14 +18,14 @@ Optionally, we need doxygen_ to generate documentation.
 .. ----------------------------------------------------------------------------
 
 Installing dependencies
-=============
+==========================
 
 First you want to setup the external dependencies.
 The external dependencies of the framework is all header-only libraries.
 We suppose two strategies to introduce dependencies based on whether to use 1) in-project directory or 2) pre-installed packages.
 
 Using in-project directory
--------------
+--------------------------
 
 This strategy uses in-project ``external`` directory to manage dependencies. To use this strategy, you want to create ``external`` directory in the project root and download all dependencies into the directory.
 The build script automatically uses the dependencies if it finds ``external`` directory in the project root.
@@ -45,7 +45,7 @@ The following commands illustrates the steps.
    This strategy internally uses on CMake's ``add_subdirectory`` to find dependencies.
 
 Using pre-installed packages
--------------
+----------------------------
 
 To use this strategy, you need to install the dependencies externally
 using package management system or install the libraries from sources.
@@ -67,7 +67,7 @@ Please refer to the file for the detailed procedure.
 .. ----------------------------------------------------------------------------
 
 Building the framework
-=============
+==========================
 
 Windows
 -------------
@@ -105,7 +105,7 @@ Additionally, execute the following command to install Lightmetrica to your syst
 .. ----------------------------------------------------------------------------
 
 Using Lightmetrica as external library
-=============
+=======================================
 
 To use Lightmetrica as external library, you need to 
 configure Lightmetrica as a dependency inside your own ``CMakeLists.txt``.
@@ -154,7 +154,7 @@ Please find `example/ext`_ directory where we build some examples externally usi
 .. ----------------------------------------------------------------------------
 
 Editing documentation
-=============
+==========================
 
 Install dependencies
 
@@ -186,7 +186,7 @@ Then you can access the documentation from ``http://127.0.0.1:8000`` with the fo
 .. ----------------------------------------------------------------------------
 
 Running tests and examples
-=============
+==========================
 
 Running tests
 -------------
@@ -207,7 +207,7 @@ Additionally, you can execute the Python tests with the following commands.
    $ python -m pytest --lm <lightmetrica binary dir> pytest
 
 Running examples
--------------
+----------------
 
 To execute all examples at once, run 
 
