@@ -15,12 +15,13 @@ Lightmetrica -- Research-oriented renderer
    changelog
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents
 
    build
    tutorial
    api
+   component
 
 Indices and tables
 -------------------

@@ -13,6 +13,18 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*!
+    \brief Diffuse material.
+
+    \rst
+    The material implements Lambertian diffuse model.
+
+    Input parameters:
+
+    
+
+    \endrst
+*/
 class Material_Diffuse : public Material {
 private:
     Vec3 Kd_;
