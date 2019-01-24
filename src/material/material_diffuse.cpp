@@ -14,7 +14,7 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*!
-    \brief Diffuse material.
+    \defgroup material::diffuse
 
     \rst
     The material implements Lambertian diffuse model.
@@ -25,6 +25,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
     \endrst
 */
+
 class Material_Diffuse : public Material {
 private:
     Vec3 Kd_;
