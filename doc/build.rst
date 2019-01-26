@@ -169,7 +169,7 @@ Then you can access the documentation from ``http://127.0.0.1:8000`` with the fo
 
    $ cd doc && doxygen
    $ cd ..
-   $ sphinx-autobuild doc doc/_build/html
+   $ sphinx-autobuild --watch src doc doc/_build/html
 
 .. ----------------------------------------------------------------------------
 
