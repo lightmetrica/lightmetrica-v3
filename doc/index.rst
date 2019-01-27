@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Lightmetrica -- Research-oriented renderer
-======================
+============================================
 
 `This project is under development for the initial release of Version 3. Please be careful to use the versions in development because they might incur abrupt API changes.`
 
@@ -22,6 +22,8 @@ Lightmetrica -- Research-oriented renderer
    tutorial
    component
    api
+
+.. todolist::
 
 Indices and tables
 -------------------

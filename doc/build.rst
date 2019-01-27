@@ -31,7 +31,7 @@ This strategy uses in-project ``external`` directory to manage dependencies. To 
 The build script automatically uses the dependencies if it finds ``external`` directory in the project root.
 The following commands illustrates the steps.
 
-.. code-block:: bash
+.. code-block:: console
 
    $ cd external
    $ git clone --depth 1 git@github.com:pybind/pybind11.git
@@ -76,7 +76,7 @@ Tested with Visual Studio 2017 Version 15.9.
 You can generate solution for Visual Studio with the following commands.
 To build Python binding, be sure to activate the previously-created Python environment and start Visual Studio from the same shell.
 
-.. code-block:: bash
+.. code-block:: console
 
    $ mkdir build && cd build
    $ cmake -G "Visual Studio 15 2017 Win64" ..
@@ -90,7 +90,7 @@ Tested with GCC 8.3 and `Ninja`_. The following commands generates the binaries 
 
 .. _Ninja: https://ninja-build.org/
 
-.. code-block:: bash
+.. code-block:: console
 
    $ mkdir build && cd build
    $ cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release ..
@@ -98,7 +98,7 @@ Tested with GCC 8.3 and `Ninja`_. The following commands generates the binaries 
 
 Additionally, execute the following command to install Lightmetrica to your system. If you want to change installation directory, add ``-DCMAKE_INSTALL_PREFIX=<install dir>`` to the ``cmake`` command.
 
-.. code-block:: bash
+.. code-block:: console
 
    $ ninja install
 
@@ -112,7 +112,7 @@ configure Lightmetrica as a dependency inside your own ``CMakeLists.txt``.
 We again have two approaches, whether to use ``add_subdirectory`` or ``find_package``.
 
 Using add_subdirectory
--------------
+--------------------------
 
 The first approach directly includes Lightmetrica's source directory via ``add_subdirectory``. You can use both options in :ref:`Installing dependencies` for the transitive dependencies. 
 The following ``CMakeLists.txt`` shows minimum example of this approach. 
@@ -128,7 +128,7 @@ Once you include the directory, you can use ``lightmetrica::liblm`` target to li
     target_link_libraries(your_renderer PRIVATE lightmetrica::liblm)
 
 Using find_package
--------------
+--------------------------
 
 The second approach uses ``find_package`` with config-file mode to find a dependency to Lightmetrica. 
 To use this approach, we need to use second option to install the dependencies, because the transitive dependencies must be also searchable via ``find_package``. 
@@ -158,14 +158,14 @@ Editing documentation
 
 Install dependencies
 
-.. code-block:: bash
+.. code-block:: console
 
    $ conda install -c conda-forge sphinx
    $ pip install sphinx-autobuild sphinx_rtd_theme breathe sphinx_tabs
 
 Then you can access the documentation from ``http://127.0.0.1:8000`` with the following command. It is useful to use sphinx-autobuild plugin if you want to get immediate visual update on editing. Note that the documentation extracted from C++ sources are not updated automatically. Make sure to execute ``doxygen`` command again if you want to update the information.
 
-.. code-block:: bash
+.. code-block:: console
 
    $ cd doc && doxygen
    $ cd ..
@@ -173,15 +173,69 @@ Then you can access the documentation from ``http://127.0.0.1:8000`` with the fo
 
 .. ----------------------------------------------------------------------------
 
-.. Working with Jupyter notebook
-.. =============
+Working with Jupyter notebook
+=============================
 
-.. Install dependencies
+Install dependencies
 
-.. .. code-block:: bash
+.. code-block:: console
 
-..    $ conda install -c conda-forge jupyter matplotlib imageio
-..    $ pip install tqdm 
+   $ conda install -c conda-forge jupyter matplotlib imageio
+   $ pip install tqdm 
+
+Move to your working directory, and create ``.lmenv`` file
+in which we describe the paths to the binary and scene directories of the framework.
+Example of ``.lmenv`` file:
+
+.. code-block:: json
+
+    {
+        "<hostname>": {
+            "module_dir": {
+                "Release": "<Path to release binary directory>",
+                "Debug": "<Path to debug binary directory>"
+            },
+            "scene_dir": "<Scene path>"
+        }
+    }
+
+Execute Jupyter notebook
+
+.. code-block:: console
+
+   $ cd <working directory>
+   $ jupyter-notebook
+
+Example of starting cells, where [1] loads ``lightmetrica_jupyter`` extension
+and [2] copies Release binaries to temporary directory
+and [3] imports the framework as an alias ``lm``:
+
+.. code-block:: ipython
+
+  In [1]: import sys
+     ...: sys.path.append(r'<Lightmetrica root directory>')
+  In [2]: %load_ext lightmetrica_jupyter
+     ...: %update_lm_modules Release
+  In [3]: import lightmetrica as lm
+
+.. note::
+
+   IPython kernel locks the loaded c extensions
+   and it prevents the shared libraries of the framework being recompiled,
+   until the kernel is shut down.
+   To improve the efficiency of the workflow,
+   we provide ``%update_lm_modules <configuration>`` line magic function.
+   The function takes configuration ``Release`` or ``Debug`` as an argument,
+   then copies the binaries to the temporary directory according to the configuration written in ``.lmenv``.
+
+We provide Jupyter notebook friendly implementation of :cpp:class:`lm::Logger` and :cpp:class:`lm::Progress`.
+To use the recommended settings, use ``jupyter_init_config()`` function and append the return value
+to the argument of :cpp:func:`lm::init()` function.
+
+.. code-block:: ipython
+
+   In [4]: from lightmetrica_jupyter import jupyter_init_config
+   In [5]: lm.init('user::default', {<other configuration>, **jupyter_init_config()})
 
 .. ----------------------------------------------------------------------------
 
@@ -193,14 +247,14 @@ Running tests
 
 To execute unit tests of the framework, run the following command after build.
 
-.. code-block:: bash
+.. code-block:: console
 
-   $ cd <lightmetrica binary dir>
+   $ cd <lightmetrica binary directory>
    $ ./lm_test
 
 Additionally, you can execute the Python tests with the following commands.
 
-.. code-block:: bash
+.. code-block:: console
 
    $ conda install -c conda-forge pytest
    $ cd <root directory of lightmetrica>
@@ -211,7 +265,7 @@ Running examples
 
 To execute all examples at once, run 
 
-.. code-block:: bash
+.. code-block:: console
 
    $ cd example
    $ python run_all.py --lm <lightmetrica binary dir> --scene <scene dir>

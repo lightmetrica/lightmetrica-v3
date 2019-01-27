@@ -41,7 +41,7 @@ Our framework provides a comprehensible solution to design various experiments i
 Although it is still possible to use stand-alone renderers in the experiments, it requires another layer of API to manage input/output of the renderer where we usually needs constant maintenance as the renderer specification change (and it happens a lot for research purpose, by design). On the other hand, our framework exposes internal features directly to the developers, which enables broader applicability to the experiments. For instance, we can design an experiment where the data is shared among renderings with different parameters. This is obviously not possible with stand-alone renderers because we need to dispatch another process to execute the renderer where additional data transfer is unavoidable. 
 
 Features (incl. plans)
-=============
+==========================
 
 .. TODO: add link
 
