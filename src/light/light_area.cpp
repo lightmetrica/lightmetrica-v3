@@ -13,6 +13,16 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: light::area
+
+   Area light.
+
+   :param color Ke: Luminance.
+   :param str mesh: Underlying mesh specified by asset name or locator.
+\endrst
+*/
 class Light_Area : public Light {
 private:
     Vec3 Ke_;     // Luminance

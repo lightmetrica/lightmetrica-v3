@@ -46,7 +46,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
-    'sphinx_tabs.tabs'
+    'sphinx_tabs.tabs',
+    'sphinx.ext.mathjax'
 ]
 
 breathe_projects = {'lightmetrica-v3': '_build/doxygenxml/'}
@@ -56,6 +57,14 @@ breathe_domain_by_extension = {'h': 'cpp'}
 napoleon_google_docstring = False
 napoleon_use_param = False
 napoleon_use_ivar = True
+
+mathjax_config = {
+    'jax': ['input/TeX', 'output/HTML-CSS'],
+    'HTML-CSS': {
+        'availableFonts': ["TeX"],
+        'scale': 90
+    }
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

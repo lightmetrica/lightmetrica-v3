@@ -9,6 +9,21 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: material::mask
+   
+   Pass-through material.
+
+   This component implements a special material that only sample
+   the outgoing ray into the same direction as the incoming ray.
+   This material is used to implement texture-masked materials.
+   BSDF reads
+
+   .. math::
+      f_s(\omega_i, \omega_o) = \delta_\Omega(-\omega_i, \omega_o).
+\endrst
+*/
 class Material_Mask : public Material {
 private:
     virtual bool isSpecular(const SurfacePoint& sp) const override {

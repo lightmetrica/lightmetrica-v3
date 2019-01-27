@@ -20,6 +20,7 @@ Lightmetrica -- Research-oriented renderer
 
    build
    tutorial
+   component
    api
 
 Indices and tables

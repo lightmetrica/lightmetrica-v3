@@ -13,10 +13,23 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: camera::pinhole
+
+   Pinhole camera.
+
+   :param str film: Underlying film specified by asset name or locator.
+   :param vec3 position: Camera position.
+   :param vec3 center: Look-at position.
+   :param vec3 up: Up vector.
+   :param float vfov: Vertical field of view.
+\endrst
+*/
 class Camera_Pinhole final : public Camera {
 private:
     Film* film_;      // Underlying film
-    Vec3 position_;   // Sensor position
+    Vec3 position_;   // Camera position
     Vec3 u_, v_, w_;  // Basis for camera coordinates
     Float tf_;        // Half of the screen height at 1 unit forward from the position
     Float aspect_;    // Aspect ratio

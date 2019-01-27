@@ -78,6 +78,25 @@ struct Node {
     }
 };
 
+/*
+\rst
+.. function:: accel::sahbvh
+
+   Bounding volume hierarchy with surface area heuristics.
+   
+   Features
+
+   - Parallel construction.
+   - Split axis is determined by longest axis.
+   - Split position is determined by minimum SAH cost.
+   - Uses full-sort of underlying geometries.
+   - Uses triangle intersection by Möller and Trumbore [Möller1997]_.
+
+   .. [Möller1997] T. Möller & B. Trumbore.
+                   Fast, Minimum Storage Ray-Triangle Intersection.
+                   Journal of Graphics Tools. 2(1):21--28. 1997.
+\endrst
+*/
 class Accel_SAHBVH final : public Accel {
 private:
     std::vector<Node> nodes_;   // Nodes

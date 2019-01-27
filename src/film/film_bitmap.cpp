@@ -42,6 +42,19 @@ struct AtomicWrapper {
     }
 };
 
+/*
+\rst
+.. function:: film::bitmap
+
+   Bitmap film.
+
+   :param int w: Width of the film.
+   :param int h: Height of the film.
+
+   This component implements thread-safe bitmap film.
+   The invocation of :cpp:func:`lm::Film::setPixel()` function is thread safe.
+\endrst
+*/
 class Film_Bitmap final : public Film {
 private:
     int w_;
