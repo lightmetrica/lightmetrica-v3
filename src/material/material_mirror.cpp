@@ -9,6 +9,24 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: material::mirror
+
+   Ideal mirror reflection.
+
+   This component implements ideal mirror reflection BRDF:
+
+   .. math::
+      f_r(\omega_i, \omega_o) = \delta_\Omega(\omega_{\mathrm{refl}}, \omega_o),
+
+   where
+   :math:`\omega_{\mathrm{refl}}\equiv2(\omega_i\cdot\mathbf{n})\mathbf{n} - \omega_i`
+   is the reflected direction of :math:`\omega_i`, and
+   :math:`\delta_\Omega` is the Dirac delta function w.r.t. solid angle measure:
+   :math:`\int_\Omega \delta_\Omega(\omega', \omega) d\omega = \omega'`.
+\endrst
+*/
 class Material_Mirror : public Material {
 private:
     virtual bool isSpecular(const SurfacePoint& sp) const override {

@@ -58,6 +58,14 @@ napoleon_google_docstring = False
 napoleon_use_param = False
 napoleon_use_ivar = True
 
+mathjax_config = {
+    'jax': ['input/TeX', 'output/HTML-CSS'],
+    'HTML-CSS': {
+        'availableFonts': ["TeX"],
+        'scale': 90
+    }
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

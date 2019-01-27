@@ -11,6 +11,19 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: material::proxy
+
+   Proxy material.
+
+   :param str ref: Asset name or locator of the referencing material.
+   
+   This component gives proxy interface to the other predefined material. 
+   This component is useful when we want to reuse predefined material
+   but we also need to create a new instance.
+\endrst
+*/
 class Material_Proxy : public Material {
 private:
     Material* ref_;
