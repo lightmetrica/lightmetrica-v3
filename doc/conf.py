@@ -47,7 +47,9 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
     'sphinx_tabs.tabs',
-    'sphinx.ext.mathjax'
+    'sphinx.ext.mathjax',
+    'sphinx.ext.todo',
+    'IPython.sphinxext.ipython_console_highlighting'
 ]
 
 breathe_projects = {'lightmetrica-v3': '_build/doxygenxml/'}
@@ -65,6 +67,8 @@ mathjax_config = {
         'scale': 90
     }
 }
+
+#todo_include_todos = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -91,7 +95,7 @@ language = None
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+#pygments_style = 'sphinx'
 
 
 # -- Options for HTML output -------------------------------------------------
