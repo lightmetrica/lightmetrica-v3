@@ -48,8 +48,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx_tabs.tabs',
     'sphinx.ext.mathjax',
-    'sphinx.ext.todo',
-    'IPython.sphinxext.ipython_console_highlighting'
+    'sphinx.ext.todo'
 ]
 
 breathe_projects = {'lightmetrica-v3': '_build/doxygenxml/'}
