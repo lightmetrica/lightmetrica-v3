@@ -185,7 +185,17 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
-        return bitmap_.loadppm(prop["path"]);
+        // Check extension
+        const std::string path = prop["path"];
+        const auto ext = std::filesystem::path(path).extension().string();
+        if (ext == ".pfm") {
+            return bitmap_.loadpfm(path);
+        }
+        else if (ext == ".ppm") {
+            return bitmap_.loadppm(path);
+        }
+        LM_ERROR("Invalid extension [ext='{}']", ext);
+        return false;
     }
 
     virtual Vec3 eval(Vec2 t) const override {

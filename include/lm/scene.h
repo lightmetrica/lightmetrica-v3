@@ -42,6 +42,9 @@ struct SurfacePoint {
     SurfacePoint(Vec3 p, Vec3 n, Vec2 t)
         : SurfacePoint(-1, -1, p, n, t) {}
 
+    SurfacePoint(int primitive)
+        : primitive(primitive), degenerated(false), endpoint(true) {}
+
     SurfacePoint(int primitive, int comp, Vec3 p, Vec3 n, Vec2 t)
         : primitive(primitive), comp(comp), degenerated(false), p(p), n(n), t(t)
     {

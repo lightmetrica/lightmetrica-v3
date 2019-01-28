@@ -70,38 +70,33 @@ public:
             return assetGroup.underlying(it.value().get<std::string>().c_str());
         };
 
-        // Underlying components of primitive
-        auto* mesh     = dynamic_cast<Mesh*>(getAssetRefBy("mesh"));
-        auto* material = dynamic_cast<Material*>(getAssetRefBy("material"));
-        auto* light    = dynamic_cast<Light*>(getAssetRefBy("light"));
-        auto* camera   = dynamic_cast<Camera*>(getAssetRefBy("camera"));
-
-        // Primitive cannot be both camera and light
-        if (camera && light) {
-            LM_ERROR("Primitive cannot be both camera and light");
-            return false;
-        }
-
         // Add a primitive entry
         primitives_.push_back(Primitive{
             int(primitives_.size()),
             Transform(transform),
-            mesh,
-            material,
-            light,
-            camera
+            dynamic_cast<Mesh*>(getAssetRefBy("mesh")),
+            dynamic_cast<Material*>(getAssetRefBy("material")),
+            dynamic_cast<Light*>(getAssetRefBy("light")),
+            dynamic_cast<Camera*>(getAssetRefBy("camera"))
         });
-        if (primitives_.back().camera) {
+
+        const auto& primitive = primitives_.back();
+        if (primitive.camera && primitive.light) {
+            LM_ERROR("Primitive cannot be both camera and light");
+            return false;
+        }
+        if (primitive.camera) {
             camera_ = primitives_.back().index;
         }
-        if (const auto* light = primitives_.back().light; light) {
-            const int lightIndex = primitives_.back().index;
+        if (primitive.light) {
+            const int lightIndex = primitive.index;
             lights_.push_back(lightIndex);
-            if (light->isInfinite()) {
+            if (primitive.light->isInfinite()) {
                 // Environment light
                 envLight_ = lightIndex;
             }
         }
+
         return true;
     }
 
@@ -156,11 +151,11 @@ public:
     virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin, Float tmax) const override {
         const auto hit = accel_->intersect(ray, tmin, tmax);
         if (!hit) {
+            // Use environment light if available
             if (envLight_ < 0) {
                 return {};
             }
-            // Environment light
-            LM_TBA_RUNTIME();
+            return SurfacePoint(envLight_);
         }
         const auto [t, uv, primitiveIndex, face] = *hit;
         const auto& primitive = primitives_.at(primitiveIndex);
@@ -200,7 +195,11 @@ public:
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
-        return primitives_.at(sp.primitive).material->sampleRay(rng, sp, wi);
+        const auto* material = primitives_.at(sp.primitive).material;
+        if (!material) {
+            return {};
+        }
+        return material->sampleRay(rng, sp, wi);
     }
 
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {

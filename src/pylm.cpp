@@ -107,6 +107,9 @@ static void bind(pybind11::module& m) {
     m.def("render", &render);
     m.def("save", &save);
     m.def("buffer", &buffer);
+    using serializeFuncPtr = void(*)(const std::string&);
+    m.def("serialize", (serializeFuncPtr)&serialize);
+    m.def("deserialize", (serializeFuncPtr)&deserialize);
 
     // ------------------------------------------------------------------------
 

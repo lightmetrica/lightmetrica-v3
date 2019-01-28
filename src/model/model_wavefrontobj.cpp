@@ -363,8 +363,9 @@ public:
                 // Create area light if Ke > 0
                 int lightIndex = -1;
                 if (glm::compMax(m.Ke) > 0_f) {
+                    const auto lightImplName = json::valueOr<std::string>(prop, "light", "light::area");
                     const auto lightName = meshName + "_light";
-                    auto light = comp::create<Light>("light::area", makeLoc(loc(), lightName), {
+                    auto light = comp::create<Light>(lightImplName, makeLoc(loc(), lightName), {
                         {"Ke", m.Ke},
                         {"mesh", "global:" + makeLoc(loc(), meshName)}
                     });

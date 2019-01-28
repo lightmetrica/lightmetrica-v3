@@ -40,9 +40,10 @@ public:
 
 public:
     virtual bool construct(const Json& prop) override {
-        envmap_ = comp::create<Texture>("texture::bitmap", "", {
-            {"path", prop["envmap_path"]}
-        });
+        envmap_ = comp::create<Texture>("texture::bitmap", "", prop);
+        if (!envmap_) {
+            return false;
+        }
         rot_ = glm::radians(json::valueOr<Float>(prop, "rot", 0_f));
         const auto [w, h] = envmap_->size();
         std::vector<Float> ls(w * h);

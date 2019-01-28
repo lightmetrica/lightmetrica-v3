@@ -86,7 +86,8 @@ public:
                             return;
                         }
                         // Evaluate and accumulate contribution
-                        L += throughput * scene->evalBsdf(s->sp, wi, sL->wo) * sL->weight;
+                        const auto fs = scene->evalBsdf(s->sp, wi, sL->wo);
+                        L += throughput * fs * sL->weight;
                     }();
 
                     // Intersection to next surface
@@ -123,6 +124,10 @@ public:
             L /= spp_;
 
             // Set color of the pixel
+            //film_->setPixel(x, y, L);
+            if (!math::isZero(L)) {
+                __debugbreak();
+            }
             film_->setPixel(x, y, L);
         });
     }
