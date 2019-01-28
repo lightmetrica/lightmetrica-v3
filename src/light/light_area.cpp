@@ -57,8 +57,7 @@ public:
         
         // Construct CDF for surface sampling
         // Note we construct the CDF before transformation
-        mesh_->foreachTriangle([&](int face, Vec3 a, Vec3 b, Vec3 c) {
-            LM_UNUSED(face);
+        mesh_->foreachTriangle([&](int, Vec3 a, Vec3 b, Vec3 c) {
             const auto cr = cross(b - a, c - a);
             dist_.add(math::safeSqrt(glm::dot(cr, cr)) * .5_f);
         });
@@ -88,14 +87,16 @@ public:
         return LightSample{ wo, glm::length(ppL), Le / pL };
     }
 
-    virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, const Transform& transform, Vec3 wo) const override {
-        LM_UNUSED(wo);
+    virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, const Transform& transform, Vec3) const override {
         const auto G = geometryTerm(sp, spL);
         return G == 0_f ? 0_f : tranformedInvA(transform) / G;
     }
 
-    virtual bool isSpecular(const SurfacePoint& sp) const override {
-        LM_UNUSED(sp);
+    virtual bool isSpecular(const SurfacePoint&) const override {
+        return false;
+    }
+
+    virtual bool isInfinite() const override {
         return false;
     }
 

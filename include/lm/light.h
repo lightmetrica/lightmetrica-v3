@@ -36,6 +36,11 @@ public:
     virtual bool isSpecular(const SurfacePoint& sp) const = 0;
 
     /*!
+        \brief Check if the light is on infinite position (e.g., environment light).
+    */
+    virtual bool isInfinite() const = 0;
+
+    /*!
         \brief Evaluate luminance.
     */
     virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const = 0;

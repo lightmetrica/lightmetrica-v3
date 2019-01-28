@@ -27,8 +27,7 @@ std::string sanitizeDirectorySeparator(std::string p) {
 }
 #endif
 
-class Bitmap_PXM {
-private:
+struct Bitmap_PXM {
     int w;                  // Width of the texture
     int h;                  // Height of the texture
     std::vector<Float> cs;  // Colors
@@ -152,6 +151,11 @@ public:
         return { cs[3*i], cs[3*i+1], cs[3*i+2] };
     }
 
+    Vec3 evalByPixelCoords(int x, int y) const {
+        const int i = w * y + x;
+        return { cs[3*i], cs[3*i+1], cs[3*i+2] };
+    }
+
     Float evalAlpha(Vec2 t) const {
         const auto u = t.x - floor(t.x);
         const auto v = t.y - floor(t.y);
@@ -176,12 +180,20 @@ public:
     }
 
 public:
+    virtual TextureSize size() const override {
+        return { bitmap_.w, bitmap_.h };
+    }
+
     virtual bool construct(const Json& prop) override {
         return bitmap_.loadppm(prop["path"]);
     }
 
     virtual Vec3 eval(Vec2 t) const override {
         return bitmap_.eval(t);
+    }
+
+    virtual Vec3 evalByPixelCoords(int x, int y) const override {
+        return bitmap_.evalByPixelCoords(x, y);
     }
 
     virtual Float evalAlpha(Vec2 t) const override {

@@ -18,9 +18,9 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct Primitive {
-    int index;                // Primitive index
+    int index;              // Primitive index
     Transform transform;    // Transform associated to the primitive
-    Mesh* mesh;                // Underlying assets
+    Mesh* mesh;             // Underlying assets
     Material* material;
     Light* light;
     Camera* camera;
@@ -35,8 +35,9 @@ class Scene_ final : public Scene {
 private:
     std::vector<Primitive> primitives_;
     Ptr<Accel> accel_;
-    int camera_;               // Camera primitive index
-    std::vector<int> lights_;  // Light primitive indices
+    int camera_;                // Camera primitive index
+    std::vector<int> lights_;   // Light primitive indices
+    int envLight_ = -1;         // Environment light primitive index
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -93,8 +94,13 @@ public:
         if (primitives_.back().camera) {
             camera_ = primitives_.back().index;
         }
-        if (primitives_.back().light) {
-            lights_.push_back(primitives_.back().index);
+        if (const auto* light = primitives_.back().light; light) {
+            const int lightIndex = primitives_.back().index;
+            lights_.push_back(lightIndex);
+            if (light->isInfinite()) {
+                // Environment light
+                envLight_ = lightIndex;
+            }
         }
         return true;
     }
@@ -150,7 +156,11 @@ public:
     virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin, Float tmax) const override {
         const auto hit = accel_->intersect(ray, tmin, tmax);
         if (!hit) {
-            return {};
+            if (envLight_ < 0) {
+                return {};
+            }
+            // Environment light
+            LM_TBA_RUNTIME();
         }
         const auto [t, uv, primitiveIndex, face] = *hit;
         const auto& primitive = primitives_.at(primitiveIndex);

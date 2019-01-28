@@ -25,16 +25,16 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     the primitive associated with the point.
 */
 struct SurfacePoint {
-    int primitive = -1; // Primitive index
-    int comp = -1;      // Primitive component index
-    bool degenerated;   // Surface is degenerated (e.g., point light)
-    Vec3 p;             // Position
-    Vec3 n;             // Normal
-    Vec2 t;             // Texture coordinates
-    Vec3 u, v;          // Orthogonal tangent vectors
+    int primitive = -1;     // Primitive index
+    int comp = -1;          // Primitive component index
+    bool degenerated;       // Surface is degenerated (e.g., point light)
+    Vec3 p;                 // Position
+    Vec3 n;                 // Normal
+    Vec2 t;                 // Texture coordinates
+    Vec3 u, v;              // Orthogonal tangent vectors
     bool endpoint = false;  // Endpoint of light path
 
-    SurfacePoint() {}
+    SurfacePoint() = default;
 
     SurfacePoint(Vec3 p)
         : degenerated(true), p(p) {}

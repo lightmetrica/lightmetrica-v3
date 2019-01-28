@@ -338,10 +338,10 @@ struct Dist2 {
         \param rn Random number generator.
         \return Sampled position.
     */
-    std::tuple<Float, Float> samp(Rng& rn) const {
+    Vec2 samp(Rng& rn) const {
         const int y = m.samp(rn);
         const int x = ds[y].samp(rn);
-        return {(x + rn.u()) / w, (y + rn.u()) / h};
+        return Vec2((x + rn.u()) / w, (y + rn.u()) / h);
     }
 };
 
@@ -480,7 +480,7 @@ struct Transform {
         ar(M, normalM, J);
     }
 
-    Transform() {}
+    Transform() = default;
 
     /*!
         \brief Construct the transform with 4x4 transformation matrix.

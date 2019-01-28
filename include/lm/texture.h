@@ -14,14 +14,32 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
+    \brief Texture size.
+*/
+struct TextureSize {
+    int w;
+    int h;
+};
+
+/*!
     \brief Texture component interface.
 */
 class Texture : public Component {
 public:
     /*!
+        \brief Get size of the texture.
+    */
+    virtual TextureSize size() const = 0;
+
+    /*!
         \brief Evaluate color component of the texture.
     */
     virtual Vec3 eval(Vec2 t) const = 0;
+
+    /*!
+        \brief Evaluate color component of the texture by pixel coordinates.
+    */
+    virtual Vec3 evalByPixelCoords(int x, int y) const = 0;
 
     /*!
         \brief Evaluate alpha component of the texture.
