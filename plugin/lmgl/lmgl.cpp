@@ -91,54 +91,54 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-		// Load shaders
+        // Load shaders
         const std::string RenderVs = R"x(
-			#version 400 core
+            #version 400 core
 
-			#define POSITION 0
-			#define NORMAL   1
-			#define TEXCOORD 2
+            #define POSITION 0
+            #define NORMAL   1
+            #define TEXCOORD 2
 
-			layout (location = POSITION) in vec3 position;
+            layout (location = POSITION) in vec3 position;
             layout (location = NORMAL) in vec3 normal;
             layout (location = TEXCOORD) in vec2 texcoord;
-				
-			uniform mat4 ModelMatrix;
-			uniform mat4 ViewMatrix;
-			uniform mat4 ProjectionMatrix;
+                
+            uniform mat4 ModelMatrix;
+            uniform mat4 ViewMatrix;
+            uniform mat4 ProjectionMatrix;
 
             out block {
                 vec3 normal;
                 vec2 texcoord;
             } Out;
 
-			void main() {
-				mat4 mvMatrix = ViewMatrix * ModelMatrix;
-				mat4 mvpMatrix = ProjectionMatrix * mvMatrix;
+            void main() {
+                mat4 mvMatrix = ViewMatrix * ModelMatrix;
+                mat4 mvpMatrix = ProjectionMatrix * mvMatrix;
                 Out.normal = normal;//mat3(mvMatrix) * normal;
                 Out.texcoord = texcoord;
-				gl_Position = mvpMatrix * vec4(position, 1);
-			}
-		)x";
+                gl_Position = mvpMatrix * vec4(position, 1);
+            }
+        )x";
         const std::string RenderFs = R"x(
-			#version 400 core
+            #version 400 core
 
             in block {
                 vec3 normal;
-	            vec2 texcoord;
+                vec2 texcoord;
             } In;
 
-			out vec4 fragColor;
+            out vec4 fragColor;
 
-			uniform vec3 Color;
+            uniform vec3 Color;
             uniform float Alpha;
             uniform int UseConstantColor;
 
-			void main() {
+            void main() {
                 fragColor.rgb = UseConstantColor > 0 ? Color : abs(In.normal);
-				fragColor.a = Alpha;
-			}
-		)x";
+                fragColor.a = Alpha;
+            }
+        )x";
         programV_.Create(GLResourceType::Program);
         programF_.Create(GLResourceType::Program);
         if (!programV_.CompileString(GL_VERTEX_SHADER, RenderVs)) return false;
