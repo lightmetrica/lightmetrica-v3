@@ -7,6 +7,7 @@
 
 #include "component.h"
 #include "math.h"
+#include "surface.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

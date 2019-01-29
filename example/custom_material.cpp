@@ -10,18 +10,12 @@
 
 class Material_VisualizeNormal final : public lm::Material {
 public:
-    virtual bool construct(const lm::Json& prop) override {
-        LM_UNUSED(prop);
+    virtual bool construct(const lm::Json&) override {
         return true;
     }
 
-    virtual std::optional<lm::RaySample> sampleRay(lm::Rng& rng, const lm::SurfacePoint& sp, lm::Vec3 wi) const override {
-        LM_UNUSED(rng, sp, wi);
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual std::optional<lm::Vec3> reflectance(const lm::SurfacePoint& sp) const override {
-        return glm::abs(sp.n);
+    virtual std::optional<lm::Vec3> reflectance(const lm::PointGeometry& geom, int) const override {
+        return glm::abs(geom.n);
     }
 };
 

@@ -76,7 +76,7 @@ public:
         return true;
     }
 
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return true;
     }
 
@@ -94,18 +94,18 @@ public:
         }();
         if (rng.u() < Fr) {
             // Reflection
-            return MaterialDirectionSample(
+            return MaterialDirectionSample{
                 math::reflection(wi, geom.n),
                 0,
                 Vec3(1_f)
-            );
+            };
         }
         // Refraction
-        return MaterialDirectionSample(
+        return MaterialDirectionSample{
             wt,
             1,
             Vec3(eta*eta)
-        );
+        };
     }
 };
 

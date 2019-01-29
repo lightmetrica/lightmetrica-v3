@@ -14,10 +14,13 @@
 #include <lm/json.h>
 #include <lm/user.h>
 #include <lm/serial.h>
+#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ----------------------------------------------------------------------------
+
+#pragma region Wavefront OBJ parser
 
 // Surface geometry shared among meshes
 struct OBJSurfaceGeometry {
@@ -285,12 +288,14 @@ private:
     }
 };
 
+#pragma endregion
+
 // ----------------------------------------------------------------------------
 
 class Mesh_WavefrontObj;
 class Material_WavefrontObj;
 
-class Model_WavefrontObj : public Model {
+class Model_WavefrontObj final : public Model {
 private:
     friend class Mesh_WavefrontObj;
     friend class Material_WavefrontObj;
@@ -348,7 +353,7 @@ public:
                 // Create mesh
                 const std::string meshName = fmt::format("mesh{}", assets_.size());
                 auto mesh = comp::create<Mesh>(
-                    "mesh::wavefrontobj", makeLoc(loc(), meshName),
+                    "mesh::wavefrontobj", makeLoc(meshName),
                     json::merge(prop, {
                         {"model_", loc()}
                     }
@@ -364,9 +369,9 @@ public:
                 if (glm::compMax(m.Ke) > 0_f) {
                     const auto lightImplName = json::valueOr<std::string>(prop, "light", "light::area");
                     const auto lightName = meshName + "_light";
-                    auto light = comp::create<Light>(lightImplName, makeLoc(loc(), lightName), {
+                    auto light = comp::create<Light>(lightImplName, makeLoc(lightName), {
                         {"Ke", m.Ke},
-                        {"mesh", "global:" + makeLoc(loc(), meshName)}
+                        {"mesh", "global:" + makeLoc(meshName)}
                     });
                     if (!light) {
                         return false;
@@ -385,7 +390,7 @@ public:
             [&](const MTLMatParams& m) -> bool {
                 if (const auto it = prop.find("base_material"); it != prop.end()) {
                     // Use user-specified material
-                    auto mat = comp::create<Material>("material::proxy", makeLoc(loc(), m.name), {
+                    auto mat = comp::create<Material>("material::proxy", makeLoc(m.name), {
                         {"ref", *it}
                     });
                     if (!mat) {
@@ -398,7 +403,7 @@ public:
                     // Default mixture material
                     currentMatParams_ = m;
                     auto mat = comp::create<Material>(
-                        "material::wavefrontobj", makeLoc(loc(), m.name),
+                        "material::wavefrontobj", makeLoc(m.name),
                         json::merge(prop, {
                             {"model_", loc()}
                         }
@@ -414,7 +419,7 @@ public:
             // Process texture
             [&](const MTLTextureParams& tex) -> bool {
                 const auto textureAssetName = json::valueOr<std::string>(prop, "texture", "texture::bitmap");
-                auto texture = comp::create<Texture>(textureAssetName, makeLoc(loc(), tex.name), {
+                auto texture = comp::create<Texture>(textureAssetName, makeLoc(tex.name), {
                     {"path", tex.path}
                 });
                 if (!texture) {
@@ -442,7 +447,7 @@ LM_COMP_REG_IMPL(Model_WavefrontObj, "model::wavefrontobj");
 
 // ----------------------------------------------------------------------------
 
-class Mesh_WavefrontObj : public Mesh {
+class Mesh_WavefrontObj final  : public Mesh {
 private:
     Model_WavefrontObj* model_;
     std::vector<OBJMeshFaceIndex> fs_;
@@ -507,7 +512,7 @@ LM_COMP_REG_IMPL(Mesh_WavefrontObj, "mesh::wavefrontobj");
 
 // ----------------------------------------------------------------------------
 
-class Material_WavefrontObj : public Material {
+class Material_WavefrontObj final : public Material {
 private:
     // Model asset
     Model_WavefrontObj* model_;
@@ -543,7 +548,7 @@ public:
         }
     }
 
-    virtual Json underlyingValue(const std::string& query) const {
+    virtual Json underlyingValue(const std::string& query) const override {
         LM_UNUSED(query);
         return {
             { "name", objmat_.name },
@@ -634,61 +639,73 @@ public:
         return true;
     }
 
-    virtual bool isSpecular(const SurfacePoint& sp) const override {
-        return materials_.at(sp.comp)->isSpecular(sp);
+    virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
+        return materials_.at(comp)->isSpecular(geom, SurfaceComp::DontCare);
     }
 
-    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
+    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
         // Select component
         const auto [comp, weight] = [&]() -> std::tuple<int, Float> {
-            // Glass or mirror
-            if (glass_ >= 0 || mirror_ >= 0) {
-                return { mirror_ < 0 ? glass_ : mirror_, 1_f };
+            // Glass
+            if (glass_ >= 0) {
+                return { glass_, 1_f };
+            }
+
+            // Mirror
+            if (mirror_ >= 0) {
+                return { mirror_, 1_f };
             }
 
             // Diffuse or glossy or mask
             const auto* D = materials_.at(diffuse_).get();
             const auto* G = materials_.at(glossy_).get();
             const auto wd = [&]() {
-                const auto wd = glm::compMax(*D->reflectance(sp));
-                const auto ws = glm::compMax(*G->reflectance(sp));
-                return wd == 0_f && ws == 0_f ? 1_f : wd / (wd + ws);
+                const auto wd = glm::compMax(*D->reflectance(geom, SurfaceComp::DontCare));
+                const auto ws = glm::compMax(*G->reflectance(geom, SurfaceComp::DontCare));
+                if (wd == 0_f && ws == 0_f) {
+                    return 1_f;
+                }
+                return wd / (wd + ws);
             }();
             if (rng.u() < wd) {
-                if (maskTex_ && rng.u() > maskTex_->evalAlpha(sp.t)) {
+                if (maskTex_ && rng.u() > maskTex_->evalAlpha(geom.t)) {
                     return { mask_, 1_f/wd };
                 }
                 else {
-                    return { diffuse_, 1_f / wd };
+                    return { diffuse_, 1_f/wd };
                 }
             }
             return { glossy_, 1_f/(1_f-wd) };
         }();
 
         // Sample a ray
-        auto s = materials_.at(comp)->sampleRay(rng, sp, wi);
+        auto s = materials_.at(comp)->sample(rng, geom, wi);
         if (!s) {
             return {};
         }
-        return s->asComp(comp).multWeight(weight);
+        return MaterialDirectionSample{
+            s->wo,
+            comp,
+            s->weight * weight
+        };
     }
 
-    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const {
-        if (sp.comp >= 0) {
-            return materials_.at(sp.comp)->reflectance(sp);
+    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
+        if (comp >= 0) {
+            return materials_.at(comp)->reflectance(geom, SurfaceComp::DontCare);
         }
         if (diffuse_ >= 0) {
-            return materials_.at(diffuse_)->reflectance(sp);
+            return materials_.at(diffuse_)->reflectance(geom, SurfaceComp::DontCare);
         }
         return {};
     }
 
-    virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {
-        return materials_.at(sp.comp)->pdf(sp, wi, wo);
+    virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+        return materials_.at(comp)->pdf(geom, SurfaceComp::DontCare, wi, wo);
     }
 
-    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {
-        return materials_.at(sp.comp)->eval(sp, wi, wo);
+    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+        return materials_.at(comp)->eval(geom, SurfaceComp::DontCare, wi, wo);
     }
 };
 

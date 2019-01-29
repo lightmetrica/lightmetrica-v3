@@ -30,7 +30,7 @@ public:
     }
 
 public:
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return false;
     }
 
@@ -45,16 +45,16 @@ public:
         }
         return MaterialDirectionSample{
             wo,
-            0,
-            eval(geom, wi, wo) / pdf(geom, wi, wo)
+            SurfaceComp::DontCare,
+            eval(geom, {}, wi, wo) / pdf(geom, {}, wi, wo)
         };
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
+    virtual std::optional<Vec3> reflectance(const PointGeometry&, int) const override {
         return Ks_;
     }
 
-    virtual Float pdf(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
         if (geom.opposite(wi, wo)) {
             return 0_f;
         }
@@ -63,7 +63,7 @@ public:
         return normalDist(wh,u,v,n)*glm::dot(wh,n)/(4_f*glm::dot(wo, wh)*glm::dot(wo, n));
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
+    virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
         if (geom.opposite(wi, wo)) {
             return {};
         }

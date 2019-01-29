@@ -38,9 +38,9 @@ public:
             }
             auto V = 0_f;
             for (long long i = 0; i < spp_; i++) {
-                const auto [n, u, v] = hit->orthonormalBasis(-ray.d);
+                const auto [n, u, v] = hit->geom.orthonormalBasis(-ray.d);
                 const auto d = lm::math::sampleCosineWeighted(rng);
-                V += scene->intersect({hit->p, u*d.x+v*d.y+n*d.z}, lm::Eps, .2_f) ? 0_f : 1_f;
+                V += scene->intersect({hit->geom.p, u*d.x+v*d.y+n*d.z}, lm::Eps, .2_f) ? 0_f : 1_f;
             }
             V /= spp_;
             film_->setPixel(x, y, lm::Vec3(V));

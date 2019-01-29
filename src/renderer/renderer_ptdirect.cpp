@@ -82,7 +82,7 @@ public:
                         if (!sL) {
                             return;
                         }
-                        if (scene->intersect(Ray{s->sp.p, sL->wo}, Eps, sL->d*(1_f-Eps))) {
+                        if (!scene->visible(s->sp, sL->sp)) {
                             return;
                         }
                         // Evaluate and accumulate contribution

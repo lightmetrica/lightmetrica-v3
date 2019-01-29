@@ -104,6 +104,13 @@ public:
         return base.empty() ? child : (base + "." + child);
     }
 
+    /*!
+        \brief Make locator by appending string to current locator.
+    */
+    const std::string makeLoc(const std::string& child) const {
+        return makeLoc(loc(), child);
+    }
+
 public:
     /*!
         \brief Cast to specific component interface type.

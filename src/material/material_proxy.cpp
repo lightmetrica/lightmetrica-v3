@@ -42,24 +42,24 @@ public:
         return ref_;
     }
 
-    virtual bool isSpecular(const PointGeometry& geom) const override {
-        return ref_->isSpecular(geom);
+    virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
+        return ref_->isSpecular(geom, comp);
     }
 
     virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
         return ref_->sample(rng, geom, wi);
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
-        return ref_->reflectance(geom);
+    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
+        return ref_->reflectance(geom, comp);
     }
 
-    Float pdf(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
-        return ref_->pdf(geom, wi, wo);
+    Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+        return ref_->pdf(geom, comp, wi, wo);
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
-        return ref_->eval(geom, wi, wo);
+    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+        return ref_->eval(geom, comp, wi, wo);
     }
 };
 

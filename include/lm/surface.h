@@ -27,7 +27,6 @@ struct PointGeometry {
     };
     Vec2 t;                 // Texture coordinates
     Vec3 u, v;              // Orthogonal tangent vectors
-    //bool endpoint = false;  // Endpoint of light path
 
     /*!
         \brief Make degenerated point.
@@ -59,7 +58,7 @@ struct PointGeometry {
         \param n Normal.
         \param t Texture coordinates.
     */
-    static PointGeometry makeOnSurface(Vec3 p, Vec3 n, Vec3 t) {
+    static PointGeometry makeOnSurface(Vec3 p, Vec3 n, Vec2 t) {
         PointGeometry geom;
         geom.degenerated = false;
         geom.infinite = false;
@@ -80,10 +79,10 @@ struct PointGeometry {
     }
 
     /*!
-        \brief Return true if wi and wo is same direction according to the normal n.
+        \brief Return true if w1 and w2 is same direction according to the normal n.
     */
-    bool opposite(Vec3 wi, Vec3 wo) const {
-        return glm::dot(wi, n) * glm::dot(wo, n) <= 0;
+    bool opposite(Vec3 w1, Vec3 w2) const {
+        return glm::dot(w1, n) * glm::dot(w2, n) <= 0;
     }
 
     /*!
@@ -95,7 +94,39 @@ struct PointGeometry {
     }
 };
 
+namespace SurfaceComp {
+    enum {
+        All = -1,
+        DontCare = 0,
+    };
+}
+
+/*!
+    \brief Scene surface point.
+
+    \rst
+    Represents single point on the scene surface, which contains
+    geometry information around a point and a weak reference to
+    the primitive associated with the point.
+    \endrst
+*/
+struct SurfacePoint {
+    int primitive;          // Primitive index
+    int comp;               // Component index
+    PointGeometry geom;     // Surface point geometry information
+    bool endpoint;          // True if endpoint of light path
+};
+
+/*!
+    @}
+*/
+
 LM_NAMESPACE_BEGIN(surface)
+
+/*!
+    \addtogroup scene
+    @{
+*/
 
 /*!
     \brief Compute geometry term.
@@ -107,10 +138,9 @@ static Float geometryTerm(const PointGeometry& s1, const PointGeometry& s2) {
     return glm::abs(glm::dot(s1.n, d)) * glm::abs(glm::dot(s2.n, -d)) / L2;
 }
 
-LM_NAMESPACE_END(surface)
-
 /*!
     @}
 */
 
+LM_NAMESPACE_END(surface)
 LM_NAMESPACE_END(LM_NAMESPACE)

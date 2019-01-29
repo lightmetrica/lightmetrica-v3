@@ -20,84 +20,17 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Scene surface point.
-    Represents single point on the scene surface, which contains
-    geometry information around a point and a weak reference to
-    the primitive associated with the point.
-*/
-struct SurfacePoint {
-    int primitive = -1;   // Primitive index
-    int comp = -1;        // Primitive component index
-    PointGeometry geom;   // Surface point geometry information
-
-    //static SurfacePoint makeEndpoint() {
-    //    
-    //}
-
-    //SurfacePoint(Vec3 p)
-    //    : degenerated(true), p(p) {}
-
-    //SurfacePoint(Vec3 p, Vec3 n, Vec2 t)
-    //    : SurfacePoint(-1, -1, p, n, t) {}
-
-    //SurfacePoint(int primitive)
-    //    : primitive(primitive), degenerated(false), endpoint(true) {}
-
-    //SurfacePoint(int primitive, int comp, Vec3 p, Vec3 n, Vec2 t)
-    //    : primitive(primitive), comp(comp), degenerated(false), p(p), n(n), t(t)
-    //{
-    //    std::tie(u, v) = math::orthonormalBasis(n);
-    //}
-};
-
-// ----------------------------------------------------------------------------
-
-/*!
     \brief Result of sampleRay functions.
 */
 struct RaySample {
-    PointGeometry geom;   // Sampled geometry information
-    Vec3 wo;                // Sampled direction
-    int comp;               // Sampled component index
-    Vec3 weight;            // Contribution divided by probability
-
-    //RaySample(const SurfacePoint& sp, Vec3 wo, Vec3 weight)
-    //    : sp(sp), wo(wo), weight(weight) {}
-
-    // Update primitive index and return a reference
-    //RaySample& asPrimitive(int primitive) {
-    //    sp.primitive = primitive;
-    //    return *this;
-    //}
-
-    // Update component index and return a reference
-    //RaySample& asComp(int comp) {
-    //    sp.comp = comp;
-    //    return *this;
-    //}
-
-    // Update endpoint flag
-    //RaySample& asEndpoint(bool endpoint) {
-    //    sp.endpoint = endpoint;
-    //    return *this;
-    //}
-
-    // Multiply weight
-    //RaySample& multWeight(Float w) {
-    //    weight *= w;
-    //    return *this;
-    //}
-
-    //RaySample(int primitive, int comp, const RaySample& rs)
-    //    : sp(rs.sp), wo(rs.wo), weight(rs.weight)
-    //{
-    //    sp.primitive = primitive;
-    //    sp.comp = comp;
-    //}
+    SurfacePoint sp;   // Surface point information
+    Vec3 wo;           // Sampled direction
+    Vec3 weight;       // Contribution divided by probability
 
     // Get a ray from the sample
     Ray ray() const {
-        return { sp.p, wo };
+        assert(!sp.geom.infinite);
+        return { sp.geom.p, wo };
     }
 };
 
@@ -143,6 +76,31 @@ public:
     virtual std::optional<SurfacePoint> intersect(
         Ray ray, Float tmin = Eps, Float tmax = Inf) const = 0;
 
+    /*!
+        \brief Check if two surface points are mutually visible.
+    */
+    bool visible(const SurfacePoint& sp1, const SurfacePoint& sp2) const {
+        const auto visible_ = [this](const SurfacePoint& sp1, const SurfacePoint& sp2) -> bool {
+            assert(!sp1.geom.infinite);
+            const auto wo = sp2.geom.infinite
+                ? -sp2.geom.wo
+                : glm::normalize(sp2.geom.p - sp1.geom.p);
+            const auto tmax = sp2.geom.infinite
+                ? Inf
+                : [&]() {
+                    const auto d = glm::distance(sp1.geom.p, sp2.geom.p);
+                    return d * (1_f - Eps);
+                }();
+            return !intersect(Ray{sp1.geom.p, wo}, Eps, tmax);
+        };
+        if (sp1.geom.infinite) {
+            return visible_(sp2, sp1);
+        }
+        else {
+            return visible_(sp1, sp2);
+        }
+    }
+
     // ------------------------------------------------------------------------
 
     /*!
@@ -181,7 +139,7 @@ public:
     /*!
         \brief Sample a position on a light.
     */
-    virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const = 0;
+    virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const = 0;
 
     // ------------------------------------------------------------------------
 

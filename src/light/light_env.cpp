@@ -57,7 +57,7 @@ public:
         return true;
     }
 
-    virtual std::optional<LightRaySample> sample(Rng& rng, PointGeometry& geom, const Transform&) const override {
+    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {
         const auto u = dist_.samp(rng);
         const auto t  = Pi * u[1];
         const auto st = sin(t);

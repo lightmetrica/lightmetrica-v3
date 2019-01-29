@@ -29,14 +29,14 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Material_Mirror final : public Material {
 private:
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return true;
     }
 
     virtual std::optional<MaterialDirectionSample> sample(Rng&, const PointGeometry& geom, Vec3 wi) const override {
         return MaterialDirectionSample{
             math::reflection(wi, geom.n),
-            0,
+            SurfaceComp::DontCare,
             Vec3(1_f)
         };
     }

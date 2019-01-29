@@ -155,17 +155,26 @@ public:
             if (envLight_ < 0) {
                 return {};
             }
-            return SurfacePoint(envLight_);
+            return SurfacePoint{
+                envLight_,
+                0,
+                PointGeometry::makeInfinite(-ray.d),
+                true
+            };
         }
         const auto [t, uv, primitiveIndex, face] = *hit;
         const auto& primitive = primitives_.at(primitiveIndex);
         const auto p = primitive.mesh->surfacePoint(face, uv);
-        return SurfacePoint(
+        return SurfacePoint{
             primitiveIndex,
             -1,
-            primitive.transform.M * Vec4(p.p, 1_f),
-            primitive.transform.normalM * p.n,
-            p.t);
+            PointGeometry::makeOnSurface(
+                primitive.transform.M * Vec4(p.p, 1_f),
+                primitive.transform.normalM * p.n,
+                p.t
+            ),
+            false
+        };
     }
 
     // ------------------------------------------------------------------------
@@ -178,14 +187,14 @@ public:
         const auto& primitive = primitives_.at(sp.primitive);
         if (sp.endpoint) {
             if (primitive.light) {
-                return primitive.light->isSpecular(sp);
+                return primitive.light->isSpecular(sp.geom);
             }
             else if (primitive.camera) {
-                return primitive.camera->isSpecular(sp);
+                return primitive.camera->isSpecular(sp.geom);
             }
             LM_UNREACHABLE_RETURN();
         }
-        return primitive.material->isSpecular(sp);
+        return primitive.material->isSpecular(sp.geom, sp.comp);
     }
 
     // ------------------------------------------------------------------------
@@ -199,18 +208,40 @@ public:
         if (!material) {
             return {};
         }
-        return material->sampleRay(rng, sp, wi);
+        const auto s = material->sample(rng, sp.geom, wi);
+        if (!s) {
+            return {};
+        }
+        return RaySample{
+            SurfacePoint{
+                sp.primitive,
+                s->comp,
+                sp.geom,
+                false
+            },
+            s->wo,
+            s->weight
+        };
     }
 
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
-        auto rs = primitives_.at(camera_).camera->samplePrimaryRay(rng, window);
-        if (!rs) {
+        const auto s = primitives_.at(camera_).camera->samplePrimaryRay(rng, window);
+        if (!s) {
             return {};
         }
-        return rs->asPrimitive(camera_).asEndpoint(true);
+        return RaySample{
+            SurfacePoint{
+                camera_,
+                0,
+                s->geom,
+                true
+            },
+            s->wo,
+            s->weight
+        };
     }
 
-    virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+    virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
         // Sample a light
         const int n  = int(lights_.size());
         const int i  = glm::clamp(int(rng.u() * n), 0, n-1);
@@ -218,37 +249,51 @@ public:
         
         // Sample a position on the light
         const auto& primitive = primitives_.at(lights_[i]);
-        return primitive.light->sampleLight(rng, sp, primitive.transform);
+        const auto s = primitive.light->sample(rng, sp.geom, primitive.transform);
+        if (!s) {
+            return {};
+        }
+        return RaySample{
+            SurfacePoint{
+                lights_[i],
+                0,
+                s->geom,
+                true
+            },
+            s->wo,
+            s->weight
+        };
     }
     
     // ------------------------------------------------------------------------
 
     virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+        const auto& prim = primitives_.at(sp.primitive);
         if (sp.endpoint) {
             if (sp.primitive == camera_) {
-                return primitives_.at(sp.primitive).camera->eval(sp, wo);
+                return prim.camera->eval(sp.geom, wo);
             }
             else {
-                return primitives_.at(sp.primitive).light->eval(sp, wo);
+                return prim.light->eval(sp.geom, wo);
             }
         }
-        return primitives_.at(sp.primitive).material->eval(sp, wi, wo);
+        return prim.material->eval(sp.geom, sp.comp, wi, wo);
     }
 
     virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
-        const auto& primitive = primitives_.at(sp.primitive);
-        if (!primitive.light) {
+        const auto& prim = primitives_.at(sp.primitive);
+        if (!prim.light) {
             return {};
         }
-        return primitive.light->eval(sp, wo);
+        return prim.light->eval(sp.geom, wo);
     }
 
     virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const override {
-        const auto& primitive = primitives_.at(sp.primitive);
-        if (!primitive.material) {
+        const auto& prim = primitives_.at(sp.primitive);
+        if (!prim.material) {
             return {};
         }
-        return primitive.material->reflectance(sp);
+        return prim.material->reflectance(sp.geom, sp.comp);
     }
 };
 

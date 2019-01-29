@@ -32,8 +32,8 @@ public:
     /*!
         \brief Check if the material is specular.
     */
-    virtual bool isSpecular(const PointGeometry& geom) const {
-        LM_UNUSED(geom);
+    virtual bool isSpecular(const PointGeometry& geom, int comp) const {
+        LM_UNUSED(geom, comp);
         LM_UNREACHABLE_RETURN();
     }
 
@@ -48,24 +48,24 @@ public:
     /*!
         \brief Evaluate reflectance.
     */
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const {
-        LM_UNUSED(geom);
+    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const {
+        LM_UNUSED(geom, comp);
         LM_UNREACHABLE_RETURN();
     }
 
     /*!
         \brief Evaluate pdf in projected solid angle measure.
     */
-    virtual Float pdf(const PointGeometry& geom, Vec3 wi, Vec3 wo) const {
-        LM_UNUSED(geom, wi, wo);
+    virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const {
+        LM_UNUSED(geom, comp, wi, wo);
         LM_UNREACHABLE_RETURN();
     }
 
     /*!
         \brief Evaluate BSDF.
     */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const {
-        LM_UNUSED(geom, wi, wo);
+    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const {
+        LM_UNUSED(geom, comp, wi, wo);
         LM_UNREACHABLE_RETURN();
     }
 };
