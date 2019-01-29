@@ -1,6 +1,6 @@
 /*
     Lightmetrica - Copyright (c) 2019 Hisanari Otsu
-    distributed under mit license. see license file for details.
+    Distributed under MIT license. See LICENSE file for details.
 */
 
 #include <pch.h>

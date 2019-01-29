@@ -428,6 +428,15 @@ static Vec3 reflection(Vec3 w, Vec3 n) {
     return 2_f * glm::dot(w, n) * n - w;
 }
 
+
+/*!
+    \brief Result of refraction() function.
+*/
+struct RefractionResult {
+    Vec3 wt;        // Refracted direction
+    bool total;     // True if total internal reflection happens
+};
+
 /*!
     \brief Refracted direction.
     \param wi Incident direction.
@@ -435,10 +444,13 @@ static Vec3 reflection(Vec3 w, Vec3 n) {
     \param eta Relative ior.
     \return Refracted direction.
 */
-static std::optional<Vec3> refraction(Vec3 wi, Vec3 n, Float eta) {
+static RefractionResult refraction(Vec3 wi, Vec3 n, Float eta) {
     const auto t = glm::dot(wi, n);
     const auto t2 = 1_f - eta*eta*(1_f-t*t);
-    return t2 > 0_f ? eta*(n*t-wi)-n*safeSqrt(t2) : std::optional<Vec3>{};
+    if (t2 <= 0_f) {
+        return {{}, true};
+    }
+    return {eta*(n*t-wi)-n*safeSqrt(t2), false};
 }
 
 /*!

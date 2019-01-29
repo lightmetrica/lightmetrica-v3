@@ -6,10 +6,10 @@
 #include <pch.h>
 #include <lm/light.h>
 #include <lm/mesh.h>
-#include <lm/scene.h>
 #include <lm/json.h>
 #include <lm/user.h>
 #include <lm/serial.h>
+#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -23,7 +23,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
    :param str mesh: Underlying mesh specified by asset name or locator.
 \endrst
 */
-class Light_Area : public Light {
+class Light_Area final : public Light {
 private:
     Vec3 Ke_;     // Luminance
     Dist dist_;   // For surface sampling of area lights
@@ -67,32 +67,35 @@ public:
         return true;
     }
 
-    virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp, const Transform& transform) const override {
+    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
         const int i = dist_.samp(rng);
         const auto s = math::safeSqrt(rng.u());
         const auto [a, b, c] = mesh_->triangleAt(i);
         const auto p = math::mixBarycentric(a, b, c, Vec2(1_f-s, rng.u()*s));
         const auto n = glm::normalize(glm::cross(b - a, c - a));
-        const SurfacePoint spL(
+        const auto geomL = PointGeometry::makeOnSurface(
             transform.M * Vec4(p, 1_f),
-            transform.normalM * n,
-            Vec2());
-        const auto ppL = spL.p - sp.p;
+            transform.normalM * n);
+        const auto ppL = geomL.p - geom.p;
         const auto wo = glm::normalize(ppL);
-        const auto pL = pdfLight(sp, spL, transform, -wo);
+        const auto pL = pdf(geom, geomL, transform, -wo);
         if (pL == 0_f) {
             return {};
         }
-        const auto Le = eval(spL, -wo);
-        return LightSample{ wo, glm::length(ppL), Le / pL };
+        const auto Le = eval(geomL, -wo);
+        return LightRaySample{
+            geomL,
+            wo,
+            Le / pL
+        };
     }
 
-    virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, const Transform& transform, Vec3) const override {
-        const auto G = geometryTerm(sp, spL);
+    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3) const override {
+        const auto G = surface::geometryTerm(geom, geomL);
         return G == 0_f ? 0_f : tranformedInvA(transform) / G;
     }
 
-    virtual bool isSpecular(const SurfacePoint&) const override {
+    virtual bool isSpecular(const PointGeometry&) const override {
         return false;
     }
 
@@ -100,8 +103,8 @@ public:
         return false;
     }
 
-    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const override {
-        return glm::dot(wo, sp.n) <= 0_f ? Vec3(0_f) : Ke_;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
+        return glm::dot(wo, geom.n) <= 0_f ? Vec3(0_f) : Ke_;
     }
 };
 

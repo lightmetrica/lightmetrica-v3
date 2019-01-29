@@ -7,9 +7,9 @@
 #include <lm/camera.h>
 #include <lm/film.h>
 #include <lm/json.h>
-#include <lm/scene.h>
 #include <lm/user.h>
 #include <lm/serial.h>
+#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -66,8 +66,7 @@ public:
         return true;
     }
 
-    virtual bool isSpecular(const SurfacePoint& sp) const override {
-        LM_UNUSED(sp);
+    virtual bool isSpecular(const PointGeometry&) const override {
         return false;
     }
 
@@ -77,17 +76,17 @@ public:
         return { position_, u_*d.x+v_*d.y+w_*d.z };
     }
 
-    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
+    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
         const auto [x, y, w, h] = window.data.data;
-        return RaySample(
-            SurfacePoint(position_),
+        return CameraRaySample{
+            PointGeometry::makeDegenerated(position_),
             primaryRay({x+w*rng.u(), y+h*rng.u()}).d,
             Vec3(1_f)
-        );
+        };
     }
 
-    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const override {
-        LM_UNUSED(sp, wo);
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
+        LM_UNUSED(geom, wo);
         LM_TBA_RUNTIME();
     }
 };

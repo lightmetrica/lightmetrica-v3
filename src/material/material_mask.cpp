@@ -5,7 +5,7 @@
 
 #include <pch.h>
 #include <lm/material.h>
-#include <lm/scene.h>
+#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -24,16 +24,18 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
       f_s(\omega_i, \omega_o) = \delta_\Omega(-\omega_i, \omega_o).
 \endrst
 */
-class Material_Mask : public Material {
+class Material_Mask final : public Material {
 private:
-    virtual bool isSpecular(const SurfacePoint& sp) const override {
-        LM_UNUSED(sp);
+    virtual bool isSpecular(const PointGeometry&) const override {
         return true;
     }
 
-    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
-        LM_UNUSED(rng);
-        return RaySample(sp, -wi, Vec3(1_f));
+    virtual std::optional<MaterialDirectionSample> sample(Rng&, const PointGeometry&, Vec3 wi) const override {
+        return MaterialDirectionSample{
+            -wi,
+            0,
+            Vec3(1_f)
+        };
     }
 };
 

@@ -11,7 +11,6 @@
 #include <lm/logger.h>
 #include <lm/film.h>
 #include <lm/light.h>
-#include <lm/scene.h>
 #include <lm/json.h>
 #include <lm/user.h>
 #include <lm/serial.h>
@@ -641,7 +640,7 @@ public:
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
         // Select component
-        const auto [compIndex, weight] = [&]() -> std::tuple<int, Float> {
+        const auto [comp, weight] = [&]() -> std::tuple<int, Float> {
             // Glass or mirror
             if (glass_ >= 0 || mirror_ >= 0) {
                 return { mirror_ < 0 ? glass_ : mirror_, 1_f };
@@ -667,11 +666,11 @@ public:
         }();
 
         // Sample a ray
-        auto s = materials_.at(compIndex)->sampleRay(rng, sp, wi);
+        auto s = materials_.at(comp)->sampleRay(rng, sp, wi);
         if (!s) {
             return {};
         }
-        return s->asComp(compIndex).multWeight(weight);
+        return s->asComp(comp).multWeight(weight);
     }
 
     virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const {

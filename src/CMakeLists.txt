@@ -33,7 +33,8 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/json.h"
     "${_INCLUDE_DIR}/common.h"
     "${_INCLUDE_DIR}/component.h"
-    "${_INCLUDE_DIR}/serial.h")
+    "${_INCLUDE_DIR}/serial.h"
+    "${_INCLUDE_DIR}/surface.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/user.cpp"

@@ -16,6 +16,15 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
+    \brief Result of Camera::samplePrimaryRay() function.
+*/
+struct CameraRaySample {
+    PointGeometry geom;   // Sampled geometry information
+    Vec3 wo;              // Sampled direction
+    Vec3 weight;          // Contribution divided by probability
+};
+
+/*!
     \brief Camera.
 */
 class Camera : public Component {
@@ -23,7 +32,7 @@ public:
     /*!
         \brief Check if the camera is specular.
     */
-    virtual bool isSpecular(const SurfacePoint& sp) const = 0;
+    virtual bool isSpecular(const PointGeometry& geom) const = 0;
 
     /*!
         \brief Generate a primary ray with the corresponding raster position.
@@ -33,12 +42,12 @@ public:
     /*!
         \brief Sample a primary ray within the given raster window.
     */
-    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
+    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
 
     /*!
         \brief Evaluate importance.
     */
-    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const = 0;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const = 0;
 };
 
 /*!

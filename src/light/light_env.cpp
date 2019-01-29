@@ -8,7 +8,7 @@
 #include <lm/texture.h>
 #include <lm/serial.h>
 #include <lm/json.h>
-#include <lm/scene.h>
+#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -23,7 +23,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
                      Default value: 0.
 \endrst
 */
-class Light_Env : public Light {
+class Light_Env final : public Light {
 private:
     Component::Ptr<Texture> envmap_;    // Environment map
     Float rot_;                         // Rotation of the environment map around (0,1,0)
@@ -57,22 +57,27 @@ public:
         return true;
     }
 
-    virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp, const Transform&) const override {
+    virtual std::optional<LightRaySample> sample(Rng& rng, PointGeometry& geom, const Transform&) const override {
         const auto u = dist_.samp(rng);
         const auto t  = Pi * u[1];
         const auto st = sin(t);
         const auto p  = 2 * Pi * u[0] + rot_;
-        const auto wo = Vec3(st * sin(p), cos(t), st * cos(p));
-        const auto pL = pdfLight(sp, {}, {}, -wo);
+        const auto wo = -Vec3(st * sin(p), cos(t), st * cos(p));
+        const auto pL = pdf(geom, {}, {}, wo);
         if (pL == 0_f) {
             return {};
         }
-        const auto Le = eval({}, -wo);
-        return LightSample{ wo, Inf, Le / pL };
+        const auto geomL = PointGeometry::makeInfinite(wo);
+        const auto Le = eval(geomL, wo);
+        return LightRaySample{
+            geomL,
+            wo,
+            Le / pL
+        };
     }
 
-    virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint&, const Transform&, Vec3 wo) const override {
-        const auto d  = -wo;
+    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, const Transform&, Vec3) const override {
+        const auto d  = -geomL.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);
             return at < 0_f ? at + 2_f * Pi : at;
@@ -84,10 +89,10 @@ public:
         if (st == 0_f) {
             return 0_f;
         }
-        return dist_.p(u, v) / (2_f*Pi*Pi*st*glm::abs(glm::dot(d, sp.n)));
+        return dist_.p(u, v) / (2_f*Pi*Pi*st*glm::abs(glm::dot(d, geom.n)));
     }
 
-    virtual bool isSpecular(const SurfacePoint&) const override {
+    virtual bool isSpecular(const PointGeometry&) const override {
         return false;
     }
 
@@ -95,8 +100,8 @@ public:
         return true;
     }
 
-    virtual Vec3 eval(const SurfacePoint&, Vec3 wo) const override {
-        const auto d = -wo;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3) const override {
+        const auto d = -geom.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);
             return at < 0_f ? at + 2_f * Pi : at;

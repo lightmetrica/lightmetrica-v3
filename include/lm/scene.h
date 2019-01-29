@@ -7,6 +7,7 @@
 
 #include "component.h"
 #include "math.h"
+#include "surface.h"
 #include <variant>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -25,57 +26,29 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     the primitive associated with the point.
 */
 struct SurfacePoint {
-    int primitive = -1;     // Primitive index
-    int comp = -1;          // Primitive component index
-    bool degenerated;       // Surface is degenerated (e.g., point light)
-    Vec3 p;                 // Position
-    Vec3 n;                 // Normal
-    Vec2 t;                 // Texture coordinates
-    Vec3 u, v;              // Orthogonal tangent vectors
-    bool endpoint = false;  // Endpoint of light path
+    int primitive = -1;   // Primitive index
+    int comp = -1;        // Primitive component index
+    PointGeometry geom;   // Surface point geometry information
 
-    SurfacePoint() = default;
+    //static SurfacePoint makeEndpoint() {
+    //    
+    //}
 
-    SurfacePoint(Vec3 p)
-        : degenerated(true), p(p) {}
+    //SurfacePoint(Vec3 p)
+    //    : degenerated(true), p(p) {}
 
-    SurfacePoint(Vec3 p, Vec3 n, Vec2 t)
-        : SurfacePoint(-1, -1, p, n, t) {}
+    //SurfacePoint(Vec3 p, Vec3 n, Vec2 t)
+    //    : SurfacePoint(-1, -1, p, n, t) {}
 
-    SurfacePoint(int primitive)
-        : primitive(primitive), degenerated(false), endpoint(true) {}
+    //SurfacePoint(int primitive)
+    //    : primitive(primitive), degenerated(false), endpoint(true) {}
 
-    SurfacePoint(int primitive, int comp, Vec3 p, Vec3 n, Vec2 t)
-        : primitive(primitive), comp(comp), degenerated(false), p(p), n(n), t(t)
-    {
-        std::tie(u, v) = math::orthonormalBasis(n);
-    }
-
-    /*!
-        \brief Return true if wi and wo is same direction according to the normal n.
-    */
-    bool opposite(Vec3 wi, Vec3 wo) const {
-        return glm::dot(wi, n) * glm::dot(wo, n) <= 0;
-    }
-    
-    /*!
-        \brief Return orthonormal basis according to the incident direction wi.
-    */
-    std::tuple<Vec3, Vec3, Vec3> orthonormalBasis(Vec3 wi) const {
-        const int i = glm::dot(wi, n) > 0;
-        return { i ? n : -n, u, i ? v : -v };
-    }
+    //SurfacePoint(int primitive, int comp, Vec3 p, Vec3 n, Vec2 t)
+    //    : primitive(primitive), comp(comp), degenerated(false), p(p), n(n), t(t)
+    //{
+    //    std::tie(u, v) = math::orthonormalBasis(n);
+    //}
 };
-
-/*!
-    \brief Compute geometry term.
-*/
-static Float geometryTerm(const SurfacePoint& s1, const SurfacePoint& s2) {
-    Vec3 d = s2.p - s1.p;
-    const Float L2 = glm::dot(d, d);
-    d = d / std::sqrt(L2);
-    return glm::abs(glm::dot(s1.n, d)) * glm::abs(glm::dot(s2.n, -d)) / L2;
-}
 
 // ----------------------------------------------------------------------------
 
@@ -83,57 +56,49 @@ static Float geometryTerm(const SurfacePoint& s1, const SurfacePoint& s2) {
     \brief Result of sampleRay functions.
 */
 struct RaySample {
-    SurfacePoint sp;  // Sampled point
-    Vec3 wo;          // Sampled direction
-    Vec3 weight;      // Contribution divided by probability
+    PointGeometry geom;   // Sampled geometry information
+    Vec3 wo;                // Sampled direction
+    int comp;               // Sampled component index
+    Vec3 weight;            // Contribution divided by probability
 
-    RaySample(const SurfacePoint& sp, Vec3 wo, Vec3 weight)
-        : sp(sp), wo(wo), weight(weight) {}
+    //RaySample(const SurfacePoint& sp, Vec3 wo, Vec3 weight)
+    //    : sp(sp), wo(wo), weight(weight) {}
 
     // Update primitive index and return a reference
-    RaySample& asPrimitive(int primitive) {
-        sp.primitive = primitive;
-        return *this;
-    }
+    //RaySample& asPrimitive(int primitive) {
+    //    sp.primitive = primitive;
+    //    return *this;
+    //}
 
     // Update component index and return a reference
-    RaySample& asComp(int comp) {
-        sp.comp = comp;
-        return *this;
-    }
+    //RaySample& asComp(int comp) {
+    //    sp.comp = comp;
+    //    return *this;
+    //}
 
     // Update endpoint flag
-    RaySample& asEndpoint(bool endpoint) {
-        sp.endpoint = endpoint;
-        return *this;
-    }
+    //RaySample& asEndpoint(bool endpoint) {
+    //    sp.endpoint = endpoint;
+    //    return *this;
+    //}
 
     // Multiply weight
-    RaySample& multWeight(Float w) {
-        weight *= w;
-        return *this;
-    }
+    //RaySample& multWeight(Float w) {
+    //    weight *= w;
+    //    return *this;
+    //}
 
-    RaySample(int primitive, int comp, const RaySample& rs)
-        : sp(rs.sp), wo(rs.wo), weight(rs.weight)
-    {
-        sp.primitive = primitive;
-        sp.comp = comp;
-    }
+    //RaySample(int primitive, int comp, const RaySample& rs)
+    //    : sp(rs.sp), wo(rs.wo), weight(rs.weight)
+    //{
+    //    sp.primitive = primitive;
+    //    sp.comp = comp;
+    //}
 
     // Get a ray from the sample
     Ray ray() const {
         return { sp.p, wo };
     }
-};
-
-// ----------------------------------------------------------------------------
-
-struct LightSample {
-    Vec3 wo;      // Sampled direction
-    Float d;      // Distance to the sampled position
-    Vec3 weight;  // Evaluated contribution divided by probability
-                  // in projected solid angle measure
 };
 
 // ----------------------------------------------------------------------------
