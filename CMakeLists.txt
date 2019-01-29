@@ -108,6 +108,22 @@ endif()
 
 # -----------------------------------------------------------------------------
 
+# OpenGL
+find_package(OpenGL REQUIRED)
+
+# GLFW
+if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/glfw")
+    option(GLFW_BUILD_DOCS "" OFF)
+    option(GLFW_BUILD_TESTS "" OFF)
+    option(GLFW_BUILD_EXAMPLES "" OFF)
+    option(GLFW_INSTALL "" OFF)
+    add_subdirectory(${LM_EXTERNAL_DIR}/glfw)
+else()
+    find_package(glfw REQUIRED)
+endif()
+
+# -----------------------------------------------------------------------------
+
 # PCH related
 set(_PCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/pch")
 set(_PCH_FILES
@@ -116,6 +132,9 @@ set(_PCH_FILES
 
 # Main libraries
 add_subdirectory(src)
+
+# Plugins
+add_subdirectory(plugin)
 
 # Examples
 if (LM_BUILD_EXAMPLES)

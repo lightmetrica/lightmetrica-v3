@@ -37,6 +37,25 @@ struct RaySample {
 // ----------------------------------------------------------------------------
 
 /*!
+    \brief Scene primitive.
+*/
+struct Primitive {
+    int index;              // Primitive index
+    Transform transform;    // Transform associated to the primitive
+    Mesh* mesh;             // Underlying assets
+    Material* material;
+    Light* light;
+    Camera* camera;
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(index, transform, mesh, material, light, camera);
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+/*!
     \brief Scene.
 */
 class Scene : public Component {
@@ -56,10 +75,14 @@ public:
     /*!
         \brief Iterate triangles in the scene.
     */
-    using ProcessTriangleFunc = std::function<
-        void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
-    virtual void foreachTriangle(
-        const ProcessTriangleFunc& processTriangle) const = 0;
+    using ProcessTriangleFunc = std::function<void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
+    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const = 0;
+
+    /*!
+        \brief Iterate primitives in the scene.
+    */
+    using ProcessPrimitiveFunc = std::function<void(const Primitive& primitive)>;
+    virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const = 0;
 
     // ------------------------------------------------------------------------
 

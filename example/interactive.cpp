@@ -4,65 +4,18 @@
 */
 
 #include <lm/lm.h>
-using namespace lm::literals;
 
-// ----------------------------------------------------------------------------
 
-// Simple ambient occlusion renderer
-class Renderer_AO final : public lm::Renderer {
-private:
-    lm::Film* film_;
-    long long spp_;
-    int rngSeed_ = 42;
-
-public:
-    virtual bool construct(const lm::Json& prop) override {
-        film_ = lm::getAsset<lm::Film>(prop, "output");
-        if (!film_) {
-            return false;
-        }
-        spp_ = prop["spp"];
-        return true;
-    }
-
-    virtual void render(const lm::Scene* scene) const override {
-        const auto [w, h] = film_->size();
-        lm::parallel::foreach(w*h, [&](long long index, int threadId) -> void {
-            thread_local lm::Rng rng(rngSeed_ + threadId);
-            const int x = int(index % w);
-            const int y = int(index / w);
-            const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h});
-            const auto hit = scene->intersect(ray);
-            if (!hit) {
-                return;
-            }
-            auto V = 0_f;
-            for (long long i = 0; i < spp_; i++) {
-                const auto [n, u, v] = hit->geom.orthonormalBasis(-ray.d);
-                const auto d = lm::math::sampleCosineWeighted(rng);
-                V += scene->intersect({hit->geom.p, u*d.x+v*d.y+n*d.z}, lm::Eps, .2_f) ? 0_f : 1_f;
-            }
-            V /= spp_;
-            film_->setPixel(x, y, lm::Vec3(V));
-        });
-    }
-};
-
-LM_COMP_REG_IMPL(Renderer_AO, "renderer::ao");
-
-// ----------------------------------------------------------------------------
-
-// This example illustrates how to create custom renderer.
+/*
+    This example illustrates interactive visualization support.
+*/
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
-        lm::init("user::default", {
-            #if LM_DEBUG_MODE
-            {"numThreads", -1}
-            #else
-            {"numThreads", -1}
-            #endif
-        });
+        lm::init();
+
+        // We need `lmgl` plugin to use interactive features
+        lm::comp::detail::ScopedLoadPlugin pluginGuard("lmgl");
 
         // Parse command line arguments
         const auto opt = lm::json::parsePositionalArgs<13>(argc, argv, R"({{
@@ -115,7 +68,7 @@ int main(int argc, char** argv) {
 
         // Render an image
         lm::build("accel::sahbvh");
-        lm::render("renderer::ao", {
+        lm::render("renderer::ao2", {
             {"output", "film1"},
             {"spp", opt["spp"]}
         });

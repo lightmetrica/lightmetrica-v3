@@ -17,20 +17,6 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-struct Primitive {
-    int index;              // Primitive index
-    Transform transform;    // Transform associated to the primitive
-    Mesh* mesh;             // Underlying assets
-    Material* material;
-    Light* light;
-    Camera* camera;
-
-    template <typename Archive>
-    void serialize(Archive& ar) {
-        ar(index, transform, mesh, material, light, camera);
-    }
-};
-
 class Scene_ final : public Scene {
 private:
     std::vector<Primitive> primitives_;
@@ -135,6 +121,12 @@ public:
                     primitive.transform.M * Vec4(p3, 1_f)
                 );
             });
+        }
+    }
+
+    virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const override {
+        for (const auto& primitive : primitives_) {
+            processPrimitive(primitive);
         }
     }
 
