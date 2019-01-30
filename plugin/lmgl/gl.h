@@ -10,7 +10,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 LM_NAMESPACE_BEGIN(gl)
 
-static void CheckGLErrors(const char* filename, const int line) {
+static void checkGLErrors(const char* filename, const int line) {
     if (int err = glGetError(); err != GL_NO_ERROR) {
         std::string errstr;
         switch (err) {
@@ -24,7 +24,7 @@ static void CheckGLErrors(const char* filename, const int line) {
     }
 }
 
-static void DebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei /*length*/, const GLchar* message, const GLvoid* /*userParam*/) {
+static void debugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei /*length*/, const GLchar* message, const GLvoid* /*userParam*/) {
     std::string sourceString;
     std::string typeString;
     std::string severityString;
@@ -56,7 +56,7 @@ static void DebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, 
     LM_INFO("{}: {}({}) {}: {}", sourceString, typeString, severityString, id, message);
 }
 
-#define LM_GL_CHECK_ERRORS() gl::CheckGLErrors(__FILE__, __LINE__)
+#define LM_GL_CHECK_ERRORS() gl::checkGLErrors(__FILE__, __LINE__)
 #define LM_GL_OFFSET_OF(Type, Element) ((size_t)&(((Type*)0)->Element))
 
 LM_NAMESPACE_END(gl)
@@ -99,7 +99,7 @@ private:
 
 public:
     #pragma region Create & Destoroy
-    void Create(int type) {
+    void create(int type) {
         type_ = type;
         if (type_ == GLResourceType::Pipeline) {
             glGenProgramPipelines(1, &name_);
@@ -129,7 +129,7 @@ public:
         LM_GL_CHECK_ERRORS();
     }
 
-    void Destory()
+    void destory()
     {
         if (type_ == GLResourceType::Pipeline)            { glDeleteProgramPipelines(1, &name_); }
         else if (type_ == GLResourceType::Program)        { glDeleteProgram(name_); }
@@ -142,14 +142,14 @@ public:
 
 public:
     #pragma region Bindable
-    void Bind() const {
+    void bind() const {
         if ((type_ & GLResourceType::Bindable) == 0) { LM_ERROR("Invalid type"); return; }
         if (type_ == GLResourceType::Pipeline) { glBindProgramPipeline(name_); }
         if ((type_ & GLResourceType::Texture) > 0) { glBindTexture(data_.texture.target, name_); }
         LM_GL_CHECK_ERRORS();
     }
 
-    void Unbind() const {
+    void unbind() const {
         if ((type_ & GLResourceType::Bindable) == 0) { LM_ERROR("Invalid type"); return; }
         if (type_ == GLResourceType::Pipeline) { glBindProgramPipeline(0); }
         if ((type_ & GLResourceType::Texture) > 0) { glBindTexture(data_.texture.target, 0); }
@@ -159,13 +159,13 @@ public:
 
 public:
     #pragma region Getter
-    int GetType()        { return type_; }
-    GLuint GetName()    { return name_; }
+    int getType()        { return type_; }
+    GLuint getName()    { return name_; }
     #pragma endregion
 
 public:
     #pragma region Program type specific functions
-    bool CompileString(GLenum shaderType, const std::string& content) {
+    bool compileString(GLenum shaderType, const std::string& content) {
         if (type_ != GLResourceType::Program) {
             LM_ERROR("Invalid type");
             return false;
@@ -211,7 +211,7 @@ public:
         return true;
     }
 
-    bool Link() {
+    bool link() {
         if (type_ != GLResourceType::Program) {
             LM_ERROR("Invalid type");
             return false;
@@ -237,43 +237,73 @@ public:
         return true;
     }
 
-    void SetUniform(const std::string& name, int v) {
+    void setUniform(const std::string& name, int v) {
         if (type_ != GLResourceType::Program) { LM_ERROR("Invalid type"); return; }
-        glProgramUniform1i(name_, GetOrCreateUniformName(name), v);
+        glProgramUniform1i(name_, getOrCreateUniformName(name), v);
         LM_GL_CHECK_ERRORS();
     }
 
-    void SetUniform(const std::string& name, float v) {
+    template <typename F>
+    void setUniform(const std::string& name, F v) {
         if (type_ != GLResourceType::Program) { LM_ERROR("Invalid type"); return; }
-        glProgramUniform1f(name_, GetOrCreateUniformName(name), v);
+        if constexpr (std::is_same_v<F, float>) {
+            glProgramUniform1f(name_, getOrCreateUniformName(name), v);
+        }
+        if constexpr (std::is_same_v<F, double>) {
+            glProgramUniform1d(name_, getOrCreateUniformName(name), v);
+        }
         LM_GL_CHECK_ERRORS();
     }
 
-    void SetUniform(const std::string& name, const glm::vec3& v) {
+    template <typename F>
+    void setUniform(const std::string& name, const glm::tvec3<F>& v) {
         if (type_ != GLResourceType::Program) { LM_ERROR("Invalid type"); return; }
-        glProgramUniform3fv(name_, GetOrCreateUniformName(name), 1, &v.x);
+        if constexpr (std::is_same_v<F, float>) {
+            glProgramUniform3fv(name_, getOrCreateUniformName(name), 1, &v.x);
+        }
+        if constexpr (std::is_same_v<F, double>) {
+            glProgramUniform3dv(name_, getOrCreateUniformName(name), 1, &v.x);
+        }
         LM_GL_CHECK_ERRORS();
     }
 
-    void SetUniform(const std::string& name, const glm::vec4& v) {
+    template <typename F>
+    void setUniform(const std::string& name, const glm::tvec4<F>& v) {
         if (type_ != GLResourceType::Program) { LM_ERROR("Invalid type"); return; }
-        glProgramUniform4fv(name_, GetOrCreateUniformName(name), 1, &v.x);
+        if constexpr (std::is_same_v<F, float>) {
+            glProgramUniform4fv(name_, getOrCreateUniformName(name), 1, &v.x);
+        }
+        if constexpr (std::is_same_v<F, double>) {
+            glProgramUniform4dv(name_, getOrCreateUniformName(name), 1, &v.x);
+        }
         LM_GL_CHECK_ERRORS();
     }
 
-    void SetUniform(const std::string& name, const glm::mat4& mat) {
+    template <typename F>
+    void setUniform(const std::string& name, const glm::mat<4, 4, F, glm::defaultp>& mat) {
         if (type_ != GLResourceType::Program) { LM_ERROR("Invalid type"); return; }
-        glProgramUniformMatrix4fv(name_, GetOrCreateUniformName(name), 1, GL_FALSE, glm::value_ptr(mat));
+        if constexpr (std::is_same_v<F, float>) {
+            glProgramUniformMatrix4fv(name_, getOrCreateUniformName(name), 1, GL_FALSE, glm::value_ptr(mat));
+        }
+        if constexpr (std::is_same_v<F, double>) {
+            glProgramUniformMatrix4dv(name_, getOrCreateUniformName(name), 1, GL_FALSE, glm::value_ptr(mat));
+        }
         LM_GL_CHECK_ERRORS();
     }
 
-    void SetUniform(const std::string& name, const float* mat) {
+    template <typename F>
+    void setUniform(const std::string& name, const float* mat) {
         if (type_ != GLResourceType::Program) { LM_ERROR("Invalid type"); return; }
-        glProgramUniformMatrix4fv(name_, GetOrCreateUniformName(name), 1, GL_FALSE, mat);
+        if constexpr (std::is_same_v<F, float>) {
+            glProgramUniformMatrix4fv(name_, getOrCreateUniformName(name), 1, GL_FALSE, mat);
+        }
+        if constexpr (std::is_same_v<F, double>) {
+            glProgramUniformMatrix4dv(name_, getOrCreateUniformName(name), 1, GL_FALSE, mat);
+        }
         LM_GL_CHECK_ERRORS();
     }
 
-    GLuint GetOrCreateUniformName(const std::string& name) {
+    GLuint getOrCreateUniformName(const std::string& name) {
         if (type_ != GLResourceType::Program) {
             LM_ERROR("Invalid type");
             return 0;
@@ -293,7 +323,7 @@ public:
 
 public:
     #pragma region Pipeline type specific functions
-    void AddProgram(const GLResource& program) {
+    void addProgram(const GLResource& program) {
         if (type_ != GLResourceType::Pipeline || program.type_ != GLResourceType::Program) {
             LM_ERROR("Invalid type");
             return;
@@ -306,7 +336,7 @@ public:
 public:
 
     #pragma region Buffer type specific functions
-    bool Allocate(GLsizeiptr size, const GLvoid* data, GLenum usage) {
+    bool allocate(GLsizeiptr size, const GLvoid* data, GLenum usage) {
         if ((type_ & GLResourceType::Buffer) == 0) { LM_ERROR("Invalid type"); return false; }
         glBindBuffer(data_.buffer.target, name_);
         glBufferData(data_.buffer.target, size, data, usage);
@@ -315,7 +345,7 @@ public:
         return true;
     }
 
-    void* MapBuffer(GLenum access) const {
+    void* mapBuffer(GLenum access) const {
         if ((type_ & GLResourceType::Buffer) == 0) { LM_ERROR("Invalid type"); return nullptr; }
         glBindBuffer(data_.buffer.target, name_);
         auto* p = glMapBuffer(data_.buffer.target, access);
@@ -323,14 +353,14 @@ public:
         return p;
     }
 
-    void UnmapBuffer() const {
+    void unmapBuffer() const {
         if ((type_ & GLResourceType::Buffer) == 0) { LM_ERROR("Invalid type"); return; }
         glUnmapBuffer(data_.buffer.target);
         glBindBuffer(data_.buffer.target, 0);
         LM_GL_CHECK_ERRORS();
     }
 
-    int BufferSize() const {
+    int bufferSize() const {
         if ((type_ & GLResourceType::Buffer) == 0) { LM_ERROR("Invalid type"); return false; }
         GLint v;
         glBindBuffer(data_.buffer.target, name_);
@@ -344,7 +374,7 @@ public:
 public:
 
     #pragma region Vertex array type specific functions
-    void AddVertexAttribute(const GLResource& v, GLuint index, GLuint componentNum, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* start) const {
+    void addVertexAttribute(const GLResource& v, GLuint index, GLuint componentNum, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* start) const {
         if (type_ != GLResourceType::VertexArray || v.type_ != GLResourceType::ArrayBuffer) {
             LM_ERROR("Invalid type");
             return;
@@ -358,7 +388,7 @@ public:
         LM_GL_CHECK_ERRORS();
     }
 
-    void Draw(GLenum mode, int offset, int count) const {
+    void draw(GLenum mode, int offset, int count) const {
         if (type_ != GLResourceType::VertexArray) {
             LM_ERROR("Invalid type");
             return;
@@ -369,7 +399,7 @@ public:
         LM_GL_CHECK_ERRORS();
     }
 
-    void Draw(GLenum mode, const GLResource& ibo, int count) const {
+    void draw(GLenum mode, const GLResource& ibo, int count) const {
         if (type_ != GLResourceType::VertexArray || ibo.type_ != GLResourceType::ElementArrayBuffer) {
             LM_ERROR("Invalid type");
             return;
@@ -382,8 +412,8 @@ public:
         LM_GL_CHECK_ERRORS();
     }
 
-    void Draw(GLenum mode, const GLResource& ibo) const {
-        Draw(mode, ibo, ibo.BufferSize() / sizeof(GLuint));
+    void draw(GLenum mode, const GLResource& ibo) const {
+        draw(mode, ibo, ibo.bufferSize() / sizeof(GLuint));
     }
     #pragma endregion
 };

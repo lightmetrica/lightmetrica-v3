@@ -12,13 +12,23 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // OpenGL material
 class Material_VisGL final : public Material {
-public:
+private:
+    Material* material_;
 
+public:
+    virtual bool construct(const Json& prop) override {
+        material_ = getAsset<Material>(prop, "material");
+        if (!material_) {
+            return false;
+        }
+
+        return true;
+    }
 
 public:
     // Enable material parameters
     void apply(const std::function<void()>& func) const {
-
+        func();
     }
 };
 
@@ -48,10 +58,10 @@ private:
 
 public:
     ~Mesh_VisGL() {
-        vertexArray_.Destory();
-        bufferP_.Destory();
-        bufferN_.Destory();
-        bufferT_.Destory();
+        vertexArray_.destory();
+        bufferP_.destory();
+        bufferN_.destory();
+        bufferT_.destory();
     }
 
 public:
@@ -66,7 +76,19 @@ public:
         }
 
         // Create OpenGL buffer objects
-        // TODO
+        std::vector<Float> vs;
+        mesh_->foreachTriangle([&](int, Vec3 p1, Vec3 p2, Vec3 p3) {
+            vs.insert(vs.end(), {
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z
+            });
+        });
+        count_ = int(vs.size()) / 3;
+        bufferP_.create(GLResourceType::ArrayBuffer);
+        bufferP_.allocate(vs.size() * sizeof(double), &vs[0], GL_DYNAMIC_DRAW);
+        vertexArray_.create(GLResourceType::VertexArray);
+        vertexArray_.addVertexAttribute(bufferP_, 0, 3, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
 
         return true;
     }
@@ -74,7 +96,18 @@ public:
 public:
     // Dispatch rendering
     void render() const {
-        
+        if ((type_ & MeshType::Triangles) > 0) {
+            vertexArray_.draw(GL_TRIANGLES, 0, count_);
+        }
+        if ((type_ & MeshType::LineStrip) > 0) {
+            vertexArray_.draw(GL_LINE_STRIP, 0, count_);
+        }
+        if ((type_ & MeshType::Lines) > 0) {
+            vertexArray_.draw(GL_LINES, 0, count_);
+        }
+        if ((type_ & MeshType::Points) > 0) {
+            vertexArray_.draw(GL_POINTS, 0, count_);
+        }
     }
 };
 
@@ -86,8 +119,8 @@ LM_COMP_REG_IMPL(Mesh_VisGL, "mesh::visgl");
 class Renderer_VisGL final : public Renderer {
 private:
     GLResource pipeline_;
-    GLResource programV_;
-    GLResource programF_;
+    mutable GLResource programV_;
+    mutable GLResource programF_;
 
 public:
     virtual bool construct(const Json& prop) override {
@@ -139,15 +172,15 @@ public:
                 fragColor.a = Alpha;
             }
         )x";
-        programV_.Create(GLResourceType::Program);
-        programF_.Create(GLResourceType::Program);
-        if (!programV_.CompileString(GL_VERTEX_SHADER, RenderVs)) return false;
-        if (!programF_.CompileString(GL_FRAGMENT_SHADER, RenderFs)) return false;
-        if (!programV_.Link()) return false;
-        if (!programF_.Link()) return false;
-        pipeline_.Create(GLResourceType::Pipeline);
-        pipeline_.AddProgram(programV_);
-        pipeline_.AddProgram(programF_);
+        programV_.create(GLResourceType::Program);
+        programF_.create(GLResourceType::Program);
+        if (!programV_.compileString(GL_VERTEX_SHADER, RenderVs)) return false;
+        if (!programF_.compileString(GL_FRAGMENT_SHADER, RenderFs)) return false;
+        if (!programV_.link()) return false;
+        if (!programF_.link()) return false;
+        pipeline_.create(GLResourceType::Pipeline);
+        pipeline_.addProgram(programV_);
+        pipeline_.addProgram(programF_);
 
         return true;
     }
@@ -165,19 +198,28 @@ public:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
         // Camera
-        // TODO. project and view matrices
+        const auto viewM = Mat4(1_f);
+        const auto projM = Mat4(1_f);
+        programV_.setUniform("ViewMatrix", viewM);
+        programV_.setUniform("ProjectionMatrix", projM);
 
         // Render meshes
-        scene->foreachPrimitive([](const Primitive& primitive) {
+        pipeline_.bind();
+        scene->foreachPrimitive([&](const Primitive& primitive) {
             const auto* mesh = dynamic_cast<Mesh_VisGL*>(primitive.mesh);
             const auto* material = dynamic_cast<Material_VisGL*>(primitive.material);
             if (!mesh || !material) {
                 return;
             }
+            programV_.setUniform("ModelMatrix", primitive.transform);
+            programF_.setUniform("Color", Vec3(1));
+            programF_.setUniform("Alpha", 1_f);
+            programF_.setUniform("UseConstantColor", 1);
             material->apply([&]() {
                 mesh->render();
             });
         });
+        pipeline_.unbind();
 
         // Restore
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
