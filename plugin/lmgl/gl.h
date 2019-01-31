@@ -24,38 +24,6 @@ static void checkGLErrors(const char* filename, const int line) {
     }
 }
 
-static void debugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei /*length*/, const GLchar* message, const GLvoid* /*userParam*/) {
-    std::string sourceString;
-    std::string typeString;
-    std::string severityString;
-    switch (source) {
-        case GL_DEBUG_SOURCE_API:                { sourceString = "OpenGL"; break; }
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:      { sourceString = "Windows"; break; }
-        case GL_DEBUG_SOURCE_SHADER_COMPILER:    { sourceString = "Shader Compiler"; break; }
-        case GL_DEBUG_SOURCE_THIRD_PARTY:        { sourceString = "Third Party"; break; }
-        case GL_DEBUG_SOURCE_APPLICATION:        { sourceString = "Application"; break; }
-        case GL_DEBUG_SOURCE_OTHER:              { sourceString = "Other"; break; }
-    }
-    switch (type) {
-        case GL_DEBUG_TYPE_ERROR:                { typeString = "Error"; break; }
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:  { typeString = "Deprecated behavior"; break; }
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:   { typeString = "Undefined behavior"; break; }
-        case GL_DEBUG_TYPE_PORTABILITY:          { typeString = "Portability"; break; }
-        case GL_DEBUG_TYPE_PERFORMANCE:          { typeString = "Performance"; break; }
-        case GL_DEBUG_TYPE_OTHER:                { typeString = "Message"; break; }
-        case GL_DEBUG_TYPE_MARKER:               { typeString = "Marker"; break; }
-        case GL_DEBUG_TYPE_PUSH_GROUP:           { typeString = "Push group"; break; }
-        case GL_DEBUG_TYPE_POP_GROUP:            { typeString = "Pop group"; break; }
-    }
-    switch (severity) {
-        case GL_DEBUG_SEVERITY_HIGH:             { severityString = "High"; break; }
-        case GL_DEBUG_SEVERITY_MEDIUM:           { severityString = "Medium"; break; }
-        case GL_DEBUG_SEVERITY_LOW:              { severityString = "Low"; break; }
-        case GL_DEBUG_SEVERITY_NOTIFICATION:     { severityString = "Notification"; break; }
-    }
-    LM_INFO("{}: {}({}) {}: {}", sourceString, typeString, severityString, id, message);
-}
-
 #define LM_GL_CHECK_ERRORS() gl::checkGLErrors(__FILE__, __LINE__)
 #define LM_GL_OFFSET_OF(Type, Element) ((size_t)&(((Type*)0)->Element))
 
@@ -82,6 +50,15 @@ class GLResource {
 private:
     int type_ = GLResourceType::None;
     GLuint name_;
+
+public:
+    GLResource() {
+        static bool glinit = false;
+        if (!glinit) {
+            gl3wInit();
+            glinit = true;
+        }
+    }
 
 private:
     struct {
@@ -334,7 +311,6 @@ public:
     #pragma endregion
 
 public:
-
     #pragma region Buffer type specific functions
     bool allocate(GLsizeiptr size, const GLvoid* data, GLenum usage) {
         if ((type_ & GLResourceType::Buffer) == 0) { LM_ERROR("Invalid type"); return false; }
@@ -372,7 +348,6 @@ public:
     #pragma endregion
 
 public:
-
     #pragma region Vertex array type specific functions
     void addVertexAttribute(const GLResource& v, GLuint index, GLuint componentNum, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* start) const {
         if (type_ != GLResourceType::VertexArray || v.type_ != GLResourceType::ArrayBuffer) {

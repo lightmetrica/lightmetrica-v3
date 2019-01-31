@@ -55,19 +55,23 @@ private:
     GLResource bufferN_;
     GLResource bufferT_;
     GLResource vertexArray_;
+    bool init_ = false;
 
 public:
     ~Mesh_VisGL() {
-        vertexArray_.destory();
-        bufferP_.destory();
-        bufferN_.destory();
-        bufferT_.destory();
+        if (init_) {
+            vertexArray_.destory();
+            bufferP_.destory();
+            bufferN_.destory();
+            bufferT_.destory();
+        }
     }
 
 public:
     virtual bool construct(const Json& prop) override {
         // Mesh type
-        type_ = prop["type"];
+        //type_ = prop["type"];
+        type_ = MeshType::Triangles;
         
         // Referencing mesh
         mesh_ = getAsset<Mesh>(prop, "mesh");
@@ -90,12 +94,20 @@ public:
         vertexArray_.create(GLResourceType::VertexArray);
         vertexArray_.addVertexAttribute(bufferP_, 0, 3, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
 
+        init_ = true;
         return true;
     }
 
 public:
     // Dispatch rendering
     void render() const {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //if (Params.WireFrame) {
+        //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //}
+        //else {
+        //    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //}
         if ((type_ & MeshType::Triangles) > 0) {
             vertexArray_.draw(GL_TRIANGLES, 0, count_);
         }
@@ -118,12 +130,19 @@ LM_COMP_REG_IMPL(Mesh_VisGL, "mesh::visgl");
 // Interactive visualizer using OpenGL
 class Renderer_VisGL final : public Renderer {
 private:
+    Camera* camera_;
     GLResource pipeline_;
     mutable GLResource programV_;
     mutable GLResource programF_;
 
 public:
     virtual bool construct(const Json& prop) override {
+        // Camera
+        camera_ = getAsset<Camera>(prop, "camera");
+        if (!camera_) {
+            return false;
+        }
+
         // Load shaders
         const std::string RenderVs = R"x(
             #version 400 core
@@ -187,21 +206,16 @@ public:
     
     // This function is called one per frame
     virtual void render(const Scene* scene) const override {
-        // Clear buffer
-        float depth(1.0f);
-        glClearBufferfv(GL_DEPTH, 0, &depth);
-        glClearBufferfv(GL_COLOR, 0, &glm::vec4(0.0f)[0]);
-
         // State
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
         // Camera
-        const auto viewM = Mat4(1_f);
-        const auto projM = Mat4(1_f);
-        programV_.setUniform("ViewMatrix", viewM);
-        programV_.setUniform("ProjectionMatrix", projM);
+        const auto viewM = camera_->viewMatrix();
+        const auto projM = camera_->projectionMatrix();
+        programV_.setUniform("ViewMatrix", glm::mat4(viewM));
+        programV_.setUniform("ProjectionMatrix", glm::mat4(projM));
 
         // Render meshes
         pipeline_.bind();
@@ -211,9 +225,9 @@ public:
             if (!mesh || !material) {
                 return;
             }
-            programV_.setUniform("ModelMatrix", primitive.transform);
-            programF_.setUniform("Color", Vec3(1));
-            programF_.setUniform("Alpha", 1_f);
+            programV_.setUniform("ModelMatrix", glm::mat4(primitive.transform.M));
+            programF_.setUniform("Color", glm::vec3(1));
+            programF_.setUniform("Alpha", 1.f);
             programF_.setUniform("UseConstantColor", 1);
             material->apply([&]() {
                 mesh->render();

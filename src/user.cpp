@@ -106,14 +106,19 @@ public:
         scene_->build(accelName, prop);
     }
 
-    virtual void render(const std::string& rendererName, const Json& prop) override {
+    virtual void renderer(const std::string& rendererName, const Json& prop) override {
         renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc(loc(), "renderer"), prop);
         if (!renderer_) {
             LM_ERROR("Failed to render [renderer='{}']", rendererName);
             THROW_RUNTIME_ERROR();
         }
-        LM_INFO("Starting render [name='{}']", rendererName);
-        LM_INDENT();
+    }
+
+    virtual void render(bool verbose) override {
+        if (verbose) {
+            LM_INFO("Starting render [name='{}']", renderer_->key());
+            LM_INDENT();
+        }
         renderer_->render(scene_.get());
     }
 
@@ -185,8 +190,12 @@ LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
     Instance::get().build(accelName, prop);
 }
 
-LM_PUBLIC_API void render(const std::string& rendererName, const Json& prop) {
-    Instance::get().render(rendererName, prop);
+LM_PUBLIC_API void renderer(const std::string& rendererName, const Json& prop) {
+    Instance::get().renderer(rendererName, prop);
+}
+
+LM_PUBLIC_API void render(bool verbose) {
+    Instance::get().render(verbose);
 }
 
 LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath) {

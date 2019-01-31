@@ -103,7 +103,9 @@ static void bind(pybind11::module& m) {
     m.def("primitive", &primitive);
     m.def("primitives", &primitives);
     m.def("build", &build);
-    m.def("render", &render);
+    m.def("renderer", &renderer);
+    m.def("render", (void(*)(bool))&render);
+    m.def("render", (void(*)(const std::string&, const Json&))&render);
     m.def("save", &save);
     m.def("buffer", &buffer);
     m.def("serialize", (void(*)(const std::string&))&serialize);
@@ -347,6 +349,9 @@ static void bind(pybind11::module& m) {
         virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, foreachTriangle, processTriangle);
         }
+        virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, foreachPrimitive, processPrimitive);
+        }
         virtual void build(const std::string& name, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
         }
@@ -386,6 +391,7 @@ static void bind(pybind11::module& m) {
         .def("loadPrimitive", &Scene::loadPrimitive)
         .def("loadPrimitives", &Scene::loadPrimitives)
         .def("foreachTriangle", &Scene::foreachTriangle)
+        .def("foreachPrimitive", &Scene::foreachPrimitive)
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect)
         .def("isLight", &Scene::isLight)

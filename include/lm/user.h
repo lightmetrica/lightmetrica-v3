@@ -92,14 +92,14 @@ LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, co
     If the asset specified by ``name`` is not registered,
     the function will generate an error on logger and return nullptr.
     ``name`` can be asset locator or global locator.
-    If ``name`` starts with ``global:``, the locator after ``:``
+    If ``name`` starts with ``global//``, the locator after ``//``
     are interpret as a global locator.
     \endrst
 */
 template <typename T>
 T* getAsset(const std::string& name) {
     const auto locator = [&]() -> std::string {
-        std::regex reg(R"x(global:(.+))x");
+        std::regex reg(R"x(global//(.+))x");
         std::smatch match;
         if (std::regex_match(name, match, reg)) {    
             return match[1];
@@ -127,32 +127,6 @@ T* getAsset(const Json& prop, const std::string& key) {
     }
     return nullptr;
 }
-
-#if 0
-/*!
-    \brief Get an asset by name.
-    \param name Identifier of the asset.
-    \return Pointer to the registered asset. ``nullptr`` if not registered.
-
-    \rst
-    If the asset specified by ``name`` is not registered,
-    the function will generate an error on logger and return nullptr.
-    \endrst
-*/
-LM_PUBLIC_API Component* getAsset(const std::string& name);
-
-/*!
-    \brief Get an asset by name with specific component interface type.
-*/
-template <typename T>
-T* getAsset(const std::string& name) {
-    auto* p = getAsset(name);
-    if (!p) {
-        return nullptr;
-    }
-    return dynamic_cast<T*>(getAsset(name));
-}
-#endif
 
 /*!
     \brief Create a primitive and add it to the scene.
@@ -201,6 +175,11 @@ LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName);
 LM_PUBLIC_API void build(const std::string& accelName, const Json& prop = {});
 
 /*!
+    \brief Initialize renderer.
+*/
+LM_PUBLIC_API void renderer(const std::string& rendererName, const Json& prop = {});
+
+/*!
     \brief Render image based on current configuration.
     \param rendererName Type of renderer.
     \param prop Property for configuration.
@@ -212,7 +191,15 @@ LM_PUBLIC_API void build(const std::string& accelName, const Json& prop = {});
     You may specify the renderer type by ``renderer::<type>`` format.
     \endrst
 */
-LM_PUBLIC_API void render(const std::string& rendererName, const Json& prop);
+LM_PUBLIC_API void render(bool verbose = true);
+
+/*!
+    \brief Initialize renderer and render.
+*/
+static void render(const std::string& rendererName, const Json& prop = {}) {
+    renderer(rendererName, prop);
+    render();
+}
 
 /*!
     \brief Save an image.
@@ -319,7 +306,8 @@ public:
     virtual void primitive(Mat4 transform, const Json& prop) = 0;
     virtual void primitives(Mat4 transform, const std::string& modelName) = 0;
     virtual void build(const std::string& accelName, const Json& prop) = 0;
-    virtual void render(const std::string& rendererName, const Json& prop) = 0;
+    virtual void renderer(const std::string& rendererName, const Json& prop) = 0;
+    virtual void render(bool verbose) = 0;
     virtual void save(const std::string& filmName, const std::string& outpath) = 0;
     virtual FilmBuffer buffer(const std::string& filmName) = 0;
     virtual void serialize(std::ostream& os) = 0;

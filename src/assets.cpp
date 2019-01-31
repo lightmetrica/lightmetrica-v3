@@ -29,7 +29,7 @@ public:
 
 private:
     bool validAssetName(const std::string& name) const {
-        std::regex regex(R"x([\w_-]+)x");
+        std::regex regex(R"x([:\w_-]+)x");
         std::smatch match;
         return std::regex_match(name, match, regex);
     }
@@ -42,7 +42,6 @@ public:
         // Finds underlying asset
         auto it = assetIndexMap_.find(s);
         if (it == assetIndexMap_.end()) {
-            LM_ERROR("Asset [name = '{}'] is not found", s);
             return nullptr;
         }
 

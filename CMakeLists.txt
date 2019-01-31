@@ -111,6 +111,11 @@ endif()
 # OpenGL
 find_package(OpenGL REQUIRED)
 
+# gl3w
+add_library(gl3w STATIC "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/GL/gl3w.c")
+target_include_directories(gl3w PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/ext")
+target_link_libraries(gl3w PUBLIC OpenGL::GL)
+
 # GLFW
 if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/glfw")
     option(GLFW_BUILD_DOCS "" OFF)
@@ -121,6 +126,20 @@ if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/glfw")
 else()
     find_package(glfw REQUIRED)
 endif()
+
+# imgui
+set(_IMGUI_DIR "${LM_EXTERNAL_DIR}/imgui")
+add_library(imgui STATIC
+    "${_IMGUI_DIR}/imgui.cpp"
+    "${_IMGUI_DIR}/imgui_draw.cpp"
+    "${_IMGUI_DIR}/imgui_widgets.cpp"
+    "${_IMGUI_DIR}/imgui_demo.cpp"
+    "${_IMGUI_DIR}/examples/imgui_impl_glfw.cpp"
+    "${_IMGUI_DIR}/examples/imgui_impl_opengl3.cpp")
+target_link_libraries(imgui PUBLIC glm glfw gl3w OpenGL::GL)
+target_include_directories(imgui PUBLIC
+    "${_IMGUI_DIR}"
+    "${_IMGUI_DIR}/examples")
 
 # -----------------------------------------------------------------------------
 

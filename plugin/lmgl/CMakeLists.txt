@@ -5,11 +5,6 @@
 
 include(LmAddPlugin)
 
-# GL3W
-add_library(gl3w STATIC "ext/GL/gl3w.c")
-target_include_directories(gl3w PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/ext")
-target_link_libraries(gl3w PUBLIC OpenGL::GL)
-
 # Add plugin
 lm_add_plugin(
     NAME lmgl

@@ -9,11 +9,13 @@
 
 #pragma warning(push)
 #pragma warning(disable:4201)  // nonstandard extension used: nameless struct/union
+#pragma warning(disable:4127)  // conditional expression is constant
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #pragma warning(pop)
 
 #include <tuple>
@@ -484,8 +486,8 @@ LM_NAMESPACE_END(math)
     \brief Transform.
 */
 struct Transform {
-    Mat4 M;                //!< Transform associated to the primitive
-    Mat3 normalM;        //!< Transform for normals
+    Mat4 M;             //!< Transform associated to the primitive
+    Mat3 normalM;       //!< Transform for normals
     Float J;            //!< J := |det(M_lin)| where M_lin is linear component of M
 
     template <typename Archive>

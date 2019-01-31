@@ -77,7 +77,14 @@ public:
         \brief Get locator of the component.
     */
     const std::string& loc() const { return loc_; }
-    
+
+    /*!
+        \brief Get global locator.
+    */
+    const std::string globalLoc() const {
+        return "global//" + loc();
+    }
+
     /*!
         \brief Get parent locator.
         
@@ -94,6 +101,15 @@ public:
             return "";
         }
         return loc_.substr(0, i);
+    }
+
+    /*!
+        \brief Get last element of locator.
+    */
+    const std::string name() const {
+        const auto i = loc().find_last_of('.');
+        assert(i != std::string::npos);
+        return loc().substr(i + 1);
     }
 
     /*!

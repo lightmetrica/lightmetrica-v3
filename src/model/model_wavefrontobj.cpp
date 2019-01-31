@@ -371,7 +371,7 @@ public:
                     const auto lightName = meshName + "_light";
                     auto light = comp::create<Light>(lightImplName, makeLoc(lightName), {
                         {"Ke", m.Ke},
-                        {"mesh", "global:" + makeLoc(meshName)}
+                        {"mesh", "global//" + makeLoc(meshName)}
                     });
                     if (!light) {
                         return false;
@@ -605,7 +605,7 @@ public:
             diffuse_ = addMaterial(diffuseMaterialName, {
                 {"Kd", objmat_.Kd},
                 {"mapKd", objmat_.mapKd.empty()
-                    ? "" : "global:" + makeLoc(parentLoc(), objmat_.mapKd)}
+                    ? "" : "global//" + makeLoc(parentLoc(), objmat_.mapKd)}
             });
             if (diffuse_ < 0) {
                 return false;

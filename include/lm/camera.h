@@ -33,22 +33,48 @@ public:
     /*!
         \brief Check if the camera is specular.
     */
-    virtual bool isSpecular(const PointGeometry& geom) const = 0;
+    virtual bool isSpecular(const PointGeometry& geom) const {
+        LM_UNUSED(geom);
+        LM_UNREACHABLE_RETURN();
+    }
 
     /*!
         \brief Generate a primary ray with the corresponding raster position.
     */
-    virtual Ray primaryRay(Vec2 rp) const = 0;
+    virtual Ray primaryRay(Vec2 rp) const {
+        LM_UNUSED(rp);
+        LM_UNREACHABLE_RETURN();
+    }
 
     /*!
         \brief Sample a primary ray within the given raster window.
     */
-    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
+    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window) const {
+        LM_UNUSED(rng, window);
+        LM_UNREACHABLE_RETURN();
+    }
 
     /*!
         \brief Evaluate importance.
     */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const = 0;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const {
+        LM_UNUSED(geom, wo);
+        LM_UNREACHABLE_RETURN();
+    }
+
+    /*!
+        \brief Get view matrix if available.
+    */
+    virtual Mat4 viewMatrix() const {
+        LM_UNREACHABLE_RETURN();
+    }
+
+    /*!
+        \brief Get projection matrix if available.
+    */
+    virtual Mat4 projectionMatrix() const {
+        LM_UNREACHABLE_RETURN();
+    }
 };
 
 /*!
