@@ -50,7 +50,7 @@ public:
     */
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const {
         LM_UNUSED(geom, comp);
-        LM_UNREACHABLE_RETURN();
+        return {};
     }
 
     /*!

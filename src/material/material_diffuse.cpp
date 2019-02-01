@@ -42,6 +42,13 @@ public:
         ar(Kd_, mapKd_);
     }
 
+    virtual Component* underlying(const std::string& name) const override {
+        if (name == "mapKd") {
+            return mapKd_;
+        }
+        return nullptr;
+    }
+
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
         comp::visit(visit, mapKd_);
     }

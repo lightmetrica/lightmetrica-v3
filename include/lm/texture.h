@@ -22,6 +22,16 @@ struct TextureSize {
 };
 
 /*!
+    \brief Texture buffer.
+*/
+struct TextureBuffer {
+    int w;
+    int h;
+    Float* data;
+};
+
+
+/*!
     \brief Texture component interface.
 */
 class Texture : public Component {
@@ -50,6 +60,11 @@ public:
         \brief Check if texture has alpha component.
     */
     virtual bool hasAlpha() const { return false; }
+
+    /*!
+        \brief Get buffer of the texture.
+    */
+    virtual TextureBuffer buffer() { return {}; }
 };
 
 /*!

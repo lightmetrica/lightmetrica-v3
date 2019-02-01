@@ -112,13 +112,13 @@ public:
             if (!primitive.mesh) {
                 continue;
             }
-            primitive.mesh->foreachTriangle([&](int face, Vec3 p1, Vec3 p2, Vec3 p3) {
+            primitive.mesh->foreachTriangle([&](int face, Mesh::Point p1, Mesh::Point p2, Mesh::Point p3) {
                 processTriangle(
                     primitive.index,
                     face,
-                    primitive.transform.M * Vec4(p1, 1_f),
-                    primitive.transform.M * Vec4(p2, 1_f),
-                    primitive.transform.M * Vec4(p3, 1_f)
+                    primitive.transform.M * Vec4(p1.p, 1_f),
+                    primitive.transform.M * Vec4(p2.p, 1_f),
+                    primitive.transform.M * Vec4(p3.p, 1_f)
                 );
             });
         }

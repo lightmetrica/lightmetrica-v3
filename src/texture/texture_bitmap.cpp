@@ -213,6 +213,10 @@ public:
     virtual bool hasAlpha() const override {
         return bitmap_.hasAlpha();
     }
+
+    virtual TextureBuffer buffer() override {
+        return { bitmap_.w, bitmap_.h, bitmap_.cs.data() };
+    }
 };
 
 LM_COMP_REG_IMPL(Texture_Bitmap, "texture::bitmap");

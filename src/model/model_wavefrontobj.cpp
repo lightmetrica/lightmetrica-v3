@@ -471,10 +471,13 @@ public:
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
         const auto& geo_ = model_->geo_;
         for (int fi = 0; fi < int(fs_.size()); fi += 3) {
-            const auto p1 = geo_.ps[fs_[fi].p];
-            const auto p2 = geo_.ps[fs_[fi + 1].p];
-            const auto p3 = geo_.ps[fs_[fi + 2].p];
-            processTriangle(fi, p1, p2, p3);
+            const auto f1 = fs_[fi];
+            const auto f2 = fs_[fi + 1];
+            const auto f3 = fs_[fi + 2];
+            processTriangle(fi,
+                { geo_.ps[f1.p], geo_.ns[f1.n], geo_.ts[f1.t] },
+                { geo_.ps[f2.p], geo_.ns[f2.n], geo_.ts[f2.t] },
+                { geo_.ps[f3.p], geo_.ns[f3.n], geo_.ts[f3.t] });
         }
     }
 
@@ -538,6 +541,13 @@ public:
         ar(objmat_, materials_,
            diffuse_, glossy_, glass_, mirror_, mask_,
            maskTex_);
+    }
+
+    virtual Component* underlying(const std::string& name) const override {
+        if (name == "diffuse") {
+            return diffuse_ == -1 ? nullptr : materials_.at(diffuse_).get();
+        }
+        return nullptr;
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {

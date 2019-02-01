@@ -13,27 +13,100 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include "lmgl.h"
 using namespace lm;
 using namespace lm::literals;
 
+// ----------------------------------------------------------------------------
+
 #define THROW_RUNTIME_ERROR() \
     throw std::runtime_error("Consult log outputs for detailed error messages")
+
+static void checkGLError(const char* filename, const int line) {
+    if (int err = glGetError(); err != GL_NO_ERROR) {
+        LM_ERROR("OpenGL Error: {} {} {}", err, filename, line);
+        THROW_RUNTIME_ERROR();
+    }
+}
+
+#define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
 
 // ----------------------------------------------------------------------------
 
 // OpenGL material
 class GLMaterial {
 private:
-    Material* material_;
+    glm::vec3 color_;
+    bool wireframe_ = false;
+    std::optional<GLuint> texture_;
 
 public:
-    GLMaterial(Material* material) : material_(material) {}
+    GLMaterial(Material* material) {
+        if (material->key() != "material::wavefrontobj") {
+            color_ = glm::vec3(0);
+            return;
+        }
+        
+        // For material::wavefrontobj, we try to use underlying texture
+        auto* diffuse = dynamic_cast<Material*>(material->underlying("diffuse"));
+        if (!diffuse) {
+            color_ = glm::vec3(0);
+            return;
+        }
+        auto* tex = dynamic_cast<Texture*>(diffuse->underlying("mapKd"));
+        if (!tex) {
+            color_ = *diffuse->reflectance({}, {});
+            return;
+        }
+
+        // Create OpenGL texture
+        const auto [w, h, data] = tex->buffer();
+
+        // Convert the texture to float type
+        std::vector<float> data_f(w*h * 3);
+        for (int i = 0; i < w*h*3; i++) {
+            data_f[i] = float(data[i]);
+        }
+
+        texture_ = 0;
+        glGenTextures(1, &*texture_);
+        glBindTexture(GL_TEXTURE_2D, *texture_);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_FLOAT, data_f.data());
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    ~GLMaterial() {
+        if (texture_) {
+            glDeleteTextures(1, &*texture_);
+        }
+    }
 
 public:
     // Enable material parameters
-    void apply(const std::function<void()>& func) const {
-        func();
+    void apply(GLuint name, const std::function<void()>& process) const {
+        if (wireframe_) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+        else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+        glProgramUniform3fv(name, glGetUniformLocation(name, "Color"), 1, &color_.x);
+        if (texture_) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, *texture_);
+            glProgramUniform1i(name, glGetUniformLocation(name, "UseTexture"), 1);
+        }
+        else {
+            glProgramUniform1i(name, glGetUniformLocation(name, "UseTexture"), 0);
+        }
+        process();
+        if (texture_) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
     }
 };
 
@@ -51,11 +124,12 @@ namespace MeshType {
 class GLMesh {
 private:
     int type_;
-    int count_;
-    GLResource bufferP_;
-    GLResource bufferN_;
-    GLResource bufferT_;
-    GLResource vertexArray_;
+    GLuint count_;
+    GLuint bufferP_;
+    GLuint bufferN_;
+    GLuint bufferT_;
+    GLuint bufferI_;
+    GLuint vertexArray_;
 
 public:
     GLMesh(Mesh* mesh) {
@@ -64,50 +138,87 @@ public:
         type_ = MeshType::Triangles;
         
         // Create OpenGL buffer objects
-        std::vector<Float> vs;
-        mesh->foreachTriangle([&](int, Vec3 p1, Vec3 p2, Vec3 p3) {
-            vs.insert(vs.end(), {
-                p1.x, p1.y, p1.z,
-                p2.x, p2.y, p2.z,
-                p3.x, p3.y, p3.z
-            });
+        std::vector<Vec3> vs;
+        std::vector<Vec3> ns;
+        std::vector<Vec2> ts;
+        std::vector<GLuint> is;
+        count_ = 0;
+        mesh->foreachTriangle([&](int, Mesh::Point p1, Mesh::Point p2, Mesh::Point p3) {
+            vs.insert(vs.end(), { p1.p, p2.p, p3.p });
+            ns.insert(ns.end(), { p1.n, p2.n, p3.n });
+            ts.insert(ts.end(), { p1.t, p2.t, p3.t });
+            is.insert(is.end(), { count_, count_+1, count_+2 });
+            count_+=3;
         });
-        count_ = int(vs.size()) / 3;
-        bufferP_.create(GLResourceType::ArrayBuffer);
-        bufferP_.allocate(vs.size() * sizeof(double), &vs[0], GL_DYNAMIC_DRAW);
-        vertexArray_.create(GLResourceType::VertexArray);
-        vertexArray_.addVertexAttribute(bufferP_, 0, 3, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
+
+        glGenBuffers(1, &bufferP_);
+        glBindBuffer(GL_ARRAY_BUFFER, bufferP_);
+        glBufferData(GL_ARRAY_BUFFER, vs.size() * sizeof(Vec3), vs.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        CHECK_GL_ERROR();
+
+        glGenBuffers(1, &bufferN_);
+        glBindBuffer(GL_ARRAY_BUFFER, bufferN_);
+        glBufferData(GL_ARRAY_BUFFER, ns.size() * sizeof(Vec3), ns.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        CHECK_GL_ERROR();
+
+        glGenBuffers(1, &bufferT_);
+        glBindBuffer(GL_ARRAY_BUFFER, bufferT_);
+        glBufferData(GL_ARRAY_BUFFER, ts.size() * sizeof(Vec2), ts.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        CHECK_GL_ERROR();
+
+        glGenBuffers(1, &bufferI_);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferI_);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, is.size() * sizeof(GLuint), is.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        CHECK_GL_ERROR();
+
+        glGenVertexArrays(1, &vertexArray_);
+        glBindVertexArray(vertexArray_);
+        glBindBuffer(GL_ARRAY_BUFFER, bufferP_);
+        glVertexAttribPointer(0, 3, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, bufferN_);
+        glVertexAttribPointer(1, 3, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, bufferT_);
+        glVertexAttribPointer(2, 2, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+        CHECK_GL_ERROR();
     }
 
     ~GLMesh() {
-        vertexArray_.destory();
-        bufferP_.destory();
-        bufferN_.destory();
-        bufferT_.destory();
+        glDeleteVertexArrays(1, &vertexArray_);
+        glDeleteBuffers(1, &bufferP_);
+        glDeleteBuffers(1, &bufferN_);
+        glDeleteBuffers(1, &bufferT_);
+        glDeleteBuffers(1, &bufferI_);
     }
 
 public:
     // Dispatch rendering
     void render() const {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        //if (Params.WireFrame) {
-        //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        //}
-        //else {
-        //    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        //}
+        glBindVertexArray(vertexArray_);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferI_);
         if ((type_ & MeshType::Triangles) > 0) {
-            vertexArray_.draw(GL_TRIANGLES, 0, count_);
+            //glDrawArrays(GL_TRIANGLES, 0, count_);
+            glDrawElements(GL_TRIANGLES, count_, GL_UNSIGNED_INT, nullptr);
         }
         if ((type_ & MeshType::LineStrip) > 0) {
-            vertexArray_.draw(GL_LINE_STRIP, 0, count_);
+            glDrawElements(GL_LINE_STRIP, count_, GL_UNSIGNED_INT, nullptr);
         }
         if ((type_ & MeshType::Lines) > 0) {
-            vertexArray_.draw(GL_LINES, 0, count_);
+            glDrawElements(GL_LINES, count_, GL_UNSIGNED_INT, nullptr);
         }
         if ((type_ & MeshType::Points) > 0) {
-            vertexArray_.draw(GL_POINTS, 0, count_);
+            glDrawElements(GL_POINTS, count_, GL_UNSIGNED_INT, nullptr);
         }
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
     }
 };
 
@@ -241,60 +352,95 @@ public:
 // Interactive visualizer using OpenGL
 class GLRenderer {
 private:
-    GLResource pipeline_;
-    mutable GLResource programV_;
-    mutable GLResource programF_;
+    GLuint pipeline_;
+    GLuint progV_;
+    GLuint progF_;
 
 public:
     GLRenderer() {
         // Load shaders
-        const std::string RenderVs = R"x(
-            #version 400 core
-            #define POSITION 0
-            #define NORMAL   1
-            #define TEXCOORD 2
-            layout (location = POSITION) in vec3 position;
-            layout (location = NORMAL) in vec3 normal;
-            layout (location = TEXCOORD) in vec2 texcoord;
+        const std::string vscode = R"x(
+            #version 430 core
+            layout (location = 0) in vec3 position_;
+            layout (location = 1) in vec3 normal_;
+            layout (location = 2) in vec2 uv_;
+            out gl_PerVertex {
+                vec4 gl_Position;
+            };
+            out vec3 normal;
+            out vec2 uv;
             uniform mat4 ModelMatrix;
             uniform mat4 ViewMatrix;
             uniform mat4 ProjectionMatrix;
-            out block {
-                vec3 normal;
-                vec2 texcoord;
-            } Out;
             void main() {
                 mat4 mvMatrix = ViewMatrix * ModelMatrix;
                 mat4 mvpMatrix = ProjectionMatrix * mvMatrix;
-                Out.normal = normal;//mat3(mvMatrix) * normal;
-                Out.texcoord = texcoord;
-                gl_Position = mvpMatrix * vec4(position, 1);
+                mat3 normalMatrix = mat3(transpose(inverse(mvMatrix)));
+                normal = normalMatrix * normal_;
+                uv = uv_;
+                gl_Position = mvpMatrix * vec4(position_, 1);
             }
         )x";
-        const std::string RenderFs = R"x(
-            #version 400 core
-            in block {
-                vec3 normal;
-                vec2 texcoord;
-            } In;
+        const std::string fscode = R"x(
+            #version 430 core
+            in vec3 normal;
+            in vec2 uv;
             out vec4 fragColor;
+            layout (binding = 0) uniform sampler2D tex;
             uniform vec3 Color;
-            uniform float Alpha;
-            uniform int UseConstantColor;
+            uniform int UseTexture;
             void main() {
-                fragColor.rgb = UseConstantColor > 0 ? Color : abs(In.normal);
-                fragColor.a = Alpha;
+                fragColor.rgb = Color;
+                if (UseTexture == 0)
+                    fragColor.rgb = Color;
+                else
+                    fragColor.rgb = texture(tex, uv).rgb;
+                //fragColor.rgb = abs(normal);
+                fragColor.rgb *= .3+.7*max(0, dot(normal, vec3(0,0,1)));
+                fragColor.a = 1;
             }
         )x";
-        programV_.create(GLResourceType::Program);
-        programF_.create(GLResourceType::Program);
-        if (!programV_.compileString(GL_VERTEX_SHADER, RenderVs)) { THROW_RUNTIME_ERROR(); }
-        if (!programF_.compileString(GL_FRAGMENT_SHADER, RenderFs)) { THROW_RUNTIME_ERROR(); }
-        if (!programV_.link()) { THROW_RUNTIME_ERROR(); }
-        if (!programF_.link()) { THROW_RUNTIME_ERROR(); }
-        pipeline_.create(GLResourceType::Pipeline);
-        pipeline_.addProgram(programV_);
-        pipeline_.addProgram(programF_);
+
+        const auto createProgram = [](GLenum shaderType, const std::string& code) -> GLuint {
+            GLuint program = glCreateProgram();
+            GLuint shader = glCreateShader(shaderType);
+            const auto* codeptr = code.c_str();
+            glShaderSource(shader, 1, &codeptr, nullptr);
+            glCompileShader(shader);
+            GLint ret;
+            glGetShaderiv(shader, GL_COMPILE_STATUS, &ret);
+            if (!ret) {
+                int length;
+                glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+                std::vector<char> v(length);
+                glGetShaderInfoLog(shader, length, nullptr, &v[0]);
+                glDeleteShader(shader);
+                LM_ERROR("{}", v.data());
+                THROW_RUNTIME_ERROR();
+            }
+            glAttachShader(program, shader);
+            glProgramParameteri(program, GL_PROGRAM_SEPARABLE, GL_TRUE);
+            glDeleteShader(shader);
+            glLinkProgram(program);
+            glGetProgramiv(program, GL_LINK_STATUS, &ret);
+            if (!ret) {
+                GLint length;
+                glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+                std::vector<char> v(length);
+                glGetProgramInfoLog(program, length, nullptr, &v[0]);
+                LM_ERROR("{}", v.data());
+                THROW_RUNTIME_ERROR();
+            }
+            return program;
+        };
+
+        progV_ = createProgram(GL_VERTEX_SHADER, vscode);
+        progF_ = createProgram(GL_FRAGMENT_SHADER, fscode);
+        glGenProgramPipelines(1, &pipeline_);
+        glUseProgramStages(pipeline_, GL_VERTEX_SHADER_BIT, progV_);
+        glUseProgramStages(pipeline_, GL_FRAGMENT_SHADER_BIT, progF_);
+
+        CHECK_GL_ERROR();
     }
     
     // This function is called one per frame
@@ -305,25 +451,26 @@ public:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
         // Camera
-        programV_.setUniform("ViewMatrix", glm::mat4(camera.viewMatrix()));
-        programV_.setUniform("ProjectionMatrix", glm::mat4(camera.projectionMatrix()));
+        const auto viewM = glm::mat4(camera.viewMatrix());
+        glProgramUniformMatrix4fv(progV_, glGetUniformLocation(progV_, "ViewMatrix"), 1, GL_FALSE, glm::value_ptr(viewM));
+        const auto projM = glm::mat4(camera.projectionMatrix());
+        glProgramUniformMatrix4fv(progV_, glGetUniformLocation(progV_, "ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(projM));
 
         // Render meshes
-        pipeline_.bind();
+        glBindProgramPipeline(pipeline_);
         scene.foreachPrimitive([&](const GLPrimitive& p) {
-            programV_.setUniform("ModelMatrix", glm::mat4(p.transform));
-            programF_.setUniform("Color", glm::vec3(1));
-            programF_.setUniform("Alpha", 1.f);
-            programF_.setUniform("UseConstantColor", 1);
-            p.material->apply([&]() {
+            glProgramUniformMatrix4fv(progV_, glGetUniformLocation(progV_, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(glm::mat4(p.transform)));
+            p.material->apply(progF_, [&]() {
                 p.mesh->render();
             });
         });
-        pipeline_.unbind();
+        glBindProgramPipeline(0);
 
         // Restore
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDisable(GL_BLEND);
+
+        CHECK_GL_ERROR();
     }
 };
 
@@ -360,7 +507,7 @@ int main(int argc, char** argv) {
         auto* window = [&]() -> GLFWwindow* {
             // GLFW window
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
             #ifdef LM_DEBUG_MODE
             glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);

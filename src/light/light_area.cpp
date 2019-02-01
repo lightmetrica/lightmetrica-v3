@@ -57,8 +57,8 @@ public:
         
         // Construct CDF for surface sampling
         // Note we construct the CDF before transformation
-        mesh_->foreachTriangle([&](int, Vec3 a, Vec3 b, Vec3 c) {
-            const auto cr = cross(b - a, c - a);
+        mesh_->foreachTriangle([&](int, Mesh::Point a, Mesh::Point b, Mesh::Point c) {
+            const auto cr = cross(b.p - a.p, c.p - a.p);
             dist_.add(math::safeSqrt(glm::dot(cr, cr)) * .5_f);
         });
         invA_ = 1_f / dist_.c.back();
