@@ -152,9 +152,6 @@ set(_PCH_FILES
 # Main libraries
 add_subdirectory(src)
 
-# Plugins
-add_subdirectory(plugin)
-
 # Examples
 if (LM_BUILD_EXAMPLES)
     add_subdirectory(example)

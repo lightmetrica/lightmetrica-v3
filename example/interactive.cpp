@@ -5,42 +5,189 @@
 
 #include <lm/lm.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include "lmgl.h"
+using namespace lm;
 using namespace lm::literals;
+
+#define THROW_RUNTIME_ERROR() \
+    throw std::runtime_error("Consult log outputs for detailed error messages")
 
 // ----------------------------------------------------------------------------
 
-class Camera_Display final : public lm::Camera {
+// OpenGL material
+class GLMaterial {
 private:
-    lm::Float aspect_;
-    lm::Float fov_;
-    lm::Vec3 eye_;
-    lm::Vec3 up_;
-    lm::Vec3 forward_;
+    Material* material_;
 
 public:
-    virtual bool construct(const lm::Json& prop) override {
-        eye_ = prop["position"];
-        const lm::Vec3 center = prop["center"];
-        up_ = prop["up"];
-        fov_ = prop["vfov"];
-        forward_ = glm::normalize(center - eye_);
-        return true;
+    GLMaterial(Material* material) : material_(material) {}
+
+public:
+    // Enable material parameters
+    void apply(const std::function<void()>& func) const {
+        func();
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+// OpenGL mesh
+namespace MeshType {
+    enum {
+        Triangles  = 1<<0,
+        LineStrip  = 1<<1,
+        Lines      = 1<<2,
+        Points     = 1<<3,
+    };
+}
+class GLMesh {
+private:
+    int type_;
+    int count_;
+    GLResource bufferP_;
+    GLResource bufferN_;
+    GLResource bufferT_;
+    GLResource vertexArray_;
+
+public:
+    GLMesh(Mesh* mesh) {
+        // Mesh type
+        //type_ = prop["type"];
+        type_ = MeshType::Triangles;
+        
+        // Create OpenGL buffer objects
+        std::vector<Float> vs;
+        mesh->foreachTriangle([&](int, Vec3 p1, Vec3 p2, Vec3 p3) {
+            vs.insert(vs.end(), {
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z
+            });
+        });
+        count_ = int(vs.size()) / 3;
+        bufferP_.create(GLResourceType::ArrayBuffer);
+        bufferP_.allocate(vs.size() * sizeof(double), &vs[0], GL_DYNAMIC_DRAW);
+        vertexArray_.create(GLResourceType::VertexArray);
+        vertexArray_.addVertexAttribute(bufferP_, 0, 3, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
     }
 
-    virtual lm::Mat4 viewMatrix() const override {
+    ~GLMesh() {
+        vertexArray_.destory();
+        bufferP_.destory();
+        bufferN_.destory();
+        bufferT_.destory();
+    }
+
+public:
+    // Dispatch rendering
+    void render() const {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //if (Params.WireFrame) {
+        //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //}
+        //else {
+        //    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //}
+        if ((type_ & MeshType::Triangles) > 0) {
+            vertexArray_.draw(GL_TRIANGLES, 0, count_);
+        }
+        if ((type_ & MeshType::LineStrip) > 0) {
+            vertexArray_.draw(GL_LINE_STRIP, 0, count_);
+        }
+        if ((type_ & MeshType::Lines) > 0) {
+            vertexArray_.draw(GL_LINES, 0, count_);
+        }
+        if ((type_ & MeshType::Points) > 0) {
+            vertexArray_.draw(GL_POINTS, 0, count_);
+        }
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+// OpenGL scene
+struct GLPrimitive {
+    Mat4 transform;
+    GLMesh* mesh;
+    GLMaterial* material;
+};
+class GLScene {
+private:
+    std::vector<std::unique_ptr<GLMesh>> meshes_;
+    std::vector<std::unique_ptr<GLMaterial>> materials_;
+    std::unordered_map<std::string, int> materialMap_;
+    std::vector<GLPrimitive> primitives_;
+
+public:
+    // Add mesh and material pair
+    void add(const Mat4& transform, Mesh* mesh, Material* material) {
+        // Mesh
+        auto* glmesh = [&]() {
+            meshes_.emplace_back(new GLMesh(mesh));
+            return meshes_.back().get();
+        }();
+
+        // Material
+        auto* glmaterial = [&]() {
+            if (auto it = materialMap_.find(material->name()); it != materialMap_.end()) {
+                return materials_.at(it->second).get();
+            }
+            materialMap_[material->name()] = int(materials_.size());
+            materials_.emplace_back(new GLMaterial(material));
+            return materials_.back().get();
+        }();
+        
+        // Primitive
+        primitives_.push_back({transform, glmesh, glmaterial});
+    }
+
+    // Iterate primitives
+    using ProcessPrimitiveFunc = std::function<void(const GLPrimitive& primitive)>;
+    void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const {
+        for (const auto& primitive : primitives_) {
+            processPrimitive(primitive);
+        }
+    }
+};
+
+// ----------------------------------------------------------------------------
+
+class GLDisplayCamera {
+private:
+    Float aspect_;
+    Float fov_;
+    Vec3 eye_;
+    Vec3 up_;
+    Vec3 forward_;
+
+public:
+    GLDisplayCamera(Vec3 eye, Vec3 center, Vec3 up, Float fov) 
+        : eye_(eye)
+        , up_(up)
+        , forward_(glm::normalize(center - eye))
+        , fov_(fov)
+    {}
+
+    Mat4 viewMatrix() const {
         return glm::lookAt(eye_, eye_ + forward_, up_);
     }
     
-    virtual lm::Mat4 projectionMatrix() const override {
+    Mat4 projectionMatrix() const {
         return glm::perspective(glm::radians(fov_), aspect_, 0.01_f, 10000_f);
     }
 
-public:
-    void update(GLFWwindow* window) {
+    // True if the camera is updated
+    bool update(GLFWwindow* window) {
+        bool updated = false;
+
         // Update aspect ratio
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
@@ -54,6 +201,7 @@ public:
             const auto mousePos = ImGui::GetMousePos();
             const bool rotating = ImGui::IsMouseDown(GLFW_MOUSE_BUTTON_RIGHT);
             if (rotating) {
+                updated = true;
                 int w, h;
                 glfwGetFramebufferSize(window, &w, &h);
                 const float sensitivity = 0.1f;
@@ -77,16 +225,107 @@ public:
             const auto v = glm::cross(w, u);
             const auto factor = ImGui::GetIO().KeyShift ? 10.0_f : 1_f;
             const auto speed = ImGui::GetIO().DeltaTime * factor;
-            if (ImGui::IsKeyDown('W')) { p += forward_ * speed; }
-            if (ImGui::IsKeyDown('S')) { p -= forward_ * speed; }
-            if (ImGui::IsKeyDown('A')) { p -= u * speed; }
-            if (ImGui::IsKeyDown('D')) { p += u * speed; }
+            if (ImGui::IsKeyDown('W')) { updated = true; p += forward_ * speed; }
+            if (ImGui::IsKeyDown('S')) { updated = true; p -= forward_ * speed; }
+            if (ImGui::IsKeyDown('A')) { updated = true; p -= u * speed; }
+            if (ImGui::IsKeyDown('D')) { updated = true; p += u * speed; }
             return p;
         }();
+
+        return updated;
     }
 };
 
-LM_COMP_REG_IMPL(Camera_Display, "camera::display");
+// ----------------------------------------------------------------------------
+
+// Interactive visualizer using OpenGL
+class GLRenderer {
+private:
+    GLResource pipeline_;
+    mutable GLResource programV_;
+    mutable GLResource programF_;
+
+public:
+    GLRenderer() {
+        // Load shaders
+        const std::string RenderVs = R"x(
+            #version 400 core
+            #define POSITION 0
+            #define NORMAL   1
+            #define TEXCOORD 2
+            layout (location = POSITION) in vec3 position;
+            layout (location = NORMAL) in vec3 normal;
+            layout (location = TEXCOORD) in vec2 texcoord;
+            uniform mat4 ModelMatrix;
+            uniform mat4 ViewMatrix;
+            uniform mat4 ProjectionMatrix;
+            out block {
+                vec3 normal;
+                vec2 texcoord;
+            } Out;
+            void main() {
+                mat4 mvMatrix = ViewMatrix * ModelMatrix;
+                mat4 mvpMatrix = ProjectionMatrix * mvMatrix;
+                Out.normal = normal;//mat3(mvMatrix) * normal;
+                Out.texcoord = texcoord;
+                gl_Position = mvpMatrix * vec4(position, 1);
+            }
+        )x";
+        const std::string RenderFs = R"x(
+            #version 400 core
+            in block {
+                vec3 normal;
+                vec2 texcoord;
+            } In;
+            out vec4 fragColor;
+            uniform vec3 Color;
+            uniform float Alpha;
+            uniform int UseConstantColor;
+            void main() {
+                fragColor.rgb = UseConstantColor > 0 ? Color : abs(In.normal);
+                fragColor.a = Alpha;
+            }
+        )x";
+        programV_.create(GLResourceType::Program);
+        programF_.create(GLResourceType::Program);
+        if (!programV_.compileString(GL_VERTEX_SHADER, RenderVs)) { THROW_RUNTIME_ERROR(); }
+        if (!programF_.compileString(GL_FRAGMENT_SHADER, RenderFs)) { THROW_RUNTIME_ERROR(); }
+        if (!programV_.link()) { THROW_RUNTIME_ERROR(); }
+        if (!programF_.link()) { THROW_RUNTIME_ERROR(); }
+        pipeline_.create(GLResourceType::Pipeline);
+        pipeline_.addProgram(programV_);
+        pipeline_.addProgram(programF_);
+    }
+    
+    // This function is called one per frame
+    void render(const GLScene& scene, const GLDisplayCamera& camera) const {
+        // State
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        // Camera
+        programV_.setUniform("ViewMatrix", glm::mat4(camera.viewMatrix()));
+        programV_.setUniform("ProjectionMatrix", glm::mat4(camera.projectionMatrix()));
+
+        // Render meshes
+        pipeline_.bind();
+        scene.foreachPrimitive([&](const GLPrimitive& p) {
+            programV_.setUniform("ModelMatrix", glm::mat4(p.transform));
+            programF_.setUniform("Color", glm::vec3(1));
+            programF_.setUniform("Alpha", 1.f);
+            programF_.setUniform("UseConstantColor", 1);
+            p.material->apply([&]() {
+                p.mesh->render();
+            });
+        });
+        pipeline_.unbind();
+
+        // Restore
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glDisable(GL_BLEND);
+    }
+};
 
 // ----------------------------------------------------------------------------
 
@@ -97,9 +336,6 @@ int main(int argc, char** argv) {
     try {
         // Initialize the framework
         lm::init();
-
-        // We need `lmgl` plugin to use interactive features
-        lm::comp::detail::ScopedLoadPlugin pluginGuard("lmgl");
 
         // Parse command line arguments
         const auto opt = lm::json::parsePositionalArgs<11>(argc, argv, R"({{
@@ -171,52 +407,25 @@ int main(int argc, char** argv) {
             {"path", opt["obj"]}
         });
 
-        // Camera for interactive display
-        lm::asset("camera_display", "camera::display", {
-            {"film", "film1"},
-            {"position", opt["eye"]},
-            {"center", opt["lookat"]},
-            {"up", {0,1,0}},
-            {"vfov", opt["vfov"]}
-        });
+        lm::primitives(lm::Mat4(1), "obj1");
 
-        // Camera
-        lm::primitive(lm::Mat4(1), {
-            {"camera", "camera_display"}
-        });
+        // --------------------------------------------------------------------
+
+        // Setup renderer
+        GLScene glscene;
+        GLRenderer glrenderer;
+        GLDisplayCamera glcamera(opt["eye"], opt["lookat"], Vec3(0, 1, 0), opt["vfov"]);
 
         // Create OpenGL-ready assets and register primitives
-        auto* model = lm::getAsset<lm::Model>("obj1");
-        model->createPrimitives([&](lm::Component* mesh, lm::Component* material, lm::Component*) {
-            // Name of OpenGL assets
-            const auto glmesh = "gl_" + mesh->name();
-            const auto glmat  = "gl_" + material->name();
-
-            // OpenGL mesh
-            lm::asset(glmesh, "mesh::visgl", {
-                {"mesh", mesh->globalLoc()}
-            });
-
-            // OpenGL material
-            if (auto* mat = lm::getAsset<lm::Material>(glmat); !mat) {
-                lm::asset(glmat, "material::visgl", {
-                    {"material", material->globalLoc()}
-                });
+        const auto* scene = lm::comp::get<lm::Scene>("scene");
+        scene->foreachPrimitive([&](const lm::Primitive& p) {
+            if (!p.mesh || !p.material) {
+                return;
             }
-
-            // Primitive
-            lm::primitive(lm::Mat4(1), {
-                {"mesh", glmesh},
-                {"material", glmat}
-            });
+            glscene.add(p.transform.M, p.mesh, p.material);
         });
         
         // --------------------------------------------------------------------
-
-        // Render an image
-        lm::renderer("renderer::visgl", {
-            {"camera", "camera_display"}
-        });
 
         // Main loop
         while (!glfwWindowShouldClose(window)) {
@@ -227,8 +436,7 @@ int main(int argc, char** argv) {
             ImGui::NewFrame();
 
             // Update camera
-            auto* camera = lm::getAsset<Camera_Display>("camera_display");
-            camera->update(window);
+            const bool cameraUpdated = glcamera.update(window);
 
             // Windows position and size
             ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
@@ -243,6 +451,44 @@ int main(int argc, char** argv) {
             ImGui::Separator();
             ImGui::End();
 
+#if 0
+            // Dispatch rendering
+            const bool rendering = lm::rendering("renderer::pt");
+            if (ImGui::ButtonEx("Render", ImVec2(0, 0), rendering ? ImGuiButtonFlags_Disabled : 0)) {
+                // Create film to store rendered image
+                lm::asset("film_render", "film::bitmap", {
+                    {"w", opt["w"]},
+                    {"h", opt["h"]}
+                });
+
+                // Camera
+                lm::asset("camera_render", "camera::pinhole", {
+                    {"film", "camera_render"},
+                    {"position", opt["eye"]},
+                    {"center", opt["lookat"]},
+                    {"up", {0,1,0}},
+                    {"vfov", opt["vfov"]}
+                });
+
+                // Renderer
+                lm::renderer("renderer::pt", {
+                    {"output", "film1"},
+                    {"spp", opt["spp"]},
+                    {"maxLength", opt["len"]}
+                });
+
+                // Create a new thread and dispatch rendering
+                std::thread([]() {
+                    lm::render("renderer::pt", true);
+                }).detach();
+            }
+
+            // If camera movement is detected, abort rendering and clear film
+            if (rendering && cameraUpdated) {
+                lm::abort("renderer::pt");
+            }
+#endif
+
             // Rendering
             ImGui::Render();
             glViewport(0, 0, display_w, display_h);
@@ -250,7 +496,7 @@ int main(int argc, char** argv) {
             glClear(GL_DEPTH_BUFFER_BIT);
             glClearColor(.45f, .55f, .6f, 1.f);
             glClear(GL_COLOR_BUFFER_BIT);
-            lm::render(false);
+            glrenderer.render(glscene, glcamera);
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             glfwSwapBuffers(window);
         }
