@@ -15,7 +15,6 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
-using namespace lm;
 using namespace lm::literals;
 
 // ----------------------------------------------------------------------------
@@ -42,19 +41,19 @@ private:
     std::optional<GLuint> texture_;
 
 public:
-    GLMaterial(Material* material) {
+    GLMaterial(lm::Material* material) {
         if (material->key() != "material::wavefrontobj") {
             color_ = glm::vec3(0);
             return;
         }
         
         // For material::wavefrontobj, we try to use underlying texture
-        auto* diffuse = dynamic_cast<Material*>(material->underlying("diffuse"));
+        auto* diffuse = dynamic_cast<lm::Material*>(material->underlying("diffuse"));
         if (!diffuse) {
             color_ = glm::vec3(0);
             return;
         }
-        auto* tex = dynamic_cast<Texture*>(diffuse->underlying("mapKd"));
+        auto* tex = dynamic_cast<lm::Texture*>(diffuse->underlying("mapKd"));
         if (!tex) {
             color_ = *diffuse->reflectance({}, {});
             return;
@@ -134,18 +133,18 @@ private:
     GLuint vertexArray_;
 
 public:
-    GLMesh(Mesh* mesh) {
+    GLMesh(lm::Mesh* mesh) {
         // Mesh type
         //type_ = prop["type"];
         type_ = MeshType::Triangles;
         
         // Create OpenGL buffer objects
-        std::vector<Vec3> vs;
-        std::vector<Vec3> ns;
-        std::vector<Vec2> ts;
+        std::vector<lm::Vec3> vs;
+        std::vector<lm::Vec3> ns;
+        std::vector<lm::Vec2> ts;
         std::vector<GLuint> is;
         count_ = 0;
-        mesh->foreachTriangle([&](int, Mesh::Point p1, Mesh::Point p2, Mesh::Point p3) {
+        mesh->foreachTriangle([&](int, lm::Mesh::Point p1, lm::Mesh::Point p2, lm::Mesh::Point p3) {
             vs.insert(vs.end(), { p1.p, p2.p, p3.p });
             ns.insert(ns.end(), { p1.n, p2.n, p3.n });
             ts.insert(ts.end(), { p1.t, p2.t, p3.t });
@@ -155,19 +154,19 @@ public:
 
         glGenBuffers(1, &bufferP_);
         glBindBuffer(GL_ARRAY_BUFFER, bufferP_);
-        glBufferData(GL_ARRAY_BUFFER, vs.size() * sizeof(Vec3), vs.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vs.size() * sizeof(lm::Vec3), vs.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         CHECK_GL_ERROR();
 
         glGenBuffers(1, &bufferN_);
         glBindBuffer(GL_ARRAY_BUFFER, bufferN_);
-        glBufferData(GL_ARRAY_BUFFER, ns.size() * sizeof(Vec3), ns.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, ns.size() * sizeof(lm::Vec3), ns.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         CHECK_GL_ERROR();
 
         glGenBuffers(1, &bufferT_);
         glBindBuffer(GL_ARRAY_BUFFER, bufferT_);
-        glBufferData(GL_ARRAY_BUFFER, ts.size() * sizeof(Vec2), ts.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, ts.size() * sizeof(lm::Vec2), ts.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         CHECK_GL_ERROR();
 
@@ -228,7 +227,7 @@ public:
 
 // OpenGL scene
 struct GLPrimitive {
-    Mat4 transform;
+    lm::Mat4 transform;
     GLMesh* mesh;
     GLMaterial* material;
 };
@@ -241,7 +240,7 @@ private:
 
 public:
     // Add mesh and material pair
-    void add(const Mat4& transform, Mesh* mesh, Material* material) {
+    void add(const lm::Mat4& transform, lm::Mesh* mesh, lm::Material* material) {
         // Mesh
         auto* glmesh = [&]() {
             meshes_.emplace_back(new GLMesh(mesh));
@@ -275,29 +274,29 @@ public:
 
 class GLDisplayCamera {
 private:
-    Float aspect_;
-    Float fov_;
-    Vec3 eye_;
-    Vec3 up_;
-    Vec3 forward_;
+    lm::Float aspect_;
+    lm::Float fov_;
+    lm::Vec3 eye_;
+    lm::Vec3 up_;
+    lm::Vec3 forward_;
 
 public:
-    GLDisplayCamera(Vec3 eye, Vec3 center, Vec3 up, Float fov) 
+    GLDisplayCamera(lm::Vec3 eye, lm::Vec3 center, lm::Vec3 up, lm::Float fov)
         : eye_(eye)
         , up_(up)
         , forward_(glm::normalize(center - eye))
         , fov_(fov)
     {}
 
-    Vec3 eye() { return eye_; }
-    Vec3 center() { return eye_ + forward_; }
-    Float fov() { return fov_; }
+    lm::Vec3 eye() { return eye_; }
+    lm::Vec3 center() { return eye_ + forward_; }
+    lm::Float fov() { return fov_; }
 
-    Mat4 viewMatrix() const {
+    lm::Mat4 viewMatrix() const {
         return glm::lookAt(eye_, eye_ + forward_, up_);
     }
     
-    Mat4 projectionMatrix() const {
+    lm::Mat4 projectionMatrix() const {
         return glm::perspective(glm::radians(fov_), aspect_, 0.01_f, 10000_f);
     }
 
@@ -577,7 +576,7 @@ int main(int argc, char** argv) {
         // Setup renderer
         GLScene glscene;
         GLRenderer glrenderer;
-        GLDisplayCamera glcamera(opt["eye"], opt["lookat"], Vec3(0, 1, 0), opt["vfov"]);
+        GLDisplayCamera glcamera(opt["eye"], opt["lookat"], lm::Vec3(0, 1, 0), opt["vfov"]);
 
         // Create OpenGL-ready assets and register primitives
         const auto* scene = lm::comp::get<lm::Scene>("scene");
