@@ -30,5 +30,6 @@ lm_add_example(NAME update_asset SOURCES "update_asset.cpp")
 lm_add_example(NAME walk_components SOURCES "walk_components.cpp")
 lm_add_example(NAME logger_usage SOURCES "logger_usage.cpp")
 lm_add_example(NAME error_handling SOURCES "error_handling.cpp")
-lm_add_example(NAME interactive SOURCES "interactive.cpp" LIBRARIES imgui)
-
+if (WIN32)
+    lm_add_example(NAME interactive SOURCES "interactive.cpp" LIBRARIES imgui)
+endif()
