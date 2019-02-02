@@ -57,7 +57,7 @@ public:
             const auto R = scene->reflectance(*sp);
             auto C = R ? *R : Vec3();
             if (!useConstantColor_) {
-                C *= glm::abs(glm::dot(sp->geom.n, -ray.d));
+                C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));
             }
             film_->setPixel(x, y, C);
         });

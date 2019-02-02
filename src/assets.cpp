@@ -93,6 +93,10 @@ public:
                 if (!comp) {
                     return;
                 }
+                if (asset == comp) {
+                    // Ignore myself
+                    return;
+                }
                 if (!weak) {
                     comp->foreachUnderlying(visit);
                 }
