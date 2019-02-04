@@ -16,6 +16,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/user.h"
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/progress.h"
+    "${_INCLUDE_DIR}/dio.h"
     "${_INCLUDE_DIR}/exception.h"
     "${_INCLUDE_DIR}/parallel.h"
     "${_INCLUDE_DIR}/math.h"
@@ -43,6 +44,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/exception.cpp"
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/progress.cpp"
+    "${_SOURCE_DIR}/dio.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
@@ -78,7 +80,7 @@ endif()
 # Configure dependency
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt::fmt-header-only cereal
-    PRIVATE OpenMP::OpenMP_CXX
+    PRIVATE OpenMP::OpenMP_CXX libzmq-static cppzmq
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
             $<$<CXX_COMPILER_ID:GNU>:atomic>)
 # Include directories

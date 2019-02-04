@@ -106,6 +106,30 @@ else()
     find_package(cereal REQUIRED)
 endif()
 
+# libzmq & cppzmq
+# https://github.com/zeromq/libzmq
+# https://github.com/zeromq/cppzmq
+if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/libzmq" AND EXISTS "${LM_EXTERNAL_DIR}/cppzmq")
+    # libzmq
+    option(ENABLE_DRAFTS "" OFF)
+    option(BUILD_SHARED "" OFF)
+    option(WITH_PERF_TOOL "" OFF)
+    option(BUILD_TESTS "" OFF)
+    option(ENABLE_CPACK "" OFF)
+    add_subdirectory(external/libzmq)
+
+    # cppzmq
+    # We workaround cppzmq's CMakeLists.txt
+    # because it internally tries to find ZeroMQ package
+    # where we already loaded via add_subdirectory.
+    set(_CPPZMQ_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq")
+    add_library(cppzmq INTERFACE)
+    target_include_directories(cppzmq INTERFACE "${_CPPZMQ_DIR}")
+else()
+    find_package(ZeroMQ REQUIRED)
+    find_package(cppzmq REQUIRED)
+endif()
+
 # -----------------------------------------------------------------------------
 
 if (WIN32)
