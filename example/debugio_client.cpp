@@ -20,6 +20,7 @@ int main() {
         });
 
         lm::debugio::handleMessage("hai domo");
+        lm::shutdown();
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());

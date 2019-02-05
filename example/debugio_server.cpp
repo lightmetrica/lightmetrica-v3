@@ -30,6 +30,7 @@ int main() {
         });
 
         lm::debugio::run();
+        lm::shutdown();
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());
