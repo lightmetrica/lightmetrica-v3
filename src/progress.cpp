@@ -47,6 +47,8 @@ public:
 
 LM_COMP_REG_IMPL(ProgressContext_Mux, "progress::mux");
 
+// ----------------------------------------------------------------------------
+
 // Delay the update for the specified seconds
 class ProgressContext_Delay : public ProgressContext {
 private:
@@ -84,6 +86,8 @@ public:
 };
 
 LM_COMP_REG_IMPL(ProgressContext_Delay, "progress::delay");
+
+// ----------------------------------------------------------------------------
 
 // Default progress reporter
 class ProgressContext_Default : public ProgressContext {

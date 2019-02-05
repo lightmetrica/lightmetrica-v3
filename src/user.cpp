@@ -15,6 +15,7 @@
 #include <lm/json.h>
 #include <lm/progress.h>
 #include <lm/serial.h>
+#include <lm/debugio.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -35,6 +36,7 @@ public:
     }
 
     ~UserContext_Default() {
+        debugio::shutdown();
         progress::shutdown();
         parallel::shutdown();
         log::shutdown();
@@ -43,22 +45,39 @@ public:
 
 public:
     virtual bool construct(const Json& prop) override {
+        // Exception subsystem
         exception::init();
+
+        // Logger subsystem
         log::init(json::valueOr<std::string>(prop, "logger", log::DefaultType));
+
+        // Initial message
+        // This must be called after logger subsystem is initialized.
         LM_INFO("Initializing Lightmetrica [version='{}']");
+
+        // Parallel subsystem
         parallel::init("parallel::openmp", prop);
-        {
-            auto it = prop.find("progress");
-            if (it != prop.end()) {
-                it = it->begin();
-                progress::init(it.key(), it.value());
-            }
-            else {
-                progress::init(progress::DefaultType);
-            }
+        if (auto it = prop.find("progress");  it != prop.end()) {
+            it = it->begin();
+            progress::init(it.key(), it.value());
         }
+        else {
+            progress::init(progress::DefaultType);
+        }
+
+        // Debugio subsystem
+        // This subsystem is initialized only if the parameter is given
+        if (auto it = prop.find("debugio"); it != prop.end()) {
+            it = it->begin();
+            debugio::init(it.key(), it.value());
+        }
+
+        // Create assets and scene
         assets_ = comp::create<Assets>("assets::default", makeLoc(loc(), "assets"));
+        assert(assets_);
         scene_  = comp::create<Scene>("scene::default", makeLoc(loc(), "scene"));
+        assert(scene_);
+
         return true;
     }
 

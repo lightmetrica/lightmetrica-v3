@@ -25,6 +25,7 @@
 #include <type_traits>
 #include <queue>
 
+#define WIN32_LEAN_AND_MEAN
 #include <fmt/format.h>
 #include <cereal/cereal.hpp>
 #include <cereal/archives/portable_binary.hpp>

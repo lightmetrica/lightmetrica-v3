@@ -12,10 +12,14 @@ int main() {
     try {
         // Initialize the framework with debugio client
         lm::init("user::default", {
-            {"debugio", "debugio::client"}
+            {"debugio", {
+                {"debugio::client", {
+                    {"address", "tcp://localhost:5555"}
+                }}
+            }}
         });
 
-        
+        lm::debugio::handleMessage("hai domo");
     }
     catch (const std::exception& e) {
         LM_ERROR("Runtime error: {}", e.what());

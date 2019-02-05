@@ -11,7 +11,7 @@
 #include "user.h"
 #include "logger.h"
 #include "progress.h"
-#include "dio.h"
+#include "debugio.h"
 #include "parallel.h"
 #include "math.h"
 #include "assets.h"
