@@ -8,6 +8,7 @@
 #include <lm/debugio.h>
 #include <lm/serial.h>
 #include <lm/logger.h>
+#include <lm/user.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::debugio)
 
@@ -29,19 +30,23 @@ struct imemstream : virtual membuf, std::istream {
 
 // Shared command between server and client
 enum class Command {
-    handleMessage
+    handleMessage,
+    syncUserContext,
+    drawScene,
+    drawLineStrip,
+    drawTriangles
 };
 
 // ----------------------------------------------------------------------------
 
-class DebugioServerContext_ final : public DebugioServerContext {
+class DebugioContext_Server final : public DebugioServerContext {
 private:
     zmq::context_t context_;
     zmq::socket_t socket_;
     Component::Ptr<DebugioContext> ref_;
 
 public:
-    DebugioServerContext_()
+    DebugioContext_Server()
         : context_(1)
         , socket_(context_, ZMQ_REP)
     {}
@@ -85,31 +90,47 @@ public:
                 case Command::handleMessage: {
                     std::string message;
                     serial::load(is, message);
-                    handleMessage(message);
+                    ref_->handleMessage(message);
+                    break;
+                }
+                case Command::syncUserContext: {
+                    lm::deserialize(is);
+                    ref_->syncUserContext();
+                    break;
+                }
+                case Command::drawScene: {
+                    ref_->drawScene();
+                    break;
+                }
+                case Command::drawLineStrip: {
+                    std::vector<Vec3> vs;
+                    serial::load(is, vs);
+                    ref_->drawLineStrip(vs);
+                    break;
+                }
+                case Command::drawTriangles: {
+                    std::vector<Vec3> vs;
+                    serial::load(is, vs);
+                    ref_->drawTriangles(vs);
                     break;
                 }
             }
             socket_.send(ok);
         }
     }
-
-public:
-    virtual void handleMessage(const std::string& message) override {
-        ref_->handleMessage(message);
-    }
 };
 
-LM_COMP_REG_IMPL(DebugioServerContext_, "debugio::server");
+LM_COMP_REG_IMPL(DebugioContext_Server, "debugio::server");
 
 // ----------------------------------------------------------------------------
 
-class DebugioClientContext_ final : public DebugioContext {
+class DebugioContext_Client final : public DebugioContext {
 private:
     zmq::context_t context_;
     zmq::socket_t socket_;
 
 public:
-    DebugioClientContext_()
+    DebugioContext_Client()
         : context_(1)
         , socket_(context_, ZMQ_REQ)
     {}
@@ -147,13 +168,36 @@ public:
         serial::save(ss, message);
         call(Command::handleMessage, ss.str());
     }
+
+    virtual void syncUserContext() override {
+        // Serialize the internal state
+        std::stringstream ss;
+        lm::serialize(ss);
+        call(Command::syncUserContext, ss.str());
+    }
+
+    virtual void drawScene() override {
+        call(Command::drawScene, {});
+    }
+
+    virtual void drawLineStrip(const std::vector<Vec3>& vs) override {
+        std::stringstream ss;
+        serial::save(ss, vs);
+        call(Command::drawLineStrip, ss.str());
+    }
+
+    virtual void drawTriangles(const std::vector<Vec3>& vs) override {
+        std::stringstream ss;
+        serial::save(ss, vs);
+        call(Command::drawTriangles, ss.str());
+    }
 };
 
-LM_COMP_REG_IMPL(DebugioClientContext_, "debugio::client");
+LM_COMP_REG_IMPL(DebugioContext_Client, "debugio::client");
 
 // ----------------------------------------------------------------------------
 
-using Instance = comp::detail::ContextInstance<DebugioContext>;
+using Instance = comp::detail::ContextInstance<Component>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
     Instance::init(type, prop);
@@ -163,12 +207,28 @@ LM_PUBLIC_API void shutdown() {
     Instance::shutdown();
 }
 
-LM_PUBLIC_API void run() {
-    Instance::get().cast<DebugioServerContext>()->run();
+LM_PUBLIC_API void handleMessage(const std::string& message) {
+    Instance::get().cast<DebugioContext>()->handleMessage(message);
 }
 
-LM_PUBLIC_API void handleMessage(const std::string& message) {
-    Instance::get().handleMessage(message);
+LM_PUBLIC_API void syncUserContext() {
+    Instance::get().cast<DebugioContext>()->syncUserContext();
+}
+
+LM_PUBLIC_API void drawScene() {
+    Instance::get().cast<DebugioContext>()->drawScene();
+}
+
+LM_PUBLIC_API void drawLineStrip(const std::vector<Vec3>& vs) {
+    Instance::get().cast<DebugioContext>()->drawLineStrip(vs);
+}
+
+LM_PUBLIC_API void drawTriangles(const std::vector<Vec3>& vs) {
+    Instance::get().cast<DebugioContext>()->drawTriangles(vs);
+}
+
+LM_PUBLIC_API void run() {
+    Instance::get().cast<DebugioServerContext>()->run();
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::debugio)

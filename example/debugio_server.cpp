@@ -8,7 +8,24 @@
 class MyDebugioContext : public lm::debugio::DebugioContext {
 public:
     virtual void handleMessage(const std::string& message) override {
+        LM_INFO("handleMessage");
         LM_INFO(message);
+    }
+
+    virtual void syncUserContext() override {
+        LM_INFO("syncUserContext");
+    }
+
+    virtual void drawScene() override {
+        LM_INFO("drawScene");
+    }
+
+    virtual void drawLineStrip(const std::vector<lm::Vec3>&) override {
+        LM_INFO("drawLineStrip");
+    }
+
+    virtual void drawTriangles(const std::vector<lm::Vec3>&) override {
+        LM_INFO("drawTriangles");
     }
 };
 
@@ -29,7 +46,10 @@ int main() {
             }}
         });
 
+        // Start to run the server
         lm::debugio::run();
+
+        // Shutdown the framework
         lm::shutdown();
     }
     catch (const std::exception& e) {

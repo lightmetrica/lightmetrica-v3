@@ -19,7 +19,21 @@ int main() {
             }}
         });
 
+        // Send a message to the server
         lm::debugio::handleMessage("hai domo");
+
+        // Synchronize the state of user context with server
+        lm::debugio::syncUserContext();
+        
+        // Debugio supports API of visual debugging
+        // Draw scene
+        lm::debugio::drawScene();
+        // Draw line strip
+        lm::debugio::drawLineStrip({});
+        // Draw triangles
+        lm::debugio::drawTriangles({});
+
+        // Shutdown the framework
         lm::shutdown();
     }
     catch (const std::exception& e) {
