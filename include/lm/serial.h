@@ -186,19 +186,19 @@ LM_NAMESPACE_BEGIN(serial)
 /*!
     \brief Serialize an object with given type.
 */
-template <typename T>
-void save(std::ostream& os, T&& v) {
+template <typename... Ts>
+void save(std::ostream& os, Ts&&... v) {
     OutputArchive ar(os);
-    ar(std::forward<T>(v));
+    ar(std::forward<Ts>(v)...);
 }
 
 /*!
     \brief Deserialize an object with given type.
 */
-template <typename T>
-void load(std::istream& is, T& v) {
+template <typename... Ts>
+void load(std::istream& is, Ts&... v) {
     InputArchive ar(is);
-    ar(v);
+    ar(v...);
 }
 
 /*!

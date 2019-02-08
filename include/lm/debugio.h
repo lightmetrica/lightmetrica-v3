@@ -42,26 +42,9 @@ LM_PUBLIC_API void handleMessage(const std::string& message);
 LM_PUBLIC_API void syncUserContext();
 
 /*!
-    \brief Draw scene.
+    \brief Query drawing to visual debugger.
 */
-LM_PUBLIC_API void drawScene();
-
-/*!
-    \brief Draw line strip from the vertices.
-*/
-LM_PUBLIC_API void drawLineStrip(const std::vector<Vec3>& vs);
-
-/*!
-    \brief Draw triangles from the vertices.
-*/
-LM_PUBLIC_API void drawTriangles(const std::vector<Vec3>& vs);
-
-/*!
-    \brief Start to run the server.
-*/
-LM_PUBLIC_API void run();
-
-// ----------------------------------------------------------------------------
+LM_PUBLIC_API void draw(int type, const std::vector<Vec3>& vs);
 
 /*!
     \brief Debugio base context.
@@ -70,19 +53,48 @@ class DebugioContext : public Component {
 public:
     virtual void handleMessage(const std::string& message) { LM_UNUSED(message); }
     virtual void syncUserContext() {}
-    virtual void drawScene() {}
-    virtual void drawLineStrip(const std::vector<Vec3>& vs) { LM_UNUSED(vs); }
-    virtual void drawTriangles(const std::vector<Vec3>& vs) { LM_UNUSED(vs); }
-};
-
-class DebugioServerContext : public Component {
-public:
-    virtual void run() = 0;
+    virtual void draw(int type, const std::vector<Vec3>& vs) { LM_UNUSED(type, vs); }
 };
 
 /*!
     @}
 */
 
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(server)
+
+/*!
+    \addtogroup debugio
+    @{
+*/
+
+/*!
+    \brief Start to run the server.
+*/
+LM_PUBLIC_API void run();
+
+using HandleMessageFunc = std::function<void(const std::string& message)>;
+LM_PUBLIC_API void on_handleMessage(const HandleMessageFunc& process);
+
+using SyncUserContextFunc = std::function<void()>;
+LM_PUBLIC_API void on_syncUserContext(const SyncUserContextFunc& process);
+
+using DrawFunc = std::function<void(int type, const std::vector<Vec3>& vs)>;
+LM_PUBLIC_API void on_draw(const DrawFunc& process);
+
+class DebugioServerContext : public Component {
+public:
+    virtual void run() = 0;
+    virtual void on_handleMessage(const HandleMessageFunc& process) = 0;
+    virtual void on_syncUserContext(const SyncUserContextFunc& process) = 0;
+    virtual void on_draw(const DrawFunc& process) = 0;
+};
+
+/*!
+    @}
+*/
+
+LM_NAMESPACE_END(server)
 LM_NAMESPACE_END(debugio)
 LM_NAMESPACE_END(LM_NAMESPACE)

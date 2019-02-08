@@ -26,12 +26,7 @@ int main() {
         lm::debugio::syncUserContext();
         
         // Debugio supports API of visual debugging
-        // Draw scene
-        lm::debugio::drawScene();
-        // Draw line strip
-        lm::debugio::drawLineStrip({});
-        // Draw triangles
-        lm::debugio::drawTriangles({});
+        lm::debugio::draw(0, {});
 
         // Shutdown the framework
         lm::shutdown();

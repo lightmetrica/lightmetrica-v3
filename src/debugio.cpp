@@ -32,95 +32,8 @@ struct imemstream : virtual membuf, std::istream {
 enum class Command {
     handleMessage,
     syncUserContext,
-    drawScene,
-    drawLineStrip,
-    drawTriangles
+    draw
 };
-
-// ----------------------------------------------------------------------------
-
-class DebugioContext_Server final : public DebugioServerContext {
-private:
-    zmq::context_t context_;
-    zmq::socket_t socket_;
-    Component::Ptr<DebugioContext> ref_;
-
-public:
-    DebugioContext_Server()
-        : context_(1)
-        , socket_(context_, ZMQ_REP)
-    {}
-
-public:
-    virtual bool construct(const Json& prop) override {
-        // Waiting for the connection of the client
-        const int port = prop["port"];
-        try {
-            socket_.bind(fmt::format("tcp://*:{}", port));
-        }
-        catch (const zmq::error_t& e) {
-            LM_ERROR("ZMQ Error: {}", e.what());
-            return false;
-        }
-
-        // Create underlying context that deligates the functions
-        ref_ = comp::create<DebugioContext>(prop["ref"], "");
-        if (!ref_) {
-            return false;
-        }
-
-        return true;
-    }
-
-    virtual void run() override {
-        while (true) {
-            zmq::message_t ok;
-
-            // Receive command
-            zmq::message_t req_command;
-            socket_.recv(&req_command);
-            const auto command = *req_command.data<Command>();
-            socket_.send(ok);
-
-            // Receive arguments and execute the function
-            zmq::message_t req_args;
-            socket_.recv(&req_args);
-            imemstream is(req_args.data<char>(), req_args.size());
-            switch (command) {
-                case Command::handleMessage: {
-                    std::string message;
-                    serial::load(is, message);
-                    ref_->handleMessage(message);
-                    break;
-                }
-                case Command::syncUserContext: {
-                    lm::deserialize(is);
-                    ref_->syncUserContext();
-                    break;
-                }
-                case Command::drawScene: {
-                    ref_->drawScene();
-                    break;
-                }
-                case Command::drawLineStrip: {
-                    std::vector<Vec3> vs;
-                    serial::load(is, vs);
-                    ref_->drawLineStrip(vs);
-                    break;
-                }
-                case Command::drawTriangles: {
-                    std::vector<Vec3> vs;
-                    serial::load(is, vs);
-                    ref_->drawTriangles(vs);
-                    break;
-                }
-            }
-            socket_.send(ok);
-        }
-    }
-};
-
-LM_COMP_REG_IMPL(DebugioContext_Server, "debugio::server");
 
 // ----------------------------------------------------------------------------
 
@@ -176,24 +89,95 @@ public:
         call(Command::syncUserContext, ss.str());
     }
 
-    virtual void drawScene() override {
-        call(Command::drawScene, {});
-    }
-
-    virtual void drawLineStrip(const std::vector<Vec3>& vs) override {
+    virtual void draw(int type, const std::vector<Vec3>& vs) override {
         std::stringstream ss;
-        serial::save(ss, vs);
-        call(Command::drawLineStrip, ss.str());
-    }
-
-    virtual void drawTriangles(const std::vector<Vec3>& vs) override {
-        std::stringstream ss;
-        serial::save(ss, vs);
-        call(Command::drawTriangles, ss.str());
+        serial::save(ss, type, vs);
+        call(Command::draw, ss.str());
     }
 };
 
 LM_COMP_REG_IMPL(DebugioContext_Client, "debugio::client");
+
+// ----------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(server)
+
+class DebugioContext_Server final : public DebugioServerContext {
+private:
+    zmq::context_t context_;
+    zmq::socket_t socket_;
+    HandleMessageFunc on_handleMessage_;
+    SyncUserContextFunc on_syncUserContext_;
+    DrawFunc on_draw_;
+
+public:
+    DebugioContext_Server()
+        : context_(1)
+        , socket_(context_, ZMQ_REP)
+    {}
+
+public:
+    virtual void on_handleMessage(const HandleMessageFunc& process) override { on_handleMessage_ = process; }
+    virtual void on_syncUserContext(const SyncUserContextFunc& process) override { on_syncUserContext_ = process; }
+    virtual void on_draw(const DrawFunc& process) override { on_draw_ = process; }
+
+public:
+    virtual bool construct(const Json& prop) override {
+        // Waiting for the connection of the client
+        const int port = prop["port"];
+        try {
+            socket_.bind(fmt::format("tcp://*:{}", port));
+        }
+        catch (const zmq::error_t& e) {
+            LM_ERROR("ZMQ Error: {}", e.what());
+            return false;
+        }
+
+        return true;
+    }
+
+    virtual void run() override {
+        while (true) {
+            zmq::message_t ok;
+
+            // Receive command
+            zmq::message_t req_command;
+            socket_.recv(&req_command);
+            const auto command = *req_command.data<Command>();
+            socket_.send(ok);
+
+            // Receive arguments and execute the function
+            zmq::message_t req_args;
+            socket_.recv(&req_args);
+            imemstream is(req_args.data<char>(), req_args.size());
+            switch (command) {
+                case Command::handleMessage: {
+                    std::string message;
+                    serial::load(is, message);
+                    on_handleMessage_(message);
+                    break;
+                }
+                case Command::syncUserContext: {
+                    lm::deserialize(is);
+                    on_syncUserContext_();
+                    break;
+                }
+                case Command::draw: {
+                    int type;
+                    std::vector<Vec3> vs;
+                    serial::load(is, type, vs);
+                    on_draw_(type, vs);
+                    break;
+                }
+            }
+            socket_.send(ok);
+        }
+    }
+};
+
+LM_COMP_REG_IMPL(DebugioContext_Server, "debugio::server");
+
+LM_NAMESPACE_END(server)
 
 // ----------------------------------------------------------------------------
 
@@ -215,20 +199,27 @@ LM_PUBLIC_API void syncUserContext() {
     Instance::get().cast<DebugioContext>()->syncUserContext();
 }
 
-LM_PUBLIC_API void drawScene() {
-    Instance::get().cast<DebugioContext>()->drawScene();
+LM_PUBLIC_API void draw(int type, const std::vector<Vec3>& vs) {
+    Instance::get().cast<DebugioContext>()->draw(type, vs);
 }
 
-LM_PUBLIC_API void drawLineStrip(const std::vector<Vec3>& vs) {
-    Instance::get().cast<DebugioContext>()->drawLineStrip(vs);
-}
-
-LM_PUBLIC_API void drawTriangles(const std::vector<Vec3>& vs) {
-    Instance::get().cast<DebugioContext>()->drawTriangles(vs);
-}
+LM_NAMESPACE_BEGIN(server)
 
 LM_PUBLIC_API void run() {
     Instance::get().cast<DebugioServerContext>()->run();
 }
 
+LM_PUBLIC_API void on_handleMessage(const HandleMessageFunc& process) {
+    Instance::get().cast<DebugioServerContext>()->on_handleMessage(process);
+}
+
+LM_PUBLIC_API void on_syncUserContext(const SyncUserContextFunc& process) {
+    Instance::get().cast<DebugioServerContext>()->on_syncUserContext(process);
+}
+
+LM_PUBLIC_API void on_draw(const DrawFunc& process) {
+    Instance::get().cast<DebugioServerContext>()->on_draw(process);
+}
+
+LM_NAMESPACE_END(server)
 LM_NAMESPACE_END(LM_NAMESPACE::debugio)
