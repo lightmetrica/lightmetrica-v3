@@ -73,10 +73,7 @@ public:
         }
 
         // Create assets and scene
-        assets_ = comp::create<Assets>("assets::default", makeLoc(loc(), "assets"));
-        assert(assets_);
-        scene_  = comp::create<Scene>("scene::default", makeLoc(loc(), "scene"));
-        assert(scene_);
+        reset();
 
         return true;
     }
@@ -103,6 +100,14 @@ public:
     }
 
 public:
+    virtual void reset() override {
+        assets_ = comp::create<Assets>("assets::default", makeLoc(loc(), "assets"));
+        assert(assets_);
+        scene_ = comp::create<Scene>("scene::default", makeLoc(loc(), "scene"));
+        assert(scene_);
+        renderer_.reset();
+    }
+
     virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) override {
         if (!assets_->loadAsset(name, implKey, prop)) {
             THROW_RUNTIME_ERROR();
@@ -191,6 +196,10 @@ LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
 
 LM_PUBLIC_API void shutdown() {
     Instance::shutdown();
+}
+
+LM_PUBLIC_API void reset() {
+    Instance::get().reset();
 }
 
 LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop) {

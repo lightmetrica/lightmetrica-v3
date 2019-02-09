@@ -40,12 +40,12 @@ struct RaySample {
     \brief Scene primitive.
 */
 struct Primitive {
-    int index;              // Primitive index
-    Transform transform;    // Transform associated to the primitive
-    Mesh* mesh;             // Underlying assets
-    Material* material;
-    Light* light;
-    Camera* camera;
+    int index;                     // Primitive index
+    Transform transform;           // Transform associated to the primitive
+    Mesh* mesh = nullptr;          // Underlying assets
+    Material* material = nullptr;
+    Light* light = nullptr;
+    Camera* camera = nullptr;
 
     template <typename Archive>
     void serialize(Archive& ar) {

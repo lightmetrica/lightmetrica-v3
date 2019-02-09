@@ -63,6 +63,16 @@ LM_PUBLIC_API void init(const std::string& type = user::DefaultType, const Json&
 LM_PUBLIC_API void shutdown();
 
 /*!
+    \brief Reset the internal state of the framework.
+
+    \rst
+    This function resets underlying states including assets and scene to the initial state.
+    The global contexts remains same.
+    \endrst
+*/
+LM_PUBLIC_API void reset();
+
+/*!
     \brief Create an asset.
     \param name Identifier of the asset.
     \param implKey Name of the asset to create.
@@ -273,7 +283,7 @@ LM_INLINE void deserialize(const std::string& path) {
 */
 class ScopedInit {
 public:
-    ScopedInit() { init(); }
+    ScopedInit(const std::string& type = user::DefaultType, const Json& prop = {}) { init(type, prop); }
     ~ScopedInit() { shutdown(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
@@ -302,6 +312,7 @@ LM_NAMESPACE_BEGIN(detail)
 */
 class UserContext : public Component {
 public:
+    virtual void reset() = 0;
     virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
     virtual void primitive(Mat4 transform, const Json& prop) = 0;
     virtual void primitives(Mat4 transform, const std::string& modelName) = 0;

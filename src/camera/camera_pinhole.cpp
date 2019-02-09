@@ -29,14 +29,19 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Camera_Pinhole final : public Camera {
 private:
     Film* film_;      // Underlying film
+
     Vec3 position_;   // Camera position
+    Vec3 center_;     // Lookat position
+    Vec3 up_;         // Up vector
+
     Vec3 u_, v_, w_;  // Basis for camera coordinates
+    Float vfov_;      // Vertical field of view
     Float tf_;        // Half of the screen height at 1 unit forward from the position
     Float aspect_;    // Aspect ratio
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, position_, u_, v_, w_, tf_, aspect_);
+        ar(film_, position_, center_, up_, u_, v_, w_, vfov_, tf_, aspect_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
@@ -49,6 +54,15 @@ public:
         return film_;
     }
 
+    virtual Json underlyingValue(const std::string&) const override {
+        return {
+            {"eye", position_},
+            {"center", center_},
+            {"up", up_},
+            {"vfov", vfov_}
+        };
+    }
+
     virtual bool construct(const Json& prop) override {
         film_ = getAsset<Film>(prop["film"]);       // Film
         if (!film_) {
@@ -56,12 +70,12 @@ public:
         }
         aspect_ = film_->aspectRatio();             // Aspect ratio
         position_ = prop["position"];               // Camera position
-        const Vec3 center = prop["center"];         // Look-at position
-        const Vec3 up = prop["up"];                 // Up vector
-        const Float fv = prop["vfov"];              // Vertical FoV
-        tf_ = tan(fv * Pi / 180_f * .5_f);          // Precompute half of screen height
-        w_ = glm::normalize(position_ - center);    // Compute basis
-        u_ = glm::normalize(glm::cross(up, w_));
+        center_ = prop["center"];                   // Look-at position
+        up_ = prop["up"];                           // Up vector
+        vfov_ = prop["vfov"];                       // Vertical FoV
+        tf_ = tan(vfov_ * Pi / 180_f * .5_f);       // Precompute half of screen height
+        w_ = glm::normalize(position_ - center_);   // Compute basis
+        u_ = glm::normalize(glm::cross(up_, w_));
         v_ = cross(w_, u_);
         return true;
     }

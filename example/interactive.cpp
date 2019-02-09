@@ -68,6 +68,7 @@ int main(int argc, char** argv) {
 
         app.run([&](int display_w, int display_h) {
             // Renderer configuration
+            ImGui::Begin("Renderer configuration");
             static int spp = 10;
             static int maxLength = 20;
             ImGui::SliderInt("spp", &spp, 1, 1000);
@@ -107,6 +108,8 @@ int main(int argc, char** argv) {
                     renderingFinished = true;
                 }).detach();
             }
+
+            ImGui::End();
 
             // ------------------------------------------------------------
                 

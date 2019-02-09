@@ -238,6 +238,14 @@ private:
     std::vector<GLPrimitive> primitives_;
 
 public:
+    // Reset the internal state
+    void reset() {
+        meshes_.clear();
+        materials_.clear();
+        materialMap_.clear();
+        primitives_.clear();
+    }
+
     // Add mesh and material pair
     void add(const lm::Mat4& transform, lm::Mesh* mesh, lm::Material* material) {
         // Mesh
@@ -278,6 +286,8 @@ private:
     lm::Vec3 eye_;
     lm::Vec3 up_;
     lm::Vec3 forward_;
+    lm::Float pitch_;
+    lm::Float yaw_;
 
 public:
     void reset(lm::Vec3 eye, lm::Vec3 center, lm::Vec3 up, lm::Float fov) {
@@ -285,6 +295,8 @@ public:
         up_ = up;
         forward_ = glm::normalize(center - eye);
         fov_ = fov;
+        pitch_ = glm::degrees(std::asin(forward_.y));
+        yaw_ = glm::degrees(std::atan2(forward_.z, forward_.x));
     }
 
     lm::Vec3 eye() { return eye_; }
@@ -307,9 +319,7 @@ public:
         aspect_ = lm::Float(display_w) / display_h;
 
         // Update forward vector
-        forward_ = [&]() -> lm::Vec3 {
-            static auto pitch = glm::degrees(std::asin(forward_.y));
-            static auto yaw = glm::degrees(std::atan2(forward_.z, forward_.x));
+        {
             static auto prevMousePos = ImGui::GetMousePos();
             const auto mousePos = ImGui::GetMousePos();
             const bool rotating = ImGui::IsMouseDown(GLFW_MOUSE_BUTTON_RIGHT);
@@ -319,30 +329,28 @@ public:
                 const float sensitivity = 0.1f;
                 const float dx = float(prevMousePos.x - mousePos.x) * sensitivity;
                 const float dy = float(prevMousePos.y - mousePos.y) * sensitivity;
-                yaw += dx;
-                pitch = glm::clamp(pitch - dy, -89_f, 89_f);
+                yaw_ += dx;
+                pitch_ = glm::clamp(pitch_ - dy, -89_f, 89_f);
             }
             prevMousePos = mousePos;
-            return glm::vec3(
-                cos(glm::radians(pitch)) * cos(glm::radians(yaw)),
-                sin(glm::radians(pitch)),
-                cos(glm::radians(pitch)) * sin(glm::radians(yaw)));
-        }();
+            forward_ = glm::vec3(
+                cos(glm::radians(pitch_)) * cos(glm::radians(yaw_)),
+                sin(glm::radians(pitch_)),
+                cos(glm::radians(pitch_)) * sin(glm::radians(yaw_)));
+        }
 
         // Update camera position
-        eye_ = [&]() -> lm::Vec3 {
-            static auto p = eye_;
+        {
             const auto w = -forward_;
             const auto u = glm::normalize(glm::cross(up_, w));
             const auto v = glm::cross(w, u);
             const auto factor = ImGui::GetIO().KeyShift ? 10.0_f : 1_f;
             const auto speed = ImGui::GetIO().DeltaTime * factor;
-            if (ImGui::IsKeyDown('W')) { p += forward_ * speed; }
-            if (ImGui::IsKeyDown('S')) { p -= forward_ * speed; }
-            if (ImGui::IsKeyDown('A')) { p -= u * speed; }
-            if (ImGui::IsKeyDown('D')) { p += u * speed; }
-            return p;
-        }();
+            if (ImGui::IsKeyDown('W')) { eye_ += forward_ * speed; }
+            if (ImGui::IsKeyDown('S')) { eye_ -= forward_ * speed; }
+            if (ImGui::IsKeyDown('A')) { eye_ -= u * speed; }
+            if (ImGui::IsKeyDown('D')) { eye_ += u * speed; }
+        }
     }
 };
 
@@ -580,7 +588,7 @@ public:
             int display_w, display_h;
             glfwGetFramebufferSize(window, &display_w, &display_h);
             ImGui::Text("Framebuffer size: (%d, %d)", display_w, display_h);
-            ImGui::Separator();
+            ImGui::End();
 
             // ----------------------------------------------------------------
 

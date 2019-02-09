@@ -83,7 +83,7 @@ public:
     }
 
     virtual void syncUserContext() override {
-        // Serialize the internal state
+        LM_INFO("Syncing user context");
         std::stringstream ss;
         lm::serialize(ss);
         call(Command::syncUserContext, ss.str());
@@ -149,7 +149,11 @@ public:
             // Receive arguments and execute the function
             zmq::message_t req_args;
             socket_.recv(&req_args);
+#if 1
+            std::stringstream is(std::string(req_args.data<char>(), req_args.size()));
+#else
             imemstream is(req_args.data<char>(), req_args.size());
+#endif
             switch (command) {
                 case Command::handleMessage: {
                     std::string message;
