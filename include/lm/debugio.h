@@ -42,6 +42,16 @@ LM_PUBLIC_API void handleMessage(const std::string& message);
 LM_PUBLIC_API void syncUserContext();
 
 /*!
+    \brief Debugio mesh type.
+*/
+enum {
+    Triangles = 1<<0,
+    LineStrip = 1<<1,
+    Lines     = 1<<2,
+    Points    = 1<<3,
+};
+
+/*!
     \brief Query drawing to visual debugger.
 */
 LM_PUBLIC_API void draw(int type, const std::vector<Vec3>& vs);
@@ -70,6 +80,11 @@ LM_NAMESPACE_BEGIN(server)
 */
 
 /*!
+    \brief Poll events.
+*/
+LM_PUBLIC_API void poll();
+
+/*!
     \brief Start to run the server.
 */
 LM_PUBLIC_API void run();
@@ -85,6 +100,7 @@ LM_PUBLIC_API void on_draw(const DrawFunc& process);
 
 class DebugioServerContext : public Component {
 public:
+    virtual void poll() = 0;
     virtual void run() = 0;
     virtual void on_handleMessage(const HandleMessageFunc& process) = 0;
     virtual void on_syncUserContext(const SyncUserContextFunc& process) = 0;

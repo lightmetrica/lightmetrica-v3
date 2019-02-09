@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
         // --------------------------------------------------------------------
 
         InteractiveApp app;
-        if (!app.setup(opt)) {
+        if (!app.setup("interactive", opt)) {
             THROW_RUNTIME_ERROR();
         }
 

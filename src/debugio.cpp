@@ -136,46 +136,59 @@ public:
         return true;
     }
 
+    virtual void poll() override {
+        zmq::pollitem_t item{ socket_, 0, ZMQ_POLLIN, 0 };
+        zmq::poll(&item, 1, 0);
+        if (item.revents & ZMQ_POLLIN) {
+            processMessages();
+        }
+    }
+
     virtual void run() override {
         while (true) {
-            zmq::message_t ok;
-
-            // Receive command
-            zmq::message_t req_command;
-            socket_.recv(&req_command);
-            const auto command = *req_command.data<Command>();
-            socket_.send(ok);
-
-            // Receive arguments and execute the function
-            zmq::message_t req_args;
-            socket_.recv(&req_args);
-#if 1
-            std::stringstream is(std::string(req_args.data<char>(), req_args.size()));
-#else
-            imemstream is(req_args.data<char>(), req_args.size());
-#endif
-            switch (command) {
-                case Command::handleMessage: {
-                    std::string message;
-                    serial::load(is, message);
-                    on_handleMessage_(message);
-                    break;
-                }
-                case Command::syncUserContext: {
-                    lm::deserialize(is);
-                    on_syncUserContext_();
-                    break;
-                }
-                case Command::draw: {
-                    int type;
-                    std::vector<Vec3> vs;
-                    serial::load(is, type, vs);
-                    on_draw_(type, vs);
-                    break;
-                }
-            }
-            socket_.send(ok);
+            processMessages();
         }
+    }
+
+private:
+    void processMessages() {
+        zmq::message_t ok;
+
+        // Receive command
+        zmq::message_t req_command;
+        socket_.recv(&req_command);
+        const auto command = *req_command.data<Command>();
+        socket_.send(ok);
+
+        // Receive arguments and execute the function
+        zmq::message_t req_args;
+        socket_.recv(&req_args);
+#if 0
+        std::stringstream is(std::string(req_args.data<char>(), req_args.size()));
+#else
+        imemstream is(req_args.data<char>(), req_args.size());
+#endif
+        switch (command) {
+            case Command::handleMessage: {
+                std::string message;
+                serial::load(is, message);
+                on_handleMessage_(message);
+                break;
+            }
+            case Command::syncUserContext: {
+                lm::deserialize(is);
+                on_syncUserContext_();
+                break;
+            }
+            case Command::draw: {
+                int type;
+                std::vector<Vec3> vs;
+                serial::load(is, type, vs);
+                on_draw_(type, vs);
+                break;
+            }
+        }
+        socket_.send(ok);
     }
 };
 
@@ -208,6 +221,10 @@ LM_PUBLIC_API void draw(int type, const std::vector<Vec3>& vs) {
 }
 
 LM_NAMESPACE_BEGIN(server)
+
+LM_PUBLIC_API void poll() {
+    Instance::get().cast<DebugioServerContext>()->poll();
+}
 
 LM_PUBLIC_API void run() {
     Instance::get().cast<DebugioServerContext>()->run();

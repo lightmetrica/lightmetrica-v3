@@ -22,7 +22,7 @@ int main() {
         // --------------------------------------------------------------------
 
         InteractiveApp app;
-        if (!app.setup({
+        if (!app.setup("debugio_vis_server", {
             {"w", 1920},
             {"h", 1080},
             {"eye", {0,0,1}},
@@ -32,45 +32,42 @@ int main() {
             THROW_RUNTIME_ERROR();
         }
 
-        std::atomic<bool> doSync = false;
         lm::debugio::server::on_syncUserContext([&]() {
-            doSync = true;
+            LM_INFO("Syncing user context");
+            LM_INDENT();
+
+            // Reset OpenGL scene
+            app.glscene.reset();
+
+            // Create OpenGL-ready assets and register primitives
+            const auto* scene = lm::comp::get<lm::Scene>("scene");
+            scene->foreachPrimitive([&](const lm::Primitive& p) {
+                if (p.camera) {
+                    // Reset camera parameters
+                    const auto cameraParams = p.camera->underlyingValue();
+                    app.glcamera.reset(
+                        cameraParams["eye"],
+                        cameraParams["center"],
+                        cameraParams["up"],
+                        cameraParams["vfov"]);
+                    return;
+                }
+                if (!p.mesh || !p.material) {
+                    return;
+                }
+                app.glscene.add(p.transform.M, p.mesh, p.material);
+            });
         });
 
-        std::thread([]() {
-            lm::debugio::server::run();
-        }).detach();
+        lm::debugio::server::on_draw([&](int type, const std::vector<lm::Vec3>& vs) {
+            app.glscene.add(type, vs);
+        });
 
         // --------------------------------------------------------------------
 
         app.run([&](int display_w, int display_h) {
-            // Synchronize user context with client
-            if (doSync) {
-                LM_INFO("Syncing user context");
-
-                // Reset OpenGL scene
-                app.glscene.reset();
-
-                // Create OpenGL-ready assets and register primitives
-                const auto* scene = lm::comp::get<lm::Scene>("scene");
-                scene->foreachPrimitive([&](const lm::Primitive& p) {
-                    if (p.camera) {
-                        // Reset camera parameters
-                        const auto cameraParams = p.camera->underlyingValue();
-                        app.glcamera.reset(
-                            cameraParams["eye"],
-                            cameraParams["center"],
-                            cameraParams["up"],
-                            cameraParams["vfov"]);
-                        return;
-                    }
-                    if (!p.mesh || !p.material) {
-                        return;
-                    }
-                    app.glscene.add(p.transform.M, p.mesh, p.material);
-                });
-                doSync = false;
-            }
+            // Poll events of debugio server
+            lm::debugio::server::poll();
 
             // ------------------------------------------------------------
 

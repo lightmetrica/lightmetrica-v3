@@ -38,9 +38,16 @@ class GLMaterial {
 private:
     glm::vec3 color_;
     bool wireframe_ = false;
+    bool shade_ = true;
     std::optional<GLuint> texture_;
 
 public:
+    GLMaterial(glm::vec3 color, bool wireframe, bool shade)
+        : color_(color)
+        , wireframe_(wireframe)
+        , shade_(shade)
+    {}
+
     GLMaterial(lm::Material* material) {
         if (material->key() != "material::wavefrontobj") {
             color_ = glm::vec3(0);
@@ -95,6 +102,7 @@ public:
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
         glProgramUniform3fv(name, glGetUniformLocation(name, "Color"), 1, &color_.x);
+        glProgramUniform1i(name, glGetUniformLocation(name, "Shade"), shade_ ? 1 : 0);
         if (texture_) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, *texture_);
@@ -116,10 +124,10 @@ public:
 // OpenGL mesh
 namespace MeshType {
     enum {
-        Triangles  = 1<<0,
-        LineStrip  = 1<<1,
-        Lines      = 1<<2,
-        Points     = 1<<3,
+        Triangles = 1<<0,
+        LineStrip = 1<<1,
+        Lines     = 1<<2,
+        Points    = 1<<3,
     };
 }
 class GLMesh {
@@ -133,43 +141,68 @@ private:
     GLuint vertexArray_;
 
 public:
-    GLMesh(lm::Mesh* mesh) {
-        // Mesh type
-        //type_ = prop["type"];
-        type_ = MeshType::Triangles;
-        
+
+    GLMesh(int type, const std::vector<lm::Vec3>& vs) : type_(type) {
+        std::vector<GLuint> is(vs.size());
+        std::iota(is.begin(), is.end(), 0);
+        createGLBuffers(vs, {}, {}, is);
+    }
+
+    GLMesh(lm::Mesh* mesh) : type_(MeshType::Triangles) {
         // Create OpenGL buffer objects
         std::vector<lm::Vec3> vs;
         std::vector<lm::Vec3> ns;
         std::vector<lm::Vec2> ts;
         std::vector<GLuint> is;
-        count_ = 0;
+        GLuint count = 0;
         mesh->foreachTriangle([&](int, lm::Mesh::Point p1, lm::Mesh::Point p2, lm::Mesh::Point p3) {
             vs.insert(vs.end(), { p1.p, p2.p, p3.p });
             ns.insert(ns.end(), { p1.n, p2.n, p3.n });
             ts.insert(ts.end(), { p1.t, p2.t, p3.t });
-            is.insert(is.end(), { count_, count_+1, count_+2 });
-            count_+=3;
+            is.insert(is.end(), { count, count+1, count+2 });
+            count+=3;
         });
+        createGLBuffers(vs, ns, ts, is);
+    }
 
+    ~GLMesh() {
+        glDeleteVertexArrays(1, &vertexArray_);
+        glDeleteBuffers(1, &bufferP_);
+        glDeleteBuffers(1, &bufferN_);
+        glDeleteBuffers(1, &bufferT_);
+        glDeleteBuffers(1, &bufferI_);
+    }
+
+private:
+    void createGLBuffers(
+        const std::vector<lm::Vec3>& vs,
+        const std::vector<lm::Vec3>& ns,
+        const std::vector<lm::Vec2>& ts,
+        const std::vector<GLuint>& is)
+    {
         glGenBuffers(1, &bufferP_);
         glBindBuffer(GL_ARRAY_BUFFER, bufferP_);
         glBufferData(GL_ARRAY_BUFFER, vs.size() * sizeof(lm::Vec3), vs.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         CHECK_GL_ERROR();
 
-        glGenBuffers(1, &bufferN_);
-        glBindBuffer(GL_ARRAY_BUFFER, bufferN_);
-        glBufferData(GL_ARRAY_BUFFER, ns.size() * sizeof(lm::Vec3), ns.data(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        CHECK_GL_ERROR();
+        if (!ns.empty()) {
+            glGenBuffers(1, &bufferN_);
+            glBindBuffer(GL_ARRAY_BUFFER, bufferN_);
+            glBufferData(GL_ARRAY_BUFFER, ns.size() * sizeof(lm::Vec3), ns.data(), GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            CHECK_GL_ERROR();
+        }
 
-        glGenBuffers(1, &bufferT_);
-        glBindBuffer(GL_ARRAY_BUFFER, bufferT_);
-        glBufferData(GL_ARRAY_BUFFER, ts.size() * sizeof(lm::Vec2), ts.data(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        CHECK_GL_ERROR();
+        if (!ts.empty()) {
+            glGenBuffers(1, &bufferT_);
+            glBindBuffer(GL_ARRAY_BUFFER, bufferT_);
+            glBufferData(GL_ARRAY_BUFFER, ts.size() * sizeof(lm::Vec2), ts.data(), GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            CHECK_GL_ERROR();
+        }
 
+        count_ = int(is.size());
         glGenBuffers(1, &bufferI_);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferI_);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, is.size() * sizeof(GLuint), is.data(), GL_STATIC_DRAW);
@@ -181,23 +214,19 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, bufferP_);
         glVertexAttribPointer(0, 3, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
         glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, bufferN_);
-        glVertexAttribPointer(1, 3, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, bufferT_);
-        glVertexAttribPointer(2, 2, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
-        glEnableVertexAttribArray(2);
+        if (!ns.empty()) {
+            glBindBuffer(GL_ARRAY_BUFFER, bufferN_);
+            glVertexAttribPointer(1, 3, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray(1);
+        }
+        if (!ts.empty()) {
+            glBindBuffer(GL_ARRAY_BUFFER, bufferT_);
+            glVertexAttribPointer(2, 2, LM_DOUBLE_PRECISION ? GL_DOUBLE : GL_FLOAT, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray(2);
+        }
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         CHECK_GL_ERROR();
-    }
-
-    ~GLMesh() {
-        glDeleteVertexArrays(1, &vertexArray_);
-        glDeleteBuffers(1, &bufferP_);
-        glDeleteBuffers(1, &bufferN_);
-        glDeleteBuffers(1, &bufferT_);
-        glDeleteBuffers(1, &bufferI_);
     }
 
 public:
@@ -248,6 +277,8 @@ public:
 
     // Add mesh and material pair
     void add(const lm::Mat4& transform, lm::Mesh* mesh, lm::Material* material) {
+        LM_INFO("Creating GL primitive [#{}]", primitives_.size());
+
         // Mesh
         auto* glmesh = [&]() {
             meshes_.emplace_back(new GLMesh(mesh));
@@ -266,6 +297,13 @@ public:
         
         // Primitive
         primitives_.push_back({transform, glmesh, glmaterial});
+    }
+
+    void add(int type, const std::vector<lm::Vec3>& vs) {
+        LM_INFO("Creating GL primitive [#{}]", primitives_.size());
+        meshes_.emplace_back(new GLMesh(type, vs));
+        materials_.emplace_back(new GLMaterial(glm::vec3(1,1,1), true, false));
+        primitives_.push_back({lm::Mat4(1_f), meshes_.back().get(), materials_.back().get()});
     }
 
     // Iterate primitives
@@ -396,14 +434,18 @@ public:
             layout (binding = 0) uniform sampler2D tex;
             uniform vec3 Color;
             uniform int UseTexture;
+            uniform int Shade;
             void main() {
                 fragColor.rgb = Color;
-                if (UseTexture == 0)
+                if (UseTexture == 0) {
                     fragColor.rgb = Color;
-                else
+                }
+                else {
                     fragColor.rgb = texture(tex, uv).rgb;
-                //fragColor.rgb = abs(normal);
-                fragColor.rgb *= .2+.8*max(0, dot(normal, vec3(0,0,1)));
+                }
+                if (Shade == 1) {
+                    fragColor.rgb *= .2+.8*max(0, dot(normal, vec3(0,0,1)));
+                }
                 fragColor.a = 1;
             }
         )x";
@@ -503,7 +545,7 @@ public:
     GLDisplayCamera glcamera;
 
 public:
-    bool setup(const lm::Json& opt) {
+    bool setup(const std::string& title, const lm::Json& opt) {
         // Init GLFW
         if (!glfwInit()) {
             return false;
@@ -518,7 +560,7 @@ public:
             #ifdef LM_DEBUG_MODE
             glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
             #endif
-            GLFWwindow* window = glfwCreateWindow(opt["w"], opt["h"], "interactive", nullptr, nullptr);
+            GLFWwindow* window = glfwCreateWindow(opt["w"], opt["h"], title.c_str(), nullptr, nullptr);
             if (!window) { return nullptr; }
             glfwMakeContextCurrent(window);
             glfwSwapInterval(0);
