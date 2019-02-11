@@ -54,7 +54,7 @@ enum {
 /*!
     \brief Query drawing to visual debugger.
 */
-LM_PUBLIC_API void draw(int type, const std::vector<Vec3>& vs);
+LM_PUBLIC_API void draw(int type, Vec3 color, const std::vector<Vec3>& vs);
 
 /*!
     \brief Debugio base context.
@@ -63,7 +63,7 @@ class DebugioContext : public Component {
 public:
     virtual void handleMessage(const std::string& message) { LM_UNUSED(message); }
     virtual void syncUserContext() {}
-    virtual void draw(int type, const std::vector<Vec3>& vs) { LM_UNUSED(type, vs); }
+    virtual void draw(int type, Vec3 color, const std::vector<Vec3>& vs) { LM_UNUSED(type, color, vs); }
 };
 
 /*!
@@ -95,7 +95,7 @@ LM_PUBLIC_API void on_handleMessage(const HandleMessageFunc& process);
 using SyncUserContextFunc = std::function<void()>;
 LM_PUBLIC_API void on_syncUserContext(const SyncUserContextFunc& process);
 
-using DrawFunc = std::function<void(int type, const std::vector<Vec3>& vs)>;
+using DrawFunc = std::function<void(int type, Vec3 color, const std::vector<Vec3>& vs)>;
 LM_PUBLIC_API void on_draw(const DrawFunc& process);
 
 class DebugioServerContext : public Component {

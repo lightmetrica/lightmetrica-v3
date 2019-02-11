@@ -109,11 +109,12 @@ public:
                 ? -sp2.geom.wo
                 : glm::normalize(sp2.geom.p - sp1.geom.p);
             const auto tmax = sp2.geom.infinite
-                ? Inf
+                ? Inf - 1_f
                 : [&]() {
                     const auto d = glm::distance(sp1.geom.p, sp2.geom.p);
                     return d * (1_f - Eps);
                 }();
+            // Exclude environent light from intersection test with tmax < Inf
             return !intersect(Ray{sp1.geom.p, wo}, Eps, tmax);
         };
         if (sp1.geom.infinite) {

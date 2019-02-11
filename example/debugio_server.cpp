@@ -27,7 +27,7 @@ int main() {
         lm::debugio::server::on_syncUserContext([]() {
             LM_INFO("syncUserContext");
         });
-        lm::debugio::server::on_draw([](int, const std::vector<lm::Vec3>&) {
+        lm::debugio::server::on_draw([](int, lm::Vec3, const std::vector<lm::Vec3>&) {
             LM_INFO("draw");
         });
 

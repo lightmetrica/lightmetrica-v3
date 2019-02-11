@@ -474,10 +474,13 @@ public:
             const auto f1 = fs_[fi];
             const auto f2 = fs_[fi + 1];
             const auto f3 = fs_[fi + 2];
+            const auto p1 = geo_.ps[f1.p];
+            const auto p2 = geo_.ps[f2.p];
+            const auto p3 = geo_.ps[f3.p];
             processTriangle(fi,
-                { geo_.ps[f1.p], geo_.ns[f1.n], geo_.ts[f1.t] },
-                { geo_.ps[f2.p], geo_.ns[f2.n], geo_.ts[f2.t] },
-                { geo_.ps[f3.p], geo_.ns[f3.n], geo_.ts[f3.t] });
+                { p1, f1.n<0 ? Vec3() : geo_.ns[f1.n], f1.t<0 ? Vec2() : geo_.ts[f1.t] },
+                { p2, f2.n<0 ? Vec3() : geo_.ns[f2.n], f2.t<0 ? Vec2() : geo_.ts[f2.t] },
+                { p3, f3.n<0 ? Vec3() : geo_.ns[f3.n], f3.t<0 ? Vec2() : geo_.ts[f3.t] });
         }
     }
 

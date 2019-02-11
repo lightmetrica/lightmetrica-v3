@@ -143,7 +143,10 @@ public:
     virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin, Float tmax) const override {
         const auto hit = accel_->intersect(ray, tmin, tmax);
         if (!hit) {
-            // Use environment light if available
+            // Use environment light when tmax = Inf
+            if (tmax < Inf) {
+                return {};
+            }
             if (envLight_ < 0) {
                 return {};
             }
@@ -253,7 +256,7 @@ public:
                 true
             },
             s->wo,
-            s->weight
+            s->weight / pL
         };
     }
     

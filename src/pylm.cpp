@@ -244,6 +244,18 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
+    // debugio.h
+    {
+        auto sm = m.def_submodule("debugio");
+        sm.def("init", &debugio::init);
+        sm.def("shutdown", &debugio::shutdown);
+        sm.def("handleMessage", &debugio::handleMessage);
+        sm.def("syncUserContext", &debugio::syncUserContext);
+        sm.def("draw", &debugio::draw);
+    }
+
+    // ------------------------------------------------------------------------
+
     // film.h
 
     // Film size

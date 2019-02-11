@@ -59,8 +59,8 @@ int main() {
             });
         });
 
-        lm::debugio::server::on_draw([&](int type, const std::vector<lm::Vec3>& vs) {
-            app.glscene.add(type, vs);
+        lm::debugio::server::on_draw([&](int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
+            app.glscene.add(type, color, vs);
         });
 
         // --------------------------------------------------------------------

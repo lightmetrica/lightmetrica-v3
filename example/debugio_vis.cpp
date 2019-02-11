@@ -61,17 +61,17 @@ int main(int argc, char** argv) {
 
         lm::debugio::syncUserContext();
 
-        lm::debugio::draw(lm::debugio::LineStrip, {
+        lm::debugio::draw(lm::debugio::LineStrip, lm::Vec3(1), {
             lm::Vec3(0,0,0),
             lm::Vec3(0,0,10),
             lm::Vec3(0,10,0)
         });
-        lm::debugio::draw(lm::debugio::Triangles, {
+        lm::debugio::draw(lm::debugio::Triangles, lm::Vec3(1), {
             lm::Vec3(1,0,0),
             lm::Vec3(1,0,10),
             lm::Vec3(1,10,0)
         });
-        lm::debugio::draw(lm::debugio::Points, {
+        lm::debugio::draw(lm::debugio::Points, lm::Vec3(1), {
             lm::Vec3(2,0,0),
             lm::Vec3(2,0,10),
             lm::Vec3(2,10,0)

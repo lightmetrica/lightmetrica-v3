@@ -299,10 +299,10 @@ public:
         primitives_.push_back({transform, glmesh, glmaterial});
     }
 
-    void add(int type, const std::vector<lm::Vec3>& vs) {
+    void add(int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
         LM_INFO("Creating GL primitive [#{}]", primitives_.size());
         meshes_.emplace_back(new GLMesh(type, vs));
-        materials_.emplace_back(new GLMaterial(glm::vec3(1,1,1), true, false));
+        materials_.emplace_back(new GLMaterial(color, true, false));
         primitives_.push_back({lm::Mat4(1_f), meshes_.back().get(), materials_.back().get()});
     }
 

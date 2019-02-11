@@ -63,11 +63,11 @@ public:
         const auto st = sin(t);
         const auto p  = 2 * Pi * u[0] + rot_;
         const auto wo = -Vec3(st * sin(p), cos(t), st * cos(p));
-        const auto pL = pdf(geom, {}, {}, wo);
+        const auto geomL = PointGeometry::makeInfinite(wo);
+        const auto pL = pdf(geom, geomL, {}, wo);
         if (pL == 0_f) {
             return {};
         }
-        const auto geomL = PointGeometry::makeInfinite(wo);
         const auto Le = eval(geomL, wo);
         return LightRaySample{
             geomL,

@@ -26,7 +26,7 @@ int main() {
         lm::debugio::syncUserContext();
         
         // Debugio supports API of visual debugging
-        lm::debugio::draw(0, {});
+        lm::debugio::draw(0, {}, {});
 
         // Shutdown the framework
         lm::shutdown();

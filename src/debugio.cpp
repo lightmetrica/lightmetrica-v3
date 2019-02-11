@@ -89,9 +89,9 @@ public:
         call(Command::syncUserContext, ss.str());
     }
 
-    virtual void draw(int type, const std::vector<Vec3>& vs) override {
+    virtual void draw(int type, Vec3 color, const std::vector<Vec3>& vs) override {
         std::stringstream ss;
-        serial::save(ss, type, vs);
+        serial::save(ss, type, color, vs);
         call(Command::draw, ss.str());
     }
 };
@@ -182,9 +182,10 @@ private:
             }
             case Command::draw: {
                 int type;
+                Vec3 color;
                 std::vector<Vec3> vs;
-                serial::load(is, type, vs);
-                on_draw_(type, vs);
+                serial::load(is, type, color, vs);
+                on_draw_(type, color, vs);
                 break;
             }
         }
@@ -209,15 +210,21 @@ LM_PUBLIC_API void shutdown() {
 }
 
 LM_PUBLIC_API void handleMessage(const std::string& message) {
-    Instance::get().cast<DebugioContext>()->handleMessage(message);
+    if (Instance::initialized()) {
+        Instance::get().cast<DebugioContext>()->handleMessage(message);
+    }
 }
 
 LM_PUBLIC_API void syncUserContext() {
-    Instance::get().cast<DebugioContext>()->syncUserContext();
+    if (Instance::initialized()) {
+        Instance::get().cast<DebugioContext>()->syncUserContext();
+    }
 }
 
-LM_PUBLIC_API void draw(int type, const std::vector<Vec3>& vs) {
-    Instance::get().cast<DebugioContext>()->draw(type, vs);
+LM_PUBLIC_API void draw(int type, Vec3 color, const std::vector<Vec3>& vs) {
+    if (Instance::initialized()) {
+        Instance::get().cast<DebugioContext>()->draw(type, color, vs);
+    }
 }
 
 LM_NAMESPACE_BEGIN(server)

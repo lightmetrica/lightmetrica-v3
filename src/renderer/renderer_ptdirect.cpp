@@ -10,6 +10,7 @@
 #include <lm/film.h>
 #include <lm/parallel.h>
 #include <lm/serial.h>
+#include <lm/debugio.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -50,6 +51,10 @@ public:
             const int x = int(index % w);
             const int y = int(index / w);
 
+#if 0
+            long long count = 0;
+#endif
+
             // Estimate pixel contribution
             Vec3 L(0_f);
             for (long long i = 0; i < spp_; i++) {
@@ -85,8 +90,16 @@ public:
                         if (!scene->visible(s->sp, sL->sp)) {
                             return;
                         }
+#if 0
+                        if (length == 1 && count < 1) {
+                            debugio::draw(debugio::Lines, Vec3(Float(x) / w, Float(y) / h, 0), {
+                                s->sp.geom.p,
+                                s->sp.geom.p - sL->wo });
+                            count++;
+                        }
+#endif
                         // Evaluate and accumulate contribution
-                        const auto fs = scene->evalBsdf(s->sp, wi, sL->wo);
+                        const auto fs = scene->evalBsdf(s->sp, wi, -sL->wo);
                         L += throughput * fs * sL->weight;
                     }();
 
@@ -124,10 +137,6 @@ public:
             L /= spp_;
 
             // Set color of the pixel
-            //film_->setPixel(x, y, L);
-            if (!math::isZero(L)) {
-                __debugbreak();
-            }
             film_->setPixel(x, y, L);
         });
     }
