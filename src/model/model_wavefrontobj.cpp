@@ -230,8 +230,7 @@ private:
     };
 
     // Parses .mtl file
-    bool loadmtl(std::string p, const ProcessMaterialFunc& processMaterial, const ProcessTextureFunc& processTexture)
-    {
+    bool loadmtl(std::string p, const ProcessMaterialFunc& processMaterial, const ProcessTextureFunc& processTexture) {
         LM_INFO("Loading MTL file [path='{}']", p);
         std::ifstream f(p);
         if (!f) {
@@ -269,6 +268,7 @@ private:
                 auto it = tsmap_.find(id);
                 if (it == tsmap_.end()) {
                     // Register a new texture
+                    tsmap_[id] = int(ts_.size());
                     ts_.push_back({id, (std::filesystem::path(p).remove_filename()/name).string()});
                 }
             }
