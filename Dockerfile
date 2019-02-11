@@ -60,6 +60,18 @@ WORKDIR /fmt
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DFMT_DOC=OFF -DFMT_TEST=OFF && \
     cmake --build _build --target install
 
+WORKDIR /
+RUN git clone --depth 1 --branch v4.3.0 https://github.com/zeromq/libzmq.git
+WORKDIR /libzmq
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DWITH_PERF_TOOL=OFF -DBUILD_TESTS=OFF -DENABLE_CPACK=OFF && \
+    cmake --build _build --target install
+
+WORKDIR /
+RUN git clone --depth 1 --branch v4.3.0 https://github.com/zeromq/cppzmq.git
+WORKDIR /cppzmq
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DCPPZMQ_BUILD_TESTS=OFF && \
+    cmake --build _build --target install
+
 COPY . /lightmetrica-v3
 WORKDIR /lightmetrica-v3
 RUN cmake -G "Ninja" -H. -B_build -DCMAKE_BUILD_TYPE=Release && \

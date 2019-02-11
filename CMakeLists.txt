@@ -123,8 +123,9 @@ if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/libzmq" AND EXISTS "${LM_
     # because it internally tries to find ZeroMQ package
     # where we already loaded via add_subdirectory.
     set(_CPPZMQ_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq")
-    add_library(cppzmq INTERFACE)
-    target_include_directories(cppzmq INTERFACE "${_CPPZMQ_DIR}")
+    add_library(cppzmq-static INTERFACE)
+    target_link_libraries(cppzmq-static INTERFACE libzmq-static)
+    target_include_directories(cppzmq-static INTERFACE "${_CPPZMQ_DIR}")
 else()
     find_package(ZeroMQ REQUIRED)
     find_package(cppzmq REQUIRED)
