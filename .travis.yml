@@ -65,9 +65,9 @@ matrix:
     filter_secrets: false
     before_install:
     - |
+      choco install openssl.light
       choco install miniconda3
       export PATH="/c/Tools/miniconda3/Scripts:$PATH"
-      conda config --set ssl_verify no
       conda update -y -n base -c defaults conda
       conda create -y -n lm3 python=3.6 
       source activate lm3
