@@ -89,7 +89,7 @@ public:
 
         // Create directory if not found
         const auto parent = std::filesystem::path(outpath).parent_path();
-        if (!std::filesystem::exists(parent)) {
+        if (!parent.empty() && !std::filesystem::exists(parent)) {
             LM_INFO("Creating directory [path='{}']", parent.string());
             if (!std::filesystem::create_directories(parent)) {
                 LM_INFO("Failed to create directory [path='{}']", parent.string());

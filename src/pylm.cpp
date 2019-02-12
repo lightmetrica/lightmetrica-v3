@@ -100,13 +100,16 @@ static void bind(pybind11::module& m) {
     m.def("init", &init);
     m.def("shutdown", &shutdown);
     m.def("asset", &asset);
-    //m.def("getAsset", (Component* (*)(const std::string&)) &getAsset, pybind11::return_value_policy::reference);
     m.def("primitive", &primitive);
     m.def("primitives", &primitives);
     m.def("build", &build);
-    m.def("render", &render);
+    m.def("renderer", &renderer);
+    m.def("render", (void(*)(bool))&render);
+    m.def("render", (void(*)(const std::string&, const Json&))&render);
     m.def("save", &save);
     m.def("buffer", &buffer);
+    m.def("serialize", (void(*)(const std::string&))&serialize);
+    m.def("deserialize", (void(*)(const std::string&))&deserialize);
 
     // ------------------------------------------------------------------------
 
@@ -241,6 +244,18 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
+    // debugio.h
+    {
+        auto sm = m.def_submodule("debugio");
+        sm.def("init", &debugio::init);
+        sm.def("shutdown", &debugio::shutdown);
+        sm.def("handleMessage", &debugio::handleMessage);
+        sm.def("syncUserContext", &debugio::syncUserContext);
+        sm.def("draw", &debugio::draw);
+    }
+
+    // ------------------------------------------------------------------------
+
     // film.h
 
     // Film size
@@ -293,37 +308,46 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
-    // scene.h
+    // surface.h
+    
+    pybind11::class_<PointGeometry>(m, "PointGeometry")
+        .def(pybind11::init<>())
+        .def_readwrite("degenerated", &PointGeometry::degenerated)
+        .def_readwrite("infinite", &PointGeometry::infinite)
+        .def_readwrite("p", &PointGeometry::p)
+        .def_readwrite("wo", &PointGeometry::wo)
+        .def_readwrite("t", &PointGeometry::t)
+        .def_readwrite("u", &PointGeometry::u)
+        .def_readwrite("v", &PointGeometry::v)
+        .def_static("makeDegenerated", &PointGeometry::makeDegenerated)
+        .def_static("makeInfinite", &PointGeometry::makeInfinite)
+        .def_static("makeOnSurface", (PointGeometry(*)(Vec3, Vec3, Vec2))&PointGeometry::makeOnSurface)
+        .def_static("makeOnSurface", (PointGeometry(*)(Vec3, Vec3))&PointGeometry::makeOnSurface)
+        .def("opposite", &PointGeometry::opposite)
+        .def("orthonormalBasis", &PointGeometry::orthonormalBasis);
 
-    // Surface point
     pybind11::class_<SurfacePoint>(m, "SurfacePoint")
         .def(pybind11::init<>())
         .def_readwrite("primitive", &SurfacePoint::primitive)
         .def_readwrite("comp", &SurfacePoint::comp)
-        .def_readwrite("degenerated", &SurfacePoint::degenerated)
-        .def_readwrite("p", &SurfacePoint::p)
-        .def_readwrite("n", &SurfacePoint::n)
-        .def_readwrite("t", &SurfacePoint::t)
-        .def_readwrite("u", &SurfacePoint::u)
-        .def_readwrite("v", &SurfacePoint::v)
-        .def_readwrite("endpoint", &SurfacePoint::endpoint)
-        .def("opposite", &SurfacePoint::opposite)
-        .def("orthonormalBasis", &SurfacePoint::orthonormalBasis);
-    m.def("geometryTerm", &geometryTerm);
-    
-    // RaySample
+        .def_readwrite("geom", &SurfacePoint::geom)
+        .def_readwrite("endpoint", &SurfacePoint::endpoint);
+
+    {
+        auto sm = m.def_submodule("surface");
+        sm.def("geometryTerm", &surface::geometryTerm);
+    }
+
+    // ------------------------------------------------------------------------
+
+    // scene.h
+
     pybind11::class_<RaySample>(m, "RaySample")
         .def_readwrite("sp", &RaySample::sp)
         .def_readwrite("wo", &RaySample::wo)
-        .def_readwrite("weight", &RaySample::weight);
+        .def_readwrite("weight", &RaySample::weight)
+        .def("ray", &RaySample::ray);
 
-    // LightSample
-    pybind11::class_<LightSample>(m, "LightSample")
-        .def_readwrite("wo", &LightSample::wo)
-        .def_readwrite("d", &LightSample::d)
-        .def_readwrite("weight", &LightSample::weight);
-
-    // Scene
     class Scene_Py final : public Scene {
         virtual bool construct(const Json& prop) override {
             PYBIND11_OVERLOAD(bool, Scene, construct, prop);
@@ -336,6 +360,9 @@ static void bind(pybind11::module& m) {
         }
         virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, foreachTriangle, processTriangle);
+        }
+        virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, foreachPrimitive, processPrimitive);
         }
         virtual void build(const std::string& name, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
@@ -358,8 +385,14 @@ static void bind(pybind11::module& m) {
         virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, samplePrimaryRay, rng, window);
         }
-        virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<LightSample>, Scene, sampleLight, rng, sp);
+        virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleLight, rng, sp);
+        }
+        virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, wi, wo);
+        }
+        virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdfLight, sp, spL, wo);
         }
         virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalBsdf, sp, wi, wo);
@@ -376,6 +409,7 @@ static void bind(pybind11::module& m) {
         .def("loadPrimitive", &Scene::loadPrimitive)
         .def("loadPrimitives", &Scene::loadPrimitives)
         .def("foreachTriangle", &Scene::foreachTriangle)
+        .def("foreachPrimitive", &Scene::foreachPrimitive)
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect)
         .def("isLight", &Scene::isLight)

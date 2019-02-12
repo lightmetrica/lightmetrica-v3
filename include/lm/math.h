@@ -9,10 +9,13 @@
 
 #pragma warning(push)
 #pragma warning(disable:4201)  // nonstandard extension used: nameless struct/union
+#pragma warning(disable:4127)  // conditional expression is constant
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #pragma warning(pop)
 
 #include <tuple>
@@ -338,10 +341,10 @@ struct Dist2 {
         \param rn Random number generator.
         \return Sampled position.
     */
-    std::tuple<Float, Float> samp(Rng& rn) const {
+    Vec2 samp(Rng& rn) const {
         const int y = m.samp(rn);
         const int x = ds[y].samp(rn);
-        return {(x + rn.u()) / w, (y + rn.u()) / h};
+        return Vec2((x + rn.u()) / w, (y + rn.u()) / h);
     }
 };
 
@@ -428,6 +431,15 @@ static Vec3 reflection(Vec3 w, Vec3 n) {
     return 2_f * glm::dot(w, n) * n - w;
 }
 
+
+/*!
+    \brief Result of refraction() function.
+*/
+struct RefractionResult {
+    Vec3 wt;        // Refracted direction
+    bool total;     // True if total internal reflection happens
+};
+
 /*!
     \brief Refracted direction.
     \param wi Incident direction.
@@ -435,10 +447,13 @@ static Vec3 reflection(Vec3 w, Vec3 n) {
     \param eta Relative ior.
     \return Refracted direction.
 */
-static std::optional<Vec3> refraction(Vec3 wi, Vec3 n, Float eta) {
+static RefractionResult refraction(Vec3 wi, Vec3 n, Float eta) {
     const auto t = glm::dot(wi, n);
     const auto t2 = 1_f - eta*eta*(1_f-t*t);
-    return t2 > 0_f ? eta*(n*t-wi)-n*safeSqrt(t2) : std::optional<Vec3>{};
+    if (t2 <= 0_f) {
+        return {{}, true};
+    }
+    return {eta*(n*t-wi)-n*safeSqrt(t2), false};
 }
 
 /*!
@@ -452,6 +467,13 @@ static Vec3 sampleCosineWeighted(Rng& rng) {
     const auto x = r * std::cos(t);
     const auto y = r * std::sin(t);
     return { x, y, safeSqrt(1_f - x*x - y*y) };
+}
+
+/*!
+    \brief Balance heuristics.
+*/
+static Float balanceHeuristic(Float p1, Float p2) {
+    return p1 / (p1 + p2);
 }
 
 /*!
@@ -471,8 +493,8 @@ LM_NAMESPACE_END(math)
     \brief Transform.
 */
 struct Transform {
-    Mat4 M;                //!< Transform associated to the primitive
-    Mat3 normalM;        //!< Transform for normals
+    Mat4 M;             //!< Transform associated to the primitive
+    Mat3 normalM;       //!< Transform for normals
     Float J;            //!< J := |det(M_lin)| where M_lin is linear component of M
 
     template <typename Archive>
@@ -480,7 +502,7 @@ struct Transform {
         ar(M, normalM, J);
     }
 
-    Transform() {}
+    Transform() = default;
 
     /*!
         \brief Construct the transform with 4x4 transformation matrix.

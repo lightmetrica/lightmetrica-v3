@@ -7,9 +7,9 @@
 #include <lm/camera.h>
 #include <lm/film.h>
 #include <lm/json.h>
-#include <lm/scene.h>
 #include <lm/user.h>
 #include <lm/serial.h>
+#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -29,14 +29,19 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Camera_Pinhole final : public Camera {
 private:
     Film* film_;      // Underlying film
+
     Vec3 position_;   // Camera position
+    Vec3 center_;     // Lookat position
+    Vec3 up_;         // Up vector
+
     Vec3 u_, v_, w_;  // Basis for camera coordinates
+    Float vfov_;      // Vertical field of view
     Float tf_;        // Half of the screen height at 1 unit forward from the position
     Float aspect_;    // Aspect ratio
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, position_, u_, v_, w_, tf_, aspect_);
+        ar(film_, position_, center_, up_, u_, v_, w_, vfov_, tf_, aspect_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
@@ -49,6 +54,15 @@ public:
         return film_;
     }
 
+    virtual Json underlyingValue(const std::string&) const override {
+        return {
+            {"eye", position_},
+            {"center", center_},
+            {"up", up_},
+            {"vfov", vfov_}
+        };
+    }
+
     virtual bool construct(const Json& prop) override {
         film_ = getAsset<Film>(prop["film"]);       // Film
         if (!film_) {
@@ -56,18 +70,17 @@ public:
         }
         aspect_ = film_->aspectRatio();             // Aspect ratio
         position_ = prop["position"];               // Camera position
-        const Vec3 center = prop["center"];         // Look-at position
-        const Vec3 up = prop["up"];                 // Up vector
-        const Float fv = prop["vfov"];              // Vertical FoV
-        tf_ = tan(fv * Pi / 180_f * .5_f);          // Precompute half of screen height
-        w_ = glm::normalize(position_ - center);    // Compute basis
-        u_ = glm::normalize(glm::cross(up, w_));
+        center_ = prop["center"];                   // Look-at position
+        up_ = prop["up"];                           // Up vector
+        vfov_ = prop["vfov"];                       // Vertical FoV
+        tf_ = tan(vfov_ * Pi / 180_f * .5_f);       // Precompute half of screen height
+        w_ = glm::normalize(position_ - center_);   // Compute basis
+        u_ = glm::normalize(glm::cross(up_, w_));
         v_ = cross(w_, u_);
         return true;
     }
 
-    virtual bool isSpecular(const SurfacePoint& sp) const override {
-        LM_UNUSED(sp);
+    virtual bool isSpecular(const PointGeometry&) const override {
         return false;
     }
 
@@ -77,17 +90,17 @@ public:
         return { position_, u_*d.x+v_*d.y+w_*d.z };
     }
 
-    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
+    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
         const auto [x, y, w, h] = window.data.data;
-        return RaySample(
-            SurfacePoint(position_),
+        return CameraRaySample{
+            PointGeometry::makeDegenerated(position_),
             primaryRay({x+w*rng.u(), y+h*rng.u()}).d,
             Vec3(1_f)
-        );
+        };
     }
 
-    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wo) const override {
-        LM_UNUSED(sp, wo);
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
+        LM_UNUSED(geom, wo);
         LM_TBA_RUNTIME();
     }
 };

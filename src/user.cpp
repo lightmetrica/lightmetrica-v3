@@ -15,6 +15,7 @@
 #include <lm/json.h>
 #include <lm/progress.h>
 #include <lm/serial.h>
+#include <lm/debugio.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -35,6 +36,7 @@ public:
     }
 
     ~UserContext_Default() {
+        debugio::shutdown();
         progress::shutdown();
         parallel::shutdown();
         log::shutdown();
@@ -43,22 +45,36 @@ public:
 
 public:
     virtual bool construct(const Json& prop) override {
+        // Exception subsystem
         exception::init();
+
+        // Logger subsystem
         log::init(json::valueOr<std::string>(prop, "logger", log::DefaultType));
+
+        // Initial message
+        // This must be called after logger subsystem is initialized.
         LM_INFO("Initializing Lightmetrica [version='{}']");
+
+        // Parallel subsystem
         parallel::init("parallel::openmp", prop);
-        {
-            auto it = prop.find("progress");
-            if (it != prop.end()) {
-                it = it->begin();
-                progress::init(it.key(), it.value());
-            }
-            else {
-                progress::init(progress::DefaultType);
-            }
+        if (auto it = prop.find("progress");  it != prop.end()) {
+            it = it->begin();
+            progress::init(it.key(), it.value());
         }
-        assets_ = comp::create<Assets>("assets::default", makeLoc(loc(), "assets"));
-        scene_  = comp::create<Scene>("scene::default", makeLoc(loc(), "scene"));
+        else {
+            progress::init(progress::DefaultType);
+        }
+
+        // Debugio subsystem
+        // This subsystem is initialized only if the parameter is given
+        if (auto it = prop.find("debugio"); it != prop.end()) {
+            it = it->begin();
+            debugio::init(it.key(), it.value());
+        }
+
+        // Create assets and scene
+        reset();
+
         return true;
     }
 
@@ -84,6 +100,14 @@ public:
     }
 
 public:
+    virtual void reset() override {
+        assets_ = comp::create<Assets>("assets::default", makeLoc(loc(), "assets"));
+        assert(assets_);
+        scene_ = comp::create<Scene>("scene::default", makeLoc(loc(), "scene"));
+        assert(scene_);
+        renderer_.reset();
+    }
+
     virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) override {
         if (!assets_->loadAsset(name, implKey, prop)) {
             THROW_RUNTIME_ERROR();
@@ -106,14 +130,19 @@ public:
         scene_->build(accelName, prop);
     }
 
-    virtual void render(const std::string& rendererName, const Json& prop) override {
+    virtual void renderer(const std::string& rendererName, const Json& prop) override {
         renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc(loc(), "renderer"), prop);
         if (!renderer_) {
             LM_ERROR("Failed to render [renderer='{}']", rendererName);
             THROW_RUNTIME_ERROR();
         }
-        LM_INFO("Starting render [name='{}']", rendererName);
-        LM_INDENT();
+    }
+
+    virtual void render(bool verbose) override {
+        if (verbose) {
+            LM_INFO("Starting render [name='{}']", renderer_->key());
+            LM_INDENT();
+        }
         renderer_->render(scene_.get());
     }
 
@@ -169,6 +198,10 @@ LM_PUBLIC_API void shutdown() {
     Instance::shutdown();
 }
 
+LM_PUBLIC_API void reset() {
+    Instance::get().reset();
+}
+
 LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop) {
     Instance::get().asset(name, implKey, prop);
 }
@@ -185,8 +218,12 @@ LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
     Instance::get().build(accelName, prop);
 }
 
-LM_PUBLIC_API void render(const std::string& rendererName, const Json& prop) {
-    Instance::get().render(rendererName, prop);
+LM_PUBLIC_API void renderer(const std::string& rendererName, const Json& prop) {
+    Instance::get().renderer(rendererName, prop);
+}
+
+LM_PUBLIC_API void render(bool verbose) {
+    Instance::get().render(verbose);
 }
 
 LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath) {

@@ -18,10 +18,10 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 # Build options
-option(LM_USE_EXTERNAL_DIR "Use in-project external directory to find dependencies" ON)
-option(LM_INSTALL          "Enable install"  ${LM_MASTER_PROJECT})
-option(LM_BUILD_TESTS      "Enable tests"    ${LM_MASTER_PROJECT})
-option(LM_BUILD_EXAMPLES   "Enable examples" ${LM_MASTER_PROJECT})
+option(LM_USE_EXTERNAL_DIR   "Use in-project external directory to find dependencies" ON)
+option(LM_INSTALL            "Enable install"  ${LM_MASTER_PROJECT})
+option(LM_BUILD_TESTS        "Enable tests"    ${LM_MASTER_PROJECT})
+option(LM_BUILD_EXAMPLES     "Enable examples" ${LM_MASTER_PROJECT})
 
 # -----------------------------------------------------------------------------
 
@@ -104,6 +104,68 @@ if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/cereal")
     add_subdirectory(external/cereal)
 else()
     find_package(cereal REQUIRED)
+endif()
+
+# libzmq & cppzmq
+# https://github.com/zeromq/libzmq
+# https://github.com/zeromq/cppzmq
+if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/libzmq" AND EXISTS "${LM_EXTERNAL_DIR}/cppzmq")
+    # libzmq
+    option(ENABLE_DRAFTS "" OFF)
+    option(BUILD_SHARED "" OFF)
+    option(WITH_PERF_TOOL "" OFF)
+    option(BUILD_TESTS "" OFF)
+    option(ENABLE_CPACK "" OFF)
+    add_subdirectory(external/libzmq)
+
+    # cppzmq
+    # We workaround cppzmq's CMakeLists.txt
+    # because it internally tries to find ZeroMQ package
+    # where we already loaded via add_subdirectory.
+    set(_CPPZMQ_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq")
+    add_library(cppzmq-static INTERFACE)
+    target_link_libraries(cppzmq-static INTERFACE libzmq-static)
+    target_include_directories(cppzmq-static INTERFACE "${_CPPZMQ_DIR}")
+else()
+    find_package(ZeroMQ REQUIRED)
+    find_package(cppzmq REQUIRED)
+endif()
+
+# -----------------------------------------------------------------------------
+
+if (WIN32)
+    # OpenGL
+    find_package(OpenGL REQUIRED)
+
+    # gl3w
+    add_library(gl3w STATIC "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/GL/gl3w.c")
+    target_include_directories(gl3w PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/ext")
+    target_link_libraries(gl3w PUBLIC OpenGL::GL)
+
+    # GLFW
+    if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/glfw")
+        option(GLFW_BUILD_DOCS "" OFF)
+        option(GLFW_BUILD_TESTS "" OFF)
+        option(GLFW_BUILD_EXAMPLES "" OFF)
+        option(GLFW_INSTALL "" OFF)
+        add_subdirectory(${LM_EXTERNAL_DIR}/glfw)
+    else()
+        find_package(glfw REQUIRED)
+    endif()
+
+    # imgui
+    set(_IMGUI_DIR "${LM_EXTERNAL_DIR}/imgui")
+    add_library(imgui STATIC
+        "${_IMGUI_DIR}/imgui.cpp"
+        "${_IMGUI_DIR}/imgui_draw.cpp"
+        "${_IMGUI_DIR}/imgui_widgets.cpp"
+        "${_IMGUI_DIR}/imgui_demo.cpp"
+        "${_IMGUI_DIR}/examples/imgui_impl_glfw.cpp"
+        "${_IMGUI_DIR}/examples/imgui_impl_opengl3.cpp")
+    target_link_libraries(imgui PUBLIC glm glfw gl3w OpenGL::GL)
+    target_include_directories(imgui PUBLIC
+        "${_IMGUI_DIR}"
+        "${_IMGUI_DIR}/examples")
 endif()
 
 # -----------------------------------------------------------------------------

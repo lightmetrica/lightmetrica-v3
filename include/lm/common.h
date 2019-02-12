@@ -250,6 +250,7 @@ class Light;              // light.h
 class Camera;             // camera.h
 struct FilmBuffer;        // film.h
 class Film;
+struct PointGeometry;   // surface.h
 struct SurfacePoint;      // scene.h
 struct RaySample;
 struct LightSample;

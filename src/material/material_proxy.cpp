@@ -5,7 +5,6 @@
 
 #include <pch.h>
 #include <lm/material.h>
-#include <lm/scene.h>
 #include <lm/user.h>
 #include <lm/serial.h>
 
@@ -24,7 +23,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
    but we also need to create a new instance.
 \endrst
 */
-class Material_Proxy : public Material {
+class Material_Proxy final : public Material {
 private:
     Material* ref_;
 
@@ -43,24 +42,24 @@ public:
         return ref_;
     }
 
-    virtual bool isSpecular(const SurfacePoint& sp) const override {
-        return ref_->isSpecular(sp);
+    virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
+        return ref_->isSpecular(geom, comp);
     }
 
-    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
-        return ref_->sampleRay(rng, sp, wi);
+    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+        return ref_->sample(rng, geom, wi);
     }
 
-    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const override {
-        return ref_->reflectance(sp);
+    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
+        return ref_->reflectance(geom, comp);
     }
 
-    Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-        return ref_->pdf(sp, wi, wo);
+    Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+        return ref_->pdf(geom, comp, wi, wo);
     }
 
-    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-        return ref_->eval(sp, wi, wo);
+    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+        return ref_->eval(geom, comp, wi, wo);
     }
 };
 

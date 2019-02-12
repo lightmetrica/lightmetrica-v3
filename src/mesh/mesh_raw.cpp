@@ -56,10 +56,13 @@ public:
 
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
         for (int fi = 0; fi < int(fs_.size()); fi += 3) {
-            const auto p1 = ps_[fs_[fi].p];
-            const auto p2 = ps_[fs_[fi + 1].p];
-            const auto p3 = ps_[fs_[fi + 2].p];
-            processTriangle(fi, p1, p2, p3);
+            const auto f1 = fs_[fi];
+            const auto f2 = fs_[fi + 1];
+            const auto f3 = fs_[fi + 2];
+            processTriangle(fi,
+                { ps_[f1.p], ns_[f1.n], ts_[f1.t] },
+                { ps_[f2.p], ns_[f2.n], ts_[f2.t] },
+                { ps_[f3.p], ns_[f3.n], ts_[f3.t] });
         }
     }
 

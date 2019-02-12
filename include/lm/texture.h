@@ -14,14 +14,42 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
+    \brief Texture size.
+*/
+struct TextureSize {
+    int w;
+    int h;
+};
+
+/*!
+    \brief Texture buffer.
+*/
+struct TextureBuffer {
+    int w;
+    int h;
+    Float* data;
+};
+
+
+/*!
     \brief Texture component interface.
 */
 class Texture : public Component {
 public:
     /*!
+        \brief Get size of the texture.
+    */
+    virtual TextureSize size() const = 0;
+
+    /*!
         \brief Evaluate color component of the texture.
     */
     virtual Vec3 eval(Vec2 t) const = 0;
+
+    /*!
+        \brief Evaluate color component of the texture by pixel coordinates.
+    */
+    virtual Vec3 evalByPixelCoords(int x, int y) const = 0;
 
     /*!
         \brief Evaluate alpha component of the texture.
@@ -32,6 +60,11 @@ public:
         \brief Check if texture has alpha component.
     */
     virtual bool hasAlpha() const { return false; }
+
+    /*!
+        \brief Get buffer of the texture.
+    */
+    virtual TextureBuffer buffer() { return {}; }
 };
 
 /*!

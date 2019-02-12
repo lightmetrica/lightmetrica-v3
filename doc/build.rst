@@ -34,12 +34,16 @@ The following commands illustrates the steps.
 .. code-block:: console
 
    $ cd external
-   $ git clone --depth 1 git@github.com:pybind/pybind11.git
-   $ git clone --depth 1 git@github.com:nlohmann/json.git
-   $ git clone --depth 1 git@github.com:g-truc/glm.git
-   $ git clone --depth 1 git@github.com:onqtam/doctest.git
-   $ git clone --depth 1 git@github.com:fmtlib/fmt.git
-   $ git clone --depth 1 git@github.com:USCiLab/cereal.git
+   $ git clone --depth 1 --branch v2.2.4 https://github.com/pybind/pybind11.git
+   $ git clone --depth 1 --branch v3.5.0 https://github.com/nlohmann/json.git
+   $ git clone --depth 1 --branch 0.9.9.3 https://github.com/g-truc/glm.git
+   $ git clone --depth 1 --branch v1.2.2 https://github.com/USCiLab/cereal.git
+   $ git clone --depth 1 --branch 2.2.0 https://github.com/onqtam/doctest.git
+   $ git clone --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git
+   $ git clone --depth 1 --branch v4.3.1 https://github.com/zeromq/libzmq.git
+   $ git clone --depth 1 --branch v4.3.0 https://github.com/zeromq/cppzmq.git
+   $ git clone --depth 1 --branch v1.67 https://github.com/ocornut/imgui.git
+   $ git clone --depth 1 --branch 3.2.1 https://github.com/glfw/glfw.git
 
 .. note::
    This strategy internally uses on CMake's ``add_subdirectory`` to find dependencies.
@@ -95,6 +99,12 @@ Tested with GCC 8.3 and `Ninja`_. The following commands generates the binaries 
    $ mkdir build && cd build
    $ cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release ..
    $ ninja
+
+.. note::
+    
+    The option ``-DCMAKE_BUILD_TYPE=Release`` is necessary because
+    CMake's default is ``Debug`` in Linux environment.
+   
 
 Additionally, execute the following command to install Lightmetrica to your system. If you want to change installation directory, add ``-DCMAKE_INSTALL_PREFIX=<install dir>`` to the ``cmake`` command.
 
@@ -184,7 +194,7 @@ Install dependencies
    $ pip install tqdm 
 
 Move to your working directory, and create ``.lmenv`` file
-in which we describe the paths to the binary and scene directories of the framework.
+where we describe the paths to the binary and scene directories of the framework.
 Example of ``.lmenv`` file:
 
 .. code-block:: json
@@ -221,7 +231,7 @@ and [3] imports the framework as an alias ``lm``:
 .. note::
 
    IPython kernel locks the loaded c extensions
-   and it prevents the shared libraries of the framework being recompiled,
+   and prevents the shared libraries of the framework from being recompiled,
    until the kernel is shut down.
    To improve the efficiency of the workflow,
    we provide ``%update_lm_modules <configuration>`` line magic function.

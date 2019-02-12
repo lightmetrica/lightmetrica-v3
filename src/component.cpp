@@ -171,7 +171,7 @@ public:
 
         fs::path path(p);
 
-        LM_INFO("Loading '{}'", path.filename().string());
+        LM_INFO("Loading plugin [name='{}']", path.filename().string());
         LM_INDENT();
 
         // Load plugin

@@ -5,13 +5,13 @@
 
 #include <pch.h>
 #include <lm/material.h>
-#include <lm/scene.h>
 #include <lm/json.h>
 #include <lm/serial.h>
+#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-class Material_Glossy : public Material {
+class Material_Glossy final : public Material {
 private:
     Vec3 Ks_;        // Specular reflectance
     Float ax_, ay_;  // Roughness (anisotropic)
@@ -30,62 +30,58 @@ public:
     }
 
 public:
-    virtual bool isSpecular(const SurfacePoint& sp) const override {
-        LM_UNUSED(sp);
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return false;
     }
 
-    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
-        const auto [n, u, v] = sp.orthonormalBasis(wi);
+    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+        const auto [n, u, v] = geom.orthonormalBasis(wi);
         const auto u1 = rng.u() * 2_f * Pi;
         const auto u2 = rng.u();
         const auto wh = glm::normalize(math::safeSqrt(u2/(1_f-u2))*(ax_*glm::cos(u1)*u+ay_*glm::sin(u1)*v)+n);
         const auto wo = math::reflection(wi, wh);
-        if (sp.opposite(wi, wo)) {
+        if (geom.opposite(wi, wo)) {
             return {};
         }
-        return RaySample(
-            sp,
+        return MaterialDirectionSample{
             wo,
-            eval(sp, wi, wo) / pdf(sp, wi, wo)
-        );
+            SurfaceComp::DontCare,
+            eval(geom, {}, wi, wo) / pdf(geom, {}, wi, wo)
+        };
     }
 
-    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const {
-        LM_UNUSED(sp);
+    virtual std::optional<Vec3> reflectance(const PointGeometry&, int) const override {
         return Ks_;
     }
 
-    virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {
-        if (sp.opposite(wi, wo)) {
+    virtual Float pdf(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+        if (geom.opposite(wi, wo)) {
             return 0_f;
         }
         const auto wh = glm::normalize(wi + wo);
-        const auto [n, u, v] = sp.orthonormalBasis(wi);
-        return GGX_D(wh, u, v, n) * glm::dot(wh, n)
-            / (4_f * glm::dot(wo, wh) * glm::dot(wo, n));
+        const auto [n, u, v] = geom.orthonormalBasis(wi);
+        return normalDist(wh,u,v,n)*glm::dot(wh,n)/(4_f*glm::dot(wo, wh)*glm::dot(wo, n));
     }
 
-    virtual Vec3 eval(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const {
-        if (sp.opposite(wi, wo)) {
+    virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+        if (geom.opposite(wi, wo)) {
             return {};
         }
         const auto wh = glm::normalize(wi + wo);
-        const auto [n, u, v] = sp.orthonormalBasis(wi);
-        const auto Fr = Ks_ + (1_f - Ks_) * std::pow(1_f - dot(wo, wh), 5_f);
-        return Ks_ * Fr * (GGX_D(wh, u, v, n) * GGX_G(wi, wo, u, v, n)
-            / (4_f * dot(wi, n) * dot(wo, n)));
+        const auto [n, u, v] = geom.orthonormalBasis(wi);
+        const auto Fr = Ks_+(1_f-Ks_)*std::pow(1_f-dot(wo, wh),5_f);
+        return Ks_*Fr*(normalDist(wh,u,v,n)*shadowG(wi,wo,u,v,n)/(4_f*dot(wi,n)*dot(wo,n)));
     }
 
 private:
     // Normal distribution of anisotropic GGX
-    Float GGX_D(Vec3 wh, Vec3 u, Vec3 v, Vec3 n) const {
-        return 1_f / (Pi*ax_*ay_*math::sq(math::sq(glm::dot(wh, u) / ax_) +
-            math::sq(glm::dot(wh, v) / ay_) + math::sq(glm::dot(wh, n))));
+    Float normalDist(Vec3 wh, Vec3 u, Vec3 v, Vec3 n) const {
+        return 1_f / (Pi*ax_*ay_*math::sq(math::sq(glm::dot(wh, u)/ax_) +
+            math::sq(glm::dot(wh, v)/ay_) + math::sq(glm::dot(wh, n))));
     }
 
     // Smith's G term correspoinding to the anisotropic GGX
-    Float GGX_G(Vec3 wi, Vec3 wo, Vec3 u, Vec3 v, Vec3 n) const {
+    Float shadowG(Vec3 wi, Vec3 wo, Vec3 u, Vec3 v, Vec3 n) const {
         const auto G1 = [&](Vec3 w) {
             const auto c = glm::dot(w, n);
             const auto s = std::max(Eps, math::safeSqrt(1_f - c * c));

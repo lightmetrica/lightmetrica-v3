@@ -7,6 +7,7 @@
 
 #include "component.h"
 #include "math.h"
+#include "surface.h"
 #include <variant>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -19,118 +20,37 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Scene surface point.
-    Represents single point on the scene surface, which contains
-    geometry information around a point and a weak reference to
-    the primitive associated with the point.
-*/
-struct SurfacePoint {
-    int primitive = -1; // Primitive index
-    int comp = -1;      // Primitive component index
-    bool degenerated;   // Surface is degenerated (e.g., point light)
-    Vec3 p;             // Position
-    Vec3 n;             // Normal
-    Vec2 t;             // Texture coordinates
-    Vec3 u, v;          // Orthogonal tangent vectors
-    bool endpoint = false;  // Endpoint of light path
-
-    SurfacePoint() {}
-
-    SurfacePoint(Vec3 p)
-        : degenerated(true), p(p) {}
-
-    SurfacePoint(Vec3 p, Vec3 n, Vec2 t)
-        : SurfacePoint(-1, -1, p, n, t) {}
-
-    SurfacePoint(int primitive, int comp, Vec3 p, Vec3 n, Vec2 t)
-        : primitive(primitive), comp(comp), degenerated(false), p(p), n(n), t(t)
-    {
-        std::tie(u, v) = math::orthonormalBasis(n);
-    }
-
-    /*!
-        \brief Return true if wi and wo is same direction according to the normal n.
-    */
-    bool opposite(Vec3 wi, Vec3 wo) const {
-        return glm::dot(wi, n) * glm::dot(wo, n) <= 0;
-    }
-    
-    /*!
-        \brief Return orthonormal basis according to the incident direction wi.
-    */
-    std::tuple<Vec3, Vec3, Vec3> orthonormalBasis(Vec3 wi) const {
-        const int i = glm::dot(wi, n) > 0;
-        return { i ? n : -n, u, i ? v : -v };
-    }
-};
-
-/*!
-    \brief Compute geometry term.
-*/
-static Float geometryTerm(const SurfacePoint& s1, const SurfacePoint& s2) {
-    Vec3 d = s2.p - s1.p;
-    const Float L2 = glm::dot(d, d);
-    d = d / std::sqrt(L2);
-    return glm::abs(glm::dot(s1.n, d)) * glm::abs(glm::dot(s2.n, -d)) / L2;
-}
-
-// ----------------------------------------------------------------------------
-
-/*!
     \brief Result of sampleRay functions.
 */
 struct RaySample {
-    SurfacePoint sp;  // Sampled point
-    Vec3 wo;          // Sampled direction
-    Vec3 weight;      // Contribution divided by probability
-
-    RaySample(const SurfacePoint& sp, Vec3 wo, Vec3 weight)
-        : sp(sp), wo(wo), weight(weight) {}
-
-    // Update primitive index and return a reference
-    RaySample& asPrimitive(int primitive) {
-        sp.primitive = primitive;
-        return *this;
-    }
-
-    // Update component index and return a reference
-    RaySample& asComp(int comp) {
-        sp.comp = comp;
-        return *this;
-    }
-
-    // Update endpoint flag
-    RaySample& asEndpoint(bool endpoint) {
-        sp.endpoint = endpoint;
-        return *this;
-    }
-
-    // Multiply weight
-    RaySample& multWeight(Float w) {
-        weight *= w;
-        return *this;
-    }
-
-    RaySample(int primitive, int comp, const RaySample& rs)
-        : sp(rs.sp), wo(rs.wo), weight(rs.weight)
-    {
-        sp.primitive = primitive;
-        sp.comp = comp;
-    }
+    SurfacePoint sp;   // Surface point information
+    Vec3 wo;           // Sampled direction
+    Vec3 weight;       // Contribution divided by probability
 
     // Get a ray from the sample
     Ray ray() const {
-        return { sp.p, wo };
+        assert(!sp.geom.infinite);
+        return { sp.geom.p, wo };
     }
 };
 
 // ----------------------------------------------------------------------------
 
-struct LightSample {
-    Vec3 wo;      // Sampled direction
-    Float d;      // Distance to the sampled position
-    Vec3 weight;  // Evaluated contribution divided by probability
-                  // in projected solid angle measure
+/*!
+    \brief Scene primitive.
+*/
+struct Primitive {
+    int index;                     // Primitive index
+    Transform transform;           // Transform associated to the primitive
+    Mesh* mesh = nullptr;          // Underlying assets
+    Material* material = nullptr;
+    Light* light = nullptr;
+    Camera* camera = nullptr;
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(index, transform, mesh, material, light, camera);
+    }
 };
 
 // ----------------------------------------------------------------------------
@@ -155,10 +75,14 @@ public:
     /*!
         \brief Iterate triangles in the scene.
     */
-    using ProcessTriangleFunc = std::function<
-        void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
-    virtual void foreachTriangle(
-        const ProcessTriangleFunc& processTriangle) const = 0;
+    using ProcessTriangleFunc = std::function<void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
+    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const = 0;
+
+    /*!
+        \brief Iterate primitives in the scene.
+    */
+    using ProcessPrimitiveFunc = std::function<void(const Primitive& primitive)>;
+    virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const = 0;
 
     // ------------------------------------------------------------------------
 
@@ -174,6 +98,32 @@ public:
     */
     virtual std::optional<SurfacePoint> intersect(
         Ray ray, Float tmin = Eps, Float tmax = Inf) const = 0;
+
+    /*!
+        \brief Check if two surface points are mutually visible.
+    */
+    bool visible(const SurfacePoint& sp1, const SurfacePoint& sp2) const {
+        const auto visible_ = [this](const SurfacePoint& sp1, const SurfacePoint& sp2) -> bool {
+            assert(!sp1.geom.infinite);
+            const auto wo = sp2.geom.infinite
+                ? -sp2.geom.wo
+                : glm::normalize(sp2.geom.p - sp1.geom.p);
+            const auto tmax = sp2.geom.infinite
+                ? Inf - 1_f
+                : [&]() {
+                    const auto d = glm::distance(sp1.geom.p, sp2.geom.p);
+                    return d * (1_f - Eps);
+                }();
+            // Exclude environent light from intersection test with tmax < Inf
+            return !intersect(Ray{sp1.geom.p, wo}, Eps, tmax);
+        };
+        if (sp1.geom.infinite) {
+            return visible_(sp2, sp1);
+        }
+        else {
+            return visible_(sp1, sp2);
+        }
+    }
 
     // ------------------------------------------------------------------------
 
@@ -213,7 +163,17 @@ public:
     /*!
         \brief Sample a position on a light.
     */
-    virtual std::optional<LightSample> sampleLight(Rng& rng, const SurfacePoint& sp) const = 0;
+    virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const = 0;
+
+    /*!
+        \brief Evaluate pdf for direction sampling.
+    */
+    virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const = 0;
+
+    /*!
+        \brief Evaluate pdf for light sampling.
+    */
+    virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const = 0;
 
     // ------------------------------------------------------------------------
 

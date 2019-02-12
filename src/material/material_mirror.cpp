@@ -5,7 +5,7 @@
 
 #include <pch.h>
 #include <lm/material.h>
-#include <lm/scene.h>
+#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -27,16 +27,18 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
    :math:`\int_\Omega \delta_\Omega(\omega', \omega) d\omega = \omega'`.
 \endrst
 */
-class Material_Mirror : public Material {
+class Material_Mirror final : public Material {
 private:
-    virtual bool isSpecular(const SurfacePoint& sp) const override {
-        LM_UNUSED(sp);
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return true;
     }
 
-    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const {
-        LM_UNUSED(rng);
-        return RaySample(sp, math::reflection(wi, sp.n), Vec3(1_f));
+    virtual std::optional<MaterialDirectionSample> sample(Rng&, const PointGeometry& geom, Vec3 wi) const override {
+        return MaterialDirectionSample{
+            math::reflection(wi, geom.n),
+            SurfaceComp::DontCare,
+            Vec3(1_f)
+        };
     }
 };
 
