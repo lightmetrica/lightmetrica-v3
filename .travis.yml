@@ -93,5 +93,3 @@ matrix:
       cmake --build _build --config Release
       cd _build/bin/Release
       ./lm_test.exe
-      cd ${TRAVIS_BUILD_DIR}
-      python -m pytest --lm _build/bin/Release pytest
