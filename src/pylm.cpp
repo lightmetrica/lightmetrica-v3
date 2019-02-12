@@ -388,6 +388,12 @@ static void bind(pybind11::module& m) {
         virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleLight, rng, sp);
         }
+        virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, wi, wo);
+        }
+        virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdfLight, sp, spL, wo);
+        }
         virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalBsdf, sp, wi, wo);
         }

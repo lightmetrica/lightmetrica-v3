@@ -51,10 +51,6 @@ public:
             const int x = int(index % w);
             const int y = int(index / w);
 
-#if 0
-            long long count = 0;
-#endif
-
             // Estimate pixel contribution
             Vec3 L(0_f);
             for (long long i = 0; i < spp_; i++) {
@@ -62,7 +58,7 @@ public:
                 Vec3 throughput(1_f);
 
                 // Incident direction and current surface point
-                Vec3 wi;
+                Vec3 wi = {};
                 SurfacePoint sp;
 
                 // Initial sampleRay function
@@ -80,8 +76,8 @@ public:
                     }
 
                     // Sample a NEE edge
-                    const bool enableNEE = length > 0 && !scene->isSpecular(s->sp);
-                    if (enableNEE) [&] {
+                    const bool nee = length > 0 && !scene->isSpecular(s->sp);
+                    if (nee) [&] {
                         // Sample a light
                         const auto sL = scene->sampleLight(rng, s->sp);
                         if (!sL) {
@@ -90,17 +86,12 @@ public:
                         if (!scene->visible(s->sp, sL->sp)) {
                             return;
                         }
-#if 0
-                        if (length == 1 && count < 1) {
-                            debugio::draw(debugio::Lines, Vec3(Float(x) / w, Float(y) / h, 0), {
-                                s->sp.geom.p,
-                                s->sp.geom.p - sL->wo });
-                            count++;
-                        }
-#endif
                         // Evaluate and accumulate contribution
-                        const auto fs = scene->evalBsdf(s->sp, wi, -sL->wo);
-                        L += throughput * fs * sL->weight;
+                        const auto wo = -sL->wo;
+                        const auto fs = scene->evalBsdf(s->sp, wi, wo);
+                        const auto misw = math::balanceHeuristic(
+                            scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
+                        L += throughput * fs * sL->weight * misw;
                     }();
 
                     // Intersection to next surface
@@ -113,9 +104,13 @@ public:
                     throughput *= s->weight;
 
                     // Accumulate contribution from light
-                    //if (scene->isLight(*hit)) {
-                    //    L += throughput * scene->evalContrbEndpoint(*hit, -s->wo);
-                    //}
+                    if (scene->isLight(*hit)) {
+                        const auto woL = -s->wo;
+                        const auto fs = scene->evalContrbEndpoint(*hit, woL);
+                        const auto misw = !nee ? 1_f : math::balanceHeuristic(
+                            scene->pdf(s->sp, wi, s->wo), scene->pdfLight(s->sp, *hit, woL));
+                        L += throughput * fs * misw;
+                    }
 
                     // Russian roulette
                     if (length > 3) {

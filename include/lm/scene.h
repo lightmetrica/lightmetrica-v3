@@ -165,6 +165,16 @@ public:
     */
     virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const = 0;
 
+    /*!
+        \brief Evaluate pdf for direction sampling.
+    */
+    virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const = 0;
+
+    /*!
+        \brief Evaluate pdf for light sampling.
+    */
+    virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const = 0;
+
     // ------------------------------------------------------------------------
 
     /*!

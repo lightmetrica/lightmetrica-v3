@@ -470,6 +470,13 @@ static Vec3 sampleCosineWeighted(Rng& rng) {
 }
 
 /*!
+    \brief Balance heuristics.
+*/
+static Float balanceHeuristic(Float p1, Float p2) {
+    return p1 / (p1 + p2);
+}
+
+/*!
     @}
 */
 

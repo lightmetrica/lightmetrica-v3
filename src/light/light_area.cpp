@@ -85,7 +85,7 @@ public:
         const auto Le = eval(geomL, -wo);
         return LightRaySample{
             geomL,
-            wo,
+            -wo,
             Le / pL
         };
     }

@@ -260,6 +260,17 @@ public:
         };
     }
     
+    virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+        const auto& prim = primitives_.at(sp.primitive);
+        return prim.material->pdf(sp.geom, sp.comp, wi, wo);
+    }
+
+    virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const override {
+        const auto& prim = primitives_.at(spL.primitive);
+        const auto pL = 1_f / int(lights_.size());
+        return prim.light->pdf(sp.geom, spL.geom, prim.transform, wo) * pL;
+    }
+
     // ------------------------------------------------------------------------
 
     virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
