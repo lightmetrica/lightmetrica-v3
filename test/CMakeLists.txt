@@ -26,7 +26,9 @@ set(_SOURCE_FILES
     "test_component.cpp"
     "test_assets.cpp"
     "test_json.cpp"
-    "test_serial.cpp")
+    "test_serial.cpp"
+    "test_debugio.cpp"
+    "test_logger.cpp")
 add_executable(${_PROJECT_NAME} ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 if (MSVC)
     add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
