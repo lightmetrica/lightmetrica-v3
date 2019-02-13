@@ -29,24 +29,16 @@ Using in-project directory
 
 This strategy uses in-project ``external`` directory to manage dependencies. To use this strategy, you want to create ``external`` directory in the project root and download all dependencies into the directory.
 The build script automatically uses the dependencies if it finds ``external`` directory in the project root.
-The following commands illustrates the steps.
+For convenience, we prepared an repository containing all external dependencies as submodules.
+The following commands will setup all depenencies inside ``external`` directory.
 
 .. code-block:: console
 
-   $ cd external
-   $ git clone --depth 1 --branch v2.2.4 https://github.com/pybind/pybind11.git
-   $ git clone --depth 1 --branch v3.5.0 https://github.com/nlohmann/json.git
-   $ git clone --depth 1 --branch 0.9.9.3 https://github.com/g-truc/glm.git
-   $ git clone --depth 1 --branch v1.2.2 https://github.com/USCiLab/cereal.git
-   $ git clone --depth 1 --branch 2.2.0 https://github.com/onqtam/doctest.git
-   $ git clone --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git
-   $ git clone --depth 1 --branch v4.3.1 https://github.com/zeromq/libzmq.git
-   $ git clone --depth 1 --branch v4.3.0 https://github.com/zeromq/cppzmq.git
-   $ git clone --depth 1 --branch v1.67 https://github.com/ocornut/imgui.git
-   $ git clone --depth 1 --branch 3.2.1 https://github.com/glfw/glfw.git
+   $ git clone --recursive https://github.com/hi2p-perim/lightmetrica-v3-external.git external
 
 .. note::
    This strategy internally uses on CMake's ``add_subdirectory`` to find dependencies.
+   The options for the dependencies are configured to minimize the build, e.g., disabling builds of examples or tests.
 
 Using pre-installed packages
 ----------------------------

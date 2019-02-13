@@ -14,8 +14,6 @@ Lightmetrica -- A research-oriented renderer
 
 ## Quick start
 
-Installation:
-
 ```bash
 $ pip install lightmetrica
 ```
