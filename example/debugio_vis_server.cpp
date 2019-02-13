@@ -12,9 +12,9 @@ int main() {
     try {
         // Initialize the framework
         lm::ScopedInit init("user::default", {
-            {"debugio", {
+            {"debugio_server", {
                 {"debugio::server", {
-                    {"port", 5555}
+                    {"address", "tcp://*:5555"}
                 }}
             }}
         });

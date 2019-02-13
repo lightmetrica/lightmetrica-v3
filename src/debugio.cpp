@@ -124,9 +124,8 @@ public:
 public:
     virtual bool construct(const Json& prop) override {
         // Waiting for the connection of the client
-        const int port = prop["port"];
         try {
-            socket_.bind(fmt::format("tcp://*:{}", port));
+            socket_.bind(prop["address"]);
         }
         catch (const zmq::error_t& e) {
             LM_ERROR("ZMQ Error: {}", e.what());
@@ -199,54 +198,64 @@ LM_NAMESPACE_END(server)
 
 // ----------------------------------------------------------------------------
 
-using Instance = comp::detail::ContextInstance<Component>;
+using ClientInstance = comp::detail::ContextInstance<DebugioContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
-    Instance::init(type, prop);
+    ClientInstance::init(type, prop);
 }
 
 LM_PUBLIC_API void shutdown() {
-    Instance::shutdown();
+    ClientInstance::shutdown();
 }
 
 LM_PUBLIC_API void handleMessage(const std::string& message) {
-    if (Instance::initialized()) {
-        Instance::get().cast<DebugioContext>()->handleMessage(message);
+    if (ClientInstance::initialized()) {
+        ClientInstance::get().handleMessage(message);
     }
 }
 
 LM_PUBLIC_API void syncUserContext() {
-    if (Instance::initialized()) {
-        Instance::get().cast<DebugioContext>()->syncUserContext();
+    if (ClientInstance::initialized()) {
+        ClientInstance::get().syncUserContext();
     }
 }
 
 LM_PUBLIC_API void draw(int type, Vec3 color, const std::vector<Vec3>& vs) {
-    if (Instance::initialized()) {
-        Instance::get().cast<DebugioContext>()->draw(type, color, vs);
+    if (ClientInstance::initialized()) {
+        ClientInstance::get().draw(type, color, vs);
     }
 }
 
 LM_NAMESPACE_BEGIN(server)
 
+using ServerInstance = comp::detail::ContextInstance<DebugioServerContext>;
+
+LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
+    ServerInstance::init(type, prop);
+}
+
+LM_PUBLIC_API void shutdown() {
+    ServerInstance::shutdown();
+}
+
 LM_PUBLIC_API void poll() {
-    Instance::get().cast<DebugioServerContext>()->poll();
+    ServerInstance::get().poll();
 }
 
 LM_PUBLIC_API void run() {
-    Instance::get().cast<DebugioServerContext>()->run();
+    ServerInstance::get().run();
 }
 
 LM_PUBLIC_API void on_handleMessage(const HandleMessageFunc& process) {
-    Instance::get().cast<DebugioServerContext>()->on_handleMessage(process);
+    ServerInstance::get().on_handleMessage(process);
 }
 
 LM_PUBLIC_API void on_syncUserContext(const SyncUserContextFunc& process) {
-    Instance::get().cast<DebugioServerContext>()->on_syncUserContext(process);
+    ServerInstance::get().on_syncUserContext(process);
 }
 
 LM_PUBLIC_API void on_draw(const DrawFunc& process) {
-    Instance::get().cast<DebugioServerContext>()->on_draw(process);
+    ServerInstance::get().on_draw(process);
 }
 
 LM_NAMESPACE_END(server)
