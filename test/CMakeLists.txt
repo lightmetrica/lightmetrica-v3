@@ -36,7 +36,8 @@ endif()
 target_link_libraries(${_PROJECT_NAME}
     PRIVATE liblm
             doctest::doctest
-            lm_test_plugin::interface)
+            lm_test_plugin::interface
+            Threads::Threads)
 target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${_PCH_DIR}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/test")
 set_target_properties(${_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

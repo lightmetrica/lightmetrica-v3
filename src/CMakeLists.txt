@@ -80,7 +80,8 @@ endif()
 # Configure dependency
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt::fmt-header-only cereal
-    PRIVATE OpenMP::OpenMP_CXX cppzmq-static
+    PRIVATE OpenMP::OpenMP_CXX
+            cppzmq-static
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
             $<$<CXX_COMPILER_ID:GNU>:atomic>)
 # Include directories

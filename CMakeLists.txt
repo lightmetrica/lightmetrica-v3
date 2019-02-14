@@ -39,6 +39,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # -----------------------------------------------------------------------------
 
+# Thread
+find_package(Threads REQUIRED)
+
 # OpenMP
 find_package(OpenMP REQUIRED)
 
