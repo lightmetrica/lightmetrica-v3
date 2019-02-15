@@ -1,6 +1,8 @@
 FROM ubuntu:latest
 MAINTAINER Hisanari Otsu <hi2p.perim@gmail.com>
 
+# -----------------------------------------------------------------------------
+
 RUN apt update && apt install -y \
     git \
     git-lfs \
@@ -23,6 +25,8 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test
 RUN apt update && apt install -y gcc-8 g++-8
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 \
                         --slave /usr/bin/g++ g++ /usr/bin/g++-8
+
+# -----------------------------------------------------------------------------
 
 WORKDIR /
 RUN git clone --depth 1 --branch v2.2.4 https://github.com/pybind/pybind11.git
@@ -71,6 +75,8 @@ RUN git clone --depth 1 --branch v4.3.0 https://github.com/zeromq/cppzmq.git
 WORKDIR /cppzmq
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DCPPZMQ_BUILD_TESTS=OFF && \
     cmake --build _build --target install
+
+# -----------------------------------------------------------------------------
 
 COPY . /lightmetrica-v3
 WORKDIR /lightmetrica-v3
