@@ -1,0 +1,46 @@
+FROM dorowu/ubuntu-desktop-lxde-vnc
+MAINTAINER Hisanari Otsu <hi2p.perim@gmail.com>
+
+ENV BUILD_CORES -j
+
+# -----------------------------------------------------------------------------
+
+# Install some packages
+RUN apt update && apt install -y \
+    git \
+    git-lfs \
+    software-properties-common \
+    build-essential \
+    cmake \
+    curl \
+    ninja-build \
+    python3-dev \
+    python3-distutils \
+    python3-pip \
+    python3-numpy \
+    doctest-dev
+
+RUN pip3 install --upgrade pip
+RUN pip install pytest tqdm
+RUN pip install imageio && imageio_download_bin freeimage
+
+RUN add-apt-repository ppa:ubuntu-toolchain-r/test
+RUN apt update && apt install -y gcc-8 g++-8
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 \
+                        --slave /usr/bin/g++ g++ /usr/bin/g++-8
+
+# -----------------------------------------------------------------------------
+
+# Install cmake
+WORKDIR /root
+RUN curl -OL https://github.com/Kitware/CMake/releases/download/v3.13.1/cmake-3.13.1-Linux-x86_64.sh
+RUN sh cmake-3.13.1-Linux-x86_64.sh --skip-license --prefix=/usr/local/
+
+# -----------------------------------------------------------------------------
+
+# Clion
+ADD https://download.jetbrains.com/cpp/CLion-2018.3.2.tar.gz /opt
+
+# -----------------------------------------------------------------------------
+
+WORKDIR /root
