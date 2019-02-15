@@ -57,7 +57,17 @@ enum {
 LM_PUBLIC_API void draw(int type, Vec3 color, const std::vector<Vec3>& vs);
 
 /*!
-    \brief Debugio base context.
+    \brief Scoped guard of `init` and `shutdown` functions.
+*/
+class ScopedInit {
+public:
+    ScopedInit(const std::string& type, const Json& prop) { init(type, prop); }
+    ~ScopedInit() { shutdown(); }
+    LM_DISABLE_COPY_AND_MOVE(ScopedInit)
+};
+
+/*!
+    \brief Debugio context.
 */
 class DebugioContext : public Component {
 public:
@@ -80,6 +90,16 @@ LM_NAMESPACE_BEGIN(server)
 */
 
 /*!
+    \brief Initialize debugio server context.
+*/
+LM_PUBLIC_API void init(const std::string& type, const Json& prop);
+
+/*!
+    \brief Shutdown debugio server context.
+*/
+LM_PUBLIC_API void shutdown();
+
+/*!
     \brief Poll events.
 */
 LM_PUBLIC_API void poll();
@@ -89,15 +109,49 @@ LM_PUBLIC_API void poll();
 */
 LM_PUBLIC_API void run();
 
+/*!
+    \brief Callback function for handleMessage.
+*/
 using HandleMessageFunc = std::function<void(const std::string& message)>;
+
+/*!
+    \brief Register callback function for handleMessage.
+*/
 LM_PUBLIC_API void on_handleMessage(const HandleMessageFunc& process);
 
+/*!
+    \brief Callback function for syncUserContext.
+*/
 using SyncUserContextFunc = std::function<void()>;
+
+/*!
+    \brief Register callback function for syncUserContext.
+*/
 LM_PUBLIC_API void on_syncUserContext(const SyncUserContextFunc& process);
 
+/*!
+    \brief Callback function for draw.
+*/
 using DrawFunc = std::function<void(int type, Vec3 color, const std::vector<Vec3>& vs)>;
+
+/*!
+    \brief Register callback function for draw.
+*/
 LM_PUBLIC_API void on_draw(const DrawFunc& process);
 
+/*!
+    \brief Scoped guard of `init` and `shutdown` functions.
+*/
+class ScopedInit {
+public:
+    ScopedInit(const std::string& type, const Json& prop) { init(type, prop); }
+    ~ScopedInit() { shutdown(); }
+    LM_DISABLE_COPY_AND_MOVE(ScopedInit)
+};
+
+/*!
+    \brief Debugio server context.
+*/
 class DebugioServerContext : public Component {
 public:
     virtual void poll() = 0;

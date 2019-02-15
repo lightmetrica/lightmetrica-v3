@@ -22,11 +22,13 @@ set(_SOURCE_FILES
     "main.cpp"
     "test_common.cpp"
     "test_exception.cpp"
-    "test_api.cpp"
     "test_component.cpp"
     "test_assets.cpp"
     "test_json.cpp"
-    "test_serial.cpp")
+    "test_serial.cpp"
+    "test_debugio.cpp"
+    "test_logger.cpp"
+	"test_user.cpp")
 add_executable(${_PROJECT_NAME} ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 if (MSVC)
     add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch.h" SOURCE_CXX "${_PCH_DIR}/pch.cpp")
@@ -34,7 +36,8 @@ endif()
 target_link_libraries(${_PROJECT_NAME}
     PRIVATE liblm
             doctest::doctest
-            lm_test_plugin::interface)
+            lm_test_plugin::interface
+            Threads::Threads)
 target_include_directories(${_PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${_PCH_DIR}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/test")
 set_target_properties(${_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

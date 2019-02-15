@@ -37,6 +37,7 @@ public:
 
     ~UserContext_Default() {
         debugio::shutdown();
+        debugio::server::shutdown();
         progress::shutdown();
         parallel::shutdown();
         log::shutdown();
@@ -70,6 +71,10 @@ public:
         if (auto it = prop.find("debugio"); it != prop.end()) {
             it = it->begin();
             debugio::init(it.key(), it.value());
+        }
+        if (auto it = prop.find("debugio_server"); it != prop.end()) {
+            it = it->begin();
+            debugio::server::init(it.key(), it.value());
         }
 
         // Create assets and scene

@@ -5,6 +5,7 @@
 
 #include <pch.h>
 #include <lm/logger.h>
+#include <lm/json.h>
 #include "ext/rang.hpp"
 
 // ----------------------------------------------------------------------------
@@ -23,6 +24,7 @@ private:
     std::chrono::time_point<std::chrono::high_resolution_clock> start_ =
         std::chrono::high_resolution_clock::now();
     std::mutex mutex_;
+    bool color_;
 
     struct Style {
         std::string name;
@@ -36,6 +38,12 @@ private:
         {LogLevel::Progress   , {"I", rang::fg::green}},
         {LogLevel::ProgressEnd, {"I", rang::fg::green}},
     };
+
+public:
+    virtual bool construct(const Json& prop) override {
+        color_ = json::valueOr<bool>(prop, "color", true);
+        return true;
+    }
 
 public:
     void log(LogLevel level, int severity, const char* filename, int line, const char* message) {
@@ -93,10 +101,13 @@ public:
             }
 
             // Print formatted log message
-            std::cout << style.color << header
-                << rang::style::reset << body
-                << whitespaces << "\r"
-                << std::flush;
+            if (color_) {
+                std::cout << style.color << header << rang::style::reset;
+            }
+            else {
+                std::cout << header;
+            }
+            std::cout << body << whitespaces << "\r" << std::flush;
 
             // ProgressEnd incurs newline so reset the cached values
             if (level == LogLevel::ProgressEnd) {
@@ -116,9 +127,13 @@ public:
                     messageByLine);
 
                 // Print formatted log message
-                std::cout << style.color << header
-                    << rang::style::reset << body << "\n"
-                    << std::flush;
+                if (color_) {
+                    std::cout << style.color << header << rang::style::reset;
+                }
+                else {
+                    std::cout << header;
+                }
+                std::cout << body << "\n" << std::flush;
             }
         }
     }
