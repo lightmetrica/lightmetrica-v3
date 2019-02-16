@@ -19,7 +19,12 @@ RUN apt update && apt install -y \
     python3-distutils \
     python3-pip \
     python3-numpy \
-    doctest-dev
+    doctest-dev \
+    gdb \
+    tmux \
+    vim \
+    xorg-dev \
+    libgl1-mesa-dev
 
 RUN pip3 install --upgrade pip
 RUN pip install pytest tqdm
