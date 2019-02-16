@@ -57,6 +57,25 @@ struct adl_serializer<glm::vec<N, T, Q>> {
     }
 };
 
+template <typename T>
+struct adl_serializer<T, std::enable_if_t<std::is_pointer_v<T>, void>> {
+    template <typename BasicJsonType>
+    static void to_json(BasicJsonType& j, T v) {
+        std::stringstream ss;
+        ss << (void*)v;
+        std::string s = ss.str();
+        j = s;
+    }
+
+    template <typename BasicJsonType>
+    static void from_json(const BasicJsonType& j, T& v) {
+        std::string s = j;
+        std::stringstream ss(s);
+        void* t; ss >> t;
+        v = (T)t;
+    }
+};
+
 LM_NAMESPACE_END(nlohmann)
 
 // ----------------------------------------------------------------------------
