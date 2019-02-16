@@ -40,6 +40,8 @@ The following commands will setup all depenencies inside ``external`` directory.
    This strategy internally uses on CMake's ``add_subdirectory`` to find dependencies.
    The options for the dependencies are configured to minimize the build, e.g., disabling builds of examples or tests.
 
+.. _using_preinstalled_packages:
+
 Using pre-installed packages
 ----------------------------
 
@@ -175,6 +177,40 @@ Then you can access the documentation from ``http://127.0.0.1:8000`` with the fo
 
 .. ----------------------------------------------------------------------------
 
+Running tests and examples
+==========================
+
+Running tests
+-------------
+
+To execute unit tests of the framework, run the following command after build.
+
+.. code-block:: console
+
+   $ cd <lightmetrica binary directory>
+   $ ./lm_test
+
+Additionally, you can execute the Python tests with the following commands.
+
+.. code-block:: console
+
+   $ conda install -c conda-forge pytest
+   $ cd <root directory of lightmetrica>
+   $ python -m pytest --lm <lightmetrica binary dir> pytest
+
+Running examples
+----------------
+
+To execute all examples at once, run 
+
+.. code-block:: console
+
+   $ cd example
+   $ python run_all.py --lm <lightmetrica binary dir> --scene <scene dir>
+   $ python compress_images.py --dir .
+
+.. ----------------------------------------------------------------------------
+
 Working with Jupyter notebook
 =============================
 
@@ -241,34 +277,59 @@ to the argument of :cpp:func:`lm::init()` function.
 
 .. ----------------------------------------------------------------------------
 
-Running tests and examples
-==========================
+Working with Docker containers
+==============================
 
-Running tests
--------------
+We prepared Dockerfiles to setup linux environments for several use-cases.
 
-To execute unit tests of the framework, run the following command after build.
-
-.. code-block:: console
-
-   $ cd <lightmetrica binary directory>
-   $ ./lm_test
-
-Additionally, you can execute the Python tests with the following commands.
+``Dockerfile`` in the root directory of the framework setups the dependencies using the strategy described in :ref:`using_preinstalled_packages`,
+and builds the framework, followed by the execution of the unit tests. The Dockerfile is also used in the automatic build with CI service.
+The following commands build a docker image ``lm3``.
 
 .. code-block:: console
 
-   $ conda install -c conda-forge pytest
-   $ cd <root directory of lightmetrica>
-   $ python -m pytest --lm <lightmetrica binary dir> pytest
+   $ docker build -t lm3 .
 
-Running examples
-----------------
+``Dockerfile.jupyter`` is made for the development with Jupyter notebook
+where the source directory of Lightmetrica is supposed to be mounted from the host. 
+Our Dockerfile is based on Jupyter's `docker-stacks`_.
+The following commands create an image ``lm3_jupyter`` and execute a notebook server as a container.
+For convenience, we often mount workspace and scene directories in addition to the source directory.
 
-To execute all examples at once, run 
+.. _`docker-stacks`: https://github.com/jupyter/docker-stacks
 
 .. code-block:: console
 
-   $ cd example
-   $ python run_all.py --lm <lightmetrica binary dir> --scene <scene dir>
-   $ python compress_images.py --dir .
+   $ docker build -t lm3_jupyter -f ./Dockerfile.jupyter .
+   $ docker run \
+        --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+        -it --rm -p 8888:8888 -h lm3_docker \
+        -v ${PWD}:/lightmetrica-v3 \
+        -v <workspace directory on host>:/work \
+        -v <scene directory on host>:/scenes \
+        lm3_jupyter start-notebook.sh \
+            --NotebookApp.token='<access token for notebook>' \
+            --ip=0.0.0.0 --no-browser
+
+``Dockerfile.desktop`` is made for the development with Linux desktop environment, specifically from Windows host.
+We used `docker-ubuntu-vnc-desktop`_ to setup LXDE desktop environment on Ubuntu, which utilizes `noVNC`_ for browser-based VNC connection.
+After executing the commands, you can access the desktop via ``localhost:6080`` using a browser.
+
+.. _`docker-ubuntu-vnc-desktop`: https://github.com/fcwu/docker-ubuntu-vnc-desktop
+.. _`noVNC`: https://novnc.com
+
+.. code-block:: console
+
+   $ docker build -t lm3_desktop -f ./Dockerfile.desktop .
+   $ docker run \
+        --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+        --rm -p 6080:80 -p 5900:5900 -e RESOLUTION=1920x1080 \
+        -v ${PWD}:/lightmetrica-v3 \
+        -v <workspace directory on host>:/work \
+        -v <scene directory on host>:/scenes \
+        lm3_desktop
+
+.. note::
+
+   The arguments ``--cap-add=SYS_PTRACE --security-opt seccomp=unconfined`` are necessary
+   to execute the applications with gdb in docker containers.
