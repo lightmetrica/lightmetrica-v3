@@ -405,7 +405,7 @@ public:
     bool setup() {
         // Load shaders
         const std::string vscode = R"x(
-            #version 430 core
+            #version 330 core
             layout (location = 0) in vec3 position_;
             layout (location = 1) in vec3 normal_;
             layout (location = 2) in vec2 uv_;
@@ -427,11 +427,11 @@ public:
             }
         )x";
         const std::string fscode = R"x(
-            #version 430 core
+            #version 330 core
             in vec3 normal;
             in vec2 uv;
             out vec4 fragColor;
-            layout (binding = 0) uniform sampler2D tex;
+            uniform sampler2D tex;
             uniform vec3 Color;
             uniform int UseTexture;
             uniform int Shade;
@@ -551,10 +551,15 @@ public:
             return false;
         }
 
+        // Error callback
+        glfwSetErrorCallback([](int error, const char* desc) {
+            LM_ERROR("[GLFW error #{}] {}", error, desc);
+        });
+
         // Craete GLFW window
         window = [&]() -> GLFWwindow* {
             // GLFW window
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
             #ifdef LM_DEBUG_MODE

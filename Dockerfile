@@ -1,6 +1,8 @@
 FROM ubuntu:latest
 MAINTAINER Hisanari Otsu <hi2p.perim@gmail.com>
 
+# -----------------------------------------------------------------------------
+
 RUN apt update && apt install -y \
     git \
     git-lfs \
@@ -13,7 +15,12 @@ RUN apt update && apt install -y \
     python3-distutils \
     python3-pip \
     python3-numpy \
-    doctest-dev
+    doctest-dev \
+    gdb \
+    tmux \
+    vim \
+    xorg-dev \
+    libgl1-mesa-dev
     
 RUN pip3 install --upgrade pip
 RUN pip install pytest
@@ -23,6 +30,8 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test
 RUN apt update && apt install -y gcc-8 g++-8
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 \
                         --slave /usr/bin/g++ g++ /usr/bin/g++-8
+
+# -----------------------------------------------------------------------------
 
 WORKDIR /
 RUN git clone --depth 1 --branch v2.2.4 https://github.com/pybind/pybind11.git
@@ -71,6 +80,14 @@ RUN git clone --depth 1 --branch v4.3.0 https://github.com/zeromq/cppzmq.git
 WORKDIR /cppzmq
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DCPPZMQ_BUILD_TESTS=OFF && \
     cmake --build _build --target install
+
+WORKDIR /
+RUN git clone --depth 1 --branch 3.2.1 https://github.com/glfw/glfw.git
+WORKDIR /glfw
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF && \
+    cmake --build _build --target install
+
+# -----------------------------------------------------------------------------
 
 COPY . /lightmetrica-v3
 WORKDIR /lightmetrica-v3
