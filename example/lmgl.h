@@ -551,6 +551,11 @@ public:
             return false;
         }
 
+        // Error callback
+        glfwSetErrorCallback([](int error, const char* desc) {
+            LM_ERROR("[GLFW error #{}] {}", error, desc);
+        });
+
         // Craete GLFW window
         window = [&]() -> GLFWwindow* {
             // GLFW window

@@ -31,15 +31,7 @@ RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 \
 
 # -----------------------------------------------------------------------------
 
-# Install cmake
-WORKDIR /root
-RUN curl -OL https://github.com/Kitware/CMake/releases/download/v3.13.1/cmake-3.13.1-Linux-x86_64.sh
-RUN sh cmake-3.13.1-Linux-x86_64.sh --skip-license --prefix=/usr/local/
-
-# -----------------------------------------------------------------------------
-
-# Clion
-ADD https://download.jetbrains.com/cpp/CLion-2018.3.2.tar.gz /opt
+RUN apt install -y gdb tmux vim xorg-dev libgl1-mesa-dev
 
 # -----------------------------------------------------------------------------
 

@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # Enable policy to manage VERSION in project() command
 cmake_policy(SET CMP0048 NEW)
-project(lightmetrica VERSION 3.0.0 LANGUAGES CXX)
+project(lightmetrica VERSION 3.0.0)
 
 # -----------------------------------------------------------------------------
 
@@ -136,7 +136,7 @@ endif()
 
 # -----------------------------------------------------------------------------
 
-if (WIN32)
+#if (WIN32)
     # OpenGL
     find_package(OpenGL REQUIRED)
 
@@ -165,11 +165,11 @@ if (WIN32)
         "${_IMGUI_DIR}/imgui_demo.cpp"
         "${_IMGUI_DIR}/examples/imgui_impl_glfw.cpp"
         "${_IMGUI_DIR}/examples/imgui_impl_opengl3.cpp")
-    target_link_libraries(imgui PUBLIC glm glfw gl3w OpenGL::GL)
+    target_link_libraries(imgui PUBLIC glm glfw gl3w)
     target_include_directories(imgui PUBLIC
         "${_IMGUI_DIR}"
         "${_IMGUI_DIR}/examples")
-endif()
+#endif()
 
 # -----------------------------------------------------------------------------
 

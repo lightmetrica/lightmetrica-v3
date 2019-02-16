@@ -174,7 +174,7 @@ int main() {
                 // Display texture
                 #pragma warning(push)
                 #pragma warning(disable:4312)
-                ImGui::Image((ImTextureID*)*texture, ImVec2(float(w/2), float(h/2)), ImVec2(0, 1), ImVec2(1, 0),
+                ImGui::Image(reinterpret_cast<ImTextureID*>(*texture), ImVec2(float(w/2), float(h/2)), ImVec2(0, 1), ImVec2(1, 0),
                     ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
                 #pragma warning(pop)
 
