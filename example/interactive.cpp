@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
             "vfov": {}
         }})");
 
-        #if LM_DEBUG_MODE && 0
+        #if LM_DEBUG_MODE
         lm::deserialize("lm.serialized");
         #else
         lm::asset("film_render", "film::bitmap", {

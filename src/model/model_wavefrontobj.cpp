@@ -355,7 +355,7 @@ public:
                 auto mesh = comp::create<Mesh>(
                     "mesh::wavefrontobj", makeLoc(meshName),
                     json::merge(prop, {
-                        {"model_", loc()}
+                        {"model_", this}
                     }
                 ));
                 if (!mesh) {
@@ -405,7 +405,7 @@ public:
                     auto mat = comp::create<Material>(
                         "material::wavefrontobj", makeLoc(m.name),
                         json::merge(prop, {
-                            {"model_", loc()}
+                            {"model_", this}
                         }
                     ));
                     if (!mat) {
@@ -463,7 +463,7 @@ public:
 
 public:
     virtual bool construct(const Json& prop) override {
-        model_ = comp::get<Model_WavefrontObj>(prop["model_"]);
+        model_ = prop["model_"].get<Model_WavefrontObj*>();
         fs_ = model_->currentFs_;
         return true;
     }
@@ -590,7 +590,7 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         // Model asset
-        model_ = comp::get<Model_WavefrontObj>(prop["model_"]);
+        model_ = prop["model_"].get<Model_WavefrontObj*>();
         objmat_ = model_->currentMatParams_;
 
         // Make parent component as a parent for the newly created components

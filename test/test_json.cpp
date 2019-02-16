@@ -48,6 +48,25 @@ TEST_CASE("Json") {
             CHECK_THROWS(lm::Vec3 v = "[1,2,3,4]"_lmJson);
         }
     }
+
+    SUBCASE("Conversion of pointer types") {
+        SUBCASE("Non const pointer") {
+            int v = 42;
+            int* vp = &v;
+            lm::Json j = vp;
+            // User-defined cast operator for pointer types doesn't match the definition.
+            // We used get<>() as a workaround.
+            auto vp2 = j.get<int*>();
+            CHECK(vp == vp2);
+        }
+        SUBCASE("const pointer") {
+            int v = 42;
+            const int* vp = &v;
+            lm::Json j = vp;
+            auto vp2 = j.get<const int*>();
+            CHECK(vp == vp2);
+        }
+    }
 }
 
 LM_NAMESPACE_END(LM_TEST_NAMESPACE)
