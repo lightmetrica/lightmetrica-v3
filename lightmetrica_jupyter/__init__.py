@@ -6,14 +6,8 @@ import filecmp
 from tqdm import tqdm_notebook
 import numpy as np
 import matplotlib.pyplot as plt
-import json
 import platform
-
-def lmenv():
-    """Obtains environment settings"""
-    with open('.lmenv') as f:
-        env_params = json.load(f)
-        return env_params[platform.node()]
+import lightmetrica as lm
 
 def jupyter_init_config():
     """ init() configuration for jupyter notebook extension """
@@ -45,44 +39,16 @@ def jupyter_init_config():
         }
     }
 
-def update_lm_modules(configuration):
-    """Copy Lightmetrica modules"""
+def widen(arg):
+    from IPython.core.display import display, HTML
+    display(HTML("<style>.container { width:100% !important; }</style>"))
 
-    # Module directory
-    if configuration is None:
-        configuration = "Release"
-    module_dir = lmenv()["module_dir"][configuration]
+def load_ipython_extension(ip):
+    """Register as IPython extension"""
+    # Register line magic function
+    ip.register_magic_function(widen)
 
-    # Temporary module directory
-    temp_module_dir = os.path.join(os.getcwd(), 'temp')
-    if not os.path.exists(temp_module_dir):
-        os.makedirs(temp_module_dir)
-
-    # Add temporary module path to sys.path
-    sys.path.insert(0, temp_module_dir)
-
-    # Copy required modules
-    try:
-        if sys.platform == 'win32':
-            files = ['pylm.cp36-win_amd64.pyd', 'liblm.dll']
-            if configuration == "Debug":
-                files += ['pylm.pdb', 'liblm.pdb']
-        elif sys.platform == 'linux':
-            files = ['pylm.cpython-36m-x86_64-linux-gnu.so', 'liblm.so']
-        for file in files:
-            # Copy if the file is not up-to-date
-            src = os.path.join(module_dir, file)
-            dst = os.path.join(temp_module_dir, file)
-            if not os.path.isfile(dst) or (os.path.isfile(dst) and not filecmp.cmp(src, dst)):
-                print('Copying... [%s]' % file)
-                shutil.copy(src, dst)
-    except PermissionError as e:
-        print('Requested module must be updated but hold by the running kernel. Restart the kernel to resolve this issue.')
-        raise
-
-    # Register some extensions for jupyter notebook
-    import lightmetrica as lm
-
+    # Register some components
     @lm.pylm_component('logger::jupyter')
     class JupyterLogger(lm.log.LoggerContext):
         """Logger for jupyter notebook"""
@@ -137,13 +103,3 @@ def update_lm_modules(configuration):
             time.sleep(1)
             plt.show()
             plt.close()
-
-def widen(arg):
-    from IPython.core.display import display, HTML
-    display(HTML("<style>.container { width:100% !important; }</style>"))
-
-def load_ipython_extension(ip):
-    """Register as IPython extension"""
-    # Register line magic function
-    ip.register_magic_function(update_lm_modules)
-    ip.register_magic_function(widen)

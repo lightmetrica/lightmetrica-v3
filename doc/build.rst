@@ -221,23 +221,7 @@ Install dependencies
    $ conda install -c conda-forge jupyter matplotlib imageio
    $ pip install tqdm 
 
-Move to your working directory, and create ``.lmenv`` file
-where we describe the paths to the binary and scene directories of the framework.
-Example of ``.lmenv`` file:
-
-.. code-block:: json
-
-    {
-        "<hostname>": {
-            "module_dir": {
-                "Release": "<Path to release binary directory>",
-                "Debug": "<Path to debug binary directory>"
-            },
-            "scene_dir": "<Scene path>"
-        }
-    }
-
-Execute Jupyter notebook
+Move to your working directory, and execute Jupyter notebook
 
 .. code-block:: console
 
@@ -252,19 +236,9 @@ and [3] imports the framework as an alias ``lm``:
 
   In [1]: import sys
      ...: sys.path.append(r'<Lightmetrica root directory>')
+     ...: sys.path.append(r'<Lightmetrica binary directory>')
   In [2]: %load_ext lightmetrica_jupyter
-     ...: %update_lm_modules Release
   In [3]: import lightmetrica as lm
-
-.. note::
-
-   IPython kernel locks the loaded c extensions
-   and prevents the shared libraries of the framework from being recompiled,
-   until the kernel is shut down.
-   To improve the efficiency of the workflow,
-   we provide ``%update_lm_modules <configuration>`` line magic function.
-   The function takes configuration ``Release`` or ``Debug`` as an argument,
-   then copies the binaries to the temporary directory according to the configuration written in ``.lmenv``.
 
 We provide Jupyter notebook friendly implementation of :cpp:class:`lm::Logger` and :cpp:class:`lm::Progress`.
 To use the recommended settings, use ``jupyter_init_config()`` function and append the return value
@@ -274,6 +248,13 @@ to the argument of :cpp:func:`lm::init()` function.
 
    In [4]: from lightmetrica_jupyter import jupyter_init_config
    In [5]: lm.init('user::default', {<other configuration>, **jupyter_init_config()})
+
+.. note::
+
+   IPython kernel locks the loaded c extensions
+   and prevents the shared libraries of the framework from being recompiled,
+   until the kernel is shut down.
+   Thus if you want to rebuild already-loaded c extension you need to first shutdown the kernel.
 
 .. ----------------------------------------------------------------------------
 
