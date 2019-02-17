@@ -34,6 +34,19 @@ static void bind(pybind11::module& m) {
         : FloatPrecisionType::Float64;
 
     // ------------------------------------------------------------------------
+    
+    // version.h
+    {
+        auto sm = m.def_submodule("version");
+        m.attr("major") = lm::version::major();
+        m.attr("minor") = lm::version::minor();
+        m.attr("patch") = lm::version::patch();
+        m.attr("revision") = lm::version::revision();
+        m.attr("buildTimestamp") = lm::version::buildTimestamp();
+        m.attr("formatted") = lm::version::formatted();
+    }
+
+    // ------------------------------------------------------------------------
 
     // math.h
 

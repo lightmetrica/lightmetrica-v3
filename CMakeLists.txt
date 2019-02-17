@@ -172,6 +172,28 @@ target_include_directories(imgui PUBLIC
 
 # -----------------------------------------------------------------------------
 
+# Execute git command in the project root and check revision number
+find_package(Git REQUIRED)
+execute_process(
+	COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--short" "HEAD"
+	OUTPUT_VARIABLE LM_VERSION_REVISION
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Current build timestamp
+string(TIMESTAMP LM_BUILD_TIMESTAMP "%Y-%m-%d %H.%M.%S")
+
+# Export framework version to a header
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/versiondef.h.in"
+    "${PROJECT_BINARY_DIR}/versiondef.h"
+    @ONLY
+)
+add_library(lm_version INTERFACE)
+target_include_directories(lm_version INTERFACE "${PROJECT_BINARY_DIR}")
+
+# -----------------------------------------------------------------------------
+
 # PCH related
 set(_PCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/pch")
 set(_PCH_FILES
