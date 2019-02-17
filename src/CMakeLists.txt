@@ -13,6 +13,7 @@ set(_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(_PROJECT_NAME liblm)
 set(_HEADER_FILES 
     "${_INCLUDE_DIR}/lm.h"
+    "${_INCLUDE_DIR}/version.h"
     "${_INCLUDE_DIR}/user.h"
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/progress.h"
@@ -38,6 +39,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/surface.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
+    "${_SOURCE_DIR}/version.cpp"
     "${_SOURCE_DIR}/user.cpp"
     "${_SOURCE_DIR}/assets.cpp"
     "${_SOURCE_DIR}/scene.cpp"
@@ -80,7 +82,8 @@ endif()
 # Configure dependency
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt::fmt-header-only cereal
-    PRIVATE OpenMP::OpenMP_CXX
+    PRIVATE lm_version
+            OpenMP::OpenMP_CXX
             cppzmq-static
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
             $<$<CXX_COMPILER_ID:GNU>:atomic>)

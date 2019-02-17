@@ -117,14 +117,12 @@ public:
         }
         // Other message types
         else {
-            // Split the mesagge by lines
-            std::stringstream ss(message);
-            std::string messageByLine;
-            while (std::getline(ss, messageByLine, '\n')) {
+            // Process one line
+            const auto processLine = [&](const std::string& message) {
                 // Message with indentation
                 const auto body = fmt::format("{}{}",
                     indentationString_,
-                    messageByLine);
+                    message);
 
                 // Print formatted log message
                 if (color_) {
@@ -134,6 +132,19 @@ public:
                     std::cout << header;
                 }
                 std::cout << body << "\n" << std::flush;
+            };
+
+            if (strlen(message) == 0) {
+                // Empty line
+                processLine("");
+            }
+            else {
+                // Split the mesagge by lines
+                std::stringstream ss(message);
+                std::string messageByLine;
+                while (std::getline(ss, messageByLine, '\n')) {
+                    processLine(messageByLine);
+                }
             }
         }
     }

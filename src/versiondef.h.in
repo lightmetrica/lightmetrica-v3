@@ -1,0 +1,12 @@
+/*
+    Lightmetrica - Copyright (c) 2019 Hisanari Otsu
+    Distributed under MIT license. See LICENSE file for details.
+*/
+
+#pragma once
+
+#define LM_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define LM_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define LM_VERSION_PATCH @PROJECT_VERSION_PATCH@
+#define LM_VERSION_REVISION "@LM_VERSION_REVISION@"
+#define LM_BUILD_TIMESTAMP "@LM_BUILD_TIMESTAMP@"

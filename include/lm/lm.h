@@ -6,6 +6,7 @@
 #pragma once
 
 #include "component.h"
+#include "version.h"
 #include "json.h"
 #include "serial.h"
 #include "user.h"
