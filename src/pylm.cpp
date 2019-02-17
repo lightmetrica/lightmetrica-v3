@@ -43,6 +43,8 @@ static void bind(pybind11::module& m) {
         m.attr("patch") = lm::version::patch();
         m.attr("revision") = lm::version::revision();
         m.attr("buildTimestamp") = lm::version::buildTimestamp();
+        m.attr("platform") = lm::version::platform();
+        m.attr("architecture") = lm::version::architecture();
         m.attr("formatted") = lm::version::formatted();
     }
 
