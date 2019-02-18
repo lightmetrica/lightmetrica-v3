@@ -7,9 +7,15 @@
 #include <lm/texture.h>
 #include <lm/logger.h>
 #include <lm/serial.h>
+#pragma warning(push)
+#pragma warning(disable:4244) // possible loss of data
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#pragma warning(pop)
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+#if 0
 #if LM_COMPILER_MSVC
 int bswap(int x) { return _byteswap_ulong(x); }
 #elif LM_COMPILER_GCC
@@ -216,6 +222,74 @@ public:
 
     virtual TextureBuffer buffer() override {
         return { bitmap_.w, bitmap_.h, bitmap_.cs.data() };
+    }
+};
+#endif
+
+class Texture_Bitmap final : public Texture {
+private:
+    int w_;     // Width of the image
+    int h_;     // Height of the image
+    int c_;     // Number of components
+    std::vector<float> data_;
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(w_, h_, data_);
+    }
+
+public:
+    virtual TextureSize size() const override {
+        return { w_, h_ };
+    }
+
+    virtual bool construct(const Json& prop) override {
+        // Image path
+        const std::string path = prop["path"];
+
+        // Load as HDR image
+        // LDR image is internally converted to HDR
+        float* data = stbi_loadf(path.c_str(), &w_, &h_, &c_, 0);
+        if (data == nullptr) {
+            LM_ERROR("Failed to load image: {}", stbi_failure_reason());
+            return false;
+        }
+        // Allocate and copy the data
+        data_.assign(data, data + (w_*h_*c_));
+        stbi_image_free(data);
+
+        return false;
+    }
+
+    virtual Vec3 eval(Vec2 t) const override {
+        const auto u = t.x - floor(t.x);
+        const auto v = t.y - floor(t.y);
+        const int x = std::clamp(int(u * w_), 0, w_ - 1);
+        const int y = std::clamp(int(v * h_), 0, h_ - 1);
+        const int i = w_ * y + x;
+        return Vec3(data_[c_*i], data_[c_*i+1], data_[c_*i+2]);
+    }
+
+    virtual Vec3 evalByPixelCoords(int x, int y) const override {
+        const int i = w_*y + x;
+        return Vec3(data_[c_*i], data_[c_*i+1], data_[c_*i+2]);
+    }
+
+    virtual Float evalAlpha(Vec2 t) const override {
+        const auto u = t.x - floor(t.x);
+        const auto v = t.y - floor(t.y);
+        const int x = std::clamp(int(u * w_), 0, w_ - 1);
+        const int y = std::clamp(int(v * h_), 0, h_ - 1);
+        const int i = w_ * y + x;
+        return data_[c_*i+3];
+    }
+
+    virtual bool hasAlpha() const override {
+        return c_ == 4;
+    }
+
+    virtual TextureBuffer buffer() override {
+        return { w_, h_, c_, data_.data() };
     }
 };
 

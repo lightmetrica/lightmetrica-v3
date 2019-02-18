@@ -67,13 +67,15 @@ public:
         }
 
         // Create OpenGL texture
-        const auto [w, h, data] = tex->buffer();
+        const auto [w, h, c, data] = tex->buffer();
 
+#if 0
         // Convert the texture to float type
         std::vector<float> data_(w*h * 3);
         for (int i = 0; i < w*h*3; i++) {
             data_[i] = float(data[i]);
         }
+#endif
 
         texture_ = 0;
         glGenTextures(1, &*texture_);

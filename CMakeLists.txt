@@ -134,6 +134,11 @@ else()
     find_package(cppzmq REQUIRED)
 endif()
 
+# stb
+# https://github.com/nothings/stb
+add_library(stb_image INTERFACE)
+target_include_directories(stb_image INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/stb")
+
 # OpenGL
 find_package(OpenGL REQUIRED)
 

@@ -83,6 +83,7 @@ endif()
 target_link_libraries(${_PROJECT_NAME}
     PUBLIC nlohmann_json glm fmt::fmt-header-only cereal
     PRIVATE lm_version
+            stb_image
             OpenMP::OpenMP_CXX
             cppzmq-static
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
