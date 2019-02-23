@@ -17,17 +17,17 @@ LM_NAMESPACE_BEGIN(version)
 /*!
     \brief Major version.
 */
-LM_PUBLIC_API int major();
+LM_PUBLIC_API int majorVersion();
 
 /*!
     \brief Minor version.
 */
-LM_PUBLIC_API int minor();
+LM_PUBLIC_API int minorVersion();
 
 /*!
     \brief Patch version.
 */
-LM_PUBLIC_API int patch();
+LM_PUBLIC_API int patchVersion();
 
 /*!
     \brief Revision string.
@@ -53,7 +53,8 @@ LM_PUBLIC_API std::string architecture();
     \brief Formatted version string.
 */
 static std::string formatted() {
-    return fmt::format("{}.{}.{} (rev. {})", major(), minor(), patch(), revision());
+    return fmt::format("{}.{}.{} (rev. {})",
+        majorVersion(), minorVersion(), patchVersion(), revision());
 }
 
 /*!

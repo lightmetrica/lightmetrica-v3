@@ -67,13 +67,15 @@ public:
         }
 
         // Create OpenGL texture
-        const auto [w, h, data] = tex->buffer();
+        const auto [w, h, c, data] = tex->buffer();
 
+#if 0
         // Convert the texture to float type
         std::vector<float> data_(w*h * 3);
         for (int i = 0; i < w*h*3; i++) {
             data_[i] = float(data[i]);
         }
+#endif
 
         texture_ = 0;
         glGenTextures(1, &*texture_);
@@ -82,7 +84,12 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_FLOAT, data_.data());
+        if (c == 3) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_FLOAT, data);
+        }
+        else if (c == 4) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_FLOAT, data);
+        }
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 

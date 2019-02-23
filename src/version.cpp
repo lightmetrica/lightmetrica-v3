@@ -9,15 +9,15 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::version)
 
-LM_PUBLIC_API int major() {
+LM_PUBLIC_API int majorVersion() {
     return LM_VERSION_MAJOR;
 }
 
-LM_PUBLIC_API int minor() {
+LM_PUBLIC_API int minorVersion() {
     return LM_VERSION_MINOR;
 }
 
-LM_PUBLIC_API int patch() {
+LM_PUBLIC_API int patchVersion() {
     return LM_VERSION_PATCH;
 }
 

@@ -47,10 +47,16 @@ Using pre-installed packages
 
 To use this strategy, you need to install the dependencies externally
 using package management system or install the libraries from sources.
+
 For instance, our `Dockerfile`_ adopts this strategy.
 Please refer to the file for the detailed procedure.
 
 .. _Dockerfile: https://github.com/hi2p-perim/lightmetrica-v3/blob/master/Dockerfile
+
+.. note::
+   If the source directory contains ``external`` directory
+   you want to specify ``-DLM_USE_EXTERNAL_DIR=OFF`` to force CMake to use this strategy.
+   Otherwise our CMakeLists automatically uses the first strategy.
 
 .. note::
    This strategy internally uses on CMake's ``find_package`` to find dependencies.

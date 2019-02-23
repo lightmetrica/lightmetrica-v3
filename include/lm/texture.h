@@ -25,11 +25,11 @@ struct TextureSize {
     \brief Texture buffer.
 */
 struct TextureBuffer {
-    int w;
-    int h;
-    Float* data;
+    int w;       // WIdth
+    int h;       // Height
+    int c;       // Components
+    float* data; // Underlying data type is already float
 };
-
 
 /*!
     \brief Texture component interface.

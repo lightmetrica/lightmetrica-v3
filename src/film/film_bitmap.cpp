@@ -7,6 +7,9 @@
 #include <lm/film.h>
 #include <lm/logger.h>
 #include <lm/serial.h>
+#include <lm/json.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -59,6 +62,7 @@ class Film_Bitmap final : public Film {
 private:
     int w_;
     int h_;
+    int quality_;
     std::vector<AtomicWrapper<Vec3>> data_;
     std::vector<Vec3> dataTemp_;  // Temporary buffer for external reference
 
@@ -71,6 +75,7 @@ public:
     virtual bool construct(const Json& prop) override {
         w_ = prop["w"];
         h_ = prop["h"];
+        quality_ = json::valueOr<int>(prop, "quality", 90);
         data_.assign(w_*h_, {});
         return true;
     }
@@ -98,6 +103,52 @@ public:
         }
 
         // Save file
+        // Check extension of the output file
+        const auto ext = std::filesystem::path(outpath).extension().string();
+        if (ext == ".png") {
+            const auto data = copy<unsigned char>(true);
+            if (!stbi_write_png(outpath.c_str(), w_, h_, 3, data.data(), w_*3)) {
+                return false;
+            }
+        }
+        #if 0
+        else if (ext == ".jpg") {
+            const auto data = copy<unsigned char>(true);
+            if (!stbi_write_jpg(outpath.c_str(), w_, h_, 3, data.data(), quality_)) {
+                return false;
+            }
+        }
+        #endif
+        else if (ext == ".hdr") {
+            const auto data = copy<float>(true);
+            if (!stbi_write_hdr(outpath.c_str(), w_, h_, 3, data.data())) {
+                return false;
+            }
+        }
+        else if (ext == ".pfm") {
+            const auto data = copy<float>(false);
+            if (!writePfm(outpath, w_, h_, data)) {
+                return false;
+            }
+        }
+        else {
+            LM_ERROR("Invalid extension [ext='{}'", ext);
+            return false;
+        }
+
+        return true;
+    }
+
+    virtual FilmBuffer buffer() override {
+        dataTemp_.clear();
+        for (const auto& v : data_) {
+            dataTemp_.push_back(v.v_);
+        }
+        return FilmBuffer{ w_, h_, &dataTemp_[0].x };
+    }
+
+private:
+    bool writePfm(const std::string& outpath, int w, int h, const std::vector<float>& d) const {
         FILE *f;
         int err;
         #if LM_COMPILER_MSVC
@@ -111,26 +162,31 @@ public:
             return false;
         }
         #endif
-        fprintf(f, "PF\n%d %d\n-1\n", w_, h_);
-        std::vector<float> d(w_*h_*3);
-        for (int y = 0; y < h_; y++) {
-            for (int x = 0; x < w_; x++) {
-                for (int i = 0; i < 3; i++) {
-                    d[3*(y*w_+x)+i] = float(data_[y*w_+x].v_.load()[i]);
-                }
-            }
-        }
+        fprintf(f, "PF\n%d %d\n-1\n", w, h);
         fwrite(d.data(), 4, d.size(), f);
         fclose(f);
         return true;
     }
 
-    virtual FilmBuffer buffer() override {
-        dataTemp_.clear();
-        for (const auto& v : data_) {
-            dataTemp_.push_back(v.v_);
+    template <typename T>
+    std::vector<T> copy(bool flip) const {
+        std::vector<T> v(w_*h_*3, {});
+        for (int y = 0; y < h_; y++) {
+            const int yy = !flip ? y : h_-y-1;
+            for (int x = 0; x < w_; x++) {
+                for (int i = 0; i < 3; i++) {
+                    const Float t = data_[y*w_+x].v_.load()[i];
+                    if constexpr (std::is_same_v<T, float>) {
+                        v[3*(yy*w_+x)+i] = T(t);
+                    }
+                    if constexpr (std::is_same_v<T, unsigned char>) {
+                        const auto t2 = std::pow(t, 1_f/2.2_f);
+                        v[3*(yy*w_+x)+i] = (unsigned char)glm::clamp(int(256_f*t2), 0, 255);
+                    }
+                }
+            }
         }
-        return FilmBuffer{ w_, h_, &dataTemp_[0].x };
+        return std::move(v);
     }
 };
 
