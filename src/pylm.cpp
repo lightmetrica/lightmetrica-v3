@@ -38,9 +38,9 @@ static void bind(pybind11::module& m) {
     // version.h
     {
         auto sm = m.def_submodule("version");
-        m.attr("major") = lm::version::major();
-        m.attr("minor") = lm::version::minor();
-        m.attr("patch") = lm::version::patch();
+        m.attr("majorVersion") = lm::version::majorVersion();
+        m.attr("minorVersion") = lm::version::minorVersion();
+        m.attr("patchVersion") = lm::version::patchVersion();
         m.attr("revision") = lm::version::revision();
         m.attr("buildTimestamp") = lm::version::buildTimestamp();
         m.attr("platform") = lm::version::platform();
