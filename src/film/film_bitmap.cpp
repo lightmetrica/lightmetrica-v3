@@ -132,7 +132,7 @@ public:
             }
         }
         else {
-            LM_ERROR("Invalid extension [ext='{}'", ext);
+            LM_ERROR("Invalid extension [ext='{}']", ext);
             return false;
         }
 

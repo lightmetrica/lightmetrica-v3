@@ -54,36 +54,10 @@ public:
         log::init(json::valueOr<std::string>(prop, "logger", log::DefaultType));
 
         // Initial message
-        // This must be called after logger subsystem is initialized.
-        {
-            LM_INFO("");
-            LM_INFO("Lightmetrica -- A research-oriented renderer");
-            LM_INFO("");
-            LM_INFO("Version {}", version::formatted());
-            LM_INFO("");
-            LM_INFO("Copyright (c) 2019 Hisanari Otsu");
-            LM_INFO("Distributed under MIT license. See LICENSE file for details.");
-            LM_INFO("");
-            const auto currentTime = []() -> std::string {
-                std::stringstream ss;
-                auto now = std::chrono::system_clock::now();
-                auto time = std::chrono::system_clock::to_time_t(now);
-                #if LM_PLATFORM_WINDOWS
-                struct tm timeinfo;
-                localtime_s(&timeinfo, &time);
-                ss << std::put_time(&timeinfo, "%Y-%m-%d %H.%M.%S");
-                #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
-                char timeStr[256];
-                std::strftime(timeStr, sizeof(timeStr), "%Y.%m.%d.%H.%M.%S", std::localtime(&time));
-                ss << timeStr;
-                #endif
-                return ss.str();
-            }();
-            LM_INFO("Platform {} {}", version::platform(), version::architecture());
-            LM_INFO("Build    {}", version::buildTimestamp());
-            LM_INFO("Current  {}", currentTime);
-            LM_INFO("");
-        }
+        LM_INFO("Lightmetrica -- Version {} {} {}",
+            version::formatted(),
+            version::platform(),
+            version::architecture());
 
         // Parallel subsystem
         parallel::init("parallel::openmp", prop);

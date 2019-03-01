@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import platform
 import lightmetrica as lm
 
-def jupyter_init_config():
+def jupyter_init_config(outfilm):
     """ init() configuration for jupyter notebook extension """
     return {
         # Configure logger for jupyter notebook
@@ -29,7 +29,7 @@ def jupyter_init_config():
                         'delay': 1000,
                         'progress': {
                             'progress::film_jupyter': {
-                                'film': 'film1',
+                                'film': outfilm,
                                 'size': [10,5]
                             }
                         }

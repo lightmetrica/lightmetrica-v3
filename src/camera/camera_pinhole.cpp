@@ -37,11 +37,10 @@ private:
     Vec3 u_, v_, w_;  // Basis for camera coordinates
     Float vfov_;      // Vertical field of view
     Float tf_;        // Half of the screen height at 1 unit forward from the position
-    Float aspect_;    // Aspect ratio
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, position_, center_, up_, u_, v_, w_, vfov_, tf_, aspect_);
+        ar(film_, position_, center_, up_, u_, v_, w_, vfov_, tf_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
@@ -68,7 +67,6 @@ public:
         if (!film_) {
             return false;
         }
-        aspect_ = film_->aspectRatio();             // Aspect ratio
         position_ = prop["position"];               // Camera position
         center_ = prop["center"];                   // Look-at position
         up_ = prop["up"];                           // Up vector

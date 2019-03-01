@@ -114,6 +114,7 @@ static void bind(pybind11::module& m) {
     // user.h
     m.def("init", &init);
     m.def("shutdown", &shutdown);
+    m.def("reset", &reset);
     m.def("asset", &asset);
     m.def("primitive", &primitive);
     m.def("primitives", &primitives);

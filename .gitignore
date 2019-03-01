@@ -28,6 +28,8 @@ dist*/
 doc/_build
 jupyter
 *.serialized
+.lmenv
+*.ipynb
 
 # https://github.com/github/gitignore/blob/master/Python.gitignore
 # Byte-compiled / optimized / DLL files
