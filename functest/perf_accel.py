@@ -60,5 +60,3 @@ for scene in lmscene.scenes():
 build_time_df
 
 render_time_df
-
-

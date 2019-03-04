@@ -35,7 +35,7 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(w_, h_, data_);
+        ar(w_, h_, c_, data_);
     }
 
 public:
