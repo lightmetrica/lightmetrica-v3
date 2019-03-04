@@ -59,7 +59,7 @@ public:
         if (!accel_.Traverse(r, intersector, &isect)) {
             return {};
         }
-
+        
         const auto [primitive, face] = primitiveFaceId_[isect.prim_id];
         return Hit{ isect.t, Vec2(isect.u, isect.v), primitive, face };
     }
