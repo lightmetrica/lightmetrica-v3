@@ -255,6 +255,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 /*!
     \brief Post a log message with a user-defined severity.
+    \param severity User-defined severity by integer.
     \param message Log message.
     \param ... Parameters for the format in the log message.
 */

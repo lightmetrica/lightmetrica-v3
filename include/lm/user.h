@@ -186,13 +186,14 @@ LM_PUBLIC_API void build(const std::string& accelName, const Json& prop = {});
 
 /*!
     \brief Initialize renderer.
+    \param rendererName Type of renderer.
+    \param prop Property for configuration.
 */
 LM_PUBLIC_API void renderer(const std::string& rendererName, const Json& prop = {});
 
 /*!
     \brief Render image based on current configuration.
-    \param rendererName Type of renderer.
-    \param prop Property for configuration.
+    \param verbose Supress outputs if false.
     \see `example/raycast.cpp`
 
     \rst
@@ -205,6 +206,8 @@ LM_PUBLIC_API void render(bool verbose = true);
 
 /*!
     \brief Initialize renderer and render.
+    \param rendererName Type of renderer.
+    \param prop Property for configuration.
 */
 static void render(const std::string& rendererName, const Json& prop = {}) {
     renderer(rendererName, prop);

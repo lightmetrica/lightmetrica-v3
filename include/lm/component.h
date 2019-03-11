@@ -397,26 +397,25 @@ updateWeakRef(T*& p) {
 
 /*!
     \brief Visit underlying asset overloaded for weak references.
-    \param visit Visitor function.
+    \param visitor Visitor function.
     \param p Reference to component pointer.
 */
 template <typename T>
 std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
-visit(const Component::ComponentVisitor& visit_, T*& p) {
+visit(const Component::ComponentVisitor& visitor, T*& p) {
     Component* temp = p;
-    visit_(temp, true);
+    visitor(temp, true);
     p = dynamic_cast<T*>(temp);
 }
 
 /*!
     \brief Visit underlying asset overloaded for unique pointers.
-    \param name Name of variable.
-    \param visit Visitor function.
+    \param visitor Visitor function.
     \param p Reference to component pointer.
 */
 template <typename T>
 std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
-visit(const Component::ComponentVisitor& visit_, Component::Ptr<T>& p) {
+visit(const Component::ComponentVisitor& visitor, Component::Ptr<T>& p) {
     Component* temp = p.get();
     visit_(temp, false);
 }
