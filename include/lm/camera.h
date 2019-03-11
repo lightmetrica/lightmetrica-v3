@@ -80,6 +80,14 @@ public:
         using 4d vector containing ``(x,y,w,h)`` where ``(x,y)`` is the bottom-left point
         of the region, and ``(w,h)`` is width and height of the region.
 
+        The sampled results are returned by :cpp:func:`CameraRaySample` structure.
+        When sampling has failed, the function returns nullopt.
+        
+        Mathematically the function defines a sampling from the distribution
+        having a joint probability density :math:`p(\mathbf{x}, \omega)` defined by
+        the surface point :math:`\mathbf{x}` and the direction :math:`\omega`
+        according to the measure :math:`dAd\sigma^\bot`.
+
         Note that the generated rays are uniform in a sense that
         each ray is generated from the uniform sampling of the raster window.
         Looking by the solid angle measure, for instance, the set of rays are not uniform.
@@ -96,7 +104,7 @@ public:
         \param wo Outgoing direction.
 
         \rst
-        Evaluates sensitivity function :math:`W_e` of the camera.
+        Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.
         \endrst
     */
     virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const {
