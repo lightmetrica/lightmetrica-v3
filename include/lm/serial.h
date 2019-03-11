@@ -76,7 +76,19 @@ void save(Archive& ar, const lm::Component::Ptr<T>& p) {
 
         // Meta information needed to recreate the instance
         ar(CEREAL_NVP_("key", Access::key(p.get())));
-        ar(CEREAL_NVP_("loc", Access::loc(p.get())));
+        
+        // Consistency testing checking if the locator is valid
+        const auto& loc = Access::loc(p.get());
+        if (!loc.empty()) {
+            const auto* p_loc = lm::comp::get<T>(loc);
+            if (!p_loc || p_loc != p.get()) {
+                LM_ERROR("Invalid locator [loc='{}']", loc);
+                LM_ERROR("Loaded state might be broken. Check if");
+                LM_ERROR("  - locator is properly specified in lm::comp::create()");
+                LM_ERROR("  - underlying() function is properly implemented");
+            }
+        }
+        ar(CEREAL_NVP_("loc", loc));
 
         // Save the contants with Component::save() function.
         // We don't use cereal's polymorphinc class support

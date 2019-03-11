@@ -96,7 +96,7 @@ public:
             return comp::getCurrentOrUnderlying(r, scene_.get());
         }
         else if (s == "renderer") {
-            return renderer_.get();
+            return comp::getCurrentOrUnderlying(r, renderer_.get());
         }
         return nullptr;
     }
@@ -109,9 +109,9 @@ public:
 
 public:
     virtual void reset() override {
-        assets_ = comp::create<Assets>("assets::default", makeLoc(loc(), "assets"));
+        assets_ = comp::create<Assets>("assets::default", makeLoc("assets"));
         assert(assets_);
-        scene_ = comp::create<Scene>("scene::default", makeLoc(loc(), "scene"));
+        scene_ = comp::create<Scene>("scene::default", makeLoc("scene"));
         assert(scene_);
         renderer_.reset();
     }
@@ -139,7 +139,7 @@ public:
     }
 
     virtual void renderer(const std::string& rendererName, const Json& prop) override {
-        renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc(loc(), "renderer"), prop);
+        renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc("renderer"), prop);
         if (!renderer_) {
             LM_ERROR("Failed to render [renderer='{}']", rendererName);
             THROW_RUNTIME_ERROR();
@@ -184,6 +184,35 @@ public:
         serial::load(is, assets_);
         serial::load(is, scene_);
         serial::load(is, renderer_);
+    }
+
+    virtual void validate() override {
+        // Check all components from the root
+        const lm::Component::ComponentVisitor visit = [&](Component* comp, bool weak) {
+            if (!comp) {
+                LM_INFO("- nullptr");
+                return;
+            }
+            if (!weak) {
+                LM_INFO("- unique [key='{}', loc='{}']", comp->key(), comp->loc());
+
+                // Locator
+                const auto loc = comp->loc();
+                
+                // Check if the locator is valid
+                const auto p = comp::get<Component>(loc);
+                if (!p || p != comp) {
+                    LM_ERROR("Invalid locator [loc='{}']", loc);
+                }
+
+                LM_INDENT();
+                comp->foreachUnderlying(visit);
+            }
+            else {
+                LM_INFO("-> weak [key='{}', loc='{}']", comp->key(), comp->loc());
+            }
+        };
+        lm::comp::detail::foreachComponent(visit);
     }
 
 private:
@@ -248,6 +277,10 @@ LM_PUBLIC_API void serialize(std::ostream& os) {
 
 LM_PUBLIC_API void deserialize(std::istream& is) {
     Instance::get().deserialize(is);
+}
+
+LM_PUBLIC_API void validate() {
+    Instance::get().validate();
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

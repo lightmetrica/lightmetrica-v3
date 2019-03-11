@@ -79,13 +79,6 @@ public:
     const std::string& loc() const { return loc_; }
 
     /*!
-        \brief Get global locator.
-    */
-    const std::string globalLoc() const {
-        return "global//" + loc();
-    }
-
-    /*!
         \brief Get parent locator.
         
         \rst
@@ -350,11 +343,6 @@ LM_PUBLIC_API void printRegistered();
 LM_PUBLIC_API void registerRootComp(Component* p);
 
 /*!
-    \brief Get root component.
-*/
-LM_PUBLIC_API Component* getRoot();
-
-/*!
     \brief Get underlying component of root by name.
 */
 LM_PUBLIC_API Component* get(const std::string& name);
@@ -511,24 +499,6 @@ LM_NAMESPACE_BEGIN(detail)
     @{
 */
 
-#if 0
-/*!
-    \brief Create component instance directly with constructor.
-    \param loc Global locator of the instance.
-
-    \rst
-    Use this function when you want to construct a component instance
-    directly with the visibile component type.
-    \endrst
-*/
-template <typename ComponentT, typename... Ts>
-Component::Ptr<ComponentT> createDirect(const std::string& loc, Ts&&... args) {
-    auto comp = std::make_unique<ComponentT>(std::forward<Ts>(args)...);
-    detail::Access::loc(comp.get()) = loc;
-    return Component::Ptr<ComponentT>(comp.release());
-}
-#endif
-
 /*!
     \brief Singleton for a context component.
     \tparam ContextComponentT Component type.
@@ -563,7 +533,8 @@ public:
         if (instance().context) {
             shutdown();
         }
-        instance().context = comp::create<ContextComponentT>(type, "", prop);
+        // Instance of the context component has root locator ($)
+        instance().context = comp::create<ContextComponentT>(type, "$", prop);
     }
 
     static void shutdown() {

@@ -54,13 +54,14 @@ def load_ipython_extension(ip):
         """Logger for jupyter notebook"""
         def construct(self, prop):
             self.severity = 0
+            self.n = 0
             return True
         def log(self, level, severity, filename, line, message):
             if self.severity > severity:
                 return
-            print(message)
+            print((' ' * self.n * 2) + message)
         def updateIndentation(self, n):
-            pass
+            self.n = n
         def setSeverity(self, severity):
             self.severity = severity
         

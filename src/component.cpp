@@ -249,16 +249,16 @@ public:
         root_ = p;
     }
 
-    Component* getRoot() {
-        return root_;
-    }
-
-    Component* get(const std::string& name) {
+    Component* get(const std::string& locator) {
         if (!root_) {
-            LM_WARN("Root component has not registered [name='{}'].", name);
+            LM_WARN("Root component has not registered [name='{}'].", locator);
             return nullptr;
         }
-        return root_->underlying(name);
+        const auto[s, r] = comp::splitFirst(locator);
+        if (s != "$") {
+            LM_WARN("Locator must start with '$' [loc='{}'].", locator);
+        }
+        return comp::getCurrentOrUnderlying(r, root_);
     }
 
     virtual void foreachComponent(const Component::ComponentVisitor& visit) {
@@ -321,10 +321,6 @@ LM_PUBLIC_API void printRegistered() {
 
 LM_PUBLIC_API void registerRootComp(Component* p) {
     Impl::instance().registerRootComp(p);
-}
-
-LM_PUBLIC_API Component* getRoot() {
-    return Impl::instance().getRoot();
 }
 
 LM_PUBLIC_API Component* get(const std::string& name) {

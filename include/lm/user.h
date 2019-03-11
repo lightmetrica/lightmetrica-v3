@@ -109,12 +109,12 @@ LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, co
 template <typename T>
 T* getAsset(const std::string& name) {
     const auto locator = [&]() -> std::string {
-        std::regex reg(R"x(global//(.+))x");
+        std::regex reg(R"x(\$(.+))x");
         std::smatch match;
         if (std::regex_match(name, match, reg)) {    
-            return match[1];
+            return name;
         }
-        return "assets." + name;
+        return "$.assets." + name;
     }();
     return comp::get<T>(locator);
 }
@@ -266,6 +266,11 @@ LM_INLINE void deserialize(const std::string& path) {
 }
 
 /*!
+    \brief Validate consistency of the component instances.
+*/
+LM_PUBLIC_API void validate();
+
+/*!
     \brief Scoped guard of `init` and `shutdown` functions.
     \rst
     Example:
@@ -323,6 +328,7 @@ public:
     virtual FilmBuffer buffer(const std::string& filmName) = 0;
     virtual void serialize(std::ostream& os) = 0;
     virtual void deserialize(std::istream& is) = 0;
+    virtual void validate() = 0;
 };
 
 /*!

@@ -37,7 +37,7 @@ struct TestAsset_Dependent final : public TestAsset {
         // In this test an instance of Assets are registered as root component
         // thus we can access the underlying component via lm::comp::get function.
         LM_UNUSED(prop);
-        other = lm::comp::get<TestAsset>("asset1");
+        other = lm::comp::get<TestAsset>("$.asset1");
         return true;
     }
 
@@ -58,7 +58,7 @@ LM_COMP_REG_IMPL(TestAsset_Dependent, "testasset::dependent");
 TEST_CASE("Assets") {
     lm::log::ScopedInit init;
 
-    auto assets = lm::comp::create<lm::Assets>("assets::default", "");
+    auto assets = lm::comp::create<lm::Assets>("assets::default", "$");
     REQUIRE(assets);
 
     // Set assets as a root component

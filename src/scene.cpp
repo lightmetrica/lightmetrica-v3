@@ -40,6 +40,14 @@ public:
         }
     }
 
+    virtual Component* underlying(const std::string& name) const override {
+        const auto[s, r] = comp::splitFirst(name);
+        if (s == "accel") {
+            return comp::getCurrentOrUnderlying(r, accel_.get());
+        }
+        return nullptr;
+    }
+
 public:
     virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) override {
         // Helper function to find an asset by property name

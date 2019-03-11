@@ -126,6 +126,7 @@ static void bind(pybind11::module& m) {
     m.def("buffer", &buffer);
     m.def("serialize", (void(*)(const std::string&))&serialize);
     m.def("deserialize", (void(*)(const std::string&))&deserialize);
+    m.def("validate", &validate);
 
     // ------------------------------------------------------------------------
 
