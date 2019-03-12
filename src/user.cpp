@@ -88,15 +88,14 @@ public:
 
 public:
     virtual Component* underlying(const std::string& name) const override {
-        const auto[s, r] = comp::splitFirst(name);
-        if (s == "assets") {
-            return comp::getCurrentOrUnderlying(r, assets_.get());
+        if (name == "assets") {
+            return assets_.get();
         }
-        else if (s == "scene") {
-            return comp::getCurrentOrUnderlying(r, scene_.get());
+        else if (name == "scene") {
+            return scene_.get();
         }
-        else if (s == "renderer") {
-            return comp::getCurrentOrUnderlying(r, renderer_.get());
+        else if (name == "renderer") {
+            return renderer_.get();
         }
         return nullptr;
     }

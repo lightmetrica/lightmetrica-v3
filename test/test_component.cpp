@@ -144,9 +144,8 @@ struct H_Root_ : public H {
     }
 
     virtual Component* underlying(const std::string& name) const {
-        const auto[s, r] = lm::comp::splitFirst(name);
-        if (s == "p1") {
-            return lm::comp::getCurrentOrUnderlying(r, p1.get());
+        if (name == "p1") {
+            return p1.get();
         }
         return nullptr;
     }
@@ -165,9 +164,8 @@ struct H_P1_ : public H {
     }
 
     virtual Component* underlying(const std::string& name) const {
-        const auto[s, r] = lm::comp::splitFirst(name);
         if (name == "p2") {
-            return lm::comp::getCurrentOrUnderlying(r, p2.get());
+            return p2.get();
         }
         return nullptr;
     }

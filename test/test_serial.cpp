@@ -154,9 +154,7 @@ struct TestSerial_Container final : public lm::Component {
     }
 
     virtual Component* underlying(const std::string& name) const {
-        // This function is called via lm::comp::underlying()
-        const auto [s, r] = lm::comp::splitFirst(name);
-        return r.empty() ? v[m.at(s)].get() : v[m.at(s)]->underlying(r);
+        return v[m.at(name)].get();
     }
 
     LM_SERIALIZE_IMPL(ar) {
@@ -179,9 +177,8 @@ struct TestSerial_Root final : public lm::Component {
     }
 
     virtual Component* underlying(const std::string& name) const {
-        const auto [s, r] = lm::comp::splitFirst(name);
-        if (s == "p") {
-            return lm::comp::getCurrentOrUnderlying(r, p.get());
+        if (name == "p") {
+            return p.get();
         }
         return nullptr;
     }

@@ -36,18 +36,7 @@ private:
 
 public:
     virtual Component* underlying(const std::string& name) const override {
-        // Take first element inside `name`
-        const auto [s, r] = comp::splitFirst(name);
-
-        // Finds underlying asset
-        auto it = assetIndexMap_.find(s);
-        if (it == assetIndexMap_.end()) {
-            return nullptr;
-        }
-
-        // Try to find nested asset. If not found, return as it is.
-        auto* comp = assets_.at(it->second).get();
-        return r.empty() ? comp : comp->underlying(r);
+        return assets_.at(assetIndexMap_.at(name)).get();
     }
 
     virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {

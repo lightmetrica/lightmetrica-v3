@@ -254,11 +254,30 @@ public:
             LM_WARN("Root component has not registered [name='{}'].", locator);
             return nullptr;
         }
-        const auto[s, r] = comp::splitFirst(locator);
-        if (s != "$") {
+
+        // Given 'xxx.yyy.zzz', returns the pair of 'xxx' and 'yyy.zzz'.
+        const auto splitFirst = [&](const std::string& s) -> std::tuple<std::string, std::string> {
+            const auto i = s.find_first_of('.', 0);
+            if (i == std::string::npos) {
+                return { s, "" };
+            }
+            return { s.substr(0, i), s.substr(i + 1) };
+        };
+
+        // Trace down from the root
+        const auto [s0, r0] = splitFirst(locator);
+        if (s0 != "$") {
             LM_WARN("Locator must start with '$' [loc='{}'].", locator);
         }
-        return comp::getCurrentOrUnderlying(r, root_);
+        auto remaining = r0;
+        auto* curr = root_;
+        while (curr && !remaining.empty()) {
+            const auto [s, r] = splitFirst(remaining);
+            curr = curr->underlying(s);
+            remaining = r;
+        }
+
+        return curr;
     }
 
     virtual void foreachComponent(const Component::ComponentVisitor& visit) {

@@ -41,9 +41,8 @@ public:
     }
 
     virtual Component* underlying(const std::string& name) const override {
-        const auto[s, r] = comp::splitFirst(name);
-        if (s == "accel") {
-            return comp::getCurrentOrUnderlying(r, accel_.get());
+        if (name == "accel") {
+            return accel_.get();
         }
         return nullptr;
     }

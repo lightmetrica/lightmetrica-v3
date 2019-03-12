@@ -394,24 +394,6 @@ Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc
     return inst;
 }
 
-/*
-    \brief Given 'xxx.yyy.zzz', returns the pair of 'xxx' and 'yyy.zzz'.
-*/
-static std::tuple<std::string, std::string> splitFirst(const std::string& s) {
-    const auto i = s.find_first_of('.', 0);
-    if (i == std::string::npos) {
-        return { s, "" };
-    }
-    return { s.substr(0, i), s.substr(i + 1) };
-}
-
-/*!
-    \brief Get a given component or its underlying component based on name.
-*/
-static Component* getCurrentOrUnderlying(const std::string& r, Component* p) {
-    return r.empty() ? p : p->underlying(r);
-}
-
 // ----------------------------------------------------------------------------
 
 /*!

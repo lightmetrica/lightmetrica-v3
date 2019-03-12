@@ -48,11 +48,6 @@ public:
     }
 
 public:
-    virtual Component* underlying(const std::string& name) const {
-        LM_UNUSED(name);
-        return film_;
-    }
-
     virtual Json underlyingValue(const std::string&) const override {
         return {
             {"eye", position_},

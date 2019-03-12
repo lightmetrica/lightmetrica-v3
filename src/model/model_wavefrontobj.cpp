@@ -340,8 +340,7 @@ public:
 
 public:
     virtual Component* underlying(const std::string& name) const override {
-        const auto [s, r] = comp::splitFirst(name);
-        return comp::getCurrentOrUnderlying(r, assets_[assetsMap_.at(s)].get());
+        return assets_[assetsMap_.at(name)].get();
     }
 
     virtual bool construct(const Json& prop) override {
