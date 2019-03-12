@@ -47,7 +47,6 @@ Using pre-installed packages
 
 To use this strategy, you need to install the dependencies externally
 using package management system or install the libraries from sources.
-
 For instance, our `Dockerfile`_ adopts this strategy.
 Please refer to the file for the detailed procedure.
 
