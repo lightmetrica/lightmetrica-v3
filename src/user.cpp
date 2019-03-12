@@ -155,7 +155,7 @@ public:
     }
 
     virtual void save(const std::string& filmName, const std::string& outpath) override {
-        const auto* film = assets_->underlying<Film>(filmName);
+        const auto* film = dynamic_cast<Film*>(assets_->underlying(filmName));
         if (!film) {
             THROW_RUNTIME_ERROR();
         }
@@ -165,7 +165,7 @@ public:
     }
 
     virtual FilmBuffer buffer(const std::string& filmName) override {
-        auto* film = assets_->underlying<Film>(filmName);
+        auto* film = dynamic_cast<Film*>(assets_->underlying(filmName));
         if (!film) {
             THROW_RUNTIME_ERROR();
         }

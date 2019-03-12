@@ -156,57 +156,6 @@ public:
     virtual Component* underlying(const std::string& name = "") const { LM_UNUSED(name); return nullptr; }
 
     /*!
-        \brief Get underlying component instance with specific interface type.
-    */
-    template <typename UnderlyingComponentT>
-    UnderlyingComponentT* underlying(const std::string& name = "") const {
-        // Use dynamic_cast directly instead of cast() function
-        // to handle the case with nullptr.
-        return dynamic_cast<UnderlyingComponentT*>(underlying(name));
-    }
-
-    /*!
-        \brief Get underlying component instance by index.
-    */
-    virtual Component* underlyingAt(int index) const { LM_UNUSED(index); return nullptr; }
-
-    /*!
-        \brief Get underlying component instance by index with specifc interface type.
-    */
-    template <typename UnderlyingComponentT>
-    UnderlyingComponentT* underlyingAt(int index) const {
-        return dynamic_cast<UnderlyingComponentT*>(underlyingAt(index));
-    }
-
-    /*!
-        \brief Get underlying comonent by property.
-        If there is no matching entry, return nullptr.
-    */
-    Component* underlying(const Json& prop, const std::string& name) const {
-        const auto it = prop.find(name);
-        if (it == prop.end()) {
-            // No entry
-            return nullptr;
-        }
-        if (it->is_string()) {
-            return underlying(*it);
-        }
-        else if (it->is_number()) {
-            return underlyingAt(*it);
-        }
-        // Invalid type
-        return nullptr;
-    }
-
-    /*!
-        \brief Get underlying comonent by property with specific interface type.
-    */
-    template <typename UnderlyingComponentT>
-    UnderlyingComponentT* underlying(const Json& prop, const std::string& name) const {
-        return dynamic_cast<UnderlyingComponentT*>(underlying(prop, name));
-    }
-
-    /*!
         \brief Process given function for each underlying component call.
     */
     virtual void foreachUnderlying(const ComponentVisitor& visit) { LM_UNUSED(visit); }
@@ -417,7 +366,7 @@ template <typename T>
 std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
 visit(const Component::ComponentVisitor& visitor, Component::Ptr<T>& p) {
     Component* temp = p.get();
-    visit_(temp, false);
+    visitor(temp, false);
 }
 
 /*!

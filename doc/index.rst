@@ -21,7 +21,6 @@ Lightmetrica -- Research-oriented renderer
    build
    tutorial
 
-   design_overview
    component
    subsystem
    rendering

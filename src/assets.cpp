@@ -21,9 +21,9 @@ public:
         ar(assetIndexMap_, assets_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreachUnderlying(const ComponentVisitor& visitor) override {
         for (auto& asset : assets_) {
-            comp::visit(visit, asset);
+            comp::visit(visitor, asset);
         }
     }
 

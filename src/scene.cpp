@@ -95,7 +95,7 @@ public:
     }
 
     virtual bool loadPrimitives(const Component& assetGroup, Mat4 transform, const std::string& modelName) override {
-        auto* model = assetGroup.underlying<Model>(modelName);
+        auto* model = dynamic_cast<Model*>(assetGroup.underlying(modelName));
         if (!model) {
             return false;
         }

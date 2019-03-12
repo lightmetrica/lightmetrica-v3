@@ -34,8 +34,8 @@ public:
         ar(envmap_, rot_, dist_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
-        comp::visit(visit, envmap_);
+    virtual void foreachUnderlying(const ComponentVisitor& visitor) override {
+        comp::visit(visitor, envmap_);
     }
 
 public:
