@@ -122,19 +122,6 @@ public:
 
 public:
     /*!
-        \brief Cast to specific component interface type.
-    */
-    template <typename InterfaceT>
-    const InterfaceT* cast() const { return dynamic_cast<InterfaceT*>(this); }
-    
-    /*!
-        \brief Cast to specific component interface type.
-    */
-    template <typename InterfaceT>
-    InterfaceT* cast() { return dynamic_cast<InterfaceT*>(this); }
-
-public:
-    /*!
         \brief Construct a component.
     */
     virtual bool construct(const Json& prop) { LM_UNUSED(prop); return true; }
@@ -153,7 +140,7 @@ public:
     /*!
         \brief Get underlying component instance.
     */
-    virtual Component* underlying(const std::string& name = "") const { LM_UNUSED(name); return nullptr; }
+    virtual Component* underlying(const std::string& name) const { LM_UNUSED(name); return nullptr; }
 
     /*!
         \brief Process given function for each underlying component call.
@@ -367,15 +354,6 @@ std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
 visit(const Component::ComponentVisitor& visitor, Component::Ptr<T>& p) {
     Component* temp = p.get();
     visitor(temp, false);
-}
-
-/*!
-    \brief Upcast/downcast of component types. 
-    Use this class if the component instance can be nullptr.
-*/
-template <typename InterfaceT>
-InterfaceT* cast(Component* p) {
-    return p ? p->cast<InterfaceT>() : nullptr;
 }
 
 /*!

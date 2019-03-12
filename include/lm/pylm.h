@@ -374,7 +374,7 @@ static pybind11::object createCompWrap(const char* name, const char* loc, const 
 */
 template <typename InterfaceT>
 static std::optional<InterfaceT*> castFrom(Component* p) {
-    return comp::cast<InterfaceT>(p);
+    return dynamic_cast<InterfaceT*>(p);
 }
 
 /*!

@@ -313,7 +313,7 @@ TEST_CASE("Serialization") {
             // Root component
             TestSerial_Root root;
             root.p = lm::comp::create<TestSerial_Container>("testserial_container", "$.p");
-            auto* c = root.p->cast<TestSerial_Container>();
+            auto* c = dynamic_cast<TestSerial_Container*>(root.p.get());
             
             // Add nested containers
             c->add("instances", "testserial_container", {});
