@@ -36,6 +36,13 @@ Progress
    :content-only:
    :members:
 
+Debug IO
+======================
+
+.. doxygengroup:: debugio
+   :content-only:
+   :members:
+
 Json
 ======================
 

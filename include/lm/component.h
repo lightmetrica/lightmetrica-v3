@@ -24,8 +24,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 /*!
     \brief Base component.
 
+    \rst
     Base class of all components in Lightmetrica.
     All components interfaces and implementations must inherit this class.
+    \endrst
 */
 class Component {
 private:
@@ -33,17 +35,54 @@ private:
     friend struct ComponentDeleter;
 
 public:
-    //! Factory function type
+    /*!
+        \brief Factory function type.
+        \return Component instance.
+        
+        \rst
+        A type of the function to create an component instance.
+        The function of this type is registered automatically to the framework
+        with :c:func:`LM_COMP_REG_IMPL` macro.
+        \endrst
+    */
     using CreateFunction  = std::function<Component*()>;
 
-    //! Release function type
-    using ReleaseFunction = std::function<void(Component*)>;
+    /*!
+        \brief Release function type.
+        \param p Component instance to be deleted.
 
-    //! Unique pointer for component instances.
+        \rst
+        A type of the function to release an component instance.
+        The function of this type is registered automatically to the framework
+        with :c:func:`LM_COMP_REG_IMPL` macro.
+        \endrst
+    */
+    using ReleaseFunction = std::function<void(Component* p)>;
+
+    /*!
+        \brief Unique pointer for component instances.
+        \tparam InterfaceT Component interface type.
+
+        \rst
+        unique_ptr for component types.
+        All component instances must be managed by unique_ptr,
+        because we constrained an instance inside our component hierarchy
+        must be managed by a single component.
+        \endrst
+    */
     template <typename InterfaceT>
     using Ptr = std::unique_ptr<InterfaceT, ComponentDeleter>;
 
-    //! Visitor function type.
+    /*!
+        \brief Visitor function type.
+        \param p Visiting component instance.
+        \param weak True if the visiting instance is referred as a weak reference.
+
+        \rst
+        The function of this type is used to be a callback function of
+        :cpp:func:`lm::Component::foreachUnderlying` function.
+        \endrst
+    */
     using ComponentVisitor = std::function<void(Component*& p, bool weak)>;
 
 private:
@@ -70,11 +109,23 @@ public:
 public:
     /*!
         \brief Get name of component instance.
+
+        \rst
+        This function returns an unique identifier
+        of the component implementation of the instance.
+        \endrst
     */
     const std::string& key() const { return key_; }
 
     /*!
         \brief Get locator of the component.
+
+        \rst
+        If the instance is integrated into the component hierarchy,
+        this function returns the unique component locator of the instance.
+        If the instance is not in the component hierarchy,
+        the function returns an empty string.
+        \endrst
     */
     const std::string& loc() const { return loc_; }
 
@@ -97,7 +148,12 @@ public:
     }
 
     /*!
-        \brief Get last element of locator.
+        \brief Get name of the component instance.
+
+        \rst
+        This fuction returns name of the component instance
+        used as an identifier in parent component.
+        \endrst
     */
     const std::string name() const {
         const auto i = loc().find_last_of('.');
@@ -107,6 +163,13 @@ public:
 
     /*!
         \brief Make locator by appending string.
+        \param base Base locator.
+        \param child Child locator.
+
+        \rst
+        This function appends the specified ``child`` locator
+        into the back of ``base`` locator.
+        \endrst
     */
     const std::string makeLoc(const std::string& base, const std::string& child) const {
         assert(!child.empty());
@@ -115,6 +178,12 @@ public:
 
     /*!
         \brief Make locator by appending string to current locator.
+        \param child Child locator.
+
+        \rst
+        This function appends the specified locator into the back of
+        the locator of the current instance.
+        \endrst
     */
     const std::string makeLoc(const std::string& child) const {
         return makeLoc(loc(), child);
@@ -123,29 +192,68 @@ public:
 public:
     /*!
         \brief Construct a component.
+        \param prop Configuration property.
+        
+        \rst
+        The function is called just after the component instance is created.
+        Mostly, the function is called internally by :cpp:func:`lm::comp::create` function.
+        The configuration properties are passed by JSON type.
+        The return values indicates if the construction suceeded or not.
+        \endrst
     */
     virtual bool construct(const Json& prop) { LM_UNUSED(prop); return true; }
     
     /*!
         \brief Deserialize a component.
+        \param ar Input archive.
+
+        \rst
+        The function deserialize the component using the archive ``ar``.
+        The function is called internally. The users do not want to use this directly.
+        \endrst
     */
     virtual void load(InputArchive& ar) { LM_UNUSED(ar); }
 
     /*!
         \brief Serialize a component.
+        \param ar Output archive.
+
+        \rst
+        The function serialize the component using the archive ``ar``.
+        The function is called internally. The users do not want to use this directly.
+        \endrst
     */
     virtual void save(OutputArchive& ar) { LM_UNUSED(ar); }
 
 public:
     /*!
         \brief Get underlying component instance.
+        \param name Name of the component instance being queried.
+
+        \rst
+        This function queries a component instance by the identifier ``name``.
+        If the component instance is found, the function returns a pointer to the instance.
+        If not component instance is found, the function returns nullptr.
+
+        The name of the component instance found by this function must match ``name``,
+        that is, ``comp->name() == name``.
+        \endrst
     */
     virtual Component* underlying(const std::string& name) const { LM_UNUSED(name); return nullptr; }
 
     /*!
         \brief Process given function for each underlying component call.
+        \param visitor Component visitor.
+
+        \rst
+        This function enumerates underlying component of the instance.
+        Every time a component instance (unique or weak) is found,
+        the callback function specified by an argument is called.
+        The callback function takes a flag to show the instance is weak reference or unique.
+        Use :cpp:func:`lm::comp::visit` function to automatically determine either of them.
+        \endrst
     */
-    virtual void foreachUnderlying(const ComponentVisitor& visit) { LM_UNUSED(visit); }
+    virtual void foreachUnderlying(const ComponentVisitor& visitor) { LM_UNUSED(visitor); }
 
     /*!
         \brief Get underlying value.
@@ -164,8 +272,11 @@ public:
 
 /*!
     \brief Deleter for component instances
+
+    \rst
     This must be default constructable because pybind11 library
     requires to construct unique_ptr from a single pointer.
+    \endrst
 */
 struct ComponentDeleter {
     ComponentDeleter() = default;
