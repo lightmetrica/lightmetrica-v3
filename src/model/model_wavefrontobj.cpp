@@ -614,11 +614,11 @@ public:
         else {
             // Diffuse material
             const auto diffuseMaterialName = json::valueOr<std::string>(prop, "diffuse", "material::diffuse");
-            diffuse_ = addMaterial(diffuseMaterialName, "diffuse", {
-                {"Kd", objmat_.Kd},
-                {"mapKd", objmat_.mapKd.empty()
-                    ? "" : makeLoc(parentLoc(), objmat_.mapKd)}
-            });
+            Json matprop{ {"Kd", objmat_.Kd} };
+            if (!objmat_.mapKd.empty()) {
+                matprop["mapKd"] = makeLoc(parentLoc(), objmat_.mapKd);
+            }
+            diffuse_ = addMaterial(diffuseMaterialName, "diffuse", matprop);
             if (diffuse_ < 0) {
                 return false;
             }

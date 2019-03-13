@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
             {"h", opt["h"]}
         });
         lm::asset("camera_render", "camera::pinhole", {
-            {"film", "film_render"},
+            {"film", lm::asset("film_render")},
             {"position", opt["eye"]},
             {"center", opt["lookat"]},
             {"up", {0,1,0}},
@@ -51,8 +51,12 @@ int main(int argc, char** argv) {
         lm::asset("obj1", "model::wavefrontobj", {
             {"path", opt["obj"]}
         });
-        lm::primitive(lm::Mat4(1), {{"camera", "camera_render"}});
-        lm::primitives(lm::Mat4(1), "obj1");
+        lm::primitive(lm::Mat4(1), {
+            {"camera", lm::asset("camera_render")}
+        });
+        lm::primitive(lm::Mat4(1), {
+            {"model", lm::asset("obj1")}
+        });
         lm::build("accel::sahbvh");
         lm::serialize("lm.serialized");
         #endif
@@ -78,15 +82,6 @@ int main(int argc, char** argv) {
         });
 
         // --------------------------------------------------------------------
-
-        // Render an image
-        //lm::render("renderer::raycast", {
-        //    {"output", "film1"},
-        //    {"color", {0,0,0}}
-        //});
-
-        // Save rendered image
-        //lm::save("film1", opt["out"]);
 
         // Shutdown the framework
         lm::shutdown();

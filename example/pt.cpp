@@ -18,13 +18,15 @@
 int main(int argc, char** argv) {
     try {
         // Initialize the framework
-        lm::init("user::default", {
+        lm::init();
+        lm::parallel::init(lm::parallel::DefaultType, {
             #if LM_DEBUG_MODE
             {"numThreads", 1}
             #else
             {"numThreads", -1}
             #endif
         });
+        lm::info();
 
         // Parse command line arguments
         const auto opt = lm::json::parsePositionalArgs<13>(argc, argv, R"({{
@@ -55,7 +57,7 @@ int main(int argc, char** argv) {
 
         // Pinhole camera
         lm::asset("camera1", "camera::pinhole", {
-            {"film", "film1"},
+            {"film", lm::asset("film1")},
             {"position", opt["eye"]},
             {"center", opt["lookat"]},
             {"up", {0,1,0}},
@@ -68,10 +70,14 @@ int main(int argc, char** argv) {
         // Define scene primitives
 
         // Camera
-        lm::primitive(lm::Mat4(1), { {"camera", "camera1"} });
+        lm::primitive(lm::Mat4(1), {
+            {"camera", lm::asset("camera1")}
+        });
 
         // Create primitives from model asset
-        lm::primitives(lm::Mat4(1), "obj1");
+        lm::primitive(lm::Mat4(1), {
+            {"model", lm::asset("obj1")}
+        });
 
         // Build acceleration structure
         lm::build("accel::sahbvh");
@@ -85,14 +91,14 @@ int main(int argc, char** argv) {
         // Render an image
         // _begin_render
         lm::render("renderer::pt", {
-            {"output", "film1"},
+            {"output", lm::asset("film1")},
             {"spp", opt["spp"]},
             {"maxLength", opt["len"]}
         });
         // _end_render
 
         // Save rendered image
-        lm::save("film1", opt["out"]);
+        lm::save(lm::asset("film1"), opt["out"]);
 
         // Shutdown the framework
         lm::shutdown();

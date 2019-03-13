@@ -12,6 +12,7 @@ int main(int argc, char** argv) {
         // _begin_init
         // Initialize the framework
         lm::init();
+        lm::info();
         // _end_init
 
         // _begin_parse_command_line
@@ -26,20 +27,23 @@ int main(int argc, char** argv) {
         // _begin_assets
         // Define assets
         // Film for the rendered image
-        lm::asset("film", "film::bitmap", {{"w", opt["w"]}, {"h", opt["h"]}});
+        lm::asset("film", "film::bitmap", {
+            {"w", opt["w"]},
+            {"h", opt["h"]}
+        });
         // _end_assets
 
         // _begin_render
         // Render an image
         lm::render("renderer::blank", {
-            {"output", "film"},
+            {"output", lm::asset("film")},
             {"color", {1,1,1}}
         });
         // _end_render
 
         // _begin_save
         // Save rendered image
-        lm::save("film", opt["out"]);
+        lm::save(lm::asset("film"), opt["out"]);
         // _end_save
 
         // _begin_shutdown

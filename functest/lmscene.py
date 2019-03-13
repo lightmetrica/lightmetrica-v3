@@ -16,7 +16,7 @@ def fireplace_room(scene_path):
         'h': 1080
     })
     lm.asset('camera_main', 'camera::pinhole', {
-        'film': 'film_output',
+        'film': lm.asset('film_output'),
         'position': [5.101118, 1.083746, -2.756308],
         'center': [4.167568, 1.078925, -2.397892],
         'up': [0,1,0],
@@ -25,9 +25,12 @@ def fireplace_room(scene_path):
     lm.asset('model_obj', 'model::wavefrontobj', {
         'path': os.path.join(scene_path, 'fireplace_room/fireplace_room.obj')
     })
-
-    lm.primitive(lm.identity(), {'camera': 'camera_main'})
-    lm.primitives(lm.identity(), 'model_obj')
+    lm.primitive(lm.identity(), {
+        'camera': lm.asset('camera_main')
+    })
+    lm.primitive(lm.identity(), {
+        'model': lm.asset('model_obj')
+    })
 
 def cornell_box_sphere(scene_path):
     lm.asset('film_output', 'film::bitmap', {
@@ -35,7 +38,7 @@ def cornell_box_sphere(scene_path):
         'h': 1080
     })
     lm.asset('camera_main', 'camera::pinhole', {
-        'film': 'film_output',
+        'film': lm.asset('film_output'),
         'position': [0,1,5],
         'center': [0,1,0],
         'up': [0,1,0],
@@ -44,6 +47,9 @@ def cornell_box_sphere(scene_path):
     lm.asset('model_obj', 'model::wavefrontobj', {
         'path': os.path.join(scene_path, 'cornell_box/CornellBox-Sphere.obj')
     })
-
-    lm.primitive(lm.identity(), {'camera': 'camera_main'})
-    lm.primitives(lm.identity(), 'model_obj')
+    lm.primitive(lm.identity(), {
+        'camera': lm.asset('camera_main')
+    })
+    lm.primitive(lm.identity(), {
+        'model': lm.asset('model_obj')
+    })

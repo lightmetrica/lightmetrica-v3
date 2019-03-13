@@ -31,7 +31,7 @@ public:
 
 public:
     virtual bool construct(const Json& prop) override {
-        film_ = getAsset<Film>(prop, "output");
+        film_ = comp::get<Film>(prop["output"]);
         if (!film_) {
             return false;
         }

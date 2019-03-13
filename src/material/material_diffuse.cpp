@@ -55,8 +55,10 @@ public:
 
 public:
     virtual bool construct(const Json& prop) override {
-        mapKd_ = getAsset<Texture>(prop, "mapKd");
-        if (!mapKd_) {
+        if (auto it = prop.find("mapKd"); it != prop.end()) {
+            mapKd_ = comp::get<Texture>(*it);
+        }
+        else {
             Kd_ = json::valueOr<Vec3>(prop, "Kd", Vec3(1_f));
         }
         return true;

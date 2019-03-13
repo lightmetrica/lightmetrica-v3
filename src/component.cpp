@@ -251,7 +251,12 @@ public:
 
     Component* get(const std::string& locator) {
         if (!root_) {
-            LM_WARN("Root component has not registered [name='{}'].", locator);
+            LM_ERROR("Root component has not registered [name='{}'].", locator);
+            return nullptr;
+        }
+
+        if (locator.empty()) {
+            LM_ERROR("Locator is empty [loc='{}']", locator);
             return nullptr;
         }
 
@@ -267,7 +272,8 @@ public:
         // Trace down from the root
         const auto [s0, r0] = splitFirst(locator);
         if (s0 != "$") {
-            LM_WARN("Locator must start with '$' [loc='{}'].", locator);
+            LM_ERROR("Locator must start with '$' [loc='{}'].", locator);
+            return nullptr;
         }
         auto remaining = r0;
         auto* curr = root_;

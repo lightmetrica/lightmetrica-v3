@@ -48,7 +48,7 @@ public:
     }
 
 public:
-    virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) override {
+    virtual bool loadPrimitive(Mat4 transform, const Json& prop) override {
         // Helper function to find an asset by property name
         const auto getAssetRefBy = [&](const std::string& propName) -> Component* {
             if (propName.empty()) {
@@ -60,57 +60,58 @@ public:
                 return nullptr;
             }
             // Obtain the referenced asset
-            return assetGroup.underlying(it.value().get<std::string>().c_str());
+            return comp::get<Component>(it.value().get<std::string>());
         };
 
-        // Add a primitive entry
-        primitives_.push_back(Primitive{
-            int(primitives_.size()),
-            Transform(transform),
-            dynamic_cast<Mesh*>(getAssetRefBy("mesh")),
-            dynamic_cast<Material*>(getAssetRefBy("material")),
-            dynamic_cast<Light*>(getAssetRefBy("light")),
-            dynamic_cast<Camera*>(getAssetRefBy("camera"))
-        });
-
-        const auto& primitive = primitives_.back();
-        if (primitive.camera && primitive.light) {
-            LM_ERROR("Primitive cannot be both camera and light");
-            return false;
-        }
-        if (primitive.camera) {
-            camera_ = primitives_.back().index;
-        }
-        if (primitive.light) {
-            const int lightIndex = primitive.index;
-            lights_.push_back(lightIndex);
-            if (primitive.light->isInfinite()) {
-                // Environment light
-                envLight_ = lightIndex;
+        if (prop.find("model") != prop.end()) {
+            const std::string modelLoc = prop["model"];
+            auto* model = comp::get<Model>(modelLoc);
+            if (!model) {
+                return false;
             }
+            model->createPrimitives([&](Component* mesh, Component* material, Component* light) {
+                primitives_.push_back(Primitive{
+                    int(primitives_.size()),
+                    Transform(transform),
+                    dynamic_cast<Mesh*>(mesh),
+                    dynamic_cast<Material*>(material),
+                    dynamic_cast<Light*>(light),
+                    nullptr
+                });
+                if (primitives_.back().light) {
+                    lights_.push_back(primitives_.back().index);
+                }
+            });
         }
-
-        return true;
-    }
-
-    virtual bool loadPrimitives(const Component& assetGroup, Mat4 transform, const std::string& modelName) override {
-        auto* model = dynamic_cast<Model*>(assetGroup.underlying(modelName));
-        if (!model) {
-            return false;
-        }
-        model->createPrimitives([&](Component* mesh, Component* material, Component* light) {
+        else {
+            // Add a primitive entry
             primitives_.push_back(Primitive{
                 int(primitives_.size()),
                 Transform(transform),
-                dynamic_cast<Mesh*>(mesh),
-                dynamic_cast<Material*>(material),
-                dynamic_cast<Light*>(light),
-                nullptr
+                dynamic_cast<Mesh*>(getAssetRefBy("mesh")),
+                dynamic_cast<Material*>(getAssetRefBy("material")),
+                dynamic_cast<Light*>(getAssetRefBy("light")),
+                dynamic_cast<Camera*>(getAssetRefBy("camera"))
             });
-            if (primitives_.back().light) {
-                lights_.push_back(primitives_.back().index);
+
+            const auto& primitive = primitives_.back();
+            if (primitive.camera && primitive.light) {
+                LM_ERROR("Primitive cannot be both camera and light");
+                return false;
             }
-        });
+            if (primitive.camera) {
+                camera_ = primitives_.back().index;
+            }
+            if (primitive.light) {
+                const int lightIndex = primitive.index;
+                lights_.push_back(lightIndex);
+                if (primitive.light->isInfinite()) {
+                    // Environment light
+                    envLight_ = lightIndex;
+                }
+            }
+        }
+
         return true;
     }
 

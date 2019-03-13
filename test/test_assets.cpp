@@ -65,7 +65,7 @@ TEST_CASE("Assets") {
     lm::comp::detail::registerRootComp(assets.get());
 
     SUBCASE("Load asset without properties") {
-        bool result = assets->loadAsset("asset1", "testasset::simple", lm::Json());
+        auto result = assets->loadAsset("asset1", "testasset::simple", lm::Json());
         CHECK(result);
         auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset1"));
         REQUIRE(a);

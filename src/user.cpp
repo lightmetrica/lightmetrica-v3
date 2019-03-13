@@ -53,12 +53,6 @@ public:
         // Logger subsystem
         log::init(json::valueOr<std::string>(prop, "logger", log::DefaultType));
 
-        // Initial message
-        LM_INFO("Lightmetrica -- Version {} {} {}",
-            version::formatted(),
-            version::platform(),
-            version::architecture());
-
         // Parallel subsystem
         parallel::init("parallel::openmp", prop);
         if (auto it = prop.find("progress");  it != prop.end()) {
@@ -107,6 +101,14 @@ public:
     }
 
 public:
+    virtual void info() override {
+        // Print information of Lightmetrica
+        LM_INFO("Lightmetrica -- Version {} {} {}",
+            version::formatted(),
+            version::platform(),
+            version::architecture());
+    }
+
     virtual void reset() override {
         assets_ = comp::create<Assets>("assets::default", makeLoc("assets"));
         assert(assets_);
@@ -115,20 +117,20 @@ public:
         renderer_.reset();
     }
 
-    virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) override {
-        if (!assets_->loadAsset(name, implKey, prop)) {
+    virtual std::string asset(const std::string& name, const std::string& implKey, const Json& prop) override {
+        const auto loc = assets_->loadAsset(name, implKey, prop);
+        if (!loc) {
             THROW_RUNTIME_ERROR();
         }
+        return *loc;
+    }
+
+    virtual std::string asset(const std::string& name) override {
+        return assets_->makeLoc(name);
     }
 
     virtual void primitive(Mat4 transform, const Json& prop) override {
-        if (!scene_->loadPrimitive(*assets_.get(), transform, prop)) {
-            THROW_RUNTIME_ERROR();
-        }
-    }
-
-    virtual void primitives(Mat4 transform, const std::string& modelName) override {
-        if (!scene_->loadPrimitives(*assets_.get(), transform, modelName)) {
+        if (!scene_->loadPrimitive(transform, prop)) {
             THROW_RUNTIME_ERROR();
         }
     }
@@ -154,7 +156,7 @@ public:
     }
 
     virtual void save(const std::string& filmName, const std::string& outpath) override {
-        const auto* film = dynamic_cast<Film*>(assets_->underlying(filmName));
+        const auto* film = comp::get<Film>(filmName);
         if (!film) {
             THROW_RUNTIME_ERROR();
         }
@@ -164,7 +166,7 @@ public:
     }
 
     virtual FilmBuffer buffer(const std::string& filmName) override {
-        auto* film = dynamic_cast<Film*>(assets_->underlying(filmName));
+        auto* film = comp::get<Film>(filmName);
         if (!film) {
             THROW_RUNTIME_ERROR();
         }
@@ -238,16 +240,20 @@ LM_PUBLIC_API void reset() {
     Instance::get().reset();
 }
 
-LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop) {
-    Instance::get().asset(name, implKey, prop);
+LM_PUBLIC_API void info() {
+    Instance::get().info();
+}
+
+LM_PUBLIC_API std::string asset(const std::string& name, const std::string& implKey, const Json& prop) {
+    return Instance::get().asset(name, implKey, prop);
+}
+
+LM_PUBLIC_API std::string asset(const std::string& name) {
+    return Instance::get().asset(name);
 }
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
     Instance::get().primitive(transform, prop);
-}
-
-LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName) {
-    Instance::get().primitives(transform, modelName);
 }
 
 LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {

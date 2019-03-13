@@ -33,6 +33,7 @@ public:
         \param name Name of the asset.
         \param implKey Key of component implementation in `interface::implementation` format.
         \param prop Properties.
+        \return Locator of the asset. nullopt if failed.
 
         \rst
         Loads an asset from the given information and registers to the class.
@@ -47,7 +48,7 @@ public:
         For usage, see ``functest/func_update_asset.py``.
         \endrst
     */
-    virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
+    virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
 };
 
 /*!

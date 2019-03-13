@@ -22,8 +22,7 @@ Lightmetrica -- Research-oriented renderer
    tutorial
 
    component
-   subsystem
-   rendering
+   user
    test
 
    component_ref

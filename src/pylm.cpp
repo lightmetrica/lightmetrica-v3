@@ -114,10 +114,11 @@ static void bind(pybind11::module& m) {
     // user.h
     m.def("init", &init);
     m.def("shutdown", &shutdown);
+    m.def("info", &info);
     m.def("reset", &reset);
-    m.def("asset", &asset);
+    m.def("asset", (std::string(*)(const std::string&, const std::string&, const Json&))&asset);
+    m.def("asset", (std::string(*)(const std::string&))&asset);
     m.def("primitive", &primitive);
-    m.def("primitives", &primitives);
     m.def("build", &build);
     m.def("renderer", &renderer);
     m.def("render", (void(*)(bool))&render);
@@ -369,11 +370,8 @@ static void bind(pybind11::module& m) {
         virtual bool construct(const Json& prop) override {
             PYBIND11_OVERLOAD(bool, Scene, construct, prop);
         }
-        virtual bool loadPrimitive(const Component& assetGroup, Mat4 transform, const Json& prop) override {
-            PYBIND11_OVERLOAD_PURE(bool, Scene, loadPrimitive, assetGroup, transform, prop);
-        }
-        virtual bool loadPrimitives(const Component& assetGroup, Mat4 transform, const std::string& modelName) override {
-            PYBIND11_OVERLOAD_PURE(bool, Scene, loadPrimitives, assetGroup, transform, modelName);
+        virtual bool loadPrimitive(Mat4 transform, const Json& prop) override {
+            PYBIND11_OVERLOAD_PURE(bool, Scene, loadPrimitive, transform, prop);
         }
         virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, foreachTriangle, processTriangle);
@@ -424,7 +422,6 @@ static void bind(pybind11::module& m) {
     pybind11::class_<Scene, Scene_Py, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
         .def("loadPrimitive", &Scene::loadPrimitive)
-        .def("loadPrimitives", &Scene::loadPrimitives)
         .def("foreachTriangle", &Scene::foreachTriangle)
         .def("foreachPrimitive", &Scene::foreachPrimitive)
         .def("build", &Scene::build)

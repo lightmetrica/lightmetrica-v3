@@ -39,14 +39,14 @@ public:
         return assets_.at(assetIndexMap_.at(name)).get();
     }
 
-    virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
+    virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
         LM_INFO("Loading asset [name='{}']", name);
         LM_INDENT();
 
         // Check if asset name is valid
         if (!validAssetName(name)) {
             LM_ERROR("Invalid asset name [name='{}']", name);
-            return false;
+            return {};
         }
 
         // Check if the asset with given name has been already loaded
@@ -60,7 +60,7 @@ public:
         auto p = comp::create<Component>(implKey, makeLoc(loc(), name));
         if (!p) {
             LM_ERROR("Failed to create component [name='{}', key='{}']", name, implKey);
-            return false;
+            return {};
         }
 
         // Register created asset
@@ -106,10 +106,10 @@ public:
         if (!asset->construct(prop)) {
             LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
             assets_.pop_back();
-            return false;
+            return {};
         }
 
-        return true;
+        return asset->loc();
     }
 };
 

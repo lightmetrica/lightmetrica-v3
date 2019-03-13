@@ -30,10 +30,12 @@ import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {
-    'numThreads': -1,
-    'logger': 'logger::jupyter'
+lm.init('user::default', {})
+lm.log.init('logger::jupyter', {})
+lm.parallel.init('parallel::openmp', {
+    'numThreads': -1
 })
+lm.info()
 lm.log.setSeverity(lm.log.LogLevel.Warn)
 lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
 
@@ -43,9 +45,9 @@ def build_and_render(scene, accel):
     lmscene.load(ft.env.scene_path, scene)
     lm.build('accel::' + accel, {})
     lm.render('renderer::raycast', {
-        'output': 'film_output'
+        'output': lm.asset('film_output')
     })
-    return np.flip(np.copy(lm.buffer('film_output')), axis=0)
+    return np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
 
 
 # ### Difference images (pixelwised RMSE)

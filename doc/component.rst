@@ -1,9 +1,6 @@
 Component
 ######################
 
-Overview
-===========================
-
 Lightmetrica is build upon a component object system
 which provides various features to support extensibility as well as usability
 based on object-oriented paradigm.
@@ -140,6 +137,8 @@ using accessors like STL containers.
     to automatically convert types to/from the JSON type,
     which includes e.g. vector / matrix types, raw pointer types.
 
+.. _component_hierarchy_and_locator:
+
 Component hierarchy and locator
 ===============================
 
@@ -242,6 +241,8 @@ inaccessible from the component hierarchy.
         }
     };
 
+.. _querying_information:
+
 Querying information
 ===========================
 
@@ -324,8 +325,7 @@ Singleton
 ===========================
 
 A component can be used as a singleton,
-and our framework implemented globally-accessible yet extensible features using component as singleton
-(see Subsystem section for detail).
+and our framework implemented globally-accessible yet extensible features using component as singleton.
 For convenience, we provide :cpp:class:`lm::comp::detail::ContextInstance` class to
 make any component interface a singleton. 
 

@@ -50,7 +50,7 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         Ke_ = prop["Ke"];
-        mesh_ = getAsset<Mesh>(prop, "mesh");
+        mesh_ = comp::get<Mesh>(prop["mesh"]);
         if (!mesh_) {
             return false;
         }

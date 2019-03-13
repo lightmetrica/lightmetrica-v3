@@ -73,10 +73,16 @@ LM_PUBLIC_API void shutdown();
 LM_PUBLIC_API void reset();
 
 /*!
+    \brief Print information about Lightmetrica.
+*/
+LM_PUBLIC_API void info();
+
+/*!
     \brief Create an asset.
     \param name Identifier of the asset.
     \param implKey Name of the asset to create.
     \param prop Properties for configuration.
+    \return Locator of the asset.
     \see `example/blank.cpp`
 
     \rst
@@ -90,84 +96,36 @@ LM_PUBLIC_API void reset();
     through logger system as well as runtime error exception.
     \endrst
 */
-LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop);
+LM_PUBLIC_API std::string asset(const std::string& name, const std::string& implKey, const Json& prop);
 
 /*!
-    \brief Get an asset by name.
-    \tparam T Component type.
+    \brief Get the locator of an asset.
     \param name Identifier of the asset.
-    \return Pointer to the registered asset. ``nullptr`` if not registered.
-
-    \rst
-    If the asset specified by ``name`` is not registered,
-    the function will generate an error on logger and return nullptr.
-    ``name`` can be asset locator or global locator.
-    If ``name`` starts with ``global//``, the locator after ``//``
-    are interpret as a global locator.
-    \endrst
+    \return Locator of the asset.
 */
-template <typename T>
-T* getAsset(const std::string& name) {
-    const auto locator = [&]() -> std::string {
-        std::regex reg(R"x(\$(.+))x");
-        std::smatch match;
-        if (std::regex_match(name, match, reg)) {    
-            return name;
-        }
-        return "$.assets." + name;
-    }();
-    return comp::get<T>(locator);
-}
+LM_PUBLIC_API std::string asset(const std::string& name);
 
 /*!
-    \brief Get an asset by name.
-    \tparam T Component type.
-    \param prop Property.
-    \param key Element key.
-    \return Pointer to the registered asset. ``nullptr`` if not registered.
-
-    \rst
-    This overload also checks if ``prop`` has ``name`` element.
-    \endrst
-*/
-template <typename T>
-T* getAsset(const Json& prop, const std::string& key) {
-    if (prop.find(key) != prop.end()) {
-        return getAsset<T>(prop[key]);
-    }
-    return nullptr;
-}
-
-/*!
-    \brief Create a primitive and add it to the scene.
+    \brief Create primitive(s) and add to the scene.
     \param transform Transformation matrix.
     \param prop Properties for configuration.
     \see `example/quad.cpp`
+    \see `example/raycast.cpp`
 
     \rst
-    This function creates a primitive and registers to the framework.
+    This function creates primitive(s) and registers to the framework.
     A primitive is a scene object associating the assets such as
     meshes or materials. The coordinates of the object is
     speficied by a 4x4 transformation matrix.
     We can use the same assets to define different primitives
     with different transformations.
+
+    If ``model`` parameter is specified,
+    the function will register primitives generated from the model.
+    In this case, the transformation is applied to all primitives to be generated.
     \endrst
 */
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
-
-/*!
-    \brief Create primitives from a model.
-    \param transform Transformation matrix.
-    \param modelName Identifier of `model` asset.
-    \see `example/raycast.cpp`
-
-    \rst
-    A ``model`` asset internally creates a set of meshes and materials.
-    This function generates a set of primitives from a model asset.
-    The transformation is applied to all primitives to be generated.
-    \endrst
-*/
-LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName);
 
 /*!
     \brief Build acceleration structure.
@@ -321,9 +279,10 @@ LM_NAMESPACE_BEGIN(detail)
 class UserContext : public Component {
 public:
     virtual void reset() = 0;
-    virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
+    virtual void info() = 0;
+    virtual std::string asset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
+    virtual std::string asset(const std::string& name) = 0;
     virtual void primitive(Mat4 transform, const Json& prop) = 0;
-    virtual void primitives(Mat4 transform, const std::string& modelName) = 0;
     virtual void build(const std::string& accelName, const Json& prop) = 0;
     virtual void renderer(const std::string& rendererName, const Json& prop) = 0;
     virtual void render(bool verbose) = 0;

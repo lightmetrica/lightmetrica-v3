@@ -61,16 +61,9 @@ struct Primitive {
 class Scene : public Component {
 public:
     /*!
-        \brief Load a scene primitive.
+        \brief Load scene primitive(s).
     */
-    virtual bool loadPrimitive(
-        const Component& assetGroup, Mat4 transform, const Json& prop) = 0;
-
-    /*!
-        \brief Create primitives from a model.
-    */
-    virtual bool loadPrimitives(
-        const Component& assetGroup, Mat4 transform, const std::string& modelName) = 0;
+    virtual bool loadPrimitive(Mat4 transform, const Json& prop) = 0;
 
     /*!
         \brief Iterate triangles in the scene.
