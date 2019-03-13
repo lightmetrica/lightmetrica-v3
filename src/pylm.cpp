@@ -106,7 +106,6 @@ static void bind(pybind11::module& m) {
         sm_detail.def("loadPlugins", &comp::detail::loadPlugins);
         sm_detail.def("unloadPlugins", &comp::detail::unloadPlugins);
         sm_detail.def("foreachRegistered", &comp::detail::foreachRegistered);
-        sm_detail.def("printRegistered", &comp::detail::printRegistered);
     }
 
     // ------------------------------------------------------------------------

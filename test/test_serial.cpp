@@ -399,9 +399,6 @@ TEST_CASE("Serialization") {
                 checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("material::mirror", {}, {})
                 );
-                checkSaveAndLoadRoundTripCompareLoaded(
-                    lm::comp::create<lm::Component>("material::proxy", {}, {})
-                );
             }
         }
     }

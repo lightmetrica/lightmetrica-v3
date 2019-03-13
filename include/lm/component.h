@@ -27,6 +27,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \rst
     Base class of all components in Lightmetrica.
     All components interfaces and implementations must inherit this class.
+    For detail, see :ref:`component`.
     \endrst
 */
 class Component {
@@ -342,12 +343,29 @@ struct KeyGen<T<Ts...>> {
 
 /*!
     \brief Create component instance.
-    \param key Name of the implementation.
+    \param key Implementation key.
+
+    \rst
+    This function creates a component instance from the key.
+    The component implementation with the key must be registered beforehand
+    with :c:func:`LM_COMP_REG_IMPL` macro and loaded with :cpp:func:`loadPlugin` function
+    if the component is defined inside a plugin.
+    Otherwise the function returns nullptr with error message.
+    \endrst
 */
 LM_PUBLIC_API Component* createComp(const std::string& key);
 
 /*!
-    Register a component.
+    \brief Register a component.
+    \param key Implementation key.
+    \param createFunc Create function.
+    \param releaseFunc Release function.
+
+    \rst
+    This function registers a component implementation into the framework.
+    The function is internally and indirectly called by :c:func:`LM_COMP_REG_IMPL` macro.
+    The users do not want to use it directly.
+    \endrst
 */
 LM_PUBLIC_API void reg(
     const std::string& key,
@@ -356,46 +374,93 @@ LM_PUBLIC_API void reg(
 
 /*!
     \brief Unregister a component.
+    \param key Implementation key.
+
+    \rst
+    This function unregisters a component implementation specified by the key.
+    The users do not want to use it directly.
+    \endrst
 */
 LM_PUBLIC_API void unreg(const std::string& key);
 
 /*!
     \brief Load a plugin.
+    \param path Path to a plugin.
+    
+    \rst
+    This function loads a plugin from a specified path.
+    The components inside the plugin are automatically registered to the framework
+    and ready to use with :cpp:func:`lm::comp::create` function.
+    If the loading fails, the function returns false.
+    \endrst
 */
 LM_PUBLIC_API bool loadPlugin(const std::string& path);
 
 /*!
-    Load plugins inside a given directory.
+    \brief Load plugins inside a given directory.
+    \param directory Path to a directory containing plugins.
+
+    \rst
+    This functions loads all plugins inside the specified directory.
+    If the loading fails, it generates an error message but ignored.
+    \endrst
 */
 LM_PUBLIC_API void loadPlugins(const std::string& directory);
 
 /*!
     \brief Unload loaded plugins.
+    
+    \rst
+    This functions unloads all the plugins loaded so far.
+    \endrst
 */
 LM_PUBLIC_API void unloadPlugins();
 
 /*!
     \brief Iterate registered component names.
+    \param func Function called for each registered component.
+
+    \rst
+    This function enumerates registered component names.
+    The specified callback function is called for each registered component.
+    \endrst
 */
 LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func);
 
 /*!
-    \brief Print registered component names.
-*/
-LM_PUBLIC_API void printRegistered();
-
-/*!
     \brief Register root component.
+    \param p Component to be registered as a root.
+
+    \rst
+    This function registers the given component as a root component.
+    The registered component is used as a starting point of the component hierarchy.
+    The given component must have a locator ``$``.
+    The function is called internaly so the user do not want to use it directly.
+    \endrst
 */
 LM_PUBLIC_API void registerRootComp(Component* p);
 
 /*!
-    \brief Get underlying component of root by name.
+    \brief Get component by locator.
+    \param locator Component locator.
+
+    \rst
+    This function queries an underlying component instance inside the component hierarchy
+    by a component locator. For detail of component locator, see :ref:`component_hierarchy_and_locator`.
+    If a component instance is not found, or the locator is ill-formed,
+    the function returns nullptr with error messages.
+    \endrst
 */
-LM_PUBLIC_API Component* get(const std::string& name);
+LM_PUBLIC_API Component* get(const std::string& locator);
 
 /*!
     \brief Enumerate all component accessible from the root.
+    \param visit Component visitor.
+
+    \rst
+    This function calls :cpp:func:`lm::Component::foreachUnderlying` function
+    for the root component of component hierarchy.
+    \endrst
 */
 LM_PUBLIC_API void foreachComponent(const Component::ComponentVisitor& visit);
 
@@ -413,12 +478,13 @@ LM_NAMESPACE_END(detail)
 */
 
 /*!
-    \brief Get underlying component of root by name and type.
+    \brief Get component by locator.
     \tparam T Component interface type.
+    \param locator Component locator.
 */
 template <typename T>
-T* get(const std::string& name) {
-    return dynamic_cast<T*>(detail::get(name));
+T* get(const std::string& locator) {
+    return dynamic_cast<T*>(detail::get(locator));
 }
 
 /*!
