@@ -537,12 +537,7 @@ visit(const Component::ComponentVisitor& visitor, Component::Ptr<T>& p) {
     \brief Create component with specific interface type.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
-    \param loc Global locator of the instance.
-
-    \rst
-    You want to specify ``loc`` if the object can be accessible via
-    :func:`lm::comp::detail::underlying` function.
-    \endrst
+    \param loc Component locator of the instance.
 */
 template <typename InterfaceT>
 Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc) {
@@ -559,7 +554,7 @@ Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc
     \brief Create component with construction with given properties.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
-    \param loc Global locator of the instance.
+    \param loc Component locator of the instance.
     \param prop Properties.
 */
 template <typename InterfaceT>
@@ -591,6 +586,14 @@ LM_NAMESPACE_BEGIN(detail)
     \rst
     This singleton holds the ownership the context component where
     we manages the component hierarchy under the context.
+    Example:
+
+    .. code-block:: cpp
+
+        using Instance = lm::comp::detail::ContextInstance<YourComponentInterface>;
+
+        Instance::init("interface::yourcomponent", { ... });
+        Instance::get()->...
     \endrst
 */
 template <typename ContextComponentT>
@@ -609,10 +612,24 @@ public:
         return instance;
     }
 
+    /*!
+        \brief Get a reference to the underlying component.
+        \return Reference to the underlying component.
+    */
     static ContextComponentT& get() {
         return *instance().context.get();
     }
 
+    /*!
+        \brief Initialize the underlying component.
+        \param type Component type.
+        \param prop Configuration property.
+
+        \rst
+        This function initializes the underlying component
+        with the specified component type and properties.
+        \endrst
+    */
     static void init(const std::string& type, const Json& prop) {
         // Implicitly call shutdown() if the singleton was already initialized
         if (instance().context) {
@@ -622,11 +639,20 @@ public:
         instance().context = comp::create<ContextComponentT>(type, "$", prop);
     }
 
+    /*!
+        \brief Delete the underlying component.
+    */
     static void shutdown() {
         instance().context.reset();
     }
 
-    // Check if the context instance is initialized
+    /*!
+        \brief Check if the context instance is initialized.
+        
+        \rst
+        This function returns true if the underlying component is initialized.
+        \endrst
+    */
     static bool initialized() {
         return bool(instance().context);
     }
@@ -661,6 +687,11 @@ public:
 /*!
     \brief Registration entry for component implementation.
     \tparam ImplType Type of component implementation.
+
+    \rst
+    This class is used internally by :c:func:`LM_COMP_REG_IMPL` macro.
+    The users do not want to use it directly.
+    \endrst
 */
 template <typename ImplType>
 class RegEntry {
@@ -714,6 +745,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     This macro registers an implementation of a component object into the framework.
     This macro can be placed under any translation unit irrespective to the kind of binaries it belongs,
     like a shared libraries or an user's application code.
+    See :ref:`implementing_interface` for detail.
 
     .. note::
        According to the C++ specification `[basic.start.dynamic]/5`_, dependening on the implementation, 

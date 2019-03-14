@@ -47,6 +47,8 @@ LM_NAMESPACE_END(user)
     The framework must be initialized with this function before any use of other APIs.
     The properties are passed as JSON format and used to initialize
     the internal subsystems of the framework.
+    This function initializes some subsystems with default types.
+    If you want to configure the subsystem, you want to call each ``init()`` function afterwards.
     \endrst
 */
 LM_PUBLIC_API void init(const std::string& type = user::DefaultType, const Json& prop = {});

@@ -20,7 +20,8 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \brief Result of primary ray sampling.
     
     \rst
-    Shows the result of :cpp:func:`lm::Camera::samplePrimaryRay` function.
+    This structure represents the result of
+    :cpp:func:`lm::Camera::samplePrimaryRay` function.
     \endrst
 */
 struct CameraRaySample {
@@ -33,8 +34,8 @@ struct CameraRaySample {
     \brief Camera.
 
     \rst
-    Interfaces a virtual camera inside the scene.
-    The class is responsible for sampling and evaluation of the rays emitted from/to the camera. 
+    This component interface represents a camera inside the scene,
+    responsible for sampling and evaluation of the rays emitted from/to the camera. 
     \endrst
 */
 class Camera : public Component {
@@ -58,7 +59,7 @@ public:
         \param rp Raster position.
 
         \rst
-        Deterministically generates a ray from the given raster position in :math:`[0,1]^2`
+        This function deterministically generates a ray from the given raster position in :math:`[0,1]^2`
         corresponding to width and height of the screen, leaf-to-right and bottom-to-top.
         This function is useful in the application that the primary ray is fixed (e.g., ray casting).
         Use :cpp:func:`samplePrimaryRay` when the primary ray is generated randomly.
@@ -75,7 +76,7 @@ public:
         \param window Raster window.
 
         \rst
-        Generates a uniformly random ray from the raster window inside the screen.
+        This function generates a uniformly random ray from the raster window inside the screen.
         The raster windows is specified by subregion of :math:`[0,1]^2` 
         using 4d vector containing ``(x,y,w,h)`` where ``(x,y)`` is the bottom-left point
         of the region, and ``(w,h)`` is width and height of the region.
@@ -86,7 +87,7 @@ public:
         Mathematically the function defines a sampling from the distribution
         having a joint probability density :math:`p(\mathbf{x}, \omega)` defined by
         the surface point :math:`\mathbf{x}` and the direction :math:`\omega`
-        according to the measure :math:`dAd\sigma^\bot`.
+        according to the produce measure of area measure and projected solid angle measure.
 
         Note that the generated rays are uniform in a sense that
         each ray is generated from the uniform sampling of the raster window.

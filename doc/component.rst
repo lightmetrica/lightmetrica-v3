@@ -42,6 +42,8 @@ An example of the component interface with a virtual function would be like:
        virtual int f() = 0;
     };
 
+.. _implementing_interface:
+
 Implementing interface
 ===========================
 

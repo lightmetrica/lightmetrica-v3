@@ -91,12 +91,10 @@ enum class LogLevel : int {
 /*!
     \brief Initialize logger context.
     \param type Type of log subsystem.
-    \param prop Properties for configuration.
+    \param prop Configuration properties.
 
     \rst
-    This function initializes the logger subsystem specified by logger type ``type``.
-    The function is implicitly called by the framework
-    so the user do not want to explicitly call this function.
+    This function initializes logger subsystem with specified type and properties.
     \endrst
 */
 LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop = {});
@@ -105,10 +103,8 @@ LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop 
     \brief Shutdown logger context.
 
     \rst
-    This function shutdowns the logger subsystem.
-    You do not want to call this function because 
-    it is called implicitly by the framework. 
-    You may consider to use :class:`ScopedInit` class if you want to explicitly shutdown
+    This function shutdowns logger subsystem.
+    You may consider to use :cpp:class:`lm::log::ScopedInit` class if you want to explicitly shutdown
     the subsystem at the end of the scope, instead of call this function directly.
     \endrst
 */
@@ -366,15 +362,15 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     
     .. code-block:: cpp
 
-       // Indentation = 0. Produces " message 1"
-       LM_INFO("message 1");
-       {
-           // Indentation = 1. Produces ".. message 2"
-           LM_INDENT();
-           LM_INFO("message 2");
-       }
-       // Indentation = 0. Produces " message 3"
-       LM_INFO("message 3");
+        // Indentation = 0. Produces " message 1"
+        LM_INFO("message 1");
+        {
+            // Indentation = 1. Produces ".. message 2"
+            LM_INDENT();
+            LM_INFO("message 2");
+        }
+        // Indentation = 0. Produces " message 3"
+        LM_INFO("message 3");
     \endrst
 */
 #define LM_INDENT() LM_NAMESPACE::log::LogIndenter \
