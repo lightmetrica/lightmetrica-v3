@@ -19,7 +19,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \brief Film size.
 
     \rst
-    The structure represents a film size
+    This structure represents a film size
     used as a return type of :cpp:func:`lm::Film::size` function.
     \endrst
 */
