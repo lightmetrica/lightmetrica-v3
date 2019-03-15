@@ -31,11 +31,14 @@ import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {
-    'numThreads': -1,
-    'logger': 'logger::jupyter'
+lm.init('user::default', {})
+lm.parallel.init('parallel::openmp', {
+    'numThreads': -1
 })
-lm.log.setSeverity(lm.log.LogLevel.Warn)
+lm.log.init('logger::jupyter', {})
+#lm.log.setSeverity(lm.log.LogLevel.Warn)
+lm.info()
+
 lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
 
 build_time_df = pd.DataFrame(columns=ft.accels(), index=lmscene.scenes())
@@ -44,7 +47,12 @@ for scene in lmscene.scenes():
     for accel in ft.accels():
         lm.reset()
 
-        lmscene.load(ft.env.scene_path, name)
+        lm.asset('film_output', 'film::bitmap', {
+            'w': 1920,
+            'h': 1080
+        })
+        
+        lmscene.load(ft.env.scene_path, scene)
         def build():
             lm.build('accel::' + accel, {})
         build_time = timeit.timeit(stmt=build, number=1)
@@ -52,7 +60,7 @@ for scene in lmscene.scenes():
 
         def render():
             lm.render('renderer::raycast', {
-                'output': 'film_output'
+                'output': lm.asset('film_output')
             })
         render_time = timeit.timeit(stmt=render, number=1)
         render_time_df[accel][scene] = render_time

@@ -19,6 +19,7 @@ class Renderer_Raycast final : public Renderer {
 private:
     Vec3 bgColor_;
     bool useConstantColor_;
+    bool visualizeNormal_;
     Film* film_;
 
 public:
@@ -34,6 +35,7 @@ public:
     virtual bool construct(const Json& prop) override {
         bgColor_ = json::valueOr(prop, "bg_color", Vec3(0_f));
         useConstantColor_ = json::valueOr(prop, "use_constant_color", false);
+        visualizeNormal_ = json::valueOr(prop, "visualize_normal", false);
         film_ = comp::get<Film>(prop["output"]);
         if (!film_) {
             return false;
@@ -54,12 +56,17 @@ public:
                 film_->setPixel(x, y, bgColor_);
                 return;
             }
-            const auto R = scene->reflectance(*sp);
-            auto C = R ? *R : Vec3();
-            if (!useConstantColor_) {
-                C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));
+            if (visualizeNormal_) {
+                film_->setPixel(x, y, glm::abs(sp->geom.n));
             }
-            film_->setPixel(x, y, C);
+            else {
+                const auto R = scene->reflectance(*sp);
+                auto C = R ? *R : Vec3();
+                if (!useConstantColor_) {
+                    C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));
+                }
+                film_->setPixel(x, y, C);
+            }
         });
     }
 };

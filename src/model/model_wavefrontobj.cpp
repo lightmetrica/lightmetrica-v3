@@ -86,7 +86,7 @@ private:
 public:
     // Callback functions
     using ProcessMeshFunc = std::function<
-        std::optional<int>(const OBJMeshFace& fs, const MTLMatParams& m)>;
+        void(const OBJMeshFace& fs, const MTLMatParams& m)>;
     using ProcessMaterialFunc = std::function<
         bool(const MTLMatParams& m)>;
     using ProcessTextureFunc = std::function<
@@ -132,6 +132,7 @@ public:
                 }
                 OBJMeshFaceIndex is[4];
                 for (auto& i : is) {
+                    if (eol(t[0])) { continue; }
                     i = parseIndices(geo, t);
                 }
                 currfs.insert(currfs.end(), {is[0], is[1], is[2]});
@@ -166,6 +167,9 @@ public:
     }
 
 private:
+    // Checks end of line
+    bool eol(char c) { return c == '\0'; }
+
     // Checks a character is space-like
     bool whitespace(char c) { return c == ' ' || c == '\t'; };
 
@@ -210,10 +214,10 @@ private:
         skipSpaces(t);
         i.p = parseIndex(atoi(t), int(geo.ps.size()));
         skipSpacesOrComments(t);
-        if (t++[0] != '/') { return i; }
+        if (eol(t[0]) || t++[0] != '/') { return i; }
         i.t = parseIndex(atoi(t), int(geo.ts.size()));
         skipSpacesOrComments(t);
-        if (t++[0] != '/') { return i; }
+        if (eol(t[0]) || t++[0] != '/') { return i; }
         i.n = parseIndex(atoi(t), int(geo.ns.size()));
         skipSpacesOrComments(t);
         return i;
@@ -347,7 +351,7 @@ public:
         WavefrontOBJParser parser;
         return parser.parse(prop["path"], geo_,
             // Process mesh
-            [&](const OBJMeshFace& fs, const MTLMatParams& m) -> std::optional<int> {
+            [&](const OBJMeshFace& fs, const MTLMatParams& m) -> void {
                 currentFs_ = fs;
 
                 // Create mesh
@@ -359,7 +363,7 @@ public:
                     }
                 ));
                 if (!mesh) {
-                    return false;
+                    return;
                 }
                 assetsMap_[meshName] = int(assets_.size());
                 assets_.push_back(std::move(mesh));
@@ -374,7 +378,7 @@ public:
                         {"mesh", makeLoc(meshName)}
                     });
                     if (!light) {
-                        return false;
+                        return;
                     }
                     lightIndex = int(assets_.size());
                     assetsMap_[lightName] = int(assets_.size());
@@ -383,8 +387,6 @@ public:
 
                 // Create mesh group
                 groups_.push_back({ assetsMap_[meshName], assetsMap_[m.name], lightIndex });
-
-                return true;
             },
             // Process material
             [&](const MTLMatParams& m) -> bool {

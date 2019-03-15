@@ -17,6 +17,9 @@
 #
 # This test checks scene loading and basic rendering for all test scenes.
 
+# %load_ext autoreload
+# %autoreload 2
+
 import os
 import imageio
 import pandas as pd
@@ -39,6 +42,8 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
+lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+
 for scene in lmscene.scenes():
     lm.reset()
     
@@ -50,14 +55,18 @@ for scene in lmscene.scenes():
     
     # Render
     lmscene.load(ft.env.scene_path, scene)
-    lm.build('accel::sahbvh', {})
+    lm.build('accel::nanort', {})
     lm.render('renderer::raycast', {
-        'output': lm.asset('film_output')
+        'output': lm.asset('film_output'),
+        #'use_constant_color': True
     })
     img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
     
     # Visualize
-    f = plt.figure(figsize=(10,10))
+    f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(111)
     ax.imshow(np.clip(np.power(img,1/2.2),0,1))
     ax.set_title(scene)
+    plt.show()
+
+
