@@ -390,14 +390,14 @@ static void bind(pybind11::module& m) {
         virtual bool isSpecular(const SurfacePoint& sp) const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, isSpecular, sp);
         }
-        virtual Ray primaryRay(Vec2 rp) const override {
-            PYBIND11_OVERLOAD_PURE(Ray, Scene, primaryRay, rp);
+        virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const override {
+            PYBIND11_OVERLOAD_PURE(Ray, Scene, primaryRay, rp, aspectRatio);
         }
         virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleRay, rng, sp, wi);
         }
-        virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, samplePrimaryRay, rng, window);
+        virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, samplePrimaryRay, rng, window, aspectRatio);
         }
         virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleLight, rng, sp);

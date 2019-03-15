@@ -120,13 +120,13 @@ public:
             if (!primitive.mesh) {
                 continue;
             }
-            primitive.mesh->foreachTriangle([&](int face, Mesh::Point p1, Mesh::Point p2, Mesh::Point p3) {
+            primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
                 processTriangle(
                     primitive.index,
                     face,
-                    primitive.transform.M * Vec4(p1.p, 1_f),
-                    primitive.transform.M * Vec4(p2.p, 1_f),
-                    primitive.transform.M * Vec4(p3.p, 1_f)
+                    primitive.transform.M * Vec4(tri.p1.p, 1_f),
+                    primitive.transform.M * Vec4(tri.p2.p, 1_f),
+                    primitive.transform.M * Vec4(tri.p3.p, 1_f)
                 );
             });
         }
@@ -202,8 +202,8 @@ public:
 
     // ------------------------------------------------------------------------
 
-    virtual Ray primaryRay(Vec2 rp) const {
-        return primitives_.at(camera_).camera->primaryRay(rp);
+    virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const {
+        return primitives_.at(camera_).camera->primaryRay(rp, aspectRatio);
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
@@ -227,8 +227,8 @@ public:
         };
     }
 
-    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
-        const auto s = primitives_.at(camera_).camera->samplePrimaryRay(rng, window);
+    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
+        const auto s = primitives_.at(camera_).camera->samplePrimaryRay(rng, window, aspectRatio);
         if (!s) {
             return {};
         }

@@ -28,8 +28,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Camera_Pinhole final : public Camera {
 private:
-    Film* film_;      // Underlying film
-
     Vec3 position_;   // Camera position
     Vec3 center_;     // Lookat position
     Vec3 up_;         // Up vector
@@ -40,11 +38,7 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, position_, center_, up_, u_, v_, w_, vfov_, tf_);
-    }
-
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
-        comp::visit(visit, film_);
+        ar(position_, center_, up_, u_, v_, w_, vfov_, tf_);
     }
 
 public:
@@ -58,10 +52,6 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
-        film_ = comp::get<Film>(prop["film"]);      // Film
-        if (!film_) {
-            return false;
-        }
         position_ = prop["position"];               // Camera position
         center_ = prop["center"];                   // Look-at position
         up_ = prop["up"];                           // Up vector
@@ -77,17 +67,17 @@ public:
         return false;
     }
 
-    virtual Ray primaryRay(Vec2 rp) const override {
+    virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const override {
         rp = 2_f*rp-1_f;
-        const auto d = glm::normalize(Vec3(film_->aspectRatio()*tf_*rp.x, tf_*rp.y, -1_f));
+        const auto d = glm::normalize(Vec3(aspectRatio*tf_*rp.x, tf_*rp.y, -1_f));
         return { position_, u_*d.x+v_*d.y+w_*d.z };
     }
 
-    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window) const override {
+    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
         const auto [x, y, w, h] = window.data.data;
         return CameraRaySample{
             PointGeometry::makeDegenerated(position_),
-            primaryRay({x+w*rng.u(), y+h*rng.u()}).d,
+            primaryRay({x+w*rng.u(), y+h*rng.u()}, aspectRatio).d,
             Vec3(1_f)
         };
     }

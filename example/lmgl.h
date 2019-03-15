@@ -162,10 +162,10 @@ public:
         std::vector<lm::Vec2> ts;
         std::vector<GLuint> is;
         GLuint count = 0;
-        mesh->foreachTriangle([&](int, lm::Mesh::Point p1, lm::Mesh::Point p2, lm::Mesh::Point p3) {
-            vs.insert(vs.end(), { p1.p, p2.p, p3.p });
-            ns.insert(ns.end(), { p1.n, p2.n, p3.n });
-            ts.insert(ts.end(), { p1.t, p2.t, p3.t });
+        mesh->foreachTriangle([&](int, const lm::Mesh::Tri& tri) {
+            vs.insert(vs.end(), { tri.p1.p, tri.p2.p, tri.p3.p });
+            ns.insert(ns.end(), { tri.p1.n, tri.p2.n, tri.p3.n });
+            ts.insert(ts.end(), { tri.p1.t, tri.p2.t, tri.p3.t });
             is.insert(is.end(), { count, count+1, count+2 });
             count+=3;
         });

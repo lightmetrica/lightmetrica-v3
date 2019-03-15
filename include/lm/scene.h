@@ -135,7 +135,7 @@ public:
     /*!
         \brief Generate a primary ray.
     */
-    virtual Ray primaryRay(Vec2 rp) const = 0;
+    virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const = 0;
 
     /*!
         \brief Sample a ray given surface point and incident direction.
@@ -151,7 +151,7 @@ public:
         (x,wo) ~ p(x,wo|raster window)
         \endrst
     */
-    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
+    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const = 0;
 
     /*!
         \brief Sample a position on a light.

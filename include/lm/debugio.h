@@ -56,12 +56,17 @@ LM_PUBLIC_API void syncUserContext();
 
 /*!
     \brief Debugio mesh type.
+
+    \rst
+    This structure represents mesh type for debug visualization,
+    used as an argument of :cpp:func:`lm::debugio::draw` function.
+    \endrst
 */
 enum {
-    Triangles = 1<<0,
-    LineStrip = 1<<1,
-    Lines     = 1<<2,
-    Points    = 1<<3,
+    Triangles = 1<<0,   //!< Triangle mesh.
+    LineStrip = 1<<1,   //!< Line strip.
+    Lines     = 1<<2,   //!< Lines.
+    Points    = 1<<3,   //!< Points.
 };
 
 /*!

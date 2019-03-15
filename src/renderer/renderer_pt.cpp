@@ -59,7 +59,7 @@ public:
                 // Initial sampleRay function
                 std::function<std::optional<RaySample>()> sampleRay = [&]() {
                     Float dx = 1_f/w, dy = 1_f/h;
-                    return scene->samplePrimaryRay(rng, {dx*x, dy*y, dx, dy});
+                    return scene->samplePrimaryRay(rng, {dx*x, dy*y, dx, dy}, film_->aspectRatio());
                 };
 
                 // Perform random walk

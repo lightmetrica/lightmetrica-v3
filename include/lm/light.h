@@ -82,7 +82,7 @@ public:
         \param wo Outgoing direction from the point of the light source.
 
         \rst
-        This function evalutes a pdf corresponding to the sample function :cpp:func:`lm::Light::sample`.
+        This function evalutes a pdf corresponding to :cpp:func:`lm::Light::sample` function.
         ``geomL`` is either the point on the light source or inifite point.
         If the given direction cannot be sampled, the function returns zero.
         \endrst

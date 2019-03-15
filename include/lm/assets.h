@@ -24,6 +24,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     :cpp:func:`lm::Component::underlying`. The class provides the feature for internal usage
     and the user may not want to use this interface directly.
     The feature of the class is exposed by ``user`` namespace.
+    See :ref:`preparing_asset` for detail.
     \endrst
 */
 class Assets : public Component {

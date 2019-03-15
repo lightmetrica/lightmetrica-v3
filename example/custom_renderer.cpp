@@ -31,7 +31,7 @@ public:
             thread_local lm::Rng rng(rngSeed_ + threadId);
             const int x = int(index % w);
             const int y = int(index / w);
-            const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h});
+            const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h}, film_->aspectRatio());
             const auto hit = scene->intersect(ray);
             if (!hit) {
                 return;

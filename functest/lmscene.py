@@ -10,13 +10,11 @@ def scenes():
 def load(scene_path, name):
     return globals()[name](scene_path)
 
+def bedroom(scene_path):
+    pass
+
 def fireplace_room(scene_path):
-    lm.asset('film_output', 'film::bitmap', {
-        'w': 1920,
-        'h': 1080
-    })
     lm.asset('camera_main', 'camera::pinhole', {
-        'film': lm.asset('film_output'),
         'position': [5.101118, 1.083746, -2.756308],
         'center': [4.167568, 1.078925, -2.397892],
         'up': [0,1,0],
@@ -33,12 +31,7 @@ def fireplace_room(scene_path):
     })
 
 def cornell_box_sphere(scene_path):
-    lm.asset('film_output', 'film::bitmap', {
-        'w': 1920,
-        'h': 1080
-    })
     lm.asset('camera_main', 'camera::pinhole', {
-        'film': lm.asset('film_output'),
         'position': [0,1,5],
         'center': [0,1,0],
         'up': [0,1,0],

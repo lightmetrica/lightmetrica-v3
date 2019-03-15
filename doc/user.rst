@@ -29,7 +29,9 @@ as a root node of the component hierarchy.
 
     :cpp:func:`lm::info` prints information about the framework.
 
-Preaparing asset
+.. _preparing_asset:
+
+Preparing asset
 ======================
 
 *Asset* represents a component of the scene such as meshes or materials.
@@ -76,6 +78,8 @@ Note that in this example, even when you want to replace ``film1``,
 you don't need to update a reference inside ``camera1``.
 Our framework automatically finds weak references inside the component hierarchy pointing to the old component 
 and replaces with the reference to the new component, as long as the component properly enumerates the underlying components (see :ref:`querying_information`).
+
+.. _making_scene:
 
 Making scene
 ======================

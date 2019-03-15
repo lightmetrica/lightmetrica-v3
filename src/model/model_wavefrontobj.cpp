@@ -469,27 +469,21 @@ public:
     }
 
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
-        const auto& geo_ = model_->geo_;
         for (int fi = 0; fi < int(fs_.size()); fi += 3) {
-            const auto f1 = fs_[fi];
-            const auto f2 = fs_[fi + 1];
-            const auto f3 = fs_[fi + 2];
-            const auto p1 = geo_.ps[f1.p];
-            const auto p2 = geo_.ps[f2.p];
-            const auto p3 = geo_.ps[f3.p];
-            processTriangle(fi,
-                { p1, f1.n<0 ? Vec3() : geo_.ns[f1.n], f1.t<0 ? Vec2() : geo_.ts[f1.t] },
-                { p2, f2.n<0 ? Vec3() : geo_.ns[f2.n], f2.t<0 ? Vec2() : geo_.ts[f2.t] },
-                { p3, f3.n<0 ? Vec3() : geo_.ns[f3.n], f3.t<0 ? Vec2() : geo_.ts[f3.t] });
+            processTriangle(fi, triangleAt(fi/3));
         }
     }
 
     virtual Tri triangleAt(int face) const override {
         const auto& geo_ = model_->geo_;
-        const auto p1 = geo_.ps[fs_[3*face].p];
-        const auto p2 = geo_.ps[fs_[3*face + 1].p];
-        const auto p3 = geo_.ps[fs_[3*face + 2].p];
-        return { p1, p2, p3 };
+        const auto f1 = fs_[3*face];
+        const auto f2 = fs_[3*face+1];
+        const auto f3 = fs_[3*face+2];
+        return {
+            { geo_.ps[f1.p], f1.n<0 ? Vec3() : geo_.ns[f1.n], f1.t<0 ? Vec2() : geo_.ts[f1.t] },
+            { geo_.ps[f2.p], f2.n<0 ? Vec3() : geo_.ns[f2.n], f2.t<0 ? Vec2() : geo_.ts[f2.t] },
+            { geo_.ps[f3.p], f3.n<0 ? Vec3() : geo_.ns[f3.n], f3.t<0 ? Vec2() : geo_.ts[f3.t] }
+        };
     }
 
     virtual Point surfacePoint(int face, Vec2 uv) const override {

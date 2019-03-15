@@ -57,6 +57,7 @@ public:
     /*!
         \brief Generate a primary ray with the corresponding raster position.
         \param rp Raster position.
+        \param aspectRatio Aspect ratio of the film.
 
         \rst
         This function deterministically generates a ray from the given raster position in :math:`[0,1]^2`
@@ -65,8 +66,8 @@ public:
         Use :cpp:func:`samplePrimaryRay` when the primary ray is generated randomly.
         \endrst
     */
-    virtual Ray primaryRay(Vec2 rp) const {
-        LM_UNUSED(rp);
+    virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const {
+        LM_UNUSED(rp, aspectRatio);
         LM_UNREACHABLE_RETURN();
     }
 
@@ -74,6 +75,7 @@ public:
         \brief Sample a primary ray within the given raster window.
         \param rng Random number generator.
         \param window Raster window.
+        \param aspectRatio Aspect ratio of the film.
 
         \rst
         This function generates a uniformly random ray from the raster window inside the screen.
@@ -94,8 +96,8 @@ public:
         Looking by the solid angle measure, for instance, the set of rays are not uniform.
         \endrst
     */
-    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window) const {
-        LM_UNUSED(rng, window);
+    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const {
+        LM_UNUSED(rng, window, aspectRatio);
         LM_UNREACHABLE_RETURN();
     }
 

@@ -48,7 +48,7 @@ public:
             LM_UNUSED(threadId);
             const int x = int(index % w);
             const int y = int(index / w);
-            const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h});
+            const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h}, film_->aspectRatio());
             const auto sp = scene->intersect(ray);
             if (!sp) {
                 film_->setPixel(x, y, bgColor_);
