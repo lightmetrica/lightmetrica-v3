@@ -4,3 +4,4 @@
 #
 
 add_subdirectory(accel_nanort)
+add_subdirectory(objloader_tinyobjloader)

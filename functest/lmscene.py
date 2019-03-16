@@ -12,6 +12,7 @@ def scenes():
         'bunny',
         'cloud',
         'conference',
+        'cube',
         'powerplant'
     ]
 
@@ -26,7 +27,8 @@ def fireplace_room(scene_path):
         'vfov': 43.001194
     })
     lm.asset('model_obj', 'model::wavefrontobj', {
-        'path': os.path.join(scene_path, 'fireplace_room/fireplace_room.obj')
+        'path': os.path.join(scene_path, 'fireplace_room/fireplace_room.obj'),
+        'loader': 'objloader::tinyobjloader'
     })
     lm.primitive(lm.identity(), {
         'camera': lm.asset('camera_main')
@@ -163,6 +165,23 @@ def conference(scene_path):
     })
     lm.asset('model_obj', 'model::wavefrontobj', {
         'path': os.path.join(scene_path, 'conference/conference.obj')
+    })
+    lm.primitive(lm.identity(), {
+        'camera': lm.asset('camera_main')
+    })
+    lm.primitive(lm.identity(), {
+        'model': lm.asset('model_obj')
+    })
+
+def cube(scene_path):
+    lm.asset('camera_main', 'camera::pinhole', {
+        'position': [2, 2, 2],
+        'center': [0, 0, 0],
+        'up': [0,1,0],
+        'vfov': 30
+    })
+    lm.asset('model_obj', 'model::wavefrontobj', {
+        'path': os.path.join(scene_path, 'cube/cube.obj')
     })
     lm.primitive(lm.identity(), {
         'camera': lm.asset('camera_main')

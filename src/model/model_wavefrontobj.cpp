@@ -5,6 +5,7 @@
 
 #include <pch.h>
 #include <lm/model.h>
+#include <lm/objloader.h>
 #include <lm/mesh.h>
 #include <lm/material.h>
 #include <lm/texture.h>
@@ -18,291 +19,12 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// ----------------------------------------------------------------------------
-
-#pragma region Wavefront OBJ parser
-
-// Surface geometry shared among meshes
-struct OBJSurfaceGeometry {
-    std::vector<Vec3> ps;   // Positions
-    std::vector<Vec3> ns;   // Normals
-    std::vector<Vec2> ts;   // Texture coordinates
-
-    template <typename Archive>
-    void serialize(Archive& ar) {
-        ar(ps, ns, ts);
-    }
-};
-
-// Face indices
-struct OBJMeshFaceIndex {
-    int p = -1;         // Index of position
-    int t = -1;         // Index of texture coordinates
-    int n = -1;         // Index of normal
-
-    template <typename Archive>
-    void serialize(Archive& ar) {
-        ar(p, t, n);
-    }
-};
-
-// Face
-using OBJMeshFace = std::vector<OBJMeshFaceIndex>;
-
-// Texture parameters
-struct MTLTextureParams {
-    std::string name;   // Name
-    std::string path;   // Texture path
-};
-
-// MLT material parameters
-struct MTLMatParams {
-    std::string name;   // Name
-    int illum;          // Type
-    Vec3 Kd;            // Diffuse reflectance
-    Vec3 Ks;            // Specular reflectance
-    Vec3 Ke;            // Luminance
-    std::string mapKd;  // Name of texture for Kd
-    Float Ni;           // Index of refraction
-    Float Ns;           // Specular exponent for phong shading
-    Float an;           // Anisotropy
-
-    template <typename Archive>
-    void serialize(Archive& ar) {
-        ar(name, illum, Kd, Ks, Ke, mapKd, Ni, Ns, an);
-    }
-};
-
-// Wavefront OBJ/MTL file parser
-class WavefrontOBJParser {
-private:
-    // Material parameters
-    std::vector<MTLMatParams> ms_;
-    std::unordered_map<std::string, int> msmap_;
-    // Texture parameters
-    std::vector<MTLTextureParams> ts_;
-    std::unordered_map<std::string, int> tsmap_;
-
-public:
-    // Callback functions
-    using ProcessMeshFunc = std::function<
-        void(const OBJMeshFace& fs, const MTLMatParams& m)>;
-    using ProcessMaterialFunc = std::function<
-        bool(const MTLMatParams& m)>;
-    using ProcessTextureFunc = std::function<
-        bool(const MTLTextureParams& path)>;
-
-    // Parses .obj file
-    bool parse(const std::string& p, OBJSurfaceGeometry& geo,
-        const ProcessMeshFunc& processMesh,
-        const ProcessMaterialFunc& processMaterial,
-        const ProcessTextureFunc& processTexture)
-    {
-        LM_INFO("Loading OBJ file [path='{}']", p);
-        char l[4096], name[256];
-        std::ifstream f(p);
-        if (!f) {
-            LM_ERROR("Missing OBJ file [path='{}']", p);
-            return false;
-        }
-
-        // Active face indices and material index
-        int currMaterialIdx = -1;
-        std::vector<OBJMeshFaceIndex> currfs;
-
-        // Parse .obj file line by line
-        while (f.getline(l, 4096)) {
-            char *t = l;
-            skipSpaces(t);
-            if (command(t, "v", 1)) {
-                geo.ps.emplace_back(nextVec3(t += 2));
-            } else if (command(t, "vn", 2)) {
-                geo.ns.emplace_back(nextVec3(t += 3));
-            } else if (command(t, "vt", 2)) {
-                geo.ts.emplace_back(nextVec3(t += 3));
-            } else if (command(t, "f", 1)) {
-                t += 2;
-                if (ms_.empty()) {
-                    // Process the case where MTL file is missing
-                    ms_.push_back({ "default", -1, Vec3(1) });
-                    if (!processMaterial(ms_.back())) {
-                        return false;
-                    }
-                    currMaterialIdx = 0;
-                }
-                OBJMeshFaceIndex is[4];
-                for (auto& i : is) {
-                    if (eol(t[0])) { continue; }
-                    i = parseIndices(geo, t);
-                }
-                currfs.insert(currfs.end(), {is[0], is[1], is[2]});
-                if (is[3].p != -1) {
-                    // Triangulate quad
-                    currfs.insert(currfs.end(), {is[0], is[2], is[3]});
-                }
-            } else if (command(t, "usemtl", 6)) {
-                t += 7;
-                nextString(t, name);
-                if (!currfs.empty()) {
-                    // 'usemtl' indicates end of mesh groups
-                    processMesh(currfs, ms_.at(currMaterialIdx));
-                    currfs.clear();
-                }
-                currMaterialIdx = msmap_.at(name);
-            } else if (command(t, "mtllib", 6)) {
-                nextString(t += 7, name);
-                if (!loadmtl((std::filesystem::path(p).remove_filename() / name).string(),
-                    processMaterial, processTexture)) {
-                    return false;
-                }
-            } else {
-                continue;
-            }
-        }
-        if (!currfs.empty()) {
-            processMesh(currfs, ms_.at(currMaterialIdx));
-        }
-
-        return true;
-    }
-
-private:
-    // Checks end of line
-    bool eol(char c) { return c == '\0'; }
-
-    // Checks a character is space-like
-    bool whitespace(char c) { return c == ' ' || c == '\t'; };
-
-    // Checks the token is a command 
-    bool command(char *&t, const char *c, int n) { return !strncmp(t, c, n) && whitespace(t[n]); }
-
-    // Skips spaces
-    void skipSpaces(char *&t) { t += strspn(t, " \t"); }
-
-    // Skips spaces or /
-    void skipSpacesOrComments(char *&t) { t += strcspn(t, "/ \t"); }
-
-    // Parses floating point value
-    Float nf(char *&t) {
-        skipSpaces(t);
-        Float v = Float(atof(t));
-        skipSpacesOrComments(t);
-        return v;
-    }
-
-    // Parses int value
-    int nextInt(char *&t) {
-        skipSpaces(t);
-        int v = atoi(t);
-        skipSpacesOrComments(t);
-        return v;
-    }
-
-    // Parses 3d vector
-    Vec3 nextVec3(char *&t) {
-        Vec3 v;
-        v.x = nf(t);
-        v.y = nf(t);
-        v.z = nf(t);
-        return v;
-    }
-
-    // Parses vertex index. See specification of obj file for detail.
-    int parseIndex(int i, int vn) { return i < 0 ? vn + i : i > 0 ? i - 1 : -1; }
-    OBJMeshFaceIndex parseIndices(OBJSurfaceGeometry& geo, char *&t) {
-        OBJMeshFaceIndex i;
-        skipSpaces(t);
-        i.p = parseIndex(atoi(t), int(geo.ps.size()));
-        skipSpacesOrComments(t);
-        if (eol(t[0]) || t++[0] != '/') { return i; }
-        i.t = parseIndex(atoi(t), int(geo.ts.size()));
-        skipSpacesOrComments(t);
-        if (eol(t[0]) || t++[0] != '/') { return i; }
-        i.n = parseIndex(atoi(t), int(geo.ns.size()));
-        skipSpacesOrComments(t);
-        return i;
-    }
-
-    // Parses a string
-    template <int N>
-    void nextString(char *&t, char (&name)[N]) {
-        #if LM_COMPILER_MSVC
-        sscanf_s(t, "%s", name, N);
-        #else
-        sscanf(t, "%s", name);
-        #endif
-    };
-
-    // Parses .mtl file
-    bool loadmtl(std::string p, const ProcessMaterialFunc& processMaterial, const ProcessTextureFunc& processTexture) {
-        LM_INFO("Loading MTL file [path='{}']", p);
-        std::ifstream f(p);
-        if (!f) {
-            LM_ERROR("Missing MLT file [path='{}']", p);
-            return false;
-        }
-        char l[4096], name[256];
-        while (f.getline(l, 4096)) {
-            auto *t = l;
-            skipSpaces(t);
-            if (command(t, "newmtl", 6)) {
-                nextString(t += 7, name);
-                msmap_[name] = int(ms_.size());
-                ms_.emplace_back();
-                ms_.back().name = name;
-                continue;
-            }
-            if (ms_.empty()) {
-                continue;
-            }
-            auto& m = ms_.back();
-            if      (command(t, "Kd", 2))     { m.Kd = nextVec3(t += 3); }
-            else if (command(t, "Ks", 2))     { m.Ks = nextVec3(t += 3); }
-            else if (command(t, "Ni", 2))     { m.Ni = nf(t += 3); }
-            else if (command(t, "Ns", 2))     { m.Ns = nf(t += 3); }
-            else if (command(t, "aniso", 5))  { m.an = nf(t += 5); }
-            else if (command(t, "Ke", 2))     { m.Ke = nextVec3(t += 3); }
-            else if (command(t, "illum", 5))  { m.illum = nextInt(t += 6); }
-            else if (command(t, "map_Kd", 6)) {
-                nextString(t += 7, name);
-                // Use filename as an identifi]er
-                const auto id = std::filesystem::path(name).stem().string();
-                m.mapKd = id;
-                // Check if the texture is alread loaded
-                auto it = tsmap_.find(id);
-                if (it == tsmap_.end()) {
-                    // Register a new texture
-                    tsmap_[id] = int(ts_.size());
-                    ts_.push_back({id, (std::filesystem::path(p).remove_filename()/name).string()});
-                }
-            }
-        }
-        // Let the user to process texture and materials
-        for (const auto& t : ts_) {
-            if (!processTexture(t)) {
-                return false;
-            }
-        }
-        for (const auto& m : ms_) {
-            if (!processMaterial(m)) {
-                return false;
-            }
-        }
-        return true;
-    }
-};
-
-#pragma endregion
-
-// ----------------------------------------------------------------------------
-
+using namespace objloader;
 class Mesh_WavefrontObj;
-class Material_WavefrontObj;
 
 class Model_WavefrontObj final : public Model {
 private:
     friend class Mesh_WavefrontObj;
-    friend class Material_WavefrontObj;
 
 private:
     // Surface geometry
@@ -325,12 +47,6 @@ private:
     };
     std::vector<Group> groups_;
 
-    // Temporary parameters accessed from underlying assets
-    // Origial material parameters
-    MTLMatParams currentMatParams_;
-    // Face indices
-    OBJMeshFace currentFs_;
-
 public:
     LM_SERIALIZE_IMPL(ar) {
         ar(geo_, groups_, assetsMap_, assets_);
@@ -348,22 +64,21 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
-        WavefrontOBJParser parser;
-        return parser.parse(prop["path"], geo_,
+        const std::string path = prop["path"];
+        return objloader::load(path, geo_,
             // Process mesh
-            [&](const OBJMeshFace& fs, const MTLMatParams& m) -> void {
-                currentFs_ = fs;
-
+            [&](const OBJMeshFace& fs, const MTLMatParams& m) -> bool {
                 // Create mesh
-                const std::string meshName = fmt::format("mesh{}", assets_.size());
+                const std::string meshName = fmt::format("mesh_{}", assets_.size());
                 auto mesh = comp::create<Mesh>(
                     "mesh::wavefrontobj", makeLoc(meshName),
                     json::merge(prop, {
-                        {"model_", this}
+                        {"model_", this},
+                        {"fs_", (const OBJMeshFace*)&fs}
                     }
                 ));
                 if (!mesh) {
-                    return;
+                    return false;
                 }
                 assetsMap_[meshName] = int(assets_.size());
                 assets_.push_back(std::move(mesh));
@@ -378,7 +93,7 @@ public:
                         {"mesh", makeLoc(meshName)}
                     });
                     if (!light) {
-                        return;
+                        return false;
                     }
                     lightIndex = int(assets_.size());
                     assetsMap_[lightName] = int(assets_.size());
@@ -387,11 +102,13 @@ public:
 
                 // Create mesh group
                 groups_.push_back({ assetsMap_[meshName], assetsMap_[m.name], lightIndex });
+
+                return true;
             },
             // Process material
             [&](const MTLMatParams& m) -> bool {
+                // User-specified material
                 if (const auto it = prop.find("base_material"); it != prop.end()) {
-                    // Use user-specified material
                     auto mat = comp::create<Material>("material::proxy", makeLoc(m.name), {
                         {"ref", *it}
                     });
@@ -400,35 +117,47 @@ public:
                     }
                     assetsMap_[m.name] = int(assets_.size());
                     assets_.push_back(std::move(mat));
+                    return true;
                 }
-                else {
-                    // Default mixture material
-                    currentMatParams_ = m;
-                    auto mat = comp::create<Material>(
-                        "material::wavefrontobj", makeLoc(m.name),
-                        json::merge(prop, {
-                            {"model_", this}
+
+                // Load texture
+                std::string mapKd_loc;
+                if (!m.mapKd.empty()) {
+                    // Use texture_<filename> as an identifier
+                    const auto id = "texture_" + std::filesystem::path(m.mapKd).stem().string();
+
+                    // Check if already loaded
+                    if (auto it = assetsMap_.find(id); it == assetsMap_.end()) {
+                        // If not loaded, load the texture
+                        const auto textureAssetName = json::valueOr<std::string>(prop, "texture", "texture::bitmap");
+                        auto texture = comp::create<Texture>(textureAssetName, makeLoc(id), {
+                            {"path", (std::filesystem::path(path).remove_filename()/m.mapKd).string()}
+                        });
+                        if (!texture) {
+                            return false;
                         }
-                    ));
-                    if (!mat) {
-                        return false;
+                        assetsMap_[id] = int(assets_.size());
+                        assets_.push_back(std::move(texture));
                     }
-                    assetsMap_[m.name] = int(assets_.size());
-                    assets_.push_back(std::move(mat));
+
+                    // Locator of the texture
+                    mapKd_loc = makeLoc(id);
                 }
-                return true;
-            },
-            // Process texture
-            [&](const MTLTextureParams& tex) -> bool {
-                const auto textureAssetName = json::valueOr<std::string>(prop, "texture", "texture::bitmap");
-                auto texture = comp::create<Texture>(textureAssetName, makeLoc(tex.name), {
-                    {"path", tex.path}
-                });
-                if (!texture) {
+
+                // Default mixture material
+                auto mat = comp::create<Material>(
+                    "material::wavefrontobj", makeLoc(m.name),
+                    json::merge(prop, {
+                        {"matparams_", (const MTLMatParams*)&m},
+                        {"mapKd_", mapKd_loc}
+                    }
+                ));
+                if (!mat) {
                     return false;
                 }
-                assetsMap_[tex.name] = int(assets_.size());
-                assets_.push_back(std::move(texture));
+                assetsMap_[m.name] = int(assets_.size());
+                assets_.push_back(std::move(mat));
+
                 return true;
             });
     }
@@ -452,7 +181,7 @@ LM_COMP_REG_IMPL(Model_WavefrontObj, "model::wavefrontobj");
 class Mesh_WavefrontObj final  : public Mesh {
 private:
     Model_WavefrontObj* model_;
-    std::vector<OBJMeshFaceIndex> fs_;
+    OBJMeshFace fs_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -466,7 +195,7 @@ public:
 public:
     virtual bool construct(const Json& prop) override {
         model_ = prop["model_"].get<Model_WavefrontObj*>();
-        fs_ = model_->currentFs_;
+        fs_ = *prop["fs_"].get<const OBJMeshFace*>();
         return true;
     }
 
@@ -516,9 +245,6 @@ LM_COMP_REG_IMPL(Mesh_WavefrontObj, "mesh::wavefrontobj");
 
 class Material_WavefrontObj final : public Material {
 private:
-    // Model asset
-    Model_WavefrontObj* model_;
-
     // Material parameters of MLT file
     MTLMatParams objmat_;
 
@@ -538,7 +264,7 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(model_, objmat_, materials_,
+        ar(objmat_, materials_,
            diffuse_, glossy_, glass_, mirror_, mask_,
            maskTex_);
     }
@@ -548,7 +274,6 @@ public:
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
-        comp::visit(visit, model_);
         comp::visit(visit, maskTex_);
         for (auto& material : materials_) {
             comp::visit(visit, material);
@@ -584,9 +309,8 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        // Model asset
-        model_ = prop["model_"].get<Model_WavefrontObj*>();
-        objmat_ = model_->currentMatParams_;
+        objmat_ = *prop["matparams_"].get<const MTLMatParams*>();
+        objmat_.mapKd = prop["mapKd_"];
 
         // Make parent component as a parent for the newly created components
         if (objmat_.illum == 7) {
@@ -612,7 +336,7 @@ public:
             const auto diffuseMaterialName = json::valueOr<std::string>(prop, "diffuse", "material::diffuse");
             Json matprop{ {"Kd", objmat_.Kd} };
             if (!objmat_.mapKd.empty()) {
-                matprop["mapKd"] = makeLoc(parentLoc(), objmat_.mapKd);
+                matprop["mapKd"] = objmat_.mapKd;
             }
             diffuse_ = addMaterial(diffuseMaterialName, "diffuse", matprop);
             if (diffuse_ < 0) {
@@ -634,7 +358,7 @@ public:
 
             // Mask texture
             if (!objmat_.mapKd.empty()) {
-                auto* texture = lm::comp::get<Texture>(makeLoc(parentLoc(), objmat_.mapKd));
+                auto* texture = lm::comp::get<Texture>(objmat_.mapKd);
                 if (texture->hasAlpha()) {
                     maskTex_ = texture;
                     mask_ = addMaterial("material::mask", "mask", {});

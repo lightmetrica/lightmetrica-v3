@@ -194,29 +194,15 @@ static void bind(pybind11::module& m) {
                 processFunc(index, threadId);
             });
         });
+    }
 
-        // Context
-        using ParallelContext = parallel::detail::ParallelContext;
-        class ParallelContext_Py final : public ParallelContext {
-            virtual bool construct(const Json& prop) override {
-                PYBIND11_OVERLOAD(bool, ParallelContext, construct, prop);
-            }
-            virtual int numThreads() const override {
-                PYBIND11_OVERLOAD_PURE(int, ParallelContext, numThreads);
-            }
-            virtual bool mainThread() const override {
-                PYBIND11_OVERLOAD_PURE(bool, ParallelContext, mainThread);
-            }
-            virtual void foreach(long long numSamples, const parallel::ParallelProcessFunc& processFunc) const override {
-                PYBIND11_OVERLOAD_PURE(void, ParallelContext, foreach, numSamples, processFunc);
-            }
-        };
-        pybind11::class_<ParallelContext, ParallelContext_Py, Component::Ptr<ParallelContext>>(sm, "ParallelContext")
-            .def(pybind11::init<>())
-            .def("numThreads", &ParallelContext::numThreads)
-            .def("mainThread", &ParallelContext::mainThread)
-            .def("foreach", &ParallelContext::foreach)
-            .PYLM_DEF_COMP_BIND(ParallelContext);
+    // ------------------------------------------------------------------------
+
+    // objloader.h
+    {
+        auto sm = m.def_submodule("objloader");
+        sm.def("init", &objloader::init);
+        sm.def("shutdown", &objloader::shutdown);
     }
 
     // ------------------------------------------------------------------------

@@ -12,6 +12,7 @@
 #include "user.h"
 #include "logger.h"
 #include "progress.h"
+#include "exception.h"
 #include "debugio.h"
 #include "parallel.h"
 #include "math.h"
@@ -25,4 +26,5 @@
 #include "accel.h"
 #include "film.h"
 #include "model.h"
+#include "objloader.h"
 #include "renderer.h"

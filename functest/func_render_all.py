@@ -43,6 +43,9 @@ lm.log.init('logger::jupyter', {})
 lm.info()
 
 lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
+
+lm.objloader.init('objloader::tinyobjloader', {})
 
 for scene in lmscene.scenes():
     lm.reset()

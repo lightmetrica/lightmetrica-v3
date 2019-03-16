@@ -17,6 +17,7 @@
 #include <lm/progress.h>
 #include <lm/serial.h>
 #include <lm/debugio.h>
+#include <lm/objloader.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -37,6 +38,7 @@ public:
     }
 
     ~UserContext_Default() {
+        objloader::shutdown();
         debugio::shutdown();
         debugio::server::shutdown();
         progress::shutdown();
@@ -73,6 +75,9 @@ public:
             it = it->begin();
             debugio::server::init(it.key(), it.value());
         }
+
+        // OBJ loader
+        objloader::init();
 
         // Create assets and scene
         reset();
