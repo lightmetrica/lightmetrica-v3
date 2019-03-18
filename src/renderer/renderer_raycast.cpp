@@ -33,9 +33,9 @@ public:
 
 public:
     virtual bool construct(const Json& prop) override {
-        bgColor_ = json::valueOr(prop, "bg_color", Vec3(0_f));
-        useConstantColor_ = json::valueOr(prop, "use_constant_color", false);
-        visualizeNormal_ = json::valueOr(prop, "visualize_normal", false);
+        bgColor_ = json::value(prop, "bg_color", Vec3(0_f));
+        useConstantColor_ = json::value(prop, "use_constant_color", false);
+        visualizeNormal_ = json::value(prop, "visualize_normal", false);
         film_ = comp::get<Film>(prop["output"]);
         if (!film_) {
             return false;

@@ -142,7 +142,10 @@ public:
     Component* createComp(const std::string& key) {
         auto it = funcMap_.find(key);
         if (it == funcMap_.end()) {
-            LM_ERROR("Missing component [key='{}']", key);
+            LM_ERROR("Missing component [key='{}']. Check if", key);
+            LM_ERROR("- Key is wrong");
+            LM_ERROR("- Component with the key is not registered");
+            LM_ERROR("- Plugin containing the component is not loaded");
             return nullptr;
         }
         auto* p = it->second.createFunc();
@@ -277,12 +280,11 @@ public:
             remaining = r;
         }
 
-        return curr;
-    }
+        if (!curr) {
+            LM_ERROR("Failed to find a component with locator [loc='{}']", locator);
+        }
 
-    virtual void foreachComponent(const Component::ComponentVisitor& visit) {
-        // root_ is a reference to singleton
-        visit(root_, false);
+        return curr;
     }
 
 private:
@@ -340,10 +342,6 @@ LM_PUBLIC_API void registerRootComp(Component* p) {
 
 LM_PUBLIC_API Component* get(const std::string& locator) {
     return Impl::instance().get(locator);
-}
-
-LM_PUBLIC_API void foreachComponent(const Component::ComponentVisitor& visit) {
-    Impl::instance().foreachComponent(visit);
 }
 
 // ----------------------------------------------------------------------------

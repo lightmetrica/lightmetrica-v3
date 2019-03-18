@@ -36,7 +36,12 @@ private:
 
 public:
     virtual Component* underlying(const std::string& name) const override {
-        return assets_.at(assetIndexMap_.at(name)).get();
+        auto it = assetIndexMap_.find(name);
+        if (it == assetIndexMap_.end()) {
+            LM_ERROR("Invalid asset name [name='{}']", name);
+            return nullptr;
+        }
+        return assets_.at(it->second).get();
     }
 
     virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
@@ -59,7 +64,7 @@ public:
         // Create an instance of the asset
         auto p = comp::create<Component>(implKey, makeLoc(loc(), name));
         if (!p) {
-            LM_ERROR("Failed to create component [name='{}', key='{}']", name, implKey);
+            LM_ERROR("Failed to create an asset [name='{}', key='{}']", name, implKey);
             return {};
         }
 
@@ -78,7 +83,7 @@ public:
             asset = assets_[it->second].get();
 
             // Notify to update the weak references in the object tree
-            const lm::Component::ComponentVisitor visit = [&](lm::Component*& comp, bool weak) {
+            const lm::Component::ComponentVisitor visitor = [&](lm::Component*& comp, bool weak) {
                 if (!comp) {
                     return;
                 }
@@ -87,13 +92,13 @@ public:
                     return;
                 }
                 if (!weak) {
-                    comp->foreachUnderlying(visit);
+                    comp->foreachUnderlying(visitor);
                 }
                 else {
                     comp::updateWeakRef(comp);
                 }
             };
-            comp::detail::foreachComponent(visit);
+            comp::get<lm::Component>("$")->foreachUnderlying(visitor);
         }
         else {
             // Register as a new asset

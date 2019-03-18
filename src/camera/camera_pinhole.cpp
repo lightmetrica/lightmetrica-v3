@@ -52,12 +52,12 @@ public:
     }
 
     virtual bool construct(const Json& prop) override {
-        position_ = prop["position"];               // Camera position
-        center_ = prop["center"];                   // Look-at position
-        up_ = prop["up"];                           // Up vector
-        vfov_ = prop["vfov"];                       // Vertical FoV
-        tf_ = tan(vfov_ * Pi / 180_f * .5_f);       // Precompute half of screen height
-        w_ = glm::normalize(position_ - center_);   // Compute basis
+        position_ = json::value<Vec3>(prop, "position"); // Camera position
+        center_ = json::value<Vec3>(prop, "center");     // Look-at position
+        up_ = json::value<Vec3>(prop, "up");             // Up vector
+        vfov_ = json::value<Float>(prop, "vfov");        // Vertical FoV
+        tf_ = tan(vfov_ * Pi / 180_f * .5_f);            // Precompute half of screen height
+        w_ = glm::normalize(position_ - center_);        // Compute basis
         u_ = glm::normalize(glm::cross(up_, w_));
         v_ = cross(w_, u_);
         return true;

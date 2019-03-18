@@ -75,7 +75,7 @@ public:
     virtual bool construct(const Json& prop) override {
         w_ = prop["w"];
         h_ = prop["h"];
-        quality_ = json::valueOr<int>(prop, "quality", 90);
+        quality_ = json::value<int>(prop, "quality", 90);
         data_.assign(w_*h_, {});
         return true;
     }

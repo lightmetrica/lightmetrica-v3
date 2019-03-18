@@ -214,6 +214,24 @@ void load(std::istream& is, Ts&... v) {
 }
 
 /*!
+    \brief Serialize an object to a file.
+*/
+template <typename T>
+void save(const std::string& path, T&& v) {
+    std::ofstream os(path, std::ios::out | std::ios::binary);
+    save(os, std::foward<T>(v));
+}
+
+/*!
+    \brief Deserialize an object from an file.
+*/
+template <typename T>
+void load(const std::string& path, T& v) {
+    std::ifstream is(path, std::ios::in | std::ios::binary);
+    load(is, v);
+}
+
+/*!
     @}
 */
 

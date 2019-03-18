@@ -86,7 +86,7 @@ public:
                 // Create area light if Ke > 0
                 int lightIndex = -1;
                 if (glm::compMax(m.Ke) > 0_f) {
-                    const auto lightImplName = json::valueOr<std::string>(prop, "light", "light::area");
+                    const auto lightImplName = json::value<std::string>(prop, "light", "light::area");
                     const auto lightName = meshName + "_light";
                     auto light = comp::create<Light>(lightImplName, makeLoc(lightName), {
                         {"Ke", m.Ke},
@@ -129,7 +129,7 @@ public:
                     // Check if already loaded
                     if (auto it = assetsMap_.find(id); it == assetsMap_.end()) {
                         // If not loaded, load the texture
-                        const auto textureAssetName = json::valueOr<std::string>(prop, "texture", "texture::bitmap");
+                        const auto textureAssetName = json::value<std::string>(prop, "texture", "texture::bitmap");
                         auto texture = comp::create<Texture>(textureAssetName, makeLoc(id), {
                             {"path", (std::filesystem::path(path).remove_filename()/m.mapKd).string()}
                         });
@@ -315,7 +315,7 @@ public:
         // Make parent component as a parent for the newly created components
         if (objmat_.illum == 7) {
             // Glass material
-            const auto glassMaterialName = json::valueOr<std::string>(prop, "glass", "material::glass");
+            const auto glassMaterialName = json::value<std::string>(prop, "glass", "material::glass");
             glass_ = addMaterial(glassMaterialName, "glass", {
                 {"Ni", objmat_.Ni}
             });
@@ -325,7 +325,7 @@ public:
         }
         else if (objmat_.illum == 5) {
             // Mirror material
-            const auto mirrorMaterialName = json::valueOr<std::string>(prop, "mirror", "material::mirror");
+            const auto mirrorMaterialName = json::value<std::string>(prop, "mirror", "material::mirror");
             mirror_ = addMaterial(mirrorMaterialName, "mirror", {});
             if (mirror_ < 0) {
                 return false;
@@ -333,7 +333,7 @@ public:
         }
         else {
             // Diffuse material
-            const auto diffuseMaterialName = json::valueOr<std::string>(prop, "diffuse", "material::diffuse");
+            const auto diffuseMaterialName = json::value<std::string>(prop, "diffuse", "material::diffuse");
             Json matprop{ {"Kd", objmat_.Kd} };
             if (!objmat_.mapKd.empty()) {
                 matprop["mapKd"] = objmat_.mapKd;
@@ -344,7 +344,7 @@ public:
             }
 
             // Glossy material
-            const auto glossyMaterialName = json::valueOr<std::string>(prop, "glossy", "material::glossy");
+            const auto glossyMaterialName = json::value<std::string>(prop, "glossy", "material::glossy");
             const auto r = 2_f / (2_f + objmat_.Ns);
             const auto as = math::safeSqrt(1_f - objmat_.an * .9_f);
             glossy_ = addMaterial(glossyMaterialName, "glossy", {

@@ -18,7 +18,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        numThreads_ = json::valueOr(prop, "numThreads", std::thread::hardware_concurrency());
+        numThreads_ = json::value(prop, "numThreads", std::thread::hardware_concurrency());
         if (numThreads_ <= 0) {
             numThreads_ = std::thread::hardware_concurrency() + numThreads_;
         }

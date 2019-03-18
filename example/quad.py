@@ -22,7 +22,6 @@ def run(**kwargs):
 
     # Pinhole camera
     lm.asset('camera1', 'camera::pinhole', {
-        'film': lm.asset('film1'),
         'position': [0,0,5],
         'center': [0,0,0],
         'up': [0,1,0],

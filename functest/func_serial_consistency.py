@@ -32,32 +32,38 @@ os.getpid()
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {
-    'numThreads': -1,
-    'logger': 'logger::jupyter'
+lm.init('user::default', {})
+lm.parallel.init('parallel::openmp', {
+    'numThreads': -1
 })
-lm.log.setSeverity(lm.log.LogLevel.Warn)
+lm.log.init('logger::jupyter', {})
+lm.info()
 
 rmse_series = pd.Series(index=lmscene.scenes())
 for scene in lmscene.scenes():
     lm.reset()
     
+    lm.asset('film_output', 'film::bitmap', {
+        'w': 1920,
+        'h': 1080
+    })
+    
     # Load scene and render
     lmscene.load(ft.env.scene_path, scene)
     lm.build('accel::sahbvh', {})
     lm.render('renderer::raycast', {
-        'output': 'film_output'
+        'output': lm.asset('film_output')
     })
-    img_orig = np.flip(np.copy(lm.buffer('film_output')), axis=0)
+    img_orig = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
     
     # Serialize, reset, deserialize, and render
     lm.serialize('lm.serialized')
     lm.reset()
     lm.deserialize('lm.serialized')
     lm.render('renderer::raycast', {
-        'output': 'film_output'
+        'output': lm.asset('film_output')
     })
-    img_serial = np.flip(np.copy(lm.buffer('film_output')), axis=0)
+    img_serial = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
     
     # Compare two images
     rmse = ft.rmse(img_orig, img_serial)

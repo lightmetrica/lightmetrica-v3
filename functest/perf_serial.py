@@ -31,17 +31,23 @@ import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {
-    'numThreads': -1,
-    'logger': 'logger::jupyter'
+lm.init('user::default', {})
+lm.parallel.init('parallel::openmp', {
+    'numThreads': -1
 })
-lm.log.setSeverity(lm.log.LogLevel.Warn)
+lm.log.init('logger::jupyter', {})
+lm.info()
 
 scene_setup_time_df = pd.DataFrame(
     columns=['scene loading', 'serialization', 'deserialization'],
     index=lmscene.scenes())
 for scene in lmscene.scenes():
     lm.reset()
+    
+    lm.asset('film_output', 'film::bitmap', {
+        'w': 1920,
+        'h': 1080
+    })
     
     # Load the scene without serialization
     def load_scene():

@@ -53,7 +53,7 @@ public:
         exception::init();
 
         // Logger subsystem
-        log::init(json::valueOr<std::string>(prop, "logger", log::DefaultType));
+        log::init(json::value<std::string>(prop, "logger", log::DefaultType));
 
         // Parallel subsystem
         parallel::init("parallel::openmp", prop);
@@ -194,7 +194,7 @@ public:
 
     virtual void validate() override {
         // Check all components from the root
-        const lm::Component::ComponentVisitor visit = [&](Component* comp, bool weak) {
+        const lm::Component::ComponentVisitor visitor = [&](Component* comp, bool weak) {
             if (!comp) {
                 LM_INFO("- nullptr");
                 return;
@@ -212,13 +212,13 @@ public:
                 }
 
                 LM_INDENT();
-                comp->foreachUnderlying(visit);
+                comp->foreachUnderlying(visitor);
             }
             else {
                 LM_INFO("-> weak [key='{}', loc='{}']", comp->key(), comp->loc());
             }
         };
-        lm::comp::detail::foreachComponent(visit);
+        comp::get<lm::Component>("$")->foreachUnderlying(visitor);
     }
 
 private:

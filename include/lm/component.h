@@ -454,17 +454,6 @@ LM_PUBLIC_API void registerRootComp(Component* p);
 LM_PUBLIC_API Component* get(const std::string& locator);
 
 /*!
-    \brief Enumerate all component accessible from the root.
-    \param visit Component visitor.
-
-    \rst
-    This function calls :cpp:func:`lm::Component::foreachUnderlying` function
-    for the root component of component hierarchy.
-    \endrst
-*/
-LM_PUBLIC_API void foreachComponent(const Component::ComponentVisitor& visit);
-
-/*!
     @}
 */
 
@@ -617,6 +606,10 @@ public:
         \return Reference to the underlying component.
     */
     static ContextComponentT& get() {
+        if (!initialized()) {
+            throw std::runtime_error(
+                "Uninitialized subsystem. Possible failure to call *::init() function.");
+        }
         return *instance().context.get();
     }
 

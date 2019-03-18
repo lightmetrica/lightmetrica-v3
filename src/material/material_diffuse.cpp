@@ -59,7 +59,7 @@ public:
             mapKd_ = comp::get<Texture>(*it);
         }
         else {
-            Kd_ = json::valueOr<Vec3>(prop, "Kd", Vec3(1_f));
+            Kd_ = json::value(prop, "Kd", Vec3(1_f));
         }
         return true;
     }
