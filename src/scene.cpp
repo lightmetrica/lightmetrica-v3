@@ -21,7 +21,7 @@ class Scene_ final : public Scene {
 private:
     std::vector<Primitive> primitives_;
     Ptr<Accel> accel_;
-    int camera_;                // Camera primitive index
+    int camera_ = -1;           // Camera primitive index
     std::vector<int> lights_;   // Light primitive indices
     int envLight_ = -1;         // Environment light primitive index
 
@@ -48,6 +48,22 @@ public:
     }
 
 public:
+    virtual bool renderable() const override {
+        if (primitives_.empty()) {
+            LM_ERROR("Missing primitives. Use lm::primitive() function to add primitives.");
+            return false;
+        }
+        if (camera_ == -1) {
+            LM_ERROR("Missing camera primitive. Use lm::primitive() function to add camera primitive.");
+            return false;
+        }
+        if (!accel_) {
+            LM_ERROR("Missing acceleration structure. Use lm::build() function before rendering.");
+            return false;
+        }
+        return true;
+    }
+
     virtual bool loadPrimitive(Mat4 transform, const Json& prop) override {
         // Helper function to find an asset by property name
         const auto getAssetRefBy = [&](const std::string& propName) -> Component* {

@@ -36,7 +36,7 @@ public:
         bgColor_ = json::value(prop, "bg_color", Vec3(0_f));
         useConstantColor_ = json::value(prop, "use_constant_color", false);
         visualizeNormal_ = json::value(prop, "visualize_normal", false);
-        film_ = comp::get<Film>(prop["output"]);
+        film_ = comp::get<Film>(json::value<std::string>(prop, "output"));
         if (!film_) {
             return false;
         }

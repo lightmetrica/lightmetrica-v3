@@ -157,6 +157,9 @@ public:
             LM_INFO("Starting render [name='{}']", renderer_->key());
             LM_INDENT();
         }
+        if (!scene_->renderable()) {
+            return;
+        }
         renderer_->render(scene_.get());
     }
 

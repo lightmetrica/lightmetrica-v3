@@ -110,6 +110,16 @@ struct Primitive {
 class Scene : public Component {
 public:
     /*!
+        \brief Check if the scene is renderable.
+
+        \rst
+        This function returns true if the scene is renderable.
+        If not, the function returns false with error messages.
+        \endrst
+    */
+    virtual bool renderable() const = 0;
+
+    /*!
         \brief Load scene primitive(s).
         \param transform Transformation associated to the primitive.
         \param prop Property containing references to the scene components.

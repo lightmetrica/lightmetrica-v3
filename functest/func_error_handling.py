@@ -21,6 +21,7 @@
 # %autoreload 2
 
 import os
+import traceback
 import imageio
 import pandas as pd
 import numpy as np
@@ -36,8 +37,11 @@ import lightmetrica as lm
 #
 # Calling Lightmetrica API without initialization causes an exception.
 
-# This causes an exception
-lm.info()
+try:
+    # This causes an exception
+    lm.info()
+except Exception:
+    traceback.print_exc()
 
 # Initializing Lightmetrica fixes the problem
 lm.init('user::default', {})
@@ -58,8 +62,11 @@ lm.info()
 #
 # If you specify the wrong asset name, the framework will rause an exception.
 
-# Wrong: film:bitmap
-lm.asset('film1', 'film:bitmap', {'w': 1920, 'h': 1080})
+try:
+    # Wrong: film:bitmap
+    lm.asset('film1', 'film:bitmap', {'w': 1920, 'h': 1080})
+except Exception:
+    traceback.print_exc()
 
 # Correct: film::bitmap
 lm.asset('film1', 'film::bitmap', {'w': 1920, 'h': 1080})
@@ -69,20 +76,26 @@ lm.asset('film1', 'film::bitmap', {'w': 1920, 'h': 1080})
 # The framework will cause an exception if you try to create an asset with invalid parameters.
 # The framework will *not* generate an error for the unnecessasry parameters.
 
-# vfov is missing
-lm.asset('camera1', 'camera::pinhole', {
-    'position': [0,0,5],
-    'center': [0,0,0],
-    'up': [0,1,0]
-})
+try:
+    # vfov is missing
+    lm.asset('camera1', 'camera::pinhole', {
+        'position': [0,0,5],
+        'center': [0,0,0],
+        'up': [0,1,0]
+    })
+except Exception:
+    traceback.print_exc()
 
-lm.asset('camera1', 'camera::pinhole', {
-    # Parameter type is wrong. position must be an array.
-    'position': 5,
-    'center': [0,0,0],
-    'up': [0,1,0],
-    'fov': 30
-})
+try:
+    lm.asset('camera1', 'camera::pinhole', {
+        # Parameter type is wrong. position must be an array.
+        'position': 5,
+        'center': [0,0,0],
+        'up': [0,1,0],
+        'fov': 30
+    })
+except Exception:
+    traceback.print_exc()
 
 # This is correct
 lm.asset('camera1', 'camera::pinhole', {
@@ -90,7 +103,7 @@ lm.asset('camera1', 'camera::pinhole', {
     'position': [0,0,5],
     'center': [0,0,0],
     'up': [0,1,0],
-    'fov': 30
+    'vfov': 30
 })
 
 # ### Missing reference
@@ -127,6 +140,31 @@ lm.primitive(lm.identity(), {
 lm.primitive(lm.identity(), {
     'mesh': lm.asset('mesh1'),
     'material': lm.asset('material1')
+})
+
+# ### Rendering with invalid scene
+
+# Without camera
+lm.render('renderer::raycast', {
+    'output': lm.asset('film1'),
+    'color': [0,0,0]
+})
+
+lm.primitive(lm.identity(), {
+    'camera': lm.asset('camera1')
+})
+
+# Without acceleration structure
+lm.render('renderer::raycast', {
+    'output': lm.asset('film1'),
+    'color': [0,0,0]
+})
+
+lm.build('accel::sahbvh', {})
+
+lm.render('renderer::raycast', {
+    'output': lm.asset('film1'),
+    'color': [0,0,0]
 })
 
 

@@ -355,6 +355,9 @@ static void bind(pybind11::module& m) {
         virtual bool construct(const Json& prop) override {
             PYBIND11_OVERLOAD(bool, Scene, construct, prop);
         }
+        virtual bool renderable() const override {
+            PYBIND11_OVERLOAD_PURE(bool, Scene, renderable);
+        }
         virtual bool loadPrimitive(Mat4 transform, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, loadPrimitive, transform, prop);
         }
