@@ -27,8 +27,7 @@ def fireplace_room(scene_path):
         'vfov': 43.001194
     })
     lm.asset('model_obj', 'model::wavefrontobj', {
-        'path': os.path.join(scene_path, 'fireplace_room/fireplace_room.obj'),
-        'loader': 'objloader::tinyobjloader'
+        'path': os.path.join(scene_path, 'fireplace_room/fireplace_room.obj')
     })
     lm.primitive(lm.identity(), {
         'camera': lm.asset('camera_main')

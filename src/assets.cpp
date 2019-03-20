@@ -69,7 +69,7 @@ public:
         }
 
         // Register created asset
-        // Note that this must happen before construct() because
+        // Note that the registration must happen before construct() because
         // the instance could be accessed by underlying() while initialization.
         Component* asset;
         if (found) {
@@ -81,6 +81,13 @@ public:
             // Replace the existing instance
             assets_[it->second] = std::move(p);
             asset = assets_[it->second].get();
+
+            // Initialize the asset
+            if (!asset->construct(prop)) {
+                LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
+                assets_.pop_back();
+                return {};
+            }
 
             // Notify to update the weak references in the object tree
             const lm::Component::ComponentVisitor visitor = [&](lm::Component*& comp, bool weak) {
@@ -105,13 +112,13 @@ public:
             assetIndexMap_[name] = int(assets_.size());
             assets_.push_back(std::move(p));
             asset = assets_.back().get();
-        }
 
-        // Initialize the asset
-        if (!asset->construct(prop)) {
-            LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
-            assets_.pop_back();
-            return {};
+            // Initialize the asset
+            if (!asset->construct(prop)) {
+                LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
+                assets_.pop_back();
+                return {};
+            }
         }
 
         return asset->loc();

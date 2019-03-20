@@ -59,8 +59,19 @@ static void bind(pybind11::module& m) {
 
     // Ray
     pybind11::class_<Ray>(m, "Ray")
+        .def(pybind11::init<>())
+        .def("__init__", [](Ray& r, Vec3 o, Vec3 d) {
+            r.o = o;
+            r.d = d;
+        })
         .def_readwrite("o", &Ray::o)
         .def_readwrite("d", &Ray::d);
+
+    // Rng
+    pybind11::class_<Rng>(m, "Rng")
+        .def(pybind11::init<>())
+        .def(pybind11::init<int>())
+        .def("u", &Rng::u);
 
     // Helper functions
     m.def("identity", []() -> Mat4 {
@@ -80,11 +91,24 @@ static void bind(pybind11::module& m) {
         return Vec3(v1, v2, v3);
     });
 
+    {
+        auto sm = m.def_submodule("math");
+        sm.def("orthonormalBasis", &math::orthonormalBasis);
+        sm.def("safeSqrt", &math::safeSqrt);
+        sm.def("sq", &math::sq);
+        sm.def("reflection", &math::reflection);
+        pybind11::class_<math::RefractionResult>(sm, "RefractionResult")
+            .def_readwrite("wt", &math::RefractionResult::wt)
+            .def_readwrite("total", &math::RefractionResult::total);
+        sm.def("refraction", &math::refraction);
+        sm.def("sampleCosineWeighted", &math::sampleCosineWeighted);
+        sm.def("balanceHeuristic", &math::balanceHeuristic);
+    }
+
     // ------------------------------------------------------------------------
 
     // component.h
 
-    // Trampoline class for lm::Component
     class Component_Py final : public Component {
     public:
         virtual bool construct(const Json& prop) override {
@@ -93,19 +117,25 @@ static void bind(pybind11::module& m) {
     };
     pybind11::class_<Component, Component_Py, Component::Ptr<Component>>(m, "Component")
         .def(pybind11::init<>())
+        .def("key", &Component::key)
+        .def("loc", &Component::loc)
+        .def("parentLoc", &Component::parentLoc)
+        .def("parentLoc", &Component::parentLoc)
         .def("construct", &Component::construct)
         .PYLM_DEF_COMP_BIND(Component);
 
     {
-        // Namespaces are handled as submodules
         auto sm = m.def_submodule("comp");
-        auto sm_detail = sm.def_submodule("detail");
-
-        // Component API
-        sm_detail.def("loadPlugin", &comp::detail::loadPlugin);
-        sm_detail.def("loadPlugins", &comp::detail::loadPlugins);
-        sm_detail.def("unloadPlugins", &comp::detail::unloadPlugins);
-        sm_detail.def("foreachRegistered", &comp::detail::foreachRegistered);
+        sm.def("get", [](const std::string& locator) -> Component* {
+            return comp::get<Component>(locator);
+        }, pybind11::return_value_policy::reference);
+        {
+            auto sm_detail = sm.def_submodule("detail");
+            sm_detail.def("loadPlugin", &comp::detail::loadPlugin);
+            sm_detail.def("loadPlugins", &comp::detail::loadPlugins);
+            sm_detail.def("unloadPlugins", &comp::detail::unloadPlugins);
+            sm_detail.def("foreachRegistered", &comp::detail::foreachRegistered);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -134,7 +164,6 @@ static void bind(pybind11::module& m) {
     {
         auto sm = m.def_submodule("log");
 
-        // LogLevel
         pybind11::enum_<log::LogLevel>(sm, "LogLevel")
             .value("Debug", log::LogLevel::Debug)
             .value("Info", log::LogLevel::Info)
@@ -143,7 +172,6 @@ static void bind(pybind11::module& m) {
             .value("Progress", log::LogLevel::Progress)
             .value("ProgressEnd", log::LogLevel::ProgressEnd);
 
-        // Log API
         sm.def("init", &log::init);
         sm.def("shutdown", &log::shutdown);
         using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
@@ -152,7 +180,6 @@ static void bind(pybind11::module& m) {
         using setSeverityFuncPtr = void(*)(int);
         sm.def("setSeverity", (setSeverityFuncPtr)&log::setSeverity);
 
-        // Context
         using LoggerContext = log::detail::LoggerContext;
         class LoggerContext_Py final : public LoggerContext {
             virtual bool construct(const Json& prop) override {
@@ -180,8 +207,6 @@ static void bind(pybind11::module& m) {
     // parallel.h
     {
         auto sm = m.def_submodule("parallel");
-
-        // Parallel API
         sm.def("init", &parallel::init);
         sm.def("shutdown", &parallel::shutdown);
         sm.def("numThreads", &parallel::numThreads);
@@ -211,29 +236,24 @@ static void bind(pybind11::module& m) {
     {
         auto sm = m.def_submodule("progress");
 
-        // Progress report API
         sm.def("init", &progress::init);
         sm.def("shutdown", &progress::shutdown);
         sm.def("start", &progress::start);
         sm.def("end", &progress::end);
         sm.def("update", &progress::update);
 
-        // Context
         using ProgressContext = progress::detail::ProgressContext;
         class ProgressContext_Py final : public ProgressContext {
             virtual bool construct(const Json& prop) override {
                 PYBIND11_OVERLOAD(bool, ProgressContext, construct, prop);
             }
             virtual void start(long long total) override {
-                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, total);
             }
             virtual void end() override {
-                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, end);
             }
             virtual void update(long long processed) override {
-                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
             }
         };
@@ -318,6 +338,7 @@ static void bind(pybind11::module& m) {
         .def_readwrite("degenerated", &PointGeometry::degenerated)
         .def_readwrite("infinite", &PointGeometry::infinite)
         .def_readwrite("p", &PointGeometry::p)
+        .def_readwrite("n", &PointGeometry::n)
         .def_readwrite("wo", &PointGeometry::wo)
         .def_readwrite("t", &PointGeometry::t)
         .def_readwrite("u", &PointGeometry::u)
@@ -413,7 +434,7 @@ static void bind(pybind11::module& m) {
         .def("foreachTriangle", &Scene::foreachTriangle)
         .def("foreachPrimitive", &Scene::foreachPrimitive)
         .def("build", &Scene::build)
-        .def("intersect", &Scene::intersect)
+        .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
         .def("isLight", &Scene::isLight)
         .def("isSpecular", &Scene::isSpecular)
         .def("primaryRay", &Scene::primaryRay)
@@ -436,8 +457,47 @@ static void bind(pybind11::module& m) {
     };
     pybind11::class_<Renderer, Renderer_Py, Component::Ptr<Renderer>>(m, "Renderer")
         .def(pybind11::init<>())
-        .def("render", &Renderer::render, pybind11::call_guard<pybind11::gil_scoped_release>())
+        .def("render", &Renderer::render)
         .PYLM_DEF_COMP_BIND(Renderer);
+
+    // ------------------------------------------------------------------------
+
+    // material.h
+
+    pybind11::class_<MaterialDirectionSample>(m, "MaterialDirectionSample")
+        .def(pybind11::init<>())
+        .def_readwrite("wo", &MaterialDirectionSample::wo)
+        .def_readwrite("comp", &MaterialDirectionSample::comp)
+        .def_readwrite("weight", &MaterialDirectionSample::weight);
+
+    class Material_Py final : public Material {
+        virtual bool construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(bool, Material, construct, prop);
+        }
+        virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
+            PYBIND11_OVERLOAD(bool, Material, isSpecular, geom, comp);
+        }
+        virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+            PYBIND11_OVERLOAD(std::optional<MaterialDirectionSample>, Material, sample, rng, geom, wi);
+        }
+        virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
+            PYBIND11_OVERLOAD(std::optional<Vec3>, Material, reflectance, geom, comp);
+        }
+        virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD(Float, Material, pdf, geom, comp, wi, wo);
+        }
+        virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD(Vec3, Material, eval, geom, comp, wi, wo);
+        }
+    };
+    pybind11::class_<Material, Material_Py, Component::Ptr<Material>>(m, "Material")
+        .def(pybind11::init<>())
+        .def("isSpecular", &Material::isSpecular)
+        .def("sample", &Material::sample)
+        .def("reflectance", &Material::reflectance)
+        .def("pdf", &Material::pdf)
+        .def("eval", &Material::eval)
+        .PYLM_DEF_COMP_BIND(Material);
 }
 
 // ----------------------------------------------------------------------------
