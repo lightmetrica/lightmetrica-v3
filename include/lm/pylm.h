@@ -11,6 +11,16 @@
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 
+// Release GIL during the execution of C++ codes
+#define PYLM_RELEASE_GIL 0
+#if PYLM_RELEASE_GIL
+#define PYLM_SCOPED_RELEASE pybind11::call_guard<pybind11::gil_scoped_release>()
+#define PYLM_ACQUIRE_GIL() pybind11::gil_scoped_acquire acquire
+#else
+#define PYLM_SCOPED_RELEASE pybind11::call_guard<>()
+#define PYLM_ACQUIRE_GIL()
+#endif
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(pybind11::detail)
@@ -293,6 +303,8 @@ template <typename InterfaceT>
 static void regCompWrap(pybind11::object implClass, const char* name) {
     lm::comp::detail::reg(name,
         [implClass = implClass]() -> lm::Component* {
+            PYLM_ACQUIRE_GIL();
+
             // Create instance of python class
             auto instPy = implClass();
             // We need to keep track of the python object
@@ -304,6 +316,8 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             return instCpp;
         },
         [](lm::Component* p) -> void {
+            PYLM_ACQUIRE_GIL();
+
             // Automatic deref of instPy causes invocation of GC.
             // Note we need one extra deref because one reference is still hold by ownerRef_.
             // The pointer of component is associated with instPy
@@ -381,17 +395,17 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
     \brief Adds component-related functions to the binding of a component interface.
 */
 #define PYLM_DEF_COMP_BIND(InterfaceT) \
-     def_static("reg", &LM_NAMESPACE::detail::regCompWrap<InterfaceT>) \
-    .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg) \
+     def_static("reg", &LM_NAMESPACE::detail::regCompWrap<InterfaceT>, PYLM_SCOPED_RELEASE) \
+    .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg, PYLM_SCOPED_RELEASE) \
     .def_static("create", \
         pybind11::overload_cast<const char*, const char*>( \
-            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
+            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>), PYLM_SCOPED_RELEASE) \
     .def_static("create", \
         pybind11::overload_cast<const char*, const char*, const LM_NAMESPACE::Json&>( \
-            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
+            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>), PYLM_SCOPED_RELEASE) \
     .def_static("castFrom", \
         &LM_NAMESPACE::detail::castFrom<InterfaceT>, \
-        pybind11::return_value_policy::reference)
+        pybind11::return_value_policy::reference, PYLM_SCOPED_RELEASE)
 
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(LM_NAMESPACE)

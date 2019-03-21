@@ -52,32 +52,40 @@ class Renderer_AO(lm.Renderer):
         h = self.film.size().h
         rng = lm.Rng(42)
         lm.progress.start(w*h)
-        for y in range(h):
-            for x in range(w):
-                rp = np.array([(x+.5)/w, (y+.5)/h])
-                ray = scene.primaryRay(rp, self.film.aspectRatio())
-                hit = scene.intersect(ray)
-                if hit is None:
-                    continue
-                V = 0
-                for i in range(self.spp):
-                    n, u, v = hit.geom.orthonormalBasis(-ray.d)
-                    d = lm.math.sampleCosineWeighted(rng)
-                    r = lm.Ray(hit.geom.p, np.dot(d, [u,v,n]))
-                    if scene.intersect(r, lm.Eps, .2) is None:
-                        V += 1
-                V /= self.spp
-                self.film.setPixel(x, y, np.full(3, V))
-                lm.progress.update(y*w+x)
+        def process(index, threadid):
+            x = index % w
+            y = int(index / w)
+            rp = np.array([(x+.5)/w, (y+.5)/h])
+            ray = scene.primaryRay(rp, self.film.aspectRatio())
+            hit = scene.intersect(ray)
+            if hit is None:
+                return
+            V = 0
+            for i in range(self.spp):
+                n, u, v = hit.geom.orthonormalBasis(-ray.d)
+                d = lm.math.sampleCosineWeighted(rng)
+                r = lm.Ray(hit.geom.p, np.dot(d, [u,v,n]))
+                if scene.intersect(r, lm.Eps, .2) is None:
+                    V += 1
+            V /= self.spp
+            self.film.setPixel(x, y, np.full(3, V))
+            lm.progress.update(y*w+x)
+        for index in range(w*h):
+            process(index, 0)
+        #lm.parallel.foreach(w*h, process)
         lm.progress.end()
 
 
 lm.init('user::default', {})
+
 lm.parallel.init('parallel::openmp', {
     'numThreads': 1
 })
+
 lm.log.init('logger::jupyter', {})
+
 lm.progress.init('progress::jupyter', {})
+
 lm.info()
 
 # Scene
@@ -87,8 +95,8 @@ lm.asset('film_output', 'film::bitmap', {
 })
 lmscene.load(ft.env.scene_path, 'fireplace_room')
 
-# Render
 lm.build('accel::sahbvh', {})
+
 lm.render('renderer::ao', {
     'output': lm.asset('film_output'),
     'spp': 5
@@ -96,7 +104,6 @@ lm.render('renderer::ao', {
 
 img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
 
-# Visualize
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1))
