@@ -10,7 +10,7 @@
 #include <lm/progress.h>
 #include <omp.h>
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel::detail)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
 
 class ParallelContext_OpenMP final : public ParallelContext {
 private:
@@ -93,4 +93,4 @@ public:
 
 LM_COMP_REG_IMPL(ParallelContext_OpenMP, "parallel::openmp");
 
-LM_NAMESPACE_END(LM_NAMESPACE::parallel::detail)
+LM_NAMESPACE_END(LM_NAMESPACE::parallel)

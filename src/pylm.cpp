@@ -286,6 +286,28 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
+    // net.h
+    {
+        auto sm = m.def_submodule("net");
+        {
+            auto sm2 = sm.def_submodule("master");
+            sm2.def("init", &net::master::init, PYLM_SCOPED_RELEASE);
+            sm2.def("shutdown", &net::master::shutdown, PYLM_SCOPED_RELEASE);
+            sm2.def("monitor", &net::master::monitor, PYLM_SCOPED_RELEASE);
+            sm2.def("addWorker", &net::master::addWorker, PYLM_SCOPED_RELEASE);
+            sm2.def("printWorkerInfo", &net::master::printWorkerInfo, PYLM_SCOPED_RELEASE);
+            sm2.def("render", &net::master::render, PYLM_SCOPED_RELEASE);
+        }
+        {
+            auto sm2 = sm.def_submodule("worker");
+            sm2.def("init", &net::worker::init, PYLM_SCOPED_RELEASE);
+            sm2.def("shutdown", &net::worker::shutdown, PYLM_SCOPED_RELEASE);
+            sm2.def("run", &net::worker::run, PYLM_SCOPED_RELEASE);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
     // film.h
 
     // Film size

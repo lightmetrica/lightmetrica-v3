@@ -38,18 +38,35 @@ os.getpid()
 lm.init('user::default', {})
 lm.log.init('logger::jupyter', {})
 
-lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
-lmscene.load(ft.env.scene_path, 'fireplace_room')
+lm.net.master.init('net::master::default', {})
 
-lm.build('accel::sahbvh', {})
-lm.render('renderer::raycast', {
-    'output': lm.asset('film_output')
-})
+lm.net.master.monitor()
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
-f = plt.figure(figsize=(15,15))
-ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
-plt.show()
+lm.net.master.addWorker('localhost', 5000)
+# lm.net.master.addWorker('localhost', 5010)
+# lm.net.master.addWorker('localhost', 5020)
+
+lm.net.master.printWorkerInfo()
+
+# + {"active": ""}
+# lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
+# lmscene.load(ft.env.scene_path, 'fireplace_room')
+
+# + {"active": ""}
+# lm.build('accel::sahbvh', {})
+# lm.renderer('renderer::raycast', {
+#     'output': lm.asset('film_output')
+# })
+
+# + {"active": ""}
+# lm.net.master.render()
+
+# + {"active": ""}
+# img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+# f = plt.figure(figsize=(15,15))
+# ax = f.add_subplot(111)
+# ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+# plt.show()
+# -
 
 

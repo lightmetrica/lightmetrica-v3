@@ -76,19 +76,6 @@ using ParallelProcessFunc = std::function<void(long long index, int threadId)>;
 LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& processFunc);
 
 /*!
-    @}
-*/
-
-// ----------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(detail)
-
-/*!
-    \addtogroup parallel
-    @{
-*/
-
-/*!
     \brief Parallel context.
     
     \rst
@@ -107,8 +94,6 @@ public:
 /*!
     @}
 */
-
-LM_NAMESPACE_END(detail)
 
 // ----------------------------------------------------------------------------
 

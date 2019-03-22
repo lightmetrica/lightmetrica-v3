@@ -14,6 +14,7 @@
 #include "progress.h"
 #include "exception.h"
 #include "debugio.h"
+#include "net.h"
 #include "parallel.h"
 #include "math.h"
 #include "assets.h"

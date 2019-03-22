@@ -8,7 +8,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
 
-using Instance = comp::detail::ContextInstance<detail::ParallelContext>;
+using Instance = comp::detail::ContextInstance<ParallelContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
     Instance::init(type, prop);
