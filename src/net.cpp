@@ -20,14 +20,15 @@ using namespace std::chrono_literals;
 
 // Shared command distributed to workers
 enum class WorkerCommand {
-    workerinfo,     // Query worker information
-    sync,           // Synchronize internal data
-    render,         // Dispatch renderer
+    workerinfo,
+    sync,
+    processCompleted,
 };
 
 // Shared command for return value from workers
-enum class ReturnCommand {
+enum class WorkerResultCommand {
     workerinfo,
+    processFunc,
 };
 
 // Worker information
@@ -41,39 +42,47 @@ struct WorkerInfo {
 };
 
 class SocketMonitor final : public zmq::monitor_t {
+private:
+    std::string name_;
+
+public:
+    SocketMonitor(const std::string& name)
+        : name_(name)
+    {}
+
 public:
     virtual void on_event_connected(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("connected [addr='{}']", addr_);
+        LM_INFO("on_event_connected [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_connect_delayed(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("connect_delayed [addr='{}']", addr_);
+        LM_INFO("on_event_connect_delayed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_connect_retried(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("connect_retried [addr='{}']", addr_);
+        LM_INFO("on_event_connect_retried [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_listening(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("listening [addr='{}']", addr_);
+        LM_INFO("on_event_listening [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_bind_failed(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("failed [addr='{}']", addr_);
+        LM_INFO("on_event_bind_failed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_accepted(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("accepted [addr='{}']", addr_);
+        LM_INFO("on_event_accepted [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_accept_failed(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("accept_failed [addr='{}']", addr_);
+        LM_INFO("on_event_accept_failed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_closed(const zmq_event_t&, const char* addr_) override  {
-        LM_INFO("closed [addr='{}']", addr_);
+        LM_INFO("on_event_closed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_close_failed(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("failed [addr='{}']", addr_);
+        LM_INFO("on_event_close_failed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_disconnected(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("disconnected [addr='{}']", addr_);
+        LM_INFO("on_event_disconnected [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_unknown(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("unknown [addr='{}']", addr_);
+        LM_INFO("on_event_unknown [name='{}', addr='{}']", name_, addr_);
     }
 };
 
@@ -89,8 +98,12 @@ private:
     zmq::socket_t pushSocket_;
     zmq::socket_t pullSocket_;
     zmq::socket_t pubSocket_;
-    SocketMonitor monitor_;
-    int numWorkers_ = 0;
+    zmq::socket_t repSocket_;
+    SocketMonitor monitor_pushSocket_;
+    SocketMonitor monitor_pullSocket_;
+    SocketMonitor monitor_pubSocket_;
+    SocketMonitor monitor_repSocket_;
+    WorkerTaskFinishedFunc onWorkerTaskFinished_;
 
 public:
     NetMasterContext_()
@@ -98,114 +111,135 @@ public:
         , pushSocket_(context_, ZMQ_PUSH)
         , pullSocket_(context_, ZMQ_PULL)
         , pubSocket_(context_, ZMQ_PUB)
+        , repSocket_(context_, ZMQ_REP)
+        , monitor_pushSocket_("push")
+        , monitor_pullSocket_("pull")
+        , monitor_pubSocket_("pub")
+        , monitor_repSocket_("rep")
     {}
 
 public:
-    virtual bool construct(const Json&) override {
+    virtual bool construct(const Json& prop) override {
+        // Listening
+        const auto port = json::value<int>(prop, "port");
+        LM_INFO("Listening [port='{}']", port);
+        pushSocket_.bind(fmt::format("tcp://*:{}", port));
+        pullSocket_.bind(fmt::format("tcp://*:{}", port+1));
+        pubSocket_.bind(fmt::format("tcp://*:{}", port+2));
+        repSocket_.bind(fmt::format("tcp://*:{}", port+3));
+
         // Initialize parallel subsystem
         parallel::init("parallel::netmaster", {});
-        // Register monitor for PUB socket
-        monitor_.init(pubSocket_, "inproc://monitor", ZMQ_EVENT_ALL);
+
+        // Register monitors
+        monitor_pushSocket_.init(pushSocket_, "inproc://monitor_push", ZMQ_EVENT_ALL);
+        monitor_pullSocket_.init(pullSocket_, "inproc://monitor_pull", ZMQ_EVENT_ALL);
+        monitor_pubSocket_.init(pubSocket_, "inproc://monitor_pub", ZMQ_EVENT_ALL);
+        monitor_repSocket_.init(repSocket_, "inproc://monitor_rep", ZMQ_EVENT_ALL);
+
+        // Thread for event loop
+        std::thread([&]() { run(); }).detach();
+
         return true;
     }
 
-    virtual void monitor() {
-        std::thread([&]() {
-            while (true) {
-                monitor_.check_event();
-            }
-        }).detach();
-    }
+private:
+    void run() {
+        zmq::pollitem_t items[] = {
+            { (void*)pullSocket_, 0, ZMQ_POLLIN, 0 },
+            { (void*)repSocket_, 0, ZMQ_POLLIN, 0 },
+        };
+        while (true) {
+            // Monitor socket
+            monitor_pushSocket_.check_event();
+            monitor_pullSocket_.check_event();
+            monitor_pubSocket_.check_event();
+            monitor_repSocket_.check_event();
 
-    virtual void addWorker(const std::string& address, int port) override {
-        LM_INFO("Connecting [addr='{}', port='{}-{}']", address, port, port+2);
-        pushSocket_.connect(fmt::format("tcp://{}:{}", address, port));
-        pullSocket_.connect(fmt::format("tcp://{}:{}", address, port + 1));
-        pubSocket_.connect(fmt::format("tcp://{}:{}", address, port + 2));
-        numWorkers_++;
-    }
+            // Handle events
+            zmq::poll(items, 2, 0);
 
-    virtual void printWorkerInfo() override {
-        // Send a command
-        {
-            std::ostringstream os;
-            lm::serial::save(os, WorkerCommand::workerinfo);
-            const auto str = os.str();
-            pubSocket_.send(zmq::message_t(str.data(), str.size()));
-        }
+            // PULL socket
+            if (items[0].revents & ZMQ_POLLIN) {
+                LM_INFO("PULL");
 
-        // Wait for reply
-#if 1
-        int count = 0;
-        while (count < numWorkers_) {
-            zmq::message_t mes;
-            pullSocket_.recv(&mes);
-            std::istringstream is(std::string(mes.data<char>(), mes.size()));
-            WorkerInfo info;
-            lm::serial::load(is, info);
-            LM_INFO("Worker [name='{}']", info.name);
-            count++;
-        }
-#else
-        zmq::pollitem_t item{ pullSocket_, 0, ZMQ_POLLIN, 0 };
-        int count = 0;
-        while (count == numWorkers_) {
-            zmq::poll(&item, 1, 0);
-            if (item.revents & ZMQ_POLLIN) {
+                // Receive message
                 zmq::message_t mes;
-                pullSocket_.recv(&mes);          
-                count++;
+                pullSocket_.recv(&mes);
+                std::istringstream is(std::string(mes.data<char>(), mes.size()));
+
+                // Extract command
+                WorkerResultCommand command;
+                lm::serial::load(is, command);
+
+                // Process command
+                if (command == WorkerResultCommand::workerinfo) {
+                    WorkerInfo info;
+                    lm::serial::load(is, info);
+                    LM_INFO("Worker [name='{}']", info.name);
+                }
+                else if (command == WorkerResultCommand::processFunc) {
+                    long long processed;
+                    lm::serial::load(is, processed);
+                    onWorkerTaskFinished_(processed);
+                }
+            }
+
+            // REP socket
+            if (items[1].revents & ZMQ_POLLIN) {
+                LM_INFO("REP");
+                zmq::message_t mes;
+                repSocket_.recv(&mes);
+                std::istringstream is(std::string(mes.data<char>(), mes.size()));
+                WorkerInfo info;
+                lm::serial::load(is, info);
+                LM_INFO("Connected worker [name='{}']", info.name);
+                zmq::message_t ok;
+                repSocket_.send(ok);
             }
         }
-#endif
+    }
+
+public:
+    virtual void printWorkerInfo() override {
+        std::ostringstream os;
+        lm::serial::save(os, WorkerCommand::workerinfo);
+        const auto str = os.str();
+        pubSocket_.send(zmq::message_t(str.data(), str.size()));
     }
 
     virtual void render() override {
-#if 0
-        // 1. Notify the information of the workers, create a list of workers.
-        {
-            std::stringstream ss;
-            lm::serial::save(ss, SubPubCommand::workerinfo);
-            const auto str = ss.str();
-            zmq::message_t mes(str.data(), str.size());
-            pubSocket_.send(mes);
-        }
+        // Synchronize internal state and dispatch rendering in worker process
+        std::stringstream ss;
+        lm::serial::save(ss, WorkerCommand::sync);
+        lm::serialize(ss);
+        const auto str = ss.str();
+        pubSocket_.send(zmq::message_t(str.data(), str.size()));
 
-        // 1-2. Wait for reply.
-        
-
-        // 1. Synchronize internal state
-        {
-            std::stringstream ss;
-            lm::serial::save(ss, SubPubCommand::sync);
-            lm::serialize(ss);
-            const auto str = ss.str();
-            zmq::message_t mes(str.data(), str.size());
-            pubSocket_.send(mes);
-        }
-
-        // 2. Execute renderer of workers
-        {
-            std::stringstream ss;
-            lm::serial::save(ss, SubPubCommand::render);
-            const auto str = ss.str();
-            zmq::message_t mes(str.data(), str.size());
-            pubSocket_.send(mes);
-        }
-
-        // 3. Wait until workers are ready
-        
-        
-
-        // 3. Execute renderer of master
+        // Execute renderer in master process
         lm::render();
+    }
 
-        // 4. Wait for 
+    virtual void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) override {
+        onWorkerTaskFinished_ = func;
+    }
 
-        // 2. Execute rendering both in master and worker
-        call(Command::render, "");
-        lm::render();
-#endif
+    virtual void processWorkerTask(long long start, long long end) override {
+        LM_INFO("processWorkerTask");
+        std::stringstream ss;
+        lm::serial::save(ss, start);
+        lm::serial::save(ss, end);
+        const auto str = ss.str();
+        pushSocket_.send(zmq::message_t(str.data(), str.size()));
+    }
+
+    virtual void notifyProcessCompleted() {
+        LM_INFO("notifyProcessCompleted");
+        std::stringstream ss;
+        lm::serial::save(ss, WorkerCommand::processCompleted);
+        lm::serialize(ss);
+        const auto str = ss.str();
+        pubSocket_.send(zmq::message_t(str.data(), str.size()));
     }
 };
 
@@ -223,20 +257,24 @@ LM_PUBLIC_API void shutdown() {
     Instance::shutdown();
 }
 
-LM_PUBLIC_API void monitor() {
-    Instance::get().monitor();
-}
-
-LM_PUBLIC_API void addWorker(const std::string& address, int port) {
-    Instance::get().addWorker(address, port);
-}
-
 LM_PUBLIC_API void printWorkerInfo() {
     Instance::get().printWorkerInfo();
 }
 
 LM_PUBLIC_API void render() {
     Instance::get().render();
+}
+
+LM_PUBLIC_API void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) {
+    Instance::get().onWorkerTaskFinished(func);
+}
+
+LM_PUBLIC_API void processWorkerTask(long long start, long long end) {
+    Instance::get().processWorkerTask(start, end);
+}
+
+LM_PUBLIC_API void notifyProcessCompleted() {
+    Instance::get().notifyProcessCompleted();
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::net::master)
@@ -251,8 +289,14 @@ private:
     zmq::socket_t pullSocket_;
     zmq::socket_t pushSocket_;
     zmq::socket_t subSocket_;
+    zmq::socket_t reqSocket_;
     std::string name_;
-    SocketMonitor monitor_;
+    SocketMonitor monitor_pullSocket_;
+    SocketMonitor monitor_pushSocket_;
+    SocketMonitor monitor_subSocket_;
+    SocketMonitor monitor_reqSocket_;
+    NetWorkerProcessFunc processFunc_;
+    ProcessCompletedFunc processCompletedFunc_;
 
 public:
     NetWorkerContext_()
@@ -260,43 +304,109 @@ public:
         , pullSocket_(context_, ZMQ_PULL)
         , pushSocket_(context_, ZMQ_PUSH)
         , subSocket_(context_, ZMQ_SUB)
+        , reqSocket_(context_, ZMQ_REQ)
+        , monitor_pullSocket_("pull")
+        , monitor_pushSocket_("push")
+        , monitor_subSocket_("sub")
+        , monitor_reqSocket_("req")
     {}
 
 public:
     virtual bool construct(const Json& prop) override {
         name_ = json::value<std::string>(prop, "name");
+        const auto address = json::value<std::string>(prop, "address");
+        const auto port = json::value<int>(prop, "port");
 
-        const int port = json::value<int>(prop, "port");
-        LM_INFO("Listening [port='{}-{}']", port, port+2);
-        pullSocket_.bind(fmt::format("tcp://*:{}", port));
-        pushSocket_.bind(fmt::format("tcp://*:{}", port + 1));
-        subSocket_.bind(fmt::format("tcp://*:{}", port + 2));
-        subSocket_.setsockopt(ZMQ_SUBSCRIBE, "");
+        // Connect
+        LM_INFO("Connecting [addr='{}', port='{}']", address, port);
+        pullSocket_.connect(fmt::format("tcp://{}:{}", address, port));
+        pushSocket_.connect(fmt::format("tcp://{}:{}", address, port+1));
+        subSocket_.connect(fmt::format("tcp://{}:{}", address, port+2));
+        subSocket_.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+        reqSocket_.connect(fmt::format("tcp://{}:{}", address, port+3));
 
         // Initialize parallel subsystem
         parallel::init("parallel::networker", {});
 
-        // Register monitor for SUB socket
-        monitor_.init(subSocket_, "inproc://monitor", ZMQ_EVENT_ALL);
+        // Register monitors
+        monitor_pullSocket_.init(pullSocket_, "inproc://monitor_pull", ZMQ_EVENT_ALL);
+        monitor_pushSocket_.init(pushSocket_, "inproc://monitor_push", ZMQ_EVENT_ALL);
+        monitor_subSocket_.init(subSocket_, "inproc://monitor_sub", ZMQ_EVENT_ALL);
+        monitor_reqSocket_.init(reqSocket_, "inproc://monitor_req", ZMQ_EVENT_ALL);
+
+        // Synchronize
+        // This is necessary to avoid missing initial messages of PUB-SUB connection.
+        // cf. http://zguide.zeromq.org/page:all#Node-Coordination
+        {
+            // Send worker information
+            WorkerInfo info{ name_ };
+            std::ostringstream os;
+            lm::serial::save(os, info);
+            const auto str = os.str();
+            reqSocket_.send(zmq::message_t(str.data(), str.size()));
+            zmq::message_t mes;
+            reqSocket_.recv(&mes);
+            LM_INFO("Connected");
+        }
 
         return true;
+    }
+
+    virtual void foreach(const NetWorkerProcessFunc& process) override {
+        processFunc_ = process;
+    }
+
+    virtual void onProcessCompleted(const ProcessCompletedFunc& func) override {
+        processCompletedFunc_ = func;
     }
 
     virtual void run() override {
         zmq::pollitem_t items[] = {
             { (void*)pullSocket_, 0, ZMQ_POLLIN, 0 },
-            { (void*)subSocket_, 0, ZMQ_POLLIN, 0 }
+            { (void*)subSocket_, 0, ZMQ_POLLIN, 0 },
         };
         while (true) {
             // Monitor socket
-            monitor_.check_event();
+            monitor_pullSocket_.check_event();
+            monitor_pushSocket_.check_event();
+            monitor_subSocket_.check_event();
+            monitor_reqSocket_.check_event();
 
             // Handle events
             zmq::poll(items, 2, 0);
+
             // PULL socket
-            if (items[0].revents & ZMQ_POLLIN) {
+            if (items[0].revents & ZMQ_POLLIN) [&]{
+                // Process function is not ready, wait for render() function being called
+                if (!processFunc_) {
+                    return;
+                }
+
+                // Receive message
+                zmq::message_t mes;
+                pullSocket_.recv(&mes);
+
+                // Arguments
+                std::istringstream is(std::string(mes.data<char>(), mes.size()));
+                long long start;
+                lm::serial::load(is, start);
+                long long end;
+                lm::serial::load(is, end);
                 
-            }
+                // Process a task
+                processFunc_(start, end);
+
+                // Notify completion
+                // Send processed number of samples
+                {
+                    std::ostringstream os;
+                    lm::serial::save(os, WorkerResultCommand::processFunc);
+                    lm::serial::save(os, end - start);
+                    const auto str = os.str();
+                    pushSocket_.send(zmq::message_t(str.data(), str.size()));
+                }
+            }();
+
             // SUB socket
             if (items[1].revents & ZMQ_POLLIN) {
                 LM_INFO("SUB");
@@ -313,14 +423,26 @@ public:
                 // Process commands
                 if (command == WorkerCommand::workerinfo) {
                     LM_INFO("workerinfo");
-
-                    // Send worker information
                     WorkerInfo info{ name_ };
                     std::ostringstream os;
-                    lm::serial::save(os, ReturnCommand::workerinfo);
+                    lm::serial::save(os, WorkerResultCommand::workerinfo);
                     lm::serial::save(os, info);
                     const auto str = os.str();
                     pushSocket_.send(zmq::message_t(str.data(), str.size()));
+                }
+                else if (command == WorkerCommand::sync) {
+                    LM_INFO("sync");
+                    lm::deserialize(is);
+
+                    // Dispatch renderer in the different thread
+                    // to prevent early return of the Renderer::render() function.
+                    std::thread([&] {
+                        lm::render();
+                    }).detach();
+                }
+                else if (command == WorkerCommand::processCompleted) {
+                    LM_INFO("processCompleted");
+                    processCompletedFunc_();
                 }
             }
         }
@@ -343,6 +465,14 @@ LM_PUBLIC_API void shutdown() {
 
 LM_PUBLIC_API void run() {
     Instance::get().run();
+}
+
+LM_PUBLIC_API void onProcessCompleted(const ProcessCompletedFunc& func) {
+    Instance::get().onProcessCompleted(func);
+}
+
+LM_PUBLIC_API void foreach(const NetWorkerProcessFunc& process) {
+    Instance::get().foreach(process);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::net::worker)

@@ -19,30 +19,35 @@ LM_NAMESPACE_BEGIN(master)
     @{
 */
 
-// Initialize master subsystem.
+// Initialize master subsystem
 LM_PUBLIC_API void init(const std::string& type, const Json& prop);
 
-// Shutdown master subsystem.
+// Shutdown master subsystem
 LM_PUBLIC_API void shutdown();
-
-// Monitor socket
-LM_PUBLIC_API void monitor();
-
-// Add a worker
-LM_PUBLIC_API void addWorker(const std::string& address, int port);
 
 // Print worker information
 LM_PUBLIC_API void printWorkerInfo();
 
-// Execute rendering.
+// Execute rendering
 LM_PUBLIC_API void render();
+
+// Register a callback function to be called when a task is finished
+using WorkerTaskFinishedFunc = std::function<void(long long processed)>;
+LM_PUBLIC_API void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func);
+
+// Process a worker task
+LM_PUBLIC_API void processWorkerTask(long long start, long long end);
+
+// Notify process has completed to workers
+LM_PUBLIC_API void notifyProcessCompleted();
 
 class NetMasterContext : public Component {
 public:
-    virtual void monitor() = 0;
-    virtual void addWorker(const std::string& address, int port) = 0;
     virtual void printWorkerInfo() = 0;
     virtual void render() = 0;
+    virtual void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) = 0;
+    virtual void processWorkerTask(long long start, long long end) = 0;
+    virtual void notifyProcessCompleted() = 0;
 };
 
 /*!
@@ -60,18 +65,28 @@ LM_NAMESPACE_BEGIN(worker)
     @{
 */
 
-// Initialize worker subsystem.
+// Initialize worker subsystem
 LM_PUBLIC_API void init(const std::string& type, const Json& prop);
 
-// Shutdown worker subsystem.
+// Shutdown worker subsystem
 LM_PUBLIC_API void shutdown();
 
-// Run event loop.
+// Run event loop
 LM_PUBLIC_API void run();
+
+// Register a callback function to be called when all processes have completed.
+using ProcessCompletedFunc = std::function<void()>;
+LM_PUBLIC_API void onProcessCompleted(const ProcessCompletedFunc& func);
+
+// Register a callback function to process a task
+using NetWorkerProcessFunc = std::function<void(long long start, long long end)>;
+LM_PUBLIC_API void foreach(const NetWorkerProcessFunc& process);
 
 class NetWorkerContext : public Component {
 public:
     virtual void run() = 0;
+    virtual void onProcessCompleted(const ProcessCompletedFunc& func) = 0;
+    virtual void foreach(const NetWorkerProcessFunc& process) = 0;
 };
 
 /*!

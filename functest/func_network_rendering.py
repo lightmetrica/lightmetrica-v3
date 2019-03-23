@@ -38,28 +38,21 @@ os.getpid()
 lm.init('user::default', {})
 lm.log.init('logger::jupyter', {})
 
-lm.net.master.init('net::master::default', {})
-
-lm.net.master.monitor()
-
-lm.net.master.addWorker('localhost', 5000)
-# lm.net.master.addWorker('localhost', 5010)
-# lm.net.master.addWorker('localhost', 5020)
+lm.net.master.init('net::master::default', {
+    'port': 5000
+})
 
 lm.net.master.printWorkerInfo()
 
-# + {"active": ""}
-# lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
-# lmscene.load(ft.env.scene_path, 'fireplace_room')
+lm.asset('film_output', 'film::bitmap', {'w': 640, 'h': 360})
+lmscene.load(ft.env.scene_path, 'cube')
 
-# + {"active": ""}
-# lm.build('accel::sahbvh', {})
-# lm.renderer('renderer::raycast', {
-#     'output': lm.asset('film_output')
-# })
+lm.build('accel::sahbvh', {})
+lm.renderer('renderer::raycast', {
+    'output': lm.asset('film_output')
+})
 
-# + {"active": ""}
-# lm.net.master.render()
+lm.net.master.render()
 
 # + {"active": ""}
 # img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)

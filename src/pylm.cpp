@@ -182,19 +182,19 @@ static void bind(pybind11::module& m) {
         using LoggerContext = log::detail::LoggerContext;
         class LoggerContext_Py final : public LoggerContext {
             virtual bool construct(const Json& prop) override {
-                PYLM_ACQUIRE_GIL();
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD(bool, LoggerContext, construct, prop);
             }
             virtual void log(log::LogLevel level, int severity, const char* filename, int line, const char* message) override {
-                PYLM_ACQUIRE_GIL();
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, LoggerContext, log, level, severity, filename, line, message);
             }
             virtual void updateIndentation(int n) override {
-                PYLM_ACQUIRE_GIL();
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, LoggerContext, updateIndentation, n);
             }
             virtual void setSeverity(int severity) override {
-                PYLM_ACQUIRE_GIL();
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, LoggerContext, setSeverity, severity);
             }
         };
@@ -293,8 +293,6 @@ static void bind(pybind11::module& m) {
             auto sm2 = sm.def_submodule("master");
             sm2.def("init", &net::master::init, PYLM_SCOPED_RELEASE);
             sm2.def("shutdown", &net::master::shutdown, PYLM_SCOPED_RELEASE);
-            sm2.def("monitor", &net::master::monitor, PYLM_SCOPED_RELEASE);
-            sm2.def("addWorker", &net::master::addWorker, PYLM_SCOPED_RELEASE);
             sm2.def("printWorkerInfo", &net::master::printWorkerInfo, PYLM_SCOPED_RELEASE);
             sm2.def("render", &net::master::render, PYLM_SCOPED_RELEASE);
         }
