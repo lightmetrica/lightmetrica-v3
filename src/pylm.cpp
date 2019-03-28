@@ -149,8 +149,8 @@ static void bind(pybind11::module& m) {
     m.def("primitive", &primitive, PYLM_SCOPED_RELEASE);
     m.def("build", &build, PYLM_SCOPED_RELEASE);
     m.def("renderer", &renderer, PYLM_SCOPED_RELEASE);
-    m.def("render", (void(*)(bool))&render, PYLM_SCOPED_RELEASE);
-    m.def("render", (void(*)(const std::string&, const Json&))&render, PYLM_SCOPED_RELEASE);
+    m.def("render", (void(*)(bool))&render, pybind11::call_guard<pybind11::gil_scoped_release>());
+    m.def("render", (void(*)(const std::string&, const Json&))&render, pybind11::call_guard<pybind11::gil_scoped_release>());
     m.def("save", &save, PYLM_SCOPED_RELEASE);
     m.def("buffer", &buffer, PYLM_SCOPED_RELEASE);
     m.def("serialize", (void(*)(const std::string&))&serialize, PYLM_SCOPED_RELEASE);
@@ -294,7 +294,7 @@ static void bind(pybind11::module& m) {
             sm2.def("init", &net::master::init, PYLM_SCOPED_RELEASE);
             sm2.def("shutdown", &net::master::shutdown, PYLM_SCOPED_RELEASE);
             sm2.def("printWorkerInfo", &net::master::printWorkerInfo, PYLM_SCOPED_RELEASE);
-            sm2.def("render", &net::master::render, PYLM_SCOPED_RELEASE);
+            sm2.def("render", &net::master::render, pybind11::call_guard<pybind11::gil_scoped_release>());
         }
         {
             auto sm2 = sm.def_submodule("worker");

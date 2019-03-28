@@ -12,6 +12,8 @@
 #include <lm/serial.h>
 #include <zmq.hpp>
 
+#define LM_NET_MONITOR_SOCKET 1
+
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::net)
@@ -41,6 +43,7 @@ struct WorkerInfo {
     }
 };
 
+#if LM_NET_MONITOR_SOCKET
 class SocketMonitor final : public zmq::monitor_t {
 private:
     std::string name_;
@@ -85,6 +88,7 @@ public:
         LM_INFO("on_event_unknown [name='{}', addr='{}']", name_, addr_);
     }
 };
+#endif
 
 LM_NAMESPACE_END(LM_NAMESPACE::net)
 
@@ -94,110 +98,114 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::net::master)
 
 class NetMasterContext_ final : public NetMasterContext {
 private:
+    int port_;
     zmq::context_t context_;
-    zmq::socket_t pushSocket_;
-    zmq::socket_t pullSocket_;
-    zmq::socket_t pubSocket_;
-    zmq::socket_t repSocket_;
-    SocketMonitor monitor_pushSocket_;
-    SocketMonitor monitor_pullSocket_;
-    SocketMonitor monitor_pubSocket_;
+    std::unique_ptr<zmq::socket_t> pushSocket_;
+    std::unique_ptr<zmq::socket_t> pullSocket_;
+    std::unique_ptr<zmq::socket_t> pubSocket_;
+    std::unique_ptr<zmq::socket_t> repSocket_;
+    #if LM_NET_MONITOR_SOCKET
     SocketMonitor monitor_repSocket_;
+    #endif
     WorkerTaskFinishedFunc onWorkerTaskFinished_;
 
 public:
     NetMasterContext_()
         : context_(1)
-        , pushSocket_(context_, ZMQ_PUSH)
-        , pullSocket_(context_, ZMQ_PULL)
-        , pubSocket_(context_, ZMQ_PUB)
-        , repSocket_(context_, ZMQ_REP)
-        , monitor_pushSocket_("push")
-        , monitor_pullSocket_("pull")
-        , monitor_pubSocket_("pub")
+        #if LM_NET_MONITOR_SOCKET
         , monitor_repSocket_("rep")
+        #endif
     {}
 
 public:
     virtual bool construct(const Json& prop) override {
-        // Listening
-        const auto port = json::value<int>(prop, "port");
-        LM_INFO("Listening [port='{}']", port);
-        pushSocket_.bind(fmt::format("tcp://*:{}", port));
-        pullSocket_.bind(fmt::format("tcp://*:{}", port+1));
-        pubSocket_.bind(fmt::format("tcp://*:{}", port+2));
-        repSocket_.bind(fmt::format("tcp://*:{}", port+3));
+        port_ = json::value<int>(prop, "port");
+        LM_INFO("Listening [port='{}']", port_);
+        
+        // --------------------------------------------------------------------
 
         // Initialize parallel subsystem
         parallel::init("parallel::netmaster", {});
 
-        // Register monitors
-        monitor_pushSocket_.init(pushSocket_, "inproc://monitor_push", ZMQ_EVENT_ALL);
-        monitor_pullSocket_.init(pullSocket_, "inproc://monitor_pull", ZMQ_EVENT_ALL);
-        monitor_pubSocket_.init(pubSocket_, "inproc://monitor_pub", ZMQ_EVENT_ALL);
-        monitor_repSocket_.init(repSocket_, "inproc://monitor_rep", ZMQ_EVENT_ALL);
+        // --------------------------------------------------------------------
+
+        // PUSH and PUB sockets in main thread
+        pushSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUSH);
+        pubSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUB);
+        pushSocket_->bind(fmt::format("tcp://*:{}", port_));
+        pubSocket_->bind(fmt::format("tcp://*:{}", port_ + 2));
+        
+        // --------------------------------------------------------------------
 
         // Thread for event loop
-        std::thread([&]() { run(); }).detach();
+        std::thread([this]() {
+            // PULL and REP sockets in event loop thread
+            pullSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PULL);
+            repSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_REP);
+            pullSocket_->bind(fmt::format("tcp://*:{}", port_ + 1));
+            repSocket_->bind(fmt::format("tcp://*:{}", port_ + 3));
+            #if LM_NET_MONITOR_SOCKET
+            monitor_repSocket_.init(*repSocket_, "inproc://monitor_rep", ZMQ_EVENT_ALL);
+            #endif
 
-        return true;
-    }
+            // ----------------------------------------------------------------
 
-private:
-    void run() {
-        zmq::pollitem_t items[] = {
-            { (void*)pullSocket_, 0, ZMQ_POLLIN, 0 },
-            { (void*)repSocket_, 0, ZMQ_POLLIN, 0 },
-        };
-        while (true) {
-            // Monitor socket
-            monitor_pushSocket_.check_event();
-            monitor_pullSocket_.check_event();
-            monitor_pubSocket_.check_event();
-            monitor_repSocket_.check_event();
+            // Event loop
+            zmq::pollitem_t items[] = {
+                { (void*)*pullSocket_, 0, ZMQ_POLLIN, 0 },
+                { (void*)*repSocket_, 0, ZMQ_POLLIN, 0 },
+            };
+            while (true) {
+                #if LM_NET_MONITOR_SOCKET
+                // Monitor socket
+                monitor_repSocket_.check_event();
+                #endif
 
-            // Handle events
-            zmq::poll(items, 2, 0);
+                // Handle events
+                zmq::poll(items, 2, 0);
 
-            // PULL socket
-            if (items[0].revents & ZMQ_POLLIN) {
-                LM_INFO("PULL");
+                // PULL socket
+                if (items[0].revents & ZMQ_POLLIN) {
+                    LM_INFO("PULL");
 
-                // Receive message
-                zmq::message_t mes;
-                pullSocket_.recv(&mes);
-                std::istringstream is(std::string(mes.data<char>(), mes.size()));
+                    // Receive message
+                    zmq::message_t mes;
+                    pullSocket_->recv(&mes);
+                    std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
-                // Extract command
-                WorkerResultCommand command;
-                lm::serial::load(is, command);
+                    // Extract command
+                    WorkerResultCommand command;
+                    lm::serial::load(is, command);
 
-                // Process command
-                if (command == WorkerResultCommand::workerinfo) {
+                    // Process command
+                    if (command == WorkerResultCommand::workerinfo) {
+                        WorkerInfo info;
+                        lm::serial::load(is, info);
+                        LM_INFO("Worker [name='{}']", info.name);
+                    }
+                    else if (command == WorkerResultCommand::processFunc) {
+                        long long processed;
+                        lm::serial::load(is, processed);
+                        onWorkerTaskFinished_(processed);
+                    }
+                }
+
+                // REP socket
+                if (items[1].revents & ZMQ_POLLIN) {
+                    LM_INFO("REP");
+                    zmq::message_t mes;
+                    repSocket_->recv(&mes);
+                    std::istringstream is(std::string(mes.data<char>(), mes.size()));
                     WorkerInfo info;
                     lm::serial::load(is, info);
-                    LM_INFO("Worker [name='{}']", info.name);
-                }
-                else if (command == WorkerResultCommand::processFunc) {
-                    long long processed;
-                    lm::serial::load(is, processed);
-                    onWorkerTaskFinished_(processed);
+                    LM_INFO("Connected worker [name='{}']", info.name);
+                    zmq::message_t ok;
+                    repSocket_->send(ok);
                 }
             }
-
-            // REP socket
-            if (items[1].revents & ZMQ_POLLIN) {
-                LM_INFO("REP");
-                zmq::message_t mes;
-                repSocket_.recv(&mes);
-                std::istringstream is(std::string(mes.data<char>(), mes.size()));
-                WorkerInfo info;
-                lm::serial::load(is, info);
-                LM_INFO("Connected worker [name='{}']", info.name);
-                zmq::message_t ok;
-                repSocket_.send(ok);
-            }
-        }
+        }).detach();
+        
+        return true;
     }
 
 public:
@@ -205,7 +213,7 @@ public:
         std::ostringstream os;
         lm::serial::save(os, WorkerCommand::workerinfo);
         const auto str = os.str();
-        pubSocket_.send(zmq::message_t(str.data(), str.size()));
+        pubSocket_->send(zmq::message_t(str.data(), str.size()));
     }
 
     virtual void render() override {
@@ -214,7 +222,7 @@ public:
         lm::serial::save(ss, WorkerCommand::sync);
         lm::serialize(ss);
         const auto str = ss.str();
-        pubSocket_.send(zmq::message_t(str.data(), str.size()));
+        pubSocket_->send(zmq::message_t(str.data(), str.size()));
 
         // Execute renderer in master process
         lm::render();
@@ -230,16 +238,15 @@ public:
         lm::serial::save(ss, start);
         lm::serial::save(ss, end);
         const auto str = ss.str();
-        pushSocket_.send(zmq::message_t(str.data(), str.size()));
+        pushSocket_->send(zmq::message_t(str.data(), str.size()));
     }
 
     virtual void notifyProcessCompleted() {
         LM_INFO("notifyProcessCompleted");
         std::stringstream ss;
         lm::serial::save(ss, WorkerCommand::processCompleted);
-        lm::serialize(ss);
         const auto str = ss.str();
-        pubSocket_.send(zmq::message_t(str.data(), str.size()));
+        pubSocket_->send(zmq::message_t(str.data(), str.size()));
     }
 };
 
@@ -286,29 +293,24 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::net::worker)
 class NetWorkerContext_ final : public NetWorkerContext {
 private:
     zmq::context_t context_;
-    zmq::socket_t pullSocket_;
-    zmq::socket_t pushSocket_;
-    zmq::socket_t subSocket_;
-    zmq::socket_t reqSocket_;
+    std::unique_ptr<zmq::socket_t> pullSocket_;
+    std::unique_ptr<zmq::socket_t> pushSocket_;
+    std::unique_ptr<zmq::socket_t> subSocket_;
+    std::unique_ptr<zmq::socket_t> reqSocket_;
     std::string name_;
-    SocketMonitor monitor_pullSocket_;
-    SocketMonitor monitor_pushSocket_;
-    SocketMonitor monitor_subSocket_;
+    #if LM_NET_MONITOR_SOCKET
     SocketMonitor monitor_reqSocket_;
+    #endif
     NetWorkerProcessFunc processFunc_;
     ProcessCompletedFunc processCompletedFunc_;
+    std::thread renderThread_;
 
 public:
     NetWorkerContext_()
         : context_(1)
-        , pullSocket_(context_, ZMQ_PULL)
-        , pushSocket_(context_, ZMQ_PUSH)
-        , subSocket_(context_, ZMQ_SUB)
-        , reqSocket_(context_, ZMQ_REQ)
-        , monitor_pullSocket_("pull")
-        , monitor_pushSocket_("push")
-        , monitor_subSocket_("sub")
+        #if LM_NET_MONITOR_SOCKET
         , monitor_reqSocket_("req")
+        #endif
     {}
 
 public:
@@ -317,22 +319,27 @@ public:
         const auto address = json::value<std::string>(prop, "address");
         const auto port = json::value<int>(prop, "port");
 
+        // Create thread
+        pullSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PULL);
+        pushSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUSH);
+        subSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_SUB);
+        reqSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_REQ);
+
         // Connect
         LM_INFO("Connecting [addr='{}', port='{}']", address, port);
-        pullSocket_.connect(fmt::format("tcp://{}:{}", address, port));
-        pushSocket_.connect(fmt::format("tcp://{}:{}", address, port+1));
-        subSocket_.connect(fmt::format("tcp://{}:{}", address, port+2));
-        subSocket_.setsockopt(ZMQ_SUBSCRIBE, "", 0);
-        reqSocket_.connect(fmt::format("tcp://{}:{}", address, port+3));
+        pullSocket_->connect(fmt::format("tcp://{}:{}", address, port));
+        pushSocket_->connect(fmt::format("tcp://{}:{}", address, port+1));
+        subSocket_->connect(fmt::format("tcp://{}:{}", address, port+2));
+        subSocket_->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+        reqSocket_->connect(fmt::format("tcp://{}:{}", address, port+3));
 
         // Initialize parallel subsystem
         parallel::init("parallel::networker", {});
 
+        #if LM_NET_MONITOR_SOCKET
         // Register monitors
-        monitor_pullSocket_.init(pullSocket_, "inproc://monitor_pull", ZMQ_EVENT_ALL);
-        monitor_pushSocket_.init(pushSocket_, "inproc://monitor_push", ZMQ_EVENT_ALL);
-        monitor_subSocket_.init(subSocket_, "inproc://monitor_sub", ZMQ_EVENT_ALL);
-        monitor_reqSocket_.init(reqSocket_, "inproc://monitor_req", ZMQ_EVENT_ALL);
+        monitor_reqSocket_.init(*reqSocket_, "inproc://monitor_req", ZMQ_EVENT_ALL);
+        #endif
 
         // Synchronize
         // This is necessary to avoid missing initial messages of PUB-SUB connection.
@@ -343,9 +350,9 @@ public:
             std::ostringstream os;
             lm::serial::save(os, info);
             const auto str = os.str();
-            reqSocket_.send(zmq::message_t(str.data(), str.size()));
+            reqSocket_->send(zmq::message_t(str.data(), str.size()));
             zmq::message_t mes;
-            reqSocket_.recv(&mes);
+            reqSocket_->recv(&mes);
             LM_INFO("Connected");
         }
 
@@ -362,15 +369,14 @@ public:
 
     virtual void run() override {
         zmq::pollitem_t items[] = {
-            { (void*)pullSocket_, 0, ZMQ_POLLIN, 0 },
-            { (void*)subSocket_, 0, ZMQ_POLLIN, 0 },
+            { (void*)*pullSocket_, 0, ZMQ_POLLIN, 0 },
+            { (void*)*subSocket_, 0, ZMQ_POLLIN, 0 },
         };
         while (true) {
+            #if LM_NET_MONITOR_SOCKET
             // Monitor socket
-            monitor_pullSocket_.check_event();
-            monitor_pushSocket_.check_event();
-            monitor_subSocket_.check_event();
             monitor_reqSocket_.check_event();
+            #endif
 
             // Handle events
             zmq::poll(items, 2, 0);
@@ -384,7 +390,7 @@ public:
 
                 // Receive message
                 zmq::message_t mes;
-                pullSocket_.recv(&mes);
+                pullSocket_->recv(&mes);
 
                 // Arguments
                 std::istringstream is(std::string(mes.data<char>(), mes.size()));
@@ -403,7 +409,7 @@ public:
                     lm::serial::save(os, WorkerResultCommand::processFunc);
                     lm::serial::save(os, end - start);
                     const auto str = os.str();
-                    pushSocket_.send(zmq::message_t(str.data(), str.size()));
+                    pushSocket_->send(zmq::message_t(str.data(), str.size()));
                 }
             }();
 
@@ -413,7 +419,7 @@ public:
 
                 // Receive message
                 zmq::message_t mes;
-                subSocket_.recv(&mes);
+                subSocket_->recv(&mes);
                 std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
                 // Extract command
@@ -428,7 +434,7 @@ public:
                     lm::serial::save(os, WorkerResultCommand::workerinfo);
                     lm::serial::save(os, info);
                     const auto str = os.str();
-                    pushSocket_.send(zmq::message_t(str.data(), str.size()));
+                    pushSocket_->send(zmq::message_t(str.data(), str.size()));
                 }
                 else if (command == WorkerCommand::sync) {
                     LM_INFO("sync");
@@ -436,13 +442,16 @@ public:
 
                     // Dispatch renderer in the different thread
                     // to prevent early return of the Renderer::render() function.
-                    std::thread([&] {
+                    renderThread_ = std::thread([&] {
                         lm::render();
-                    }).detach();
+                    });
                 }
                 else if (command == WorkerCommand::processCompleted) {
                     LM_INFO("processCompleted");
                     processCompletedFunc_();
+                    renderThread_.join();
+                    processFunc_ = {};
+                    processCompletedFunc_ = {};
                 }
             }
         }

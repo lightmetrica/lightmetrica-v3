@@ -43,7 +43,7 @@ public:
         });
 
         // Execute tasks
-        const long long WorkSize = 100000;
+        const long long WorkSize = 10000;
         const long long Iter = (numSamples + WorkSize - 1) / WorkSize;
         for (long long i = 0; i < Iter; i++) {
             const long long start = i * WorkSize;
@@ -58,6 +58,8 @@ public:
 
         // Notify process has completed
         net::master::notifyProcessCompleted();
+
+        LM_INFO("finish rendering");
     }
 };
 
@@ -109,6 +111,8 @@ public:
         // Block until completion
         std::unique_lock<std::mutex> lock(mut);
         cond.wait(lock, [&] { return done; });
+
+        LM_INFO("finish rendering");
     }
 };
 
