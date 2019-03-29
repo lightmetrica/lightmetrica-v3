@@ -290,6 +290,8 @@ LM_NAMESPACE_END(LM_NAMESPACE::net::master)
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::net::worker)
 
+//std::atomic<bool> interrupted_ = false;
+
 class NetWorkerContext_ final : public NetWorkerContext {
 private:
     zmq::context_t context_;

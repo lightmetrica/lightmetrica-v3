@@ -299,8 +299,15 @@ static void bind(pybind11::module& m) {
         {
             auto sm2 = sm.def_submodule("worker");
             sm2.def("init", &net::worker::init, PYLM_SCOPED_RELEASE);
+            //sm2.def("init", [](const std::string& type, const Json& prop) {
+            //    net::worker::init(type, prop);
+            //    net::worker::onEventLoop([] {
+            //        pybind11::gil_scoped_acquire acquire;
+            //        PyErr_CheckSignals();
+            //    });
+            //}, PYLM_SCOPED_RELEASE);
             sm2.def("shutdown", &net::worker::shutdown, PYLM_SCOPED_RELEASE);
-            sm2.def("run", &net::worker::run, PYLM_SCOPED_RELEASE);
+            sm2.def("run", &net::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
         }
     }
 

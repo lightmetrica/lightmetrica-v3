@@ -54,6 +54,8 @@ lm.renderer('renderer::raycast', {
 
 lm.net.master.render()
 
+lm.net.master.gatherFilm(lm.asset('film_output'))
+
 # + {"active": ""}
 # img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
 # f = plt.figure(figsize=(15,15))
