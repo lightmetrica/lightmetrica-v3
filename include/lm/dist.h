@@ -8,14 +8,12 @@
 #include "component.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
-LM_NAMESPACE_BEGIN(net)
+LM_NAMESPACE_BEGIN(dist)
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(master)
-
 /*!
-    \addtogroup net
+    \addtogroup dist
     @{
 */
 
@@ -28,8 +26,8 @@ LM_PUBLIC_API void shutdown();
 // Print worker information
 LM_PUBLIC_API void printWorkerInfo();
 
-// Execute rendering
-LM_PUBLIC_API void render();
+// Synchronize the internal state with the workers
+LM_PUBLIC_API void sync();
 
 // Register a callback function to be called when a task is finished
 using WorkerTaskFinishedFunc = std::function<void(long long processed)>;
@@ -41,27 +39,29 @@ LM_PUBLIC_API void processWorkerTask(long long start, long long end);
 // Notify process has completed to workers
 LM_PUBLIC_API void notifyProcessCompleted();
 
-class NetMasterContext : public Component {
+// Gather films from workers
+LM_PUBLIC_API void gatherFilm(const std::string& filmloc);
+
+class DistMasterContext : public Component {
 public:
     virtual void printWorkerInfo() = 0;
-    virtual void render() = 0;
+    virtual void sync() = 0;
     virtual void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) = 0;
     virtual void processWorkerTask(long long start, long long end) = 0;
     virtual void notifyProcessCompleted() = 0;
+    virtual void gatherFilm(const std::string& filmloc) = 0;
 };
 
 /*!
     @}
 */
 
-LM_NAMESPACE_END(master)
-
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(worker)
 
 /*!
-    \addtogroup net
+    \addtogroup dist
     @{
 */
 
@@ -82,7 +82,7 @@ LM_PUBLIC_API void onProcessCompleted(const ProcessCompletedFunc& func);
 using NetWorkerProcessFunc = std::function<void(long long start, long long end)>;
 LM_PUBLIC_API void foreach(const NetWorkerProcessFunc& process);
 
-class NetWorkerContext : public Component {
+class DistWorkerContext : public Component {
 public:
     virtual void run() = 0;
     virtual void onProcessCompleted(const ProcessCompletedFunc& func) = 0;
@@ -97,5 +97,5 @@ LM_NAMESPACE_END(worker)
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_END(net)
+LM_NAMESPACE_END(dist)
 LM_NAMESPACE_END(LM_NAMESPACE)

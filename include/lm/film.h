@@ -105,6 +105,17 @@ public:
         \endrst
     */
     virtual FilmBuffer buffer() = 0;
+
+    /*!
+        \brief Accumulate another film.
+        \param film Another film.
+    */
+    virtual void accum(const Film* film) = 0;
+
+    /*!
+        \brief Clear the film.
+    */
+    virtual void clear() = 0;
 };
 
 /*!

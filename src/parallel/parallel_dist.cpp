@@ -5,7 +5,7 @@
 
 #include <pch.h>
 #include <lm/parallel.h>
-#include <lm/net.h>
+#include <lm/dist.h>
 #include <lm/json.h>
 #include <lm/logger.h>
 #include <lm/progress.h>
@@ -13,7 +13,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
 
-class ParallelContext_NetMaster final : public ParallelContext {
+class ParallelContext_DistMaster final : public ParallelContext {
 public:
     virtual bool construct(const Json&) override {
         return true;
@@ -28,17 +28,14 @@ public:
     }
 
     virtual void foreach(long long numSamples, const ParallelProcessFunc&) const override {
-        LM_INFO("rendering");
-
         std::mutex mut;
         std::condition_variable cond;
         long long totalProcessed = 0;
 
         // Called when a task is finished
-        net::master::onWorkerTaskFinished([&](long long processed) {
+        dist::onWorkerTaskFinished([&](long long processed) {
             std::unique_lock<std::mutex> lock(mut);
             totalProcessed += processed;
-            LM_INFO("Processed: {}", totalProcessed);
             cond.notify_one();
         });
 
@@ -48,26 +45,27 @@ public:
         for (long long i = 0; i < Iter; i++) {
             const long long start = i * WorkSize;
             const long long end = std::min((i + 1) * WorkSize, numSamples);
-            net::master::processWorkerTask(start, end);
+            dist::processWorkerTask(start, end);
         }
 
         // Wait for completion
-        LM_INFO("Waiting for completion");
+        progress::ScopedReport progress_(numSamples);
         std::unique_lock<std::mutex> lock(mut);
-        cond.wait(lock, [&] { return totalProcessed == numSamples; });
+        cond.wait(lock, [&] {
+            progress::update(totalProcessed);
+            return totalProcessed == numSamples;
+        });
 
         // Notify process has completed
-        net::master::notifyProcessCompleted();
-
-        LM_INFO("finish rendering");
+        dist::notifyProcessCompleted();
     }
 };
 
-LM_COMP_REG_IMPL(ParallelContext_NetMaster, "parallel::netmaster");
+LM_COMP_REG_IMPL(ParallelContext_DistMaster, "parallel::distmaster");
 
 // ----------------------------------------------------------------------------
 
-class ParallelContext_NetWorker final : public ParallelContext {
+class ParallelContext_DistWorker final : public ParallelContext {
 public:
     virtual bool construct(const Json&) override {
         return true;
@@ -82,14 +80,12 @@ public:
     }
 
     virtual void foreach(long long, const ParallelProcessFunc& processFunc) const override {
-        LM_INFO("rendering");
-
         std::mutex mut;
         std::condition_variable cond;
         bool done = false;
 
         // Called when the process is completed.
-        lm::net::worker::onProcessCompleted([&] {
+        dist::worker::onProcessCompleted([&] {
             std::unique_lock<std::mutex> lock(mut);
             done = true;
             cond.notify_one();
@@ -97,7 +93,7 @@ public:
 
         // Register a function to process a task
         // Note that this function is asynchronious, and called in the different thread.
-        lm::net::worker::foreach([&](long long start, long long end) {
+        dist::worker::foreach([&](long long start, long long end) {
             {
                 progress::ScopedReport progress_(end - start);
                 for (long long i = start; i < end; i++) {
@@ -111,11 +107,9 @@ public:
         // Block until completion
         std::unique_lock<std::mutex> lock(mut);
         cond.wait(lock, [&] { return done; });
-
-        LM_INFO("finish rendering");
     }
 };
 
-LM_COMP_REG_IMPL(ParallelContext_NetWorker, "parallel::networker");
+LM_COMP_REG_IMPL(ParallelContext_DistWorker, "parallel::distworker");
 
 LM_NAMESPACE_END(LM_NAMESPACE::parallel)

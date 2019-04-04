@@ -58,11 +58,12 @@ void load(Archive& ar, std::atomic<T>& v) {
 
 // ----------------------------------------------------------------------------
 
+
 /*
-    Save function specialized for Component::Ptr<T>.
+    Save owned pointer.
 */
 template <typename Archive, typename T>
-void save(Archive& ar, const lm::Component::Ptr<T>& p) {
+void saveOwned(Archive& ar, T* p) {
     using Access = lm::comp::detail::Access;
 
     // Save an additional information if the pointer is nullptr
@@ -75,13 +76,13 @@ void save(Archive& ar, const lm::Component::Ptr<T>& p) {
         ar(CEREAL_NVP_("valid", uint8_t(1)));
 
         // Meta information needed to recreate the instance
-        ar(CEREAL_NVP_("key", Access::key(p.get())));
-        
+        ar(CEREAL_NVP_("key", Access::key(p)));
+
         // Consistency testing checking if the locator is valid
-        const auto& loc = Access::loc(p.get());
+        const auto& loc = Access::loc(p);
         if (!loc.empty()) {
             const auto* p_loc = lm::comp::get<T>(loc);
-            if (!p_loc || p_loc != p.get()) {
+            if (!p_loc || p_loc != p) {
                 LM_ERROR("Invalid locator [loc='{}']", loc);
                 LM_ERROR("Loaded state might be broken. Check if");
                 LM_ERROR("  - locator is properly specified in lm::comp::create()");
@@ -95,6 +96,14 @@ void save(Archive& ar, const lm::Component::Ptr<T>& p) {
         // because their features can be achievable with our component system.
         p->save(ar);
     }
+}
+
+/*
+    Save function specialized for Component::Ptr<T>.
+*/
+template <typename Archive, typename T>
+void save(Archive& ar, const lm::Component::Ptr<T>& p) {
+    saveOwned(ar, p.get());
 }
 
 /*
@@ -202,6 +211,14 @@ template <typename... Ts>
 void save(std::ostream& os, Ts&&... v) {
     OutputArchive ar(os);
     ar(std::forward<Ts>(v)...);
+}
+
+/*!
+    \brief Serialize a component as owned pointer.
+*/
+LM_INLINE void saveOwned(std::ostream& os, Component* v) {
+    OutputArchive ar(os);
+    cereal::saveOwned(ar, v);
 }
 
 /*!

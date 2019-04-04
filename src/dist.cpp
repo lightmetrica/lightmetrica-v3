@@ -4,19 +4,21 @@
 */
 
 #include <pch.h>
-#include <lm/net.h>
+#include <lm/dist.h>
 #include <lm/logger.h>
 #include <lm/json.h>
 #include <lm/user.h>
 #include <lm/parallel.h>
 #include <lm/serial.h>
+#include <lm/film.h>
+#include <lm/progress.h>
 #include <zmq.hpp>
 
 #define LM_NET_MONITOR_SOCKET 1
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::net)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::dist)
 
 using namespace std::chrono_literals;
 
@@ -25,12 +27,14 @@ enum class WorkerCommand {
     workerinfo,
     sync,
     processCompleted,
+    gatherFilm,
 };
 
 // Shared command for return value from workers
 enum class WorkerResultCommand {
     workerinfo,
     processFunc,
+    gatherFilm,
 };
 
 // Worker information
@@ -90,13 +94,9 @@ public:
 };
 #endif
 
-LM_NAMESPACE_END(LM_NAMESPACE::net)
-
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::net::master)
-
-class NetMasterContext_ final : public NetMasterContext {
+class DistMasterContext_ final : public DistMasterContext {
 private:
     int port_;
     zmq::context_t context_;
@@ -108,9 +108,13 @@ private:
     SocketMonitor monitor_repSocket_;
     #endif
     WorkerTaskFinishedFunc onWorkerTaskFinished_;
+    long long numIssuedTasks_;   // Number of issued tasks
+    std::mutex gatherFilmMutex_;
+    std::condition_variable gatherFilmCond_;
+    long long gatherFilmSync_;
 
 public:
-    NetMasterContext_()
+    DistMasterContext_()
         : context_(1)
         #if LM_NET_MONITOR_SOCKET
         , monitor_repSocket_("rep")
@@ -125,7 +129,7 @@ public:
         // --------------------------------------------------------------------
 
         // Initialize parallel subsystem
-        parallel::init("parallel::netmaster", {});
+        parallel::init("parallel::distmaster", {});
 
         // --------------------------------------------------------------------
 
@@ -166,8 +170,6 @@ public:
 
                 // PULL socket
                 if (items[0].revents & ZMQ_POLLIN) {
-                    LM_INFO("PULL");
-
                     // Receive message
                     zmq::message_t mes;
                     pullSocket_->recv(&mes);
@@ -188,11 +190,23 @@ public:
                         lm::serial::load(is, processed);
                         onWorkerTaskFinished_(processed);
                     }
+                    else if (command == WorkerResultCommand::gatherFilm) {
+                        long long numProcessedTasks;
+                        std::string filmloc;
+                        lm::serial::load(is, numProcessedTasks);
+                        lm::serial::load(is, filmloc);
+                        Component::Ptr<Film> workerFilm;
+                        lm::serial::load(is, workerFilm);
+                        auto* film = lm::comp::get<Film>(filmloc);
+                        film->accum(workerFilm.get());
+                        std::unique_lock<std::mutex> lock(gatherFilmMutex_);
+                        gatherFilmSync_ += numProcessedTasks;
+                        gatherFilmCond_.notify_one();
+                    }
                 }
 
                 // REP socket
                 if (items[1].revents & ZMQ_POLLIN) {
-                    LM_INFO("REP");
                     zmq::message_t mes;
                     repSocket_->recv(&mes);
                     std::istringstream is(std::string(mes.data<char>(), mes.size()));
@@ -216,16 +230,13 @@ public:
         pubSocket_->send(zmq::message_t(str.data(), str.size()));
     }
 
-    virtual void render() override {
+    virtual void sync() override {
         // Synchronize internal state and dispatch rendering in worker process
         std::stringstream ss;
         lm::serial::save(ss, WorkerCommand::sync);
         lm::serialize(ss);
         const auto str = ss.str();
         pubSocket_->send(zmq::message_t(str.data(), str.size()));
-
-        // Execute renderer in master process
-        lm::render();
     }
 
     virtual void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) override {
@@ -233,28 +244,52 @@ public:
     }
 
     virtual void processWorkerTask(long long start, long long end) override {
-        LM_INFO("processWorkerTask");
+        if (start == 0) {
+            // Reset the issued task
+            numIssuedTasks_ = 0;
+        }
         std::stringstream ss;
         lm::serial::save(ss, start);
         lm::serial::save(ss, end);
         const auto str = ss.str();
         pushSocket_->send(zmq::message_t(str.data(), str.size()));
+        numIssuedTasks_++;
     }
 
-    virtual void notifyProcessCompleted() {
-        LM_INFO("notifyProcessCompleted");
+    virtual void notifyProcessCompleted() override  {
         std::stringstream ss;
         lm::serial::save(ss, WorkerCommand::processCompleted);
         const auto str = ss.str();
         pubSocket_->send(zmq::message_t(str.data(), str.size()));
     }
+
+    virtual void gatherFilm(const std::string& filmloc) override {
+        // Initialize film
+        gatherFilmSync_ = 0;
+        lm::comp::get<Film>(filmloc)->clear();
+
+        // Send command
+        std::stringstream ss;
+        lm::serial::save(ss, WorkerCommand::gatherFilm);
+        lm::serial::save(ss, filmloc);
+        const auto str = ss.str();
+        pubSocket_->send(zmq::message_t(str.data(), str.size()));
+
+        // Synchronize
+        progress::ScopedReport progress_(numIssuedTasks_);
+        std::unique_lock<std::mutex> lock(gatherFilmMutex_);
+        gatherFilmCond_.wait(lock, [&] {
+            progress::update(gatherFilmSync_);
+            return gatherFilmSync_ == numIssuedTasks_;
+        });
+    }
 };
 
-LM_COMP_REG_IMPL(NetMasterContext_, "net::master::default");
+LM_COMP_REG_IMPL(DistMasterContext_, "dist::master::default");
 
 // ----------------------------------------------------------------------------
 
-using Instance = comp::detail::ContextInstance<NetMasterContext>;
+using Instance = comp::detail::ContextInstance<DistMasterContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
     Instance::init(type, prop);
@@ -268,8 +303,8 @@ LM_PUBLIC_API void printWorkerInfo() {
     Instance::get().printWorkerInfo();
 }
 
-LM_PUBLIC_API void render() {
-    Instance::get().render();
+LM_PUBLIC_API void sync() {
+    Instance::get().sync();
 }
 
 LM_PUBLIC_API void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) {
@@ -284,15 +319,19 @@ LM_PUBLIC_API void notifyProcessCompleted() {
     Instance::get().notifyProcessCompleted();
 }
 
-LM_NAMESPACE_END(LM_NAMESPACE::net::master)
+LM_PUBLIC_API void gatherFilm(const std::string& filmloc) {
+    Instance::get().gatherFilm(filmloc);
+}
+
+LM_NAMESPACE_END(LM_NAMESPACE::dist)
 
 // ----------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::net::worker)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::dist::worker)
 
 //std::atomic<bool> interrupted_ = false;
 
-class NetWorkerContext_ final : public NetWorkerContext {
+class DistWorkerContext_ final : public DistWorkerContext {
 private:
     zmq::context_t context_;
     std::unique_ptr<zmq::socket_t> pullSocket_;
@@ -306,9 +345,10 @@ private:
     NetWorkerProcessFunc processFunc_;
     ProcessCompletedFunc processCompletedFunc_;
     std::thread renderThread_;
+    long long numProcessedTasks_;  // Number of procesed tasks
 
 public:
-    NetWorkerContext_()
+    DistWorkerContext_()
         : context_(1)
         #if LM_NET_MONITOR_SOCKET
         , monitor_reqSocket_("req")
@@ -336,7 +376,7 @@ public:
         reqSocket_->connect(fmt::format("tcp://{}:{}", address, port+3));
 
         // Initialize parallel subsystem
-        parallel::init("parallel::networker", {});
+        parallel::init("parallel::distworker", {});
 
         #if LM_NET_MONITOR_SOCKET
         // Register monitors
@@ -363,6 +403,7 @@ public:
 
     virtual void foreach(const NetWorkerProcessFunc& process) override {
         processFunc_ = process;
+        numProcessedTasks_ = 0;
     }
 
     virtual void onProcessCompleted(const ProcessCompletedFunc& func) override {
@@ -402,6 +443,7 @@ public:
                 lm::serial::load(is, end);
                 
                 // Process a task
+                numProcessedTasks_++;
                 processFunc_(start, end);
 
                 // Notify completion
@@ -417,8 +459,6 @@ public:
 
             // SUB socket
             if (items[1].revents & ZMQ_POLLIN) {
-                LM_INFO("SUB");
-
                 // Receive message
                 zmq::message_t mes;
                 subSocket_->recv(&mes);
@@ -430,7 +470,6 @@ public:
 
                 // Process commands
                 if (command == WorkerCommand::workerinfo) {
-                    LM_INFO("workerinfo");
                     WorkerInfo info{ name_ };
                     std::ostringstream os;
                     lm::serial::save(os, WorkerResultCommand::workerinfo);
@@ -439,7 +478,6 @@ public:
                     pushSocket_->send(zmq::message_t(str.data(), str.size()));
                 }
                 else if (command == WorkerCommand::sync) {
-                    LM_INFO("sync");
                     lm::deserialize(is);
 
                     // Dispatch renderer in the different thread
@@ -448,23 +486,33 @@ public:
                         lm::render();
                     });
                 }
-                else if (command == WorkerCommand::processCompleted) {
-                    LM_INFO("processCompleted");
+                else if (command == WorkerCommand::processCompleted) {;
                     processCompletedFunc_();
                     renderThread_.join();
                     processFunc_ = {};
                     processCompletedFunc_ = {};
+                }
+                else if (command == WorkerCommand::gatherFilm) {
+                    std::string filmloc;
+                    lm::serial::load(is, filmloc);
+                    std::ostringstream os;
+                    lm::serial::save(os, WorkerResultCommand::gatherFilm);
+                    lm::serial::save(os, numProcessedTasks_);
+                    lm::serial::save(os, filmloc);
+                    lm::serial::saveOwned(os, lm::comp::get<Film>(filmloc));
+                    const auto str = os.str();
+                    pushSocket_->send(zmq::message_t(str.data(), str.size()));
                 }
             }
         }
     }
 };
 
-LM_COMP_REG_IMPL(NetWorkerContext_, "net::worker::default");
+LM_COMP_REG_IMPL(DistWorkerContext_, "dist::worker::default");
 
 // ----------------------------------------------------------------------------
 
-using Instance = comp::detail::ContextInstance<NetWorkerContext>;
+using Instance = comp::detail::ContextInstance<DistWorkerContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
     Instance::init(type, prop);
@@ -486,4 +534,4 @@ LM_PUBLIC_API void foreach(const NetWorkerProcessFunc& process) {
     Instance::get().foreach(process);
 }
 
-LM_NAMESPACE_END(LM_NAMESPACE::net::worker)
+LM_NAMESPACE_END(LM_NAMESPACE::dist::worker)

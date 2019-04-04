@@ -4,13 +4,13 @@ import argparse
 def run(**kwargs):
     lm.init('user::default', {})
     lm.info()
-    lm.net.worker.init('net::worker::default', {
+    lm.dist.worker.init('dist::worker::default', {
         'name': kwargs['name'],
         'address': kwargs['address'],
         'port': kwargs['port']
     })
-    lm.net.worker.run()
-    lm.net.shutdown()
+    lm.dist.worker.run()
+    lm.dist.shutdown()
     lm.shutdown()
 
 if __name__ == '__main__':

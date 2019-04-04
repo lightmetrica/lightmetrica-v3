@@ -149,7 +149,7 @@ static void bind(pybind11::module& m) {
     m.def("primitive", &primitive, PYLM_SCOPED_RELEASE);
     m.def("build", &build, PYLM_SCOPED_RELEASE);
     m.def("renderer", &renderer, PYLM_SCOPED_RELEASE);
-    m.def("render", (void(*)(bool))&render, pybind11::call_guard<pybind11::gil_scoped_release>());
+    m.def("render", (void(*)(bool))&render, "verbose"_a = true, pybind11::call_guard<pybind11::gil_scoped_release>());
     m.def("render", (void(*)(const std::string&, const Json&))&render, pybind11::call_guard<pybind11::gil_scoped_release>());
     m.def("save", &save, PYLM_SCOPED_RELEASE);
     m.def("buffer", &buffer, PYLM_SCOPED_RELEASE);
@@ -286,28 +286,19 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
-    // net.h
+    // dist.h
     {
-        auto sm = m.def_submodule("net");
-        {
-            auto sm2 = sm.def_submodule("master");
-            sm2.def("init", &net::master::init, PYLM_SCOPED_RELEASE);
-            sm2.def("shutdown", &net::master::shutdown, PYLM_SCOPED_RELEASE);
-            sm2.def("printWorkerInfo", &net::master::printWorkerInfo, PYLM_SCOPED_RELEASE);
-            sm2.def("render", &net::master::render, pybind11::call_guard<pybind11::gil_scoped_release>());
-        }
+        auto sm = m.def_submodule("dist");
+        sm.def("init", &dist::init, PYLM_SCOPED_RELEASE);
+        sm.def("shutdown", &dist::shutdown, PYLM_SCOPED_RELEASE);
+        sm.def("printWorkerInfo", &dist::printWorkerInfo, PYLM_SCOPED_RELEASE);
+        sm.def("sync", &dist::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
+        sm.def("gatherFilm", &dist::gatherFilm, pybind11::call_guard<pybind11::gil_scoped_release>());
         {
             auto sm2 = sm.def_submodule("worker");
-            sm2.def("init", &net::worker::init, PYLM_SCOPED_RELEASE);
-            //sm2.def("init", [](const std::string& type, const Json& prop) {
-            //    net::worker::init(type, prop);
-            //    net::worker::onEventLoop([] {
-            //        pybind11::gil_scoped_acquire acquire;
-            //        PyErr_CheckSignals();
-            //    });
-            //}, PYLM_SCOPED_RELEASE);
-            sm2.def("shutdown", &net::worker::shutdown, PYLM_SCOPED_RELEASE);
-            sm2.def("run", &net::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
+            sm2.def("init", &dist::worker::init, PYLM_SCOPED_RELEASE);
+            sm2.def("shutdown", &dist::worker::shutdown, PYLM_SCOPED_RELEASE);
+            sm2.def("run", &dist::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
         }
     }
 
@@ -357,6 +348,14 @@ static void bind(pybind11::module& m) {
         virtual FilmBuffer buffer() override {
             PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(FilmBuffer, Film, buffer);
+        }
+        virtual void accum(const Film* film) override {
+            PYLM_ACQUIRE_GIL();
+            PYBIND11_OVERLOAD_PURE(void, Film, accum, film);
+        }
+        virtual void clear() override {
+            PYLM_ACQUIRE_GIL();
+            PYBIND11_OVERLOAD_PURE(void, Film, clear);
         }
     };
     pybind11::class_<Film, Film_Py, Component::Ptr<Film>>(m, "Film")

@@ -37,31 +37,33 @@ os.getpid()
 
 lm.init('user::default', {})
 lm.log.init('logger::jupyter', {})
+lm.progress.init('progress::jupyter', {})
 
-lm.net.master.init('net::master::default', {
+lm.dist.init('dist::master::default', {
     'port': 5000
 })
 
-lm.net.master.printWorkerInfo()
+lm.dist.printWorkerInfo()
 
-lm.asset('film_output', 'film::bitmap', {'w': 640, 'h': 360})
-lmscene.load(ft.env.scene_path, 'cube')
+lmscene.load(ft.env.scene_path, 'fireplace_room')
 
 lm.build('accel::sahbvh', {})
+
+lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
 lm.renderer('renderer::raycast', {
     'output': lm.asset('film_output')
 })
 
-lm.net.master.render()
+lm.dist.sync()
 
-lm.net.master.gatherFilm(lm.asset('film_output'))
+lm.render()
 
-# + {"active": ""}
-# img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
-# f = plt.figure(figsize=(15,15))
-# ax = f.add_subplot(111)
-# ax.imshow(np.clip(np.power(img,1/2.2),0,1))
-# plt.show()
-# -
+lm.dist.gatherFilm(lm.asset('film_output'))
+
+img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+f = plt.figure(figsize=(15,15))
+ax = f.add_subplot(111)
+ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+plt.show()
 
 

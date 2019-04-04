@@ -24,7 +24,7 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(bgColor_, useConstantColor_, film_);
+        ar(bgColor_, useConstantColor_, visualizeNormal_, film_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
