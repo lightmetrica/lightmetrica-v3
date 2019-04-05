@@ -40,7 +40,7 @@ public:
         });
 
         // Execute tasks
-        const long long WorkSize = 10000;
+        const long long WorkSize = 1000000;
         const long long Iter = (numSamples + WorkSize - 1) / WorkSize;
         for (long long i = 0; i < Iter; i++) {
             const long long start = i * WorkSize;
@@ -67,16 +67,20 @@ LM_COMP_REG_IMPL(ParallelContext_DistMaster, "parallel::distmaster");
 
 class ParallelContext_DistWorker final : public ParallelContext {
 public:
-    virtual bool construct(const Json&) override {
+    Ptr<ParallelContext> localContext_;
+
+public:
+    virtual bool construct(const Json& prop) override {
+        localContext_ = comp::create<ParallelContext>("parallel::openmp", "", prop);
         return true;
     }
     
     virtual int numThreads() const {
-        return 0;
+        return localContext_->numThreads();
     }
 
     virtual bool mainThread() const {
-        return true;
+        return localContext_->mainThread();
     }
 
     virtual void foreach(long long, const ParallelProcessFunc& processFunc) const override {
@@ -94,14 +98,9 @@ public:
         // Register a function to process a task
         // Note that this function is asynchronious, and called in the different thread.
         dist::worker::foreach([&](long long start, long long end) {
-            {
-                progress::ScopedReport progress_(end - start);
-                for (long long i = start; i < end; i++) {
-                    processFunc(i, 0);
-                    progress::update(i - start);
-                }
-            }
-            LM_INFO("");
+            localContext_->foreach(end - start, [&](long long index, int threadId) {
+                processFunc(start + index, threadId);
+            });
         });
         
         // Block until completion

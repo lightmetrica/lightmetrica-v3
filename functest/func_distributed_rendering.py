@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# ## Network rendering
+# ## Distributed rendering
 #
 # This test demonstrates network rendering feature of Lightmetrica.
 
@@ -35,7 +35,7 @@ os.getpid()
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {})
+lm.init()
 lm.log.init('logger::jupyter', {})
 lm.progress.init('progress::jupyter', {})
 
@@ -45,7 +45,8 @@ lm.dist.init('dist::master::default', {
 
 lm.dist.printWorkerInfo()
 
-lmscene.load(ft.env.scene_path, 'fireplace_room')
+#lmscene.load(ft.env.scene_path, 'fireplace_room')
+lmscene.load(ft.env.scene_path, 'cornell_box_sphere')
 
 lm.build('accel::sahbvh', {})
 

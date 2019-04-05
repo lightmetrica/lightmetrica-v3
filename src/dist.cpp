@@ -59,37 +59,34 @@ public:
 
 public:
     virtual void on_event_connected(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_connected [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Connected [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_connect_delayed(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_connect_delayed [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Delayed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_connect_retried(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_connect_retried [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Retried [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_listening(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_listening [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Listening [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_bind_failed(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_bind_failed [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Bind failed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_accepted(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_accepted [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Accepted [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_accept_failed(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_accept_failed [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Accept failed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_closed(const zmq_event_t&, const char* addr_) override  {
-        LM_INFO("on_event_closed [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Closed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_close_failed(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_close_failed [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Close failed [name='{}', addr='{}']", name_, addr_);
     }
     virtual void on_event_disconnected(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_disconnected [name='{}', addr='{}']", name_, addr_);
-    }
-    virtual void on_event_unknown(const zmq_event_t&, const char* addr_) override {
-        LM_INFO("on_event_unknown [name='{}', addr='{}']", name_, addr_);
+        LM_INFO("Disconnected [name='{}', addr='{}']", name_, addr_);
     }
 };
 #endif
@@ -112,6 +109,8 @@ private:
     std::mutex gatherFilmMutex_;
     std::condition_variable gatherFilmCond_;
     long long gatherFilmSync_;
+    std::thread eventLoopThread_;
+    bool done_ = false;     // True if the event loop is finished
 
 public:
     DistMasterContext_()
@@ -121,6 +120,11 @@ public:
         #endif
     {}
 
+    ~DistMasterContext_() {
+        done_ = true;
+        eventLoopThread_.join();
+    }
+
 public:
     virtual bool construct(const Json& prop) override {
         port_ = json::value<int>(prop, "port");
@@ -129,7 +133,7 @@ public:
         // --------------------------------------------------------------------
 
         // Initialize parallel subsystem
-        parallel::init("parallel::distmaster", {});
+        parallel::init("parallel::distmaster", prop);
 
         // --------------------------------------------------------------------
 
@@ -142,7 +146,7 @@ public:
         // --------------------------------------------------------------------
 
         // Thread for event loop
-        std::thread([this]() {
+        eventLoopThread_ = std::thread([this]() {
             // PULL and REP sockets in event loop thread
             pullSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PULL);
             repSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_REP);
@@ -159,7 +163,7 @@ public:
                 { (void*)*pullSocket_, 0, ZMQ_POLLIN, 0 },
                 { (void*)*repSocket_, 0, ZMQ_POLLIN, 0 },
             };
-            while (true) {
+            while (!done_) {
                 #if LM_NET_MONITOR_SOCKET
                 // Monitor socket
                 monitor_repSocket_.check_event();
@@ -217,7 +221,7 @@ public:
                     repSocket_->send(ok);
                 }
             }
-        }).detach();
+        });
         
         return true;
     }
@@ -376,7 +380,7 @@ public:
         reqSocket_->connect(fmt::format("tcp://{}:{}", address, port+3));
 
         // Initialize parallel subsystem
-        parallel::init("parallel::distworker", {});
+        parallel::init("parallel::distworker", prop);
 
         #if LM_NET_MONITOR_SOCKET
         // Register monitors

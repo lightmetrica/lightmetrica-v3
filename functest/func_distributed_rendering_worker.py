@@ -7,7 +7,8 @@ def run(**kwargs):
     lm.dist.worker.init('dist::worker::default', {
         'name': kwargs['name'],
         'address': kwargs['address'],
-        'port': kwargs['port']
+        'port': kwargs['port'],
+        'numThreads': -1
     })
     lm.dist.worker.run()
     lm.dist.shutdown()

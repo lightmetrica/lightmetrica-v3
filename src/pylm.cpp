@@ -140,7 +140,7 @@ static void bind(pybind11::module& m) {
     // ------------------------------------------------------------------------
 
     // user.h
-    m.def("init", &init, PYLM_SCOPED_RELEASE);
+    m.def("init", &init, "type"_a = user::DefaultType, "prop"_a = Json{}, PYLM_SCOPED_RELEASE);
     m.def("shutdown", &shutdown, PYLM_SCOPED_RELEASE);
     m.def("info", &info, PYLM_SCOPED_RELEASE);
     m.def("reset", &reset, PYLM_SCOPED_RELEASE);
@@ -171,7 +171,7 @@ static void bind(pybind11::module& m) {
             .value("Progress", log::LogLevel::Progress)
             .value("ProgressEnd", log::LogLevel::ProgressEnd);
 
-        sm.def("init", &log::init, PYLM_SCOPED_RELEASE);
+        sm.def("init", &log::init, "type"_a = log::DefaultType, "prop"_a = Json{}, PYLM_SCOPED_RELEASE);
         sm.def("shutdown", &log::shutdown, PYLM_SCOPED_RELEASE);
         using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
         sm.def("log", (logFuncPtr)&log::log, PYLM_SCOPED_RELEASE);
@@ -210,7 +210,7 @@ static void bind(pybind11::module& m) {
     // parallel.h
     {
         auto sm = m.def_submodule("parallel");
-        sm.def("init", &parallel::init, PYLM_SCOPED_RELEASE);
+        sm.def("init", &parallel::init, "type"_a = parallel::DefaultType, "prop"_a = Json{}, PYLM_SCOPED_RELEASE);
         sm.def("shutdown", &parallel::shutdown, PYLM_SCOPED_RELEASE);
         sm.def("numThreads", &parallel::numThreads, PYLM_SCOPED_RELEASE);
         sm.def("foreach", [](long long numSamples, const parallel::ParallelProcessFunc& processFunc) {
@@ -239,7 +239,7 @@ static void bind(pybind11::module& m) {
     {
         auto sm = m.def_submodule("progress");
 
-        sm.def("init", &progress::init, PYLM_SCOPED_RELEASE);
+        sm.def("init", &progress::init, "type"_a = progress::DefaultType, "prop"_a = Json{}, PYLM_SCOPED_RELEASE);
         sm.def("shutdown", &progress::shutdown, PYLM_SCOPED_RELEASE);
         sm.def("start", &progress::start, PYLM_SCOPED_RELEASE);
         sm.def("end", &progress::end, PYLM_SCOPED_RELEASE);
