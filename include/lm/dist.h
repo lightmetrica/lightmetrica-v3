@@ -26,6 +26,9 @@ LM_PUBLIC_API void shutdown();
 // Print worker information
 LM_PUBLIC_API void printWorkerInfo();
 
+// Allow or disallow new connections by workers
+LM_PUBLIC_API void allowWorkerConnection(bool allow);
+
 // Synchronize the internal state with the workers
 LM_PUBLIC_API void sync();
 
@@ -45,6 +48,7 @@ LM_PUBLIC_API void gatherFilm(const std::string& filmloc);
 class DistMasterContext : public Component {
 public:
     virtual void printWorkerInfo() = 0;
+    virtual void allowWorkerConnection(bool allow) = 0;
     virtual void sync() = 0;
     virtual void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) = 0;
     virtual void processWorkerTask(long long start, long long end) = 0;

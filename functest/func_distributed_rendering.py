@@ -45,8 +45,8 @@ lm.dist.init('dist::master::default', {
 
 lm.dist.printWorkerInfo()
 
-#lmscene.load(ft.env.scene_path, 'fireplace_room')
-lmscene.load(ft.env.scene_path, 'cornell_box_sphere')
+lmscene.load(ft.env.scene_path, 'fireplace_room')
+#lmscene.load(ft.env.scene_path, 'cornell_box_sphere')
 
 lm.build('accel::sahbvh', {})
 
@@ -55,11 +55,15 @@ lm.renderer('renderer::raycast', {
     'output': lm.asset('film_output')
 })
 
+lm.dist.allowWorkerConnection(False)
+
 lm.dist.sync()
 
 lm.render()
 
 lm.dist.gatherFilm(lm.asset('film_output'))
+
+lm.dist.allowWorkerConnection(True)
 
 img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
 f = plt.figure(figsize=(15,15))

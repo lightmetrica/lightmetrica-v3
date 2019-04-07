@@ -11,16 +11,6 @@
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 
-// Release GIL during the execution of C++ codes
-#define PYLM_RELEASE_GIL 0
-#if PYLM_RELEASE_GIL
-#define PYLM_SCOPED_RELEASE pybind11::call_guard<pybind11::gil_scoped_release>()
-#define PYLM_ACQUIRE_GIL() pybind11::gil_scoped_acquire acquire
-#else
-#define PYLM_SCOPED_RELEASE pybind11::call_guard<>()
-#define PYLM_ACQUIRE_GIL()
-#endif
-
 // ----------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(pybind11::detail)
@@ -303,7 +293,7 @@ template <typename InterfaceT>
 static void regCompWrap(pybind11::object implClass, const char* name) {
     lm::comp::detail::reg(name,
         [implClass = implClass]() -> lm::Component* {
-            PYLM_ACQUIRE_GIL();
+            pybind11::gil_scoped_acquire gil;
 
             // Create instance of python class
             auto instPy = implClass();
@@ -316,7 +306,7 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             return instCpp;
         },
         [](lm::Component* p) -> void {
-            PYLM_ACQUIRE_GIL();
+            pybind11::gil_scoped_acquire gil;
 
             // Automatic deref of instPy causes invocation of GC.
             // Note we need one extra deref because one reference is still hold by ownerRef_.
@@ -395,17 +385,46 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
     \brief Adds component-related functions to the binding of a component interface.
 */
 #define PYLM_DEF_COMP_BIND(InterfaceT) \
-     def_static("reg", &LM_NAMESPACE::detail::regCompWrap<InterfaceT>, PYLM_SCOPED_RELEASE) \
-    .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg, PYLM_SCOPED_RELEASE) \
+     def_static("reg", &LM_NAMESPACE::detail::regCompWrap<InterfaceT>) \
+    .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg) \
     .def_static("create", \
         pybind11::overload_cast<const char*, const char*>( \
-            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>), PYLM_SCOPED_RELEASE) \
+            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
     .def_static("create", \
         pybind11::overload_cast<const char*, const char*, const LM_NAMESPACE::Json&>( \
-            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>), PYLM_SCOPED_RELEASE) \
+            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
     .def_static("castFrom", \
         &LM_NAMESPACE::detail::castFrom<InterfaceT>, \
-        pybind11::return_value_policy::reference, PYLM_SCOPED_RELEASE)
+        pybind11::return_value_policy::reference);
+
+/*!
+    \brief Implement save() and load() function for trampoline helper class.
+    This workaround casting facility of pybind11 for Input/OutputArchive.
+*/
+#define PYLM_SERIALIZE_IMPL(ComponentT) \
+    virtual void save(lm::OutputArchive& ar) override { \
+        pybind11::gil_scoped_acquire gil; \
+        auto overload = pybind11::get_overload(static_cast<const ComponentT*>(this), "save"); \
+        if (overload) { \
+            auto s = pybind11::detail::cast_safe<std::string>(overload()); \
+            ar(s); \
+        } \
+        else { \
+            ComponentT::save(ar); \
+        } \
+    } \
+    virtual void load(lm::InputArchive& ar) override { \
+        pybind11::gil_scoped_acquire gil; \
+        auto overload = pybind11::get_overload(static_cast<const ComponentT*>(this), "load"); \
+        if (overload) { \
+            std::string arg; \
+            ar(arg); \
+            overload(pybind11::bytes(arg)); \
+        } \
+        else { \
+            ComponentT::load(ar); \
+        } \
+    }
 
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(LM_NAMESPACE)

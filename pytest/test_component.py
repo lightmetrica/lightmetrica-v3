@@ -2,6 +2,7 @@
 import os
 import pytest
 import gc
+import pickle
 from contextlib import contextmanager
 import pylm as lm
 from pylm_test import component as m
@@ -33,6 +34,8 @@ def test_construction():
         assert p.f1() == 42
         assert p.f2(1, 2) == 3
 
+        # ---------------------------------------------------------------------
+
         # Use component inside native plugin
         with lm_plugin_scope('lm_test_plugin'):
             p = m.createTestPlugin()
@@ -40,6 +43,8 @@ def test_construction():
             # Free p before unloading the plugin
             del p
             gc.collect()
+
+        # ---------------------------------------------------------------------
 
         # Extend component from python
         class A2(m.A):
@@ -56,6 +61,8 @@ def test_construction():
         # Instantiate inside python script and use it in C++
         assert m.useA(p) == 86
 
+        # ---------------------------------------------------------------------
+
         # Native embeded plugin
         # w/o property
         p = m.A.create('test::comp::a1', '')
@@ -64,15 +71,8 @@ def test_construction():
         # w/ property
         p = m.D.create('test::comp::d1', '', {'v1':42, 'v2':43})
         assert p.f() == 85
-        # # w/ parent component
-        # d = m.D.create('test::comp::d1', '', {'v1':42, 'v2':43})
-        # e = m.E.create('test::comp::e1', d, None)
-        # assert e.f() == 86
-        # # w/ underlying component of the parent
-        # d  = m.D.create('test::comp::d1', None, {'v1':42, 'v2':43})
-        # e1 = m.E.create('test::comp::e1', d, None)
-        # e2 = m.E.create('test::comp::e2', e1, None)
-        # assert e2.f() == 87
+
+        # ---------------------------------------------------------------------
 
         # Native external plugin
         with lm_plugin_scope('lm_test_plugin'):
@@ -84,6 +84,8 @@ def test_construction():
             assert p.f() == -1
             del p
             gc.collect()
+
+        # ---------------------------------------------------------------------
 
         # Define and register component implementation
         # Implement component A
@@ -114,3 +116,68 @@ def test_construction():
         # Python plugin instantiate from C++
         assert m.createA4AndCallFuncs() == (44, -1)
         assert m.createA5AndCallFuncs() == (7, 10)
+
+def test_serialization():
+    """Serialization of component instances"""
+    with lm_logger_scope():
+        # Component with serialization support
+        class A_Serializable(m.A):
+            def construct(self, prop):
+                self.v = prop['v']
+                return True
+            def save(self):
+                return str(self.v)
+            def load(self, s):
+                self.v = int(s)
+            def f1(self):
+                return self.v
+        m.A.reg(A_Serializable, 'test::comp::serializable')
+        
+        # Create instance
+        p = m.A.create('test::comp::serializable', '', {'v': 22})
+        assert p.f1() == 22
+
+        # Serialize it
+        serialized = p.save()
+        
+        # Create another instance, deserialize it
+        p2 = m.A.create('test::comp::serializable', '')
+        p2.load(serialized)
+        assert p2.f1() == 22
+
+        # Same test with the instance created in C++
+        assert m.roundTripSerializedA() == 23
+
+        # Same test with lm.serial.save / load functions in C++
+        assert m.roundTripSerializedA_UseSerial() == 23
+
+        # ---------------------------------------------------------------------
+
+        # Using pickle for serializing member variables
+        class A_SerializableWithPickle(m.A):
+            def construct(self, prop):
+                self.v1 = prop['v1']
+                self.v2 = prop['v2']
+                return True
+            def save(self):
+                return pickle.dumps((self.v1, self.v2))
+            def load(self, s):
+                self.v1, self.v2 = pickle.loads(s)
+            def f1(self):
+                return self.v1 + self.v2
+        m.A.reg(A_SerializableWithPickle, 'test::comp::serializable_with_pickle')
+        
+        # Create instance
+        p = m.A.create('test::comp::serializable_with_pickle', '', {'v1': 4, 'v2': 13})
+        assert p.f1() == 17
+
+        # Serialize it
+        serialized = p.save()
+        
+        # Create another instance, deserialize it
+        p2 = m.A.create('test::comp::serializable_with_pickle', '')
+        p2.load(serialized)
+        assert p2.f1() == 17
+
+        # Same test with the instance created in C++
+        assert m.roundTripSerializedA_WithPickle() == 48

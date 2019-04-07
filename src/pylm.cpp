@@ -16,7 +16,8 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
-    // Build parameters
+    #pragma region common.h
+
     // Debug or Release mode
     m.attr("Debug") = LM_DEBUG_MODE ? true : false;
 
@@ -33,9 +34,11 @@ static void bind(pybind11::module& m) {
         ? FloatPrecisionType::Float32
         : FloatPrecisionType::Float64;
 
+    #pragma endregion
+
     // ------------------------------------------------------------------------
     
-    // version.h
+    #pragma region version.h
     {
         auto sm = m.def_submodule("version");
         m.attr("majorVersion") = lm::version::majorVersion();
@@ -47,10 +50,11 @@ static void bind(pybind11::module& m) {
         m.attr("architecture") = lm::version::architecture();
         m.attr("formatted") = lm::version::formatted();
     }
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // math.h
+    #pragma region math.h
 
     // Constants
     m.attr("Inf") = Inf;
@@ -93,34 +97,50 @@ static void bind(pybind11::module& m) {
 
     {
         auto sm = m.def_submodule("math");
-        sm.def("orthonormalBasis", &math::orthonormalBasis, PYLM_SCOPED_RELEASE);
-        sm.def("safeSqrt", &math::safeSqrt, PYLM_SCOPED_RELEASE);
-        sm.def("sq", &math::sq, PYLM_SCOPED_RELEASE);
-        sm.def("reflection", &math::reflection, PYLM_SCOPED_RELEASE);
+        sm.def("orthonormalBasis", &math::orthonormalBasis);
+        sm.def("safeSqrt", &math::safeSqrt);
+        sm.def("sq", &math::sq);
+        sm.def("reflection", &math::reflection);
         pybind11::class_<math::RefractionResult>(sm, "RefractionResult")
             .def_readwrite("wt", &math::RefractionResult::wt)
             .def_readwrite("total", &math::RefractionResult::total);
-        sm.def("refraction", &math::refraction, PYLM_SCOPED_RELEASE);
-        sm.def("sampleCosineWeighted", &math::sampleCosineWeighted, PYLM_SCOPED_RELEASE);
-        sm.def("balanceHeuristic", &math::balanceHeuristic, PYLM_SCOPED_RELEASE);
+        sm.def("refraction", &math::refraction);
+        sm.def("sampleCosineWeighted", &math::sampleCosineWeighted);
+        sm.def("balanceHeuristic", &math::balanceHeuristic);
     }
+
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // component.h
+    #pragma region component.h
 
     class Component_Py final : public Component {
     public:
+        PYLM_SERIALIZE_IMPL(Component)
         virtual bool construct(const Json& prop) override {
             PYBIND11_OVERLOAD(bool, Component, construct, prop);
         }
     };
     pybind11::class_<Component, Component_Py, Component::Ptr<Component>>(m, "Component")
         .def(pybind11::init<>())
-        .def("key", &Component::key, PYLM_SCOPED_RELEASE)
-        .def("loc", &Component::loc, PYLM_SCOPED_RELEASE)
-        .def("parentLoc", &Component::parentLoc, PYLM_SCOPED_RELEASE)
-        .def("construct", &Component::construct, PYLM_SCOPED_RELEASE)
+        .def("key", &Component::key)
+        .def("loc", &Component::loc)
+        .def("parentLoc", &Component::parentLoc)
+        .def("construct", &Component::construct)
+        .def("save", [](Component* self) -> pybind11::bytes {
+            std::ostringstream os;
+            {
+                OutputArchive ar(os);
+                self->save(ar);
+            }
+            return pybind11::bytes(os.str());
+        })
+        .def("load", [](Component* self, pybind11::bytes data) {
+            std::istringstream is(data);
+            InputArchive ar(is);
+            self->load(ar);
+        })
         .PYLM_DEF_COMP_BIND(Component);
 
     {
@@ -130,36 +150,39 @@ static void bind(pybind11::module& m) {
         }, pybind11::return_value_policy::reference);
         {
             auto sm_detail = sm.def_submodule("detail");
-            sm_detail.def("loadPlugin", &comp::detail::loadPlugin, PYLM_SCOPED_RELEASE);
-            sm_detail.def("loadPlugins", &comp::detail::loadPlugins, PYLM_SCOPED_RELEASE);
-            sm_detail.def("unloadPlugins", &comp::detail::unloadPlugins, PYLM_SCOPED_RELEASE);
-            sm_detail.def("foreachRegistered", &comp::detail::foreachRegistered, PYLM_SCOPED_RELEASE);
+            sm_detail.def("loadPlugin", &comp::detail::loadPlugin);
+            sm_detail.def("loadPlugins", &comp::detail::loadPlugins);
+            sm_detail.def("unloadPlugins", &comp::detail::unloadPlugins);
+            sm_detail.def("foreachRegistered", &comp::detail::foreachRegistered);
         }
     }
 
+    #pragma endregion
+
     // ------------------------------------------------------------------------
 
-    // user.h
-    m.def("init", &init, "type"_a = user::DefaultType, "prop"_a = Json{}, PYLM_SCOPED_RELEASE);
-    m.def("shutdown", &shutdown, PYLM_SCOPED_RELEASE);
-    m.def("info", &info, PYLM_SCOPED_RELEASE);
-    m.def("reset", &reset, PYLM_SCOPED_RELEASE);
-    m.def("asset", (std::string(*)(const std::string&, const std::string&, const Json&))&asset, PYLM_SCOPED_RELEASE);
-    m.def("asset", (std::string(*)(const std::string&))&asset, PYLM_SCOPED_RELEASE);
-    m.def("primitive", &primitive, PYLM_SCOPED_RELEASE);
-    m.def("build", &build, PYLM_SCOPED_RELEASE);
-    m.def("renderer", &renderer, PYLM_SCOPED_RELEASE);
+    #pragma region user.h
+    m.def("init", &init, "type"_a = user::DefaultType, "prop"_a = Json{});
+    m.def("shutdown", &shutdown);
+    m.def("info", &info);
+    m.def("reset", &reset);
+    m.def("asset", (std::string(*)(const std::string&, const std::string&, const Json&))&asset);
+    m.def("asset", (std::string(*)(const std::string&))&asset);
+    m.def("primitive", &primitive);
+    m.def("build", &build);
+    m.def("renderer", &renderer, pybind11::call_guard<pybind11::gil_scoped_release>());
     m.def("render", (void(*)(bool))&render, "verbose"_a = true, pybind11::call_guard<pybind11::gil_scoped_release>());
     m.def("render", (void(*)(const std::string&, const Json&))&render, pybind11::call_guard<pybind11::gil_scoped_release>());
-    m.def("save", &save, PYLM_SCOPED_RELEASE);
-    m.def("buffer", &buffer, PYLM_SCOPED_RELEASE);
-    m.def("serialize", (void(*)(const std::string&))&serialize, PYLM_SCOPED_RELEASE);
-    m.def("deserialize", (void(*)(const std::string&))&deserialize, PYLM_SCOPED_RELEASE);
-    m.def("validate", &validate, PYLM_SCOPED_RELEASE);
+    m.def("save", &save);
+    m.def("buffer", &buffer);
+    m.def("serialize", (void(*)(const std::string&))&serialize);
+    m.def("deserialize", (void(*)(const std::string&))&deserialize);
+    m.def("validate", &validate);
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // logger.h
+    #pragma region logger.h
     {
         auto sm = m.def_submodule("log");
 
@@ -171,13 +194,13 @@ static void bind(pybind11::module& m) {
             .value("Progress", log::LogLevel::Progress)
             .value("ProgressEnd", log::LogLevel::ProgressEnd);
 
-        sm.def("init", &log::init, "type"_a = log::DefaultType, "prop"_a = Json{}, PYLM_SCOPED_RELEASE);
-        sm.def("shutdown", &log::shutdown, PYLM_SCOPED_RELEASE);
+        sm.def("init", &log::init, "type"_a = log::DefaultType, "prop"_a = Json{});
+        sm.def("shutdown", &log::shutdown);
         using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
-        sm.def("log", (logFuncPtr)&log::log, PYLM_SCOPED_RELEASE);
-        sm.def("updateIndentation", &log::updateIndentation, PYLM_SCOPED_RELEASE);
+        sm.def("log", (logFuncPtr)&log::log);
+        sm.def("updateIndentation", &log::updateIndentation);
         using setSeverityFuncPtr = void(*)(int);
-        sm.def("setSeverity", (setSeverityFuncPtr)&log::setSeverity, PYLM_SCOPED_RELEASE);
+        sm.def("setSeverity", (setSeverityFuncPtr)&log::setSeverity);
 
         using LoggerContext = log::detail::LoggerContext;
         class LoggerContext_Py final : public LoggerContext {
@@ -200,19 +223,20 @@ static void bind(pybind11::module& m) {
         };
         pybind11::class_<LoggerContext, LoggerContext_Py, Component::Ptr<LoggerContext>>(sm, "LoggerContext")
             .def(pybind11::init<>())
-            .def("log", &LoggerContext::log, PYLM_SCOPED_RELEASE)
-            .def("updateIndentation", &LoggerContext::updateIndentation, PYLM_SCOPED_RELEASE)
+            .def("log", &LoggerContext::log)
+            .def("updateIndentation", &LoggerContext::updateIndentation)
             .PYLM_DEF_COMP_BIND(LoggerContext);
     }
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // parallel.h
+    #pragma region parallel.h
     {
         auto sm = m.def_submodule("parallel");
-        sm.def("init", &parallel::init, "type"_a = parallel::DefaultType, "prop"_a = Json{}, PYLM_SCOPED_RELEASE);
-        sm.def("shutdown", &parallel::shutdown, PYLM_SCOPED_RELEASE);
-        sm.def("numThreads", &parallel::numThreads, PYLM_SCOPED_RELEASE);
+        sm.def("init", &parallel::init, "type"_a = parallel::DefaultType, "prop"_a = Json{});
+        sm.def("shutdown", &parallel::shutdown);
+        sm.def("numThreads", &parallel::numThreads);
         sm.def("foreach", [](long long numSamples, const parallel::ParallelProcessFunc& processFunc) {
             // Release GIL and let the C++ to create new threads
             pybind11::gil_scoped_release release;
@@ -223,88 +247,90 @@ static void bind(pybind11::module& m) {
             });
         });
     }
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // objloader.h
+    #pragma region objloader.h
     {
         auto sm = m.def_submodule("objloader");
-        sm.def("init", &objloader::init, PYLM_SCOPED_RELEASE);
-        sm.def("shutdown", &objloader::shutdown, PYLM_SCOPED_RELEASE);
+        sm.def("init", &objloader::init);
+        sm.def("shutdown", &objloader::shutdown);
     }
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // progress.h
+    #pragma region progress.h
     {
         auto sm = m.def_submodule("progress");
 
-        sm.def("init", &progress::init, "type"_a = progress::DefaultType, "prop"_a = Json{}, PYLM_SCOPED_RELEASE);
-        sm.def("shutdown", &progress::shutdown, PYLM_SCOPED_RELEASE);
-        sm.def("start", &progress::start, PYLM_SCOPED_RELEASE);
-        sm.def("end", &progress::end, PYLM_SCOPED_RELEASE);
-        sm.def("update", &progress::update, PYLM_SCOPED_RELEASE);
+        sm.def("init", &progress::init, "type"_a = progress::DefaultType, "prop"_a = Json{});
+        sm.def("shutdown", &progress::shutdown);
+        sm.def("start", &progress::start);
+        sm.def("end", &progress::end);
+        sm.def("update", &progress::update);
 
         using ProgressContext = progress::detail::ProgressContext;
         class ProgressContext_Py final : public ProgressContext {
             virtual bool construct(const Json& prop) override {
-                PYLM_ACQUIRE_GIL();
                 PYBIND11_OVERLOAD(bool, ProgressContext, construct, prop);
             }
             virtual void start(long long total) override {
-                PYLM_ACQUIRE_GIL();
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, total);
             }
             virtual void end() override {
-                PYLM_ACQUIRE_GIL();
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, end);
             }
             virtual void update(long long processed) override {
-                PYLM_ACQUIRE_GIL();
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
             }
         };
         pybind11::class_<ProgressContext, ProgressContext_Py, Component::Ptr<ProgressContext>>(sm, "ProgressContext")
             .def(pybind11::init<>())
-            .def("start", &ProgressContext::start, PYLM_SCOPED_RELEASE)
-            .def("end", &ProgressContext::end, PYLM_SCOPED_RELEASE)
-            .def("update", &ProgressContext::update, PYLM_SCOPED_RELEASE)
+            .def("start", &ProgressContext::start)
+            .def("end", &ProgressContext::end)
+            .def("update", &ProgressContext::update)
             .PYLM_DEF_COMP_BIND(ProgressContext);
     }
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // debugio.h
+    #pragma region debugio.h
     {
         auto sm = m.def_submodule("debugio");
-        sm.def("init", &debugio::init, PYLM_SCOPED_RELEASE);
-        sm.def("shutdown", &debugio::shutdown, PYLM_SCOPED_RELEASE);
-        sm.def("handleMessage", &debugio::handleMessage, PYLM_SCOPED_RELEASE);
-        sm.def("syncUserContext", &debugio::syncUserContext, PYLM_SCOPED_RELEASE);
-        sm.def("draw", &debugio::draw, PYLM_SCOPED_RELEASE);
+        sm.def("init", &debugio::init);
+        sm.def("shutdown", &debugio::shutdown);
+        sm.def("handleMessage", &debugio::handleMessage);
+        sm.def("syncUserContext", &debugio::syncUserContext);
+        sm.def("draw", &debugio::draw);
     }
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // dist.h
+    #pragma region dist.h
     {
         auto sm = m.def_submodule("dist");
-        sm.def("init", &dist::init, PYLM_SCOPED_RELEASE);
-        sm.def("shutdown", &dist::shutdown, PYLM_SCOPED_RELEASE);
-        sm.def("printWorkerInfo", &dist::printWorkerInfo, PYLM_SCOPED_RELEASE);
+        sm.def("init", &dist::init);
+        sm.def("shutdown", &dist::shutdown);
+        sm.def("printWorkerInfo", &dist::printWorkerInfo);
+        sm.def("allowWorkerConnection", &dist::allowWorkerConnection);
         sm.def("sync", &dist::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
         sm.def("gatherFilm", &dist::gatherFilm, pybind11::call_guard<pybind11::gil_scoped_release>());
         {
             auto sm2 = sm.def_submodule("worker");
-            sm2.def("init", &dist::worker::init, PYLM_SCOPED_RELEASE);
-            sm2.def("shutdown", &dist::worker::shutdown, PYLM_SCOPED_RELEASE);
+            sm2.def("init", &dist::worker::init);
+            sm2.def("shutdown", &dist::worker::shutdown);
             sm2.def("run", &dist::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
         }
     }
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // film.h
+    #pragma region film.h
 
     // Film size
     pybind11::class_<FilmSize>(m, "FilmSize")
@@ -329,47 +355,44 @@ static void bind(pybind11::module& m) {
     
     // Film
     class Film_Py final : public Film {
+    public:
         virtual bool construct(const Json& prop) override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD(bool, Film, construct, prop);
         }
         virtual FilmSize size() const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(FilmSize, Film, size);
         }
         virtual void setPixel(int x, int y, Vec3 v) override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(void, Film, setPixel, x, y, v);
         }
         virtual bool save(const std::string& outpath) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(bool, Film, save, outpath);
         }
         virtual FilmBuffer buffer() override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(FilmBuffer, Film, buffer);
         }
         virtual void accum(const Film* film) override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(void, Film, accum, film);
         }
         virtual void clear() override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(void, Film, clear);
         }
     };
     pybind11::class_<Film, Film_Py, Component::Ptr<Film>>(m, "Film")
         .def(pybind11::init<>())
-        .def("size", &Film::size, PYLM_SCOPED_RELEASE)
-        .def("setPixel", &Film::setPixel, PYLM_SCOPED_RELEASE)
-        .def("save", &Film::save, PYLM_SCOPED_RELEASE)
-        .def("aspectRatio", &Film::aspectRatio, PYLM_SCOPED_RELEASE)
-        .def("buffer", &Film::buffer, PYLM_SCOPED_RELEASE)
+        .def("loc", &Film::loc)
+        .def("size", &Film::size)
+        .def("setPixel", &Film::setPixel)
+        .def("save", &Film::save)
+        .def("aspectRatio", &Film::aspectRatio)
+        .def("buffer", &Film::buffer)
         .PYLM_DEF_COMP_BIND(Film);
+
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // surface.h
+    #pragma region surface.h
     
     pybind11::class_<PointGeometry>(m, "PointGeometry")
         .def(pybind11::init<>())
@@ -381,12 +404,12 @@ static void bind(pybind11::module& m) {
         .def_readwrite("t", &PointGeometry::t)
         .def_readwrite("u", &PointGeometry::u)
         .def_readwrite("v", &PointGeometry::v)
-        .def_static("makeDegenerated", &PointGeometry::makeDegenerated, PYLM_SCOPED_RELEASE)
-        .def_static("makeInfinite", &PointGeometry::makeInfinite, PYLM_SCOPED_RELEASE)
-        .def_static("makeOnSurface", (PointGeometry(*)(Vec3, Vec3, Vec2))&PointGeometry::makeOnSurface, PYLM_SCOPED_RELEASE)
-        .def_static("makeOnSurface", (PointGeometry(*)(Vec3, Vec3))&PointGeometry::makeOnSurface, PYLM_SCOPED_RELEASE)
-        .def("opposite", &PointGeometry::opposite, PYLM_SCOPED_RELEASE)
-        .def("orthonormalBasis", &PointGeometry::orthonormalBasis, PYLM_SCOPED_RELEASE);
+        .def_static("makeDegenerated", &PointGeometry::makeDegenerated)
+        .def_static("makeInfinite", &PointGeometry::makeInfinite)
+        .def_static("makeOnSurface", (PointGeometry(*)(Vec3, Vec3, Vec2))&PointGeometry::makeOnSurface)
+        .def_static("makeOnSurface", (PointGeometry(*)(Vec3, Vec3))&PointGeometry::makeOnSurface)
+        .def("opposite", &PointGeometry::opposite)
+        .def("orthonormalBasis", &PointGeometry::orthonormalBasis);
 
     pybind11::class_<SurfacePoint>(m, "SurfacePoint")
         .def(pybind11::init<>())
@@ -397,130 +420,116 @@ static void bind(pybind11::module& m) {
 
     {
         auto sm = m.def_submodule("surface");
-        sm.def("geometryTerm", &surface::geometryTerm, PYLM_SCOPED_RELEASE);
+        sm.def("geometryTerm", &surface::geometryTerm);
     }
+
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // scene.h
+    #pragma region scene.h
 
     pybind11::class_<RaySample>(m, "RaySample")
         .def_readwrite("sp", &RaySample::sp)
         .def_readwrite("wo", &RaySample::wo)
         .def_readwrite("weight", &RaySample::weight)
-        .def("ray", &RaySample::ray, PYLM_SCOPED_RELEASE);
+        .def("ray", &RaySample::ray);
 
     class Scene_Py final : public Scene {
         virtual bool construct(const Json& prop) override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD(bool, Scene, construct, prop);
         }
         virtual bool renderable() const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(bool, Scene, renderable);
         }
         virtual bool loadPrimitive(Mat4 transform, const Json& prop) override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(bool, Scene, loadPrimitive, transform, prop);
         }
         virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(void, Scene, foreachTriangle, processTriangle);
         }
         virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(void, Scene, foreachPrimitive, processPrimitive);
         }
         virtual void build(const std::string& name, const Json& prop) override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
         }
         virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin, Float tmax) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(std::optional<SurfacePoint>, Scene, intersect, ray, tmin, tmax);
         }
         virtual bool isLight(const SurfacePoint& sp) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(bool, Scene, isLight, sp);
         }
         virtual bool isSpecular(const SurfacePoint& sp) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(bool, Scene, isSpecular, sp);
         }
         virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(Ray, Scene, primaryRay, rp, aspectRatio);
         }
         virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleRay, rng, sp, wi);
         }
         virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, samplePrimaryRay, rng, window, aspectRatio);
         }
         virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleLight, rng, sp);
         }
         virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, wi, wo);
         }
         virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdfLight, sp, spL, wo);
         }
         virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalBsdf, sp, wi, wo);
         }
         virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrbEndpoint, sp, wo);
         }
         virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp);
         }
     };
     pybind11::class_<Scene, Scene_Py, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
-        .def("loadPrimitive", &Scene::loadPrimitive, PYLM_SCOPED_RELEASE)
-        .def("foreachTriangle", &Scene::foreachTriangle, PYLM_SCOPED_RELEASE)
-        .def("foreachPrimitive", &Scene::foreachPrimitive, PYLM_SCOPED_RELEASE)
-        .def("build", &Scene::build, PYLM_SCOPED_RELEASE)
-        .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf, PYLM_SCOPED_RELEASE)
-        .def("isLight", &Scene::isLight, PYLM_SCOPED_RELEASE)
-        .def("isSpecular", &Scene::isSpecular, PYLM_SCOPED_RELEASE)
-        .def("primaryRay", &Scene::primaryRay, PYLM_SCOPED_RELEASE)
-        .def("sampleRay", &Scene::sampleRay, PYLM_SCOPED_RELEASE)
-        .def("samplePrimaryRay", &Scene::samplePrimaryRay, PYLM_SCOPED_RELEASE)
-        .def("evalContrbEndpoint", &Scene::evalContrbEndpoint, PYLM_SCOPED_RELEASE)
-        .def("reflectance", &Scene::reflectance, PYLM_SCOPED_RELEASE)
+        .def("loadPrimitive", &Scene::loadPrimitive)
+        .def("foreachTriangle", &Scene::foreachTriangle)
+        .def("foreachPrimitive", &Scene::foreachPrimitive)
+        .def("build", &Scene::build)
+        .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
+        .def("isLight", &Scene::isLight)
+        .def("isSpecular", &Scene::isSpecular)
+        .def("primaryRay", &Scene::primaryRay)
+        .def("sampleRay", &Scene::sampleRay)
+        .def("samplePrimaryRay", &Scene::samplePrimaryRay)
+        .def("evalContrbEndpoint", &Scene::evalContrbEndpoint)
+        .def("reflectance", &Scene::reflectance)
         .PYLM_DEF_COMP_BIND(Scene);
+
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // renderer.h
+    #pragma region renderer.h
     class Renderer_Py final : public Renderer {
+        PYLM_SERIALIZE_IMPL(Renderer)
         virtual bool construct(const Json& prop) override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD(bool, Renderer, construct, prop);
         }
         virtual void render(const Scene* scene) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD_PURE(void, Renderer, render, scene);
         }
     };
     pybind11::class_<Renderer, Renderer_Py, Component::Ptr<Renderer>>(m, "Renderer")
         .def(pybind11::init<>())
-        .def("render", &Renderer::render, PYLM_SCOPED_RELEASE)
+        .def("render", &Renderer::render)
         .PYLM_DEF_COMP_BIND(Renderer);
+    #pragma endregion
 
     // ------------------------------------------------------------------------
 
-    // material.h
+    #pragma region material.h
 
     pybind11::class_<MaterialDirectionSample>(m, "MaterialDirectionSample")
         .def(pybind11::init<>())
@@ -530,38 +539,34 @@ static void bind(pybind11::module& m) {
 
     class Material_Py final : public Material {
         virtual bool construct(const Json& prop) override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD(bool, Material, construct, prop);
         }
         virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD(bool, Material, isSpecular, geom, comp);
         }
         virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD(std::optional<MaterialDirectionSample>, Material, sample, rng, geom, wi);
         }
         virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD(std::optional<Vec3>, Material, reflectance, geom, comp);
         }
         virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD(Float, Material, pdf, geom, comp, wi, wo);
         }
         virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-            PYLM_ACQUIRE_GIL();
             PYBIND11_OVERLOAD(Vec3, Material, eval, geom, comp, wi, wo);
         }
     };
     pybind11::class_<Material, Material_Py, Component::Ptr<Material>>(m, "Material")
         .def(pybind11::init<>())
-        .def("isSpecular", &Material::isSpecular, PYLM_SCOPED_RELEASE)
-        .def("sample", &Material::sample, PYLM_SCOPED_RELEASE)
-        .def("reflectance", &Material::reflectance, PYLM_SCOPED_RELEASE)
-        .def("pdf", &Material::pdf, PYLM_SCOPED_RELEASE)
-        .def("eval", &Material::eval, PYLM_SCOPED_RELEASE)
+        .def("isSpecular", &Material::isSpecular)
+        .def("sample", &Material::sample)
+        .def("reflectance", &Material::reflectance)
+        .def("pdf", &Material::pdf)
+        .def("eval", &Material::eval)
         .PYLM_DEF_COMP_BIND(Material);
+
+    #pragma endregion
 }
 
 // ----------------------------------------------------------------------------

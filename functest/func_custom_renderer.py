@@ -15,7 +15,7 @@
 
 # ## Custom renderer
 #
-# This test demostrates how to create an custom material from python side.
+# This test demostrates how to create an custom renderer from python side.
 
 # %load_ext autoreload
 # %autoreload 2
@@ -70,9 +70,9 @@ class Renderer_AO(lm.Renderer):
             V /= self.spp
             self.film.setPixel(x, y, np.full(3, V))
             lm.progress.update(y*w+x)
-        for index in range(w*h):
-            process(index, 0)
-        #lm.parallel.foreach(w*h, process)
+#         for index in range(w*h):
+#             process(index, 0)
+        lm.parallel.foreach(w*h, process)
         lm.progress.end()
 
 

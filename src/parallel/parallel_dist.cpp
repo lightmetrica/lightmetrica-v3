@@ -40,7 +40,7 @@ public:
         });
 
         // Execute tasks
-        const long long WorkSize = 1000000;
+        const long long WorkSize = 10000;
         const long long Iter = (numSamples + WorkSize - 1) / WorkSize;
         for (long long i = 0; i < Iter; i++) {
             const long long start = i * WorkSize;

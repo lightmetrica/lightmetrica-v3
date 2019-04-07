@@ -14,7 +14,7 @@
 #include <lm/progress.h>
 #include <zmq.hpp>
 
-#define LM_NET_MONITOR_SOCKET 1
+#define LM_DIST_MONITOR_SOCKET 1
 
 // ----------------------------------------------------------------------------
 
@@ -22,20 +22,34 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::dist)
 
 using namespace std::chrono_literals;
 
-// Shared command distributed to workers
-enum class WorkerCommand {
+// Shared commands
+
+// master -> worker, PUB
+enum class PubToWorkerCommand {
     workerinfo,
     sync,
     processCompleted,
     gatherFilm,
 };
 
-// Shared command for return value from workers
-enum class WorkerResultCommand {
+// master -> worker, PUSH
+enum class PushToWorkerCommand {
+    processWorkerTask,
+};
+
+// worker -> master, REQ
+enum class ReqToMasterCommand {
+    notifyConnection,
+};
+
+// worker -> master, PUSH
+enum class PushToMasterCommand {
     workerinfo,
     processFunc,
     gatherFilm,
 };
+
+// ----------------------------------------------------------------------------
 
 // Worker information
 struct WorkerInfo {
@@ -47,7 +61,7 @@ struct WorkerInfo {
     }
 };
 
-#if LM_NET_MONITOR_SOCKET
+#if LM_DIST_MONITOR_SOCKET
 class SocketMonitor final : public zmq::monitor_t {
 private:
     std::string name_;
@@ -93,6 +107,33 @@ public:
 
 // ----------------------------------------------------------------------------
 
+// User-define serialization funciton
+using SerializeFunc = std::function<void(std::ostream& os)>;
+
+// Send command with user-defined serialization
+template <typename CommandType>
+void sendFunc(zmq::socket_t& socket, CommandType command, const SerializeFunc& serialize) {
+    std::ostringstream ss;
+    lm::serial::save(ss, command);
+    serialize(ss);
+    const auto str = ss.str();
+    socket.send(zmq::message_t(str.data(), str.size()));
+}
+
+// Send command with arbitrary parameters
+template <typename CommandType, typename... Ts>
+void send(zmq::socket_t& socket, CommandType command, Ts&&... args) {
+    sendFunc(socket, command, [&](std::ostream& os) {
+        // This prevents unused argument warning when sizeof..(args) == 0
+        LM_UNUSED(os);
+        if constexpr (sizeof...(args) > 0) {
+            lm::serial::save(os, std::forward<Ts>(args)...);
+        }
+    });
+}
+
+// ----------------------------------------------------------------------------
+
 class DistMasterContext_ final : public DistMasterContext {
 private:
     int port_;
@@ -101,7 +142,7 @@ private:
     std::unique_ptr<zmq::socket_t> pullSocket_;
     std::unique_ptr<zmq::socket_t> pubSocket_;
     std::unique_ptr<zmq::socket_t> repSocket_;
-    #if LM_NET_MONITOR_SOCKET
+    #if LM_DIST_MONITOR_SOCKET
     SocketMonitor monitor_repSocket_;
     #endif
     WorkerTaskFinishedFunc onWorkerTaskFinished_;
@@ -110,12 +151,13 @@ private:
     std::condition_variable gatherFilmCond_;
     long long gatherFilmSync_;
     std::thread eventLoopThread_;
-    bool done_ = false;     // True if the event loop is finished
+    bool done_ = false;                 // True if the event loop is finished
+    bool allowWorkerConnection_ = true; // True if master allows new connections by workers
 
 public:
     DistMasterContext_()
         : context_(1)
-        #if LM_NET_MONITOR_SOCKET
+        #if LM_DIST_MONITOR_SOCKET
         , monitor_repSocket_("rep")
         #endif
     {}
@@ -152,7 +194,7 @@ public:
             repSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_REP);
             pullSocket_->bind(fmt::format("tcp://*:{}", port_ + 1));
             repSocket_->bind(fmt::format("tcp://*:{}", port_ + 3));
-            #if LM_NET_MONITOR_SOCKET
+            #if LM_DIST_MONITOR_SOCKET
             monitor_repSocket_.init(*repSocket_, "inproc://monitor_rep", ZMQ_EVENT_ALL);
             #endif
 
@@ -164,7 +206,7 @@ public:
                 { (void*)*repSocket_, 0, ZMQ_POLLIN, 0 },
             };
             while (!done_) {
-                #if LM_NET_MONITOR_SOCKET
+                #if LM_DIST_MONITOR_SOCKET
                 // Monitor socket
                 monitor_repSocket_.check_event();
                 #endif
@@ -180,25 +222,24 @@ public:
                     std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
                     // Extract command
-                    WorkerResultCommand command;
+                    PushToMasterCommand command;
                     lm::serial::load(is, command);
 
                     // Process command
-                    if (command == WorkerResultCommand::workerinfo) {
+                    if (command == PushToMasterCommand::workerinfo) {
                         WorkerInfo info;
                         lm::serial::load(is, info);
                         LM_INFO("Worker [name='{}']", info.name);
                     }
-                    else if (command == WorkerResultCommand::processFunc) {
+                    else if (command == PushToMasterCommand::processFunc) {
                         long long processed;
                         lm::serial::load(is, processed);
                         onWorkerTaskFinished_(processed);
                     }
-                    else if (command == WorkerResultCommand::gatherFilm) {
+                    else if (command == PushToMasterCommand::gatherFilm) {
                         long long numProcessedTasks;
                         std::string filmloc;
-                        lm::serial::load(is, numProcessedTasks);
-                        lm::serial::load(is, filmloc);
+                        lm::serial::load(is, numProcessedTasks, filmloc);
                         Component::Ptr<Film> workerFilm;
                         lm::serial::load(is, workerFilm);
                         auto* film = lm::comp::get<Film>(filmloc);
@@ -210,15 +251,19 @@ public:
                 }
 
                 // REP socket
-                if (items[1].revents & ZMQ_POLLIN) {
+                if ((items[1].revents & ZMQ_POLLIN) && allowWorkerConnection_) {
                     zmq::message_t mes;
                     repSocket_->recv(&mes);
                     std::istringstream is(std::string(mes.data<char>(), mes.size()));
-                    WorkerInfo info;
-                    lm::serial::load(is, info);
-                    LM_INFO("Connected worker [name='{}']", info.name);
-                    zmq::message_t ok;
-                    repSocket_->send(ok);
+                    ReqToMasterCommand command;
+                    lm::serial::load(is, command);
+                    if (command == ReqToMasterCommand::notifyConnection) {
+                        WorkerInfo info;
+                        lm::serial::load(is, info);
+                        LM_INFO("Connected worker [name='{}']", info.name);
+                        zmq::message_t ok;
+                        repSocket_->send(ok);
+                    }
                 }
             }
         });
@@ -228,19 +273,18 @@ public:
 
 public:
     virtual void printWorkerInfo() override {
-        std::ostringstream os;
-        lm::serial::save(os, WorkerCommand::workerinfo);
-        const auto str = os.str();
-        pubSocket_->send(zmq::message_t(str.data(), str.size()));
+        send(*pubSocket_, PubToWorkerCommand::workerinfo);
+    }
+
+    virtual void allowWorkerConnection(bool allow) override {
+        allowWorkerConnection_ = allow;
     }
 
     virtual void sync() override {
         // Synchronize internal state and dispatch rendering in worker process
-        std::stringstream ss;
-        lm::serial::save(ss, WorkerCommand::sync);
-        lm::serialize(ss);
-        const auto str = ss.str();
-        pubSocket_->send(zmq::message_t(str.data(), str.size()));
+        sendFunc(*pubSocket_, PubToWorkerCommand::sync, [&](std::ostream& os) {
+            lm::serialize(os);
+        });
     }
 
     virtual void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) override {
@@ -252,19 +296,12 @@ public:
             // Reset the issued task
             numIssuedTasks_ = 0;
         }
-        std::stringstream ss;
-        lm::serial::save(ss, start);
-        lm::serial::save(ss, end);
-        const auto str = ss.str();
-        pushSocket_->send(zmq::message_t(str.data(), str.size()));
+        send(*pushSocket_, PushToWorkerCommand::processWorkerTask, start, end);
         numIssuedTasks_++;
     }
 
     virtual void notifyProcessCompleted() override  {
-        std::stringstream ss;
-        lm::serial::save(ss, WorkerCommand::processCompleted);
-        const auto str = ss.str();
-        pubSocket_->send(zmq::message_t(str.data(), str.size()));
+        send(*pubSocket_, PubToWorkerCommand::processCompleted);
     }
 
     virtual void gatherFilm(const std::string& filmloc) override {
@@ -273,11 +310,7 @@ public:
         lm::comp::get<Film>(filmloc)->clear();
 
         // Send command
-        std::stringstream ss;
-        lm::serial::save(ss, WorkerCommand::gatherFilm);
-        lm::serial::save(ss, filmloc);
-        const auto str = ss.str();
-        pubSocket_->send(zmq::message_t(str.data(), str.size()));
+        send(*pubSocket_, PubToWorkerCommand::gatherFilm, filmloc);
 
         // Synchronize
         progress::ScopedReport progress_(numIssuedTasks_);
@@ -307,6 +340,10 @@ LM_PUBLIC_API void printWorkerInfo() {
     Instance::get().printWorkerInfo();
 }
 
+LM_PUBLIC_API void allowWorkerConnection(bool allow) {
+    Instance::get().allowWorkerConnection(allow);
+}
+
 LM_PUBLIC_API void sync() {
     Instance::get().sync();
 }
@@ -333,8 +370,6 @@ LM_NAMESPACE_END(LM_NAMESPACE::dist)
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::dist::worker)
 
-//std::atomic<bool> interrupted_ = false;
-
 class DistWorkerContext_ final : public DistWorkerContext {
 private:
     zmq::context_t context_;
@@ -343,7 +378,7 @@ private:
     std::unique_ptr<zmq::socket_t> subSocket_;
     std::unique_ptr<zmq::socket_t> reqSocket_;
     std::string name_;
-    #if LM_NET_MONITOR_SOCKET
+    #if LM_DIST_MONITOR_SOCKET
     SocketMonitor monitor_reqSocket_;
     #endif
     NetWorkerProcessFunc processFunc_;
@@ -354,7 +389,7 @@ private:
 public:
     DistWorkerContext_()
         : context_(1)
-        #if LM_NET_MONITOR_SOCKET
+        #if LM_DIST_MONITOR_SOCKET
         , monitor_reqSocket_("req")
         #endif
     {}
@@ -365,24 +400,11 @@ public:
         const auto address = json::value<std::string>(prop, "address");
         const auto port = json::value<int>(prop, "port");
 
-        // Create thread
-        pullSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PULL);
-        pushSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUSH);
-        subSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_SUB);
+        // First try to connect only with REQ socket.
+        // Once a connection is established, connect with other sockets.
         reqSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_REQ);
-
-        // Connect
-        LM_INFO("Connecting [addr='{}', port='{}']", address, port);
-        pullSocket_->connect(fmt::format("tcp://{}:{}", address, port));
-        pushSocket_->connect(fmt::format("tcp://{}:{}", address, port+1));
-        subSocket_->connect(fmt::format("tcp://{}:{}", address, port+2));
-        subSocket_->setsockopt(ZMQ_SUBSCRIBE, "", 0);
         reqSocket_->connect(fmt::format("tcp://{}:{}", address, port+3));
-
-        // Initialize parallel subsystem
-        parallel::init("parallel::distworker", prop);
-
-        #if LM_NET_MONITOR_SOCKET
+        #if LM_DIST_MONITOR_SOCKET
         // Register monitors
         monitor_reqSocket_.init(*reqSocket_, "inproc://monitor_req", ZMQ_EVENT_ALL);
         #endif
@@ -390,17 +412,29 @@ public:
         // Synchronize
         // This is necessary to avoid missing initial messages of PUB-SUB connection.
         // cf. http://zguide.zeromq.org/page:all#Node-Coordination
-        {
+        while (true) {
             // Send worker information
-            WorkerInfo info{ name_ };
-            std::ostringstream os;
-            lm::serial::save(os, info);
-            const auto str = os.str();
-            reqSocket_->send(zmq::message_t(str.data(), str.size()));
+            send(*reqSocket_, ReqToMasterCommand::notifyConnection, WorkerInfo{ name_ });
             zmq::message_t mes;
-            reqSocket_->recv(&mes);
-            LM_INFO("Connected");
+            if (reqSocket_->recv(&mes)) {
+                break;
+            }
         }
+
+        // Create sockets
+        pullSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PULL);
+        pushSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUSH);
+        subSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_SUB);
+
+        // Connect
+        LM_INFO("Connecting [addr='{}', port='{}']", address, port);
+        pullSocket_->connect(fmt::format("tcp://{}:{}", address, port));
+        pushSocket_->connect(fmt::format("tcp://{}:{}", address, port+1));
+        subSocket_->connect(fmt::format("tcp://{}:{}", address, port+2));
+        subSocket_->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+
+        // Initialize parallel subsystem
+        parallel::init("parallel::distworker", prop);
 
         return true;
     }
@@ -420,7 +454,7 @@ public:
             { (void*)*subSocket_, 0, ZMQ_POLLIN, 0 },
         };
         while (true) {
-            #if LM_NET_MONITOR_SOCKET
+            #if LM_DIST_MONITOR_SOCKET
             // Monitor socket
             monitor_reqSocket_.check_event();
             #endif
@@ -438,26 +472,25 @@ public:
                 // Receive message
                 zmq::message_t mes;
                 pullSocket_->recv(&mes);
-
-                // Arguments
                 std::istringstream is(std::string(mes.data<char>(), mes.size()));
-                long long start;
-                lm::serial::load(is, start);
-                long long end;
-                lm::serial::load(is, end);
-                
-                // Process a task
-                numProcessedTasks_++;
-                processFunc_(start, end);
 
-                // Notify completion
-                // Send processed number of samples
-                {
-                    std::ostringstream os;
-                    lm::serial::save(os, WorkerResultCommand::processFunc);
-                    lm::serial::save(os, end - start);
-                    const auto str = os.str();
-                    pushSocket_->send(zmq::message_t(str.data(), str.size()));
+                // Extract command
+                PushToWorkerCommand command;
+                lm::serial::load(is, command);
+
+                if (command == PushToWorkerCommand::processWorkerTask) {
+                    // Arguments
+                    long long start;
+                    long long end;
+                    lm::serial::load(is, start, end);
+                
+                    // Process a task
+                    numProcessedTasks_++;
+                    processFunc_(start, end);
+
+                    // Notify completion
+                    // Send processed number of samples
+                    send(*pushSocket_, PushToMasterCommand::processFunc, end - start);
                 }
             }();
 
@@ -469,19 +502,14 @@ public:
                 std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
                 // Extract command
-                WorkerCommand command;
+                PubToWorkerCommand command;
                 lm::serial::load(is, command);
 
                 // Process commands
-                if (command == WorkerCommand::workerinfo) {
-                    WorkerInfo info{ name_ };
-                    std::ostringstream os;
-                    lm::serial::save(os, WorkerResultCommand::workerinfo);
-                    lm::serial::save(os, info);
-                    const auto str = os.str();
-                    pushSocket_->send(zmq::message_t(str.data(), str.size()));
+                if (command == PubToWorkerCommand::workerinfo) {
+                    send(*pushSocket_, PushToMasterCommand::workerinfo, WorkerInfo{ name_ });
                 }
-                else if (command == WorkerCommand::sync) {
+                else if (command == PubToWorkerCommand::sync) {
                     lm::deserialize(is);
 
                     // Dispatch renderer in the different thread
@@ -490,22 +518,19 @@ public:
                         lm::render();
                     });
                 }
-                else if (command == WorkerCommand::processCompleted) {;
+                else if (command == PubToWorkerCommand::processCompleted) {;
                     processCompletedFunc_();
                     renderThread_.join();
                     processFunc_ = {};
                     processCompletedFunc_ = {};
                 }
-                else if (command == WorkerCommand::gatherFilm) {
+                else if (command == PubToWorkerCommand::gatherFilm) {
                     std::string filmloc;
                     lm::serial::load(is, filmloc);
-                    std::ostringstream os;
-                    lm::serial::save(os, WorkerResultCommand::gatherFilm);
-                    lm::serial::save(os, numProcessedTasks_);
-                    lm::serial::save(os, filmloc);
-                    lm::serial::saveOwned(os, lm::comp::get<Film>(filmloc));
-                    const auto str = os.str();
-                    pushSocket_->send(zmq::message_t(str.data(), str.size()));
+                    sendFunc(*pushSocket_, PushToMasterCommand::gatherFilm, [&](std::ostream& os) {
+                        lm::serial::save(os, numProcessedTasks_, filmloc);
+                        lm::serial::saveOwned(os, lm::comp::get<Film>(filmloc));
+                    });
                 }
             }
         }
