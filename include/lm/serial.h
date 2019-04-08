@@ -236,7 +236,7 @@ void load(std::istream& is, Ts&... v) {
 template <typename T>
 void save(const std::string& path, T&& v) {
     std::ofstream os(path, std::ios::out | std::ios::binary);
-    save(os, std::foward<T>(v));
+    save(os, std::forward<T>(v));
 }
 
 /*!
