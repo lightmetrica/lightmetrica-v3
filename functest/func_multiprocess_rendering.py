@@ -96,7 +96,7 @@ os.getpid()
 #     try:
 #         lm.init('user::default', {})
 #         lm.info()
-#         #lm.log.setSeverity(1000)
+#         lm.log.setSeverity(1000)
 #         lm.log.log(lm.log.LogLevel.Err, lm.log.LogLevel.Info, '', 0, 'pid={}'.format(os.getpid()))
 #         lm.dist.worker.init('dist::worker::default', {
 #             'name': uuid.uuid4().hex,
