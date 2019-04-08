@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import platform
 import lightmetrica as lm
 
-def jupyter_init_config():
+def jupyter_init_config(outfilm):
     """ init() configuration for jupyter notebook extension """
     return {
         # Configure logger for jupyter notebook
@@ -29,7 +29,7 @@ def jupyter_init_config():
                         'delay': 1000,
                         'progress': {
                             'progress::film_jupyter': {
-                                'film': 'film1',
+                                'film': outfilm,
                                 'size': [10,5]
                             }
                         }
@@ -54,13 +54,14 @@ def load_ipython_extension(ip):
         """Logger for jupyter notebook"""
         def construct(self, prop):
             self.severity = 0
+            self.n = 0
             return True
         def log(self, level, severity, filename, line, message):
             if self.severity > severity:
                 return
-            print(message)
+            print((' ' * self.n * 2) + message)
         def updateIndentation(self, n):
-            pass
+            self.n = n
         def setSeverity(self, severity):
             self.severity = severity
         

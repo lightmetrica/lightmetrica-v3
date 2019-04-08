@@ -41,7 +41,7 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        color_ = json::valueOr<bool>(prop, "color", true);
+        color_ = json::value(prop, "color", true);
         return true;
     }
 

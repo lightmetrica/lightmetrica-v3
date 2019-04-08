@@ -13,18 +13,12 @@
 #include <stb_image.h>
 #pragma warning(pop)
 
-#if LM_PLATFORM_WINDOWS
-std::string sanitizeDirectorySeparator(std::string p) {
-    return p;
-}
-#else
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
 std::string sanitizeDirectorySeparator(std::string p) {
     std::replace(p.begin(), p.end(), '\\', '/');
     return p;
 }
-#endif
-
-LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Texture_Bitmap final : public Texture {
 private:
@@ -35,7 +29,7 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(w_, h_, data_);
+        ar(w_, h_, c_, data_);
     }
 
 public:
@@ -46,9 +40,11 @@ public:
     virtual bool construct(const Json& prop) override {
         // Image path
         const std::string path = sanitizeDirectorySeparator(prop["path"]);
+        LM_INFO("Loading texture [path='{}']", path);
 
         // Load as HDR image
         // LDR image is internally converted to HDR
+        stbi_set_flip_vertically_on_load(true);
         float* data = stbi_loadf(path.c_str(), &w_, &h_, &c_, 0);
         if (data == nullptr) {
             LM_ERROR("Failed to load image: {} [path='{}']", stbi_failure_reason(), path);

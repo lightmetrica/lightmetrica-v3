@@ -34,8 +34,8 @@ public:
         ar(envmap_, rot_, dist_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
-        comp::visit(visit, envmap_);
+    virtual void foreachUnderlying(const ComponentVisitor& visitor) override {
+        comp::visit(visitor, envmap_);
     }
 
 public:
@@ -44,7 +44,7 @@ public:
         if (!envmap_) {
             return false;
         }
-        rot_ = glm::radians(json::valueOr<Float>(prop, "rot", 0_f));
+        rot_ = glm::radians(json::value(prop, "rot", 0_f));
         const auto [w, h] = envmap_->size();
         std::vector<Float> ls(w * h);
         for (int i = 0; i < w*h; i++) {

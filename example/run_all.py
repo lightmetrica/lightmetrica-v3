@@ -93,19 +93,3 @@ execute_example('custom_renderer', [
     4.167568, 1.078925, -2.397892,
     43.001194
 ])
-execute_example('serialization', [
-    os.path.join(args.scene, 'fireplace_room/fireplace_room.obj'),
-    os.path.join(args.outdir, 'serialization_fireplace_room.pfm'),
-    args.width, args.height,
-    5.101118, 1.083746, -2.756308,
-    4.167568, 1.078925, -2.397892,
-    43.001194
-])
-execute_example('serialization', [
-    os.path.join(args.scene, 'cornell_box/CornellBox-Sphere.obj'),
-    os.path.join(args.outdir, 'serialization_cornell_box.pfm'),
-    args.width, args.height,
-    0, 1, 5,
-    0, 1, 0,
-    30
-])

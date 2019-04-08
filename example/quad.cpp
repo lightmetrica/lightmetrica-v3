@@ -9,9 +9,11 @@ int main(int argc, char** argv) {
     try {
         // Initialize the framework
         // _begin_init
-        lm::init("user::default", {
+        lm::init();
+        lm::parallel::init(lm::parallel::DefaultType, {
             {"numThreads", -1}
         });
+        lm::info();
         // _end_init
 
         // Parse command line arguments
@@ -31,7 +33,7 @@ int main(int argc, char** argv) {
 
         // Pinhole camera
         lm::asset("camera1", "camera::pinhole", {
-            {"film", "film1"},
+            {"film", lm::asset("film1")},
             {"position", {0,0,5}},
             {"center", {0,0,0}},
             {"up", {0,1,0}},
@@ -62,12 +64,14 @@ int main(int argc, char** argv) {
 
         // _begin_primitive
         // Camera
-        lm::primitive(lm::Mat4(1), {{"camera", "camera1"}});
+        lm::primitive(lm::Mat4(1), {
+            {"camera", lm::asset("camera1")}
+        });
 
         // Mesh
         lm::primitive(lm::Mat4(1), {
-            {"mesh", "mesh1"},
-            {"material", "material1"}
+            {"mesh", lm::asset("mesh1")},
+            {"material", lm::asset("material1")}
         });
         // _end_primitive
 
@@ -77,13 +81,13 @@ int main(int argc, char** argv) {
         // _begin_render
         lm::build("accel::sahbvh");
         lm::render("renderer::raycast", {
-            {"output", "film1"},
+            {"output", lm::asset("film1")},
             {"color", {0,0,0}}
         });
         // _end_render
 
         // Save rendered image
-        lm::save("film1", opt["out"]);
+        lm::save(lm::asset("film1"), opt["out"]);
 
         // Shutdown the framework
         lm::shutdown();

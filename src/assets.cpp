@@ -21,9 +21,9 @@ public:
         ar(assetIndexMap_, assets_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreachUnderlying(const ComponentVisitor& visitor) override {
         for (auto& asset : assets_) {
-            comp::visit(visit, asset);
+            comp::visit(visitor, asset);
         }
     }
 
@@ -36,28 +36,22 @@ private:
 
 public:
     virtual Component* underlying(const std::string& name) const override {
-        // Take first element inside `name`
-        const auto [s, r] = comp::splitFirst(name);
-
-        // Finds underlying asset
-        auto it = assetIndexMap_.find(s);
+        auto it = assetIndexMap_.find(name);
         if (it == assetIndexMap_.end()) {
+            LM_ERROR("Invalid asset name [name='{}']", name);
             return nullptr;
         }
-
-        // Try to find nested asset. If not found, return as it is.
-        auto* comp = assets_.at(it->second).get();
-        return r.empty() ? comp : comp->underlying(r);
+        return assets_.at(it->second).get();
     }
 
-    virtual bool loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
+    virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
         LM_INFO("Loading asset [name='{}']", name);
         LM_INDENT();
 
         // Check if asset name is valid
         if (!validAssetName(name)) {
             LM_ERROR("Invalid asset name [name='{}']", name);
-            return false;
+            return {};
         }
 
         // Check if the asset with given name has been already loaded
@@ -70,12 +64,12 @@ public:
         // Create an instance of the asset
         auto p = comp::create<Component>(implKey, makeLoc(loc(), name));
         if (!p) {
-            LM_ERROR("Failed to create component [name='{}', key='{}']", name, implKey);
-            return false;
+            LM_ERROR("Failed to create an asset [name='{}', key='{}']", name, implKey);
+            return {};
         }
 
         // Register created asset
-        // Note that this must happen before construct() because
+        // Note that the registration must happen before construct() because
         // the instance could be accessed by underlying() while initialization.
         Component* asset;
         if (found) {
@@ -88,8 +82,15 @@ public:
             assets_[it->second] = std::move(p);
             asset = assets_[it->second].get();
 
+            // Initialize the asset
+            if (!asset->construct(prop)) {
+                LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
+                assets_.pop_back();
+                return {};
+            }
+
             // Notify to update the weak references in the object tree
-            const lm::Component::ComponentVisitor visit = [&](lm::Component*& comp, bool weak) {
+            const lm::Component::ComponentVisitor visitor = [&](lm::Component*& comp, bool weak) {
                 if (!comp) {
                     return;
                 }
@@ -98,29 +99,29 @@ public:
                     return;
                 }
                 if (!weak) {
-                    comp->foreachUnderlying(visit);
+                    comp->foreachUnderlying(visitor);
                 }
                 else {
                     comp::updateWeakRef(comp);
                 }
             };
-            comp::detail::foreachComponent(visit);
+            comp::get<lm::Component>("$")->foreachUnderlying(visitor);
         }
         else {
             // Register as a new asset
             assetIndexMap_[name] = int(assets_.size());
             assets_.push_back(std::move(p));
             asset = assets_.back().get();
+
+            // Initialize the asset
+            if (!asset->construct(prop)) {
+                LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
+                assets_.pop_back();
+                return {};
+            }
         }
 
-        // Initialize the asset
-        if (!asset->construct(prop)) {
-            LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
-            assets_.pop_back();
-            return false;
-        }
-
-        return true;
+        return asset->loc();
     }
 };
 

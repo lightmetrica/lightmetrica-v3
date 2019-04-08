@@ -17,7 +17,8 @@ matrix:
           - doxygen
           - graphviz
     install:
-      - pip install sphinx sphinx_rtd_theme breathe sphinx_tabs
+      # We need sphinx<2 because breathe doesn't support breathe 2
+      - pip install 'sphinx<2' sphinx_rtd_theme breathe sphinx_tabs
     script:
       - |
         cd doc
@@ -68,7 +69,10 @@ matrix:
       choco install openssl.light
       choco install miniconda3
       export PATH="/c/Tools/miniconda3/Scripts:$PATH"
-      conda update -y -n base -c defaults conda
+      # Calling activate command with conda>=4.6.9 in bash on Windows is not working.
+      # For workaround, we stick to 4.6.8.
+      # https://github.com/conda/conda/issues/8506
+      conda install -y -n base conda=4.6.8
       conda create -y -n lm3 python=3.6 
       source activate lm3
       conda install -y pytest numpy

@@ -20,14 +20,26 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Result of sampleRay functions.
+    \brief Result of ray sampling.
+
+    \rst
+    This structure represents the result of ray sampling
+    used by the functions of :cpp:class:`lm::Scene` class.
+    \endrst
 */
 struct RaySample {
-    SurfacePoint sp;   // Surface point information
-    Vec3 wo;           // Sampled direction
-    Vec3 weight;       // Contribution divided by probability
+    SurfacePoint sp;   //!< Surface point information.
+    Vec3 wo;           //!< Sampled direction.
+    Vec3 weight;       //!< Contribution divided by probability.
 
-    // Get a ray from the sample
+    /*!
+        \brief Get a ray from the sample.
+        
+        \rst
+        This function constructs a :cpp:class:`lm::Ray`
+        structure from the ray sample.
+        \endrst
+    */
     Ray ray() const {
         assert(!sp.geom.infinite);
         return { sp.geom.p, wo };
@@ -38,14 +50,42 @@ struct RaySample {
 
 /*!
     \brief Scene primitive.
+
+    \rst
+    This structure represents a scene primitive. The scene is described by a set of primitives
+    and a primitive describes an object in the scene,
+    which associates various scene components like mesh or material.
+    A primitive can represent three types of scene objects.
+
+    (1) *Scene geometry*.
+        If ``mesh != nullptr`` and ``material != nullptr``,
+        the structure describes a geometry in the scene,
+        represented by an association of a mesh and a material.
+        A transformation is applied to the mesh.
+
+    (2) *Light*.
+        If ``light != nullptr``, the structure describes a light in the scene.
+        Note that a light can also be a scene geometry, such as area lights.
+
+    (3) *Camera*.
+        If ``camera != nullptr``, the structure describes a camera in the scene.
+        Note that a camera and a light cannot be the same primitive,
+        that is, ``light`` and ``camera`` cannot be non-``nullptr`` in the same time.
+
+    A set of primitives is managed internally by the implementation of :cpp:class:`lm::Scene`
+    and the class exposes a facade for the sampling and evaluation functions
+    for the underlying component interfaces.
+    Thus the users usually do not need to explicitly access the underlying
+    component interfaces of a primitive.
+    \endrst
 */
 struct Primitive {
-    int index;                     // Primitive index
-    Transform transform;           // Transform associated to the primitive
-    Mesh* mesh = nullptr;          // Underlying assets
-    Material* material = nullptr;
-    Light* light = nullptr;
-    Camera* camera = nullptr;
+    int index;                      //!< Primitive index.
+    Transform transform;            //!< Transformation associated to the primitive.
+    Mesh* mesh = nullptr;           //!< Underlying mesh.
+    Material* material = nullptr;   //!< Underlying material.
+    Light* light = nullptr;         //!< Underlying light.
+    Camera* camera = nullptr;       //!< Underlying camera.
 
     template <typename Archive>
     void serialize(Archive& ar) {
@@ -57,25 +97,68 @@ struct Primitive {
 
 /*!
     \brief Scene.
+
+    \rst
+    This class represent a component interface for a scene.
+    A scene is responsible for sampling of a ray emitted from a point inside a scene,
+    evaluation of directional terms given a point in the scene,
+    ray-scene intersection, visibility query, etc.
+    The class is a basic building block to construct your own renderer.
+    For detail, see TODO.
+    \endrst
 */
 class Scene : public Component {
 public:
     /*!
-        \brief Load a scene primitive.
+        \brief Check if the scene is renderable.
+
+        \rst
+        This function returns true if the scene is renderable.
+        If not, the function returns false with error messages.
+        \endrst
     */
-    virtual bool loadPrimitive(
-        const Component& assetGroup, Mat4 transform, const Json& prop) = 0;
+    virtual bool renderable() const = 0;
 
     /*!
-        \brief Create primitives from a model.
+        \brief Load scene primitive(s).
+        \param transform Transformation associated to the primitive.
+        \param prop Property containing references to the scene components.
+
+        \rst
+        This function construct a primitive and add it to the scene
+        given the transformation and the references specified in ``prop``.
+        The type of the primitive created by this function changes according to
+        the properties in ``prop``.
+        The function returns true if the loading is a success.
+        \endrst
     */
-    virtual bool loadPrimitives(
-        const Component& assetGroup, Mat4 transform, const std::string& modelName) = 0;
+    virtual bool loadPrimitive(Mat4 transform, const Json& prop) = 0;
 
     /*!
-        \brief Iterate triangles in the scene.
+        \brief Callback function to process a triangle.
+        \param primitive Primitive index.
+        \param face Face index.
+        \param p1 First position.
+        \param p2 Second position.
+        \param p3 Third position.
+        
+        \rst
+        The function of this type is used as an argument of
+        :cpp:func:`lm::Scene::foreachTriangle` function.
+        \endrst
     */
     using ProcessTriangleFunc = std::function<void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
+
+    /*!
+        \brief Enumerate triangles in the scene.
+        \param processTriangle Callback function to process a triangle.
+
+        \rst
+        This function enumerates triangles of all the transformed meshes in the scene.
+        The specified callback function is called per a triangle.
+        The primitive and face indices associated to the triangle is also given.
+        \endrst
+    */
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const = 0;
 
     /*!
@@ -142,7 +225,7 @@ public:
     /*!
         \brief Generate a primary ray.
     */
-    virtual Ray primaryRay(Vec2 rp) const = 0;
+    virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const = 0;
 
     /*!
         \brief Sample a ray given surface point and incident direction.
@@ -158,7 +241,7 @@ public:
         (x,wo) ~ p(x,wo|raster window)
         \endrst
     */
-    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window) const = 0;
+    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const = 0;
 
     /*!
         \brief Sample a position on a light.

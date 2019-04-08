@@ -18,6 +18,7 @@ def run(**kwargs):
     lm.init('user::default', {
         'numThreads': -1
     })
+    lm.info()
 
     # Define assets
     # _begin_asset
@@ -29,7 +30,7 @@ def run(**kwargs):
 
     # Pinhole camera
     lm.asset('camera1', 'camera::pinhole', {
-        'film': 'film1',
+        'film': lm.asset('film1'),
         'position': kwargs['eye'],
         'center': kwargs['lookat'],
         'up': [0,1,0],
@@ -43,21 +44,25 @@ def run(**kwargs):
     # Define scene primitives
     # _begin_primitives
     # Camera
-    lm.primitive(lm.identity(), {'camera': 'camera1'})
+    lm.primitive(lm.identity(), {
+        'camera': lm.asset('camera1')
+    })
 
     # Create primitives from model asset
-    lm.primitives(lm.identity(), 'obj1')
+    lm.primitive(lm.identity(), {
+        'model': lm.asset('obj1')
+    })
     # _end_primitives
 
     # Render an image
     lm.build('accel::sahbvh', {})
     lm.render('renderer::raycast', {
-        'output': 'film1',
+        'output': lm.asset('film1'),
         'color': [0,0,0]
     })
 
     # Save rendered image
-    lm.save('film1', kwargs['out'])
+    lm.save(lm.asset('film1'), kwargs['out'])
 
     # Shutdown the framework
     lm.shutdown()

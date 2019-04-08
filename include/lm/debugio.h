@@ -18,16 +18,29 @@ LM_NAMESPACE_BEGIN(debugio)
 
 /*!
     \brief Initialize debugio context.
+    \param type Type of debugio subsystem.
+    \param prop Configuration properties.
+
+    \rst
+    This function initializes debugio subsystem with specified type and properties.
+    \endrst
 */
 LM_PUBLIC_API void init(const std::string& type, const Json& prop);
 
 /*!
     \brief Shutdown debugio context.
+    
+    \rst
+    This function shutdowns debugio subsystem.
+    You may consider to use :cpp:class:`lm::debugio::ScopedInit` class if you want to explicitly shutdown
+    the subsystem at the end of the scope, instead of call this function directly.
+    \endrst
 */
 LM_PUBLIC_API void shutdown();
 
 /*!
     \brief Handle a message.
+    \param message Send a message to the server.
 */
 LM_PUBLIC_API void handleMessage(const std::string& message);
 
@@ -43,16 +56,24 @@ LM_PUBLIC_API void syncUserContext();
 
 /*!
     \brief Debugio mesh type.
+
+    \rst
+    This structure represents mesh type for debug visualization,
+    used as an argument of :cpp:func:`lm::debugio::draw` function.
+    \endrst
 */
 enum {
-    Triangles = 1<<0,
-    LineStrip = 1<<1,
-    Lines     = 1<<2,
-    Points    = 1<<3,
+    Triangles = 1<<0,   //!< Triangle mesh.
+    LineStrip = 1<<1,   //!< Line strip.
+    Lines     = 1<<2,   //!< Lines.
+    Points    = 1<<3,   //!< Points.
 };
 
 /*!
     \brief Query drawing to visual debugger.
+    \param type Mesh type.
+    \param color Mesh color.
+    \param vs Mesh vertices.
 */
 LM_PUBLIC_API void draw(int type, Vec3 color, const std::vector<Vec3>& vs);
 
@@ -91,11 +112,23 @@ LM_NAMESPACE_BEGIN(server)
 
 /*!
     \brief Initialize debugio server context.
+    \param type Type of debugio server subsystem.
+    \param prop Configuration properties.
+
+    \rst
+    This function initializes debugio server subsystem with specified type and properties.
+    \endrst
 */
 LM_PUBLIC_API void init(const std::string& type, const Json& prop);
 
 /*!
     \brief Shutdown debugio server context.
+
+    \rst
+    This function shutdowns debugio server subsystem.
+    You may consider to use :cpp:class:`lm::debugio::server::ScopedInit` class if you want to explicitly shutdown
+    the subsystem at the end of the scope, instead of call this function directly.
+    \endrst
 */
 LM_PUBLIC_API void shutdown();
 
@@ -111,11 +144,13 @@ LM_PUBLIC_API void run();
 
 /*!
     \brief Callback function for handleMessage.
+    \param message Received message.
 */
 using HandleMessageFunc = std::function<void(const std::string& message)>;
 
 /*!
     \brief Register callback function for handleMessage.
+    \param process Callback function.
 */
 LM_PUBLIC_API void on_handleMessage(const HandleMessageFunc& process);
 
@@ -126,16 +161,21 @@ using SyncUserContextFunc = std::function<void()>;
 
 /*!
     \brief Register callback function for syncUserContext.
+    \param process Callback function.
 */
 LM_PUBLIC_API void on_syncUserContext(const SyncUserContextFunc& process);
 
 /*!
     \brief Callback function for draw.
+    \param type Mesh type.
+    \param color Mesh color.
+    \param vs Mesh vertices.
 */
 using DrawFunc = std::function<void(int type, Vec3 color, const std::vector<Vec3>& vs)>;
 
 /*!
     \brief Register callback function for draw.
+    \param process Callback function.
 */
 LM_PUBLIC_API void on_draw(const DrawFunc& process);
 

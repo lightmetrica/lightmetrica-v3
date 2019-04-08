@@ -58,11 +58,12 @@ void load(Archive& ar, std::atomic<T>& v) {
 
 // ----------------------------------------------------------------------------
 
+
 /*
-    Save function specialized for Component::Ptr<T>.
+    Save owned pointer.
 */
 template <typename Archive, typename T>
-void save(Archive& ar, const lm::Component::Ptr<T>& p) {
+void saveOwned(Archive& ar, T* p) {
     using Access = lm::comp::detail::Access;
 
     // Save an additional information if the pointer is nullptr
@@ -75,14 +76,34 @@ void save(Archive& ar, const lm::Component::Ptr<T>& p) {
         ar(CEREAL_NVP_("valid", uint8_t(1)));
 
         // Meta information needed to recreate the instance
-        ar(CEREAL_NVP_("key", Access::key(p.get())));
-        ar(CEREAL_NVP_("loc", Access::loc(p.get())));
+        ar(CEREAL_NVP_("key", Access::key(p)));
+
+        // Consistency testing checking if the locator is valid
+        const auto& loc = Access::loc(p);
+        if (!loc.empty()) {
+            const auto* p_loc = lm::comp::get<T>(loc);
+            if (!p_loc || p_loc != p) {
+                LM_ERROR("Invalid locator [loc='{}']", loc);
+                LM_ERROR("Loaded state might be broken. Check if");
+                LM_ERROR("  - locator is properly specified in lm::comp::create()");
+                LM_ERROR("  - underlying() function is properly implemented");
+            }
+        }
+        ar(CEREAL_NVP_("loc", loc));
 
         // Save the contants with Component::save() function.
         // We don't use cereal's polymorphinc class support
         // because their features can be achievable with our component system.
         p->save(ar);
     }
+}
+
+/*
+    Save function specialized for Component::Ptr<T>.
+*/
+template <typename Archive, typename T>
+void save(Archive& ar, const lm::Component::Ptr<T>& p) {
+    saveOwned(ar, p.get());
 }
 
 /*
@@ -193,12 +214,38 @@ void save(std::ostream& os, Ts&&... v) {
 }
 
 /*!
+    \brief Serialize a component as owned pointer.
+*/
+LM_INLINE void saveOwned(std::ostream& os, Component* v) {
+    OutputArchive ar(os);
+    cereal::saveOwned(ar, v);
+}
+
+/*!
     \brief Deserialize an object with given type.
 */
 template <typename... Ts>
 void load(std::istream& is, Ts&... v) {
     InputArchive ar(is);
     ar(v...);
+}
+
+/*!
+    \brief Serialize an object to a file.
+*/
+template <typename T>
+void save(const std::string& path, T&& v) {
+    std::ofstream os(path, std::ios::out | std::ios::binary);
+    save(os, std::forward<T>(v));
+}
+
+/*!
+    \brief Deserialize an object from an file.
+*/
+template <typename T>
+void load(const std::string& path, T& v) {
+    std::ifstream is(path, std::ios::in | std::ios::binary);
+    load(is, v);
 }
 
 /*!

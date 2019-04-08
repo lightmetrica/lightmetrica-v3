@@ -147,13 +147,31 @@ Json parsePositionalArgs(int argc, char** argv, const std::string& temp) {
 }
 
 /*!
-    \brief Get the value inside the element with default.
+    \brief Get value inside JSON element.
+    \param j Json object.
+    \param name Name of the element.
+
+    \rst
+    This function will cause an exception
+    if JSON object does not contain the element.
+    \endrst
+*/
+template <typename T>
+T value(const Json& j, const std::string& name) {
+    if (const auto it = j.find(name); it != j.end()) {
+        return *it;
+    }
+    throw std::runtime_error(fmt::format("Missing property [name='{}']", name));
+}
+
+/*!
+    \brief Get value inside JSON element with default.
     \param j Json object.
     \param name Name of the element.
     \param def Default value.
 */
 template <typename T>
-T valueOr(const Json& j, const std::string& name, T&& def) {
+T value(const Json& j, const std::string& name, T&& def) {
     if (const auto it = j.find(name); it != j.end()) {
         return *it;
     }

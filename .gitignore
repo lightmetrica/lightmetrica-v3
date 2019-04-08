@@ -28,6 +28,11 @@ dist*/
 doc/_build
 jupyter
 *.serialized
+.lmenv
+*.ipynb
+functest/output
+functest/lm_renderer_ao.py
+functest/run_worker_process.py
 
 # https://github.com/github/gitignore/blob/master/Python.gitignore
 # Byte-compiled / optimized / DLL files

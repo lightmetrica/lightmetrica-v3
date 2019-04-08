@@ -93,64 +93,7 @@ TEST_CASE("Construction") {
         REQUIRE(p);
         CHECK(p->f() == -1);
     }
-
-#if 0
-    SUBCASE("Construction with parent component") {
-        auto d = lm::comp::create<D>("test::comp::d1", nullptr, { {"v1", 42}, {"v2", 43} });
-        REQUIRE(d);
-        auto e = lm::comp::create<E>("test::comp::e1", d.get(), {});
-        REQUIRE(e);
-        CHECK(e->f() == 86);
-    }
-
-    SUBCASE("Construction with underlying component of the parent") {
-        auto d = lm::comp::create<D>("test::comp::d1", nullptr, { {"v1", 42}, {"v2", 43} });
-        REQUIRE(d);
-        auto e1 = lm::comp::create<E>("test::comp::e1", d.get(), {});
-        REQUIRE(e1);
-        auto e2 = lm::comp::create<E>("test::comp::e2", e1.get(), {});
-        REQUIRE(e2);
-        CHECK(e2->f() == 87);
-    }
-#endif
 }
-
-// ----------------------------------------------------------------------------
-
-#if 0
-TEST_CASE("Serialization of component") {
-    lm::log::ScopedInit init;
-
-    SUBCASE("Simple") {
-        // Create instance
-        const auto p = lm::comp::create<F>("test::comp::f1", nullptr, { {"v", 42} });
-        REQUIRE(p);
-        CHECK(p->f1() == 43);
-        CHECK(p->f2() == 41);
-        // Save
-        std::stringstream ss;
-        p->save(ss);
-        // Load
-        const auto p2 = lm::comp::create<F>("test::comp::f1", nullptr);
-        p2->load(ss);
-        CHECK(p2->f1() == 43);
-        CHECK(p2->f2() == 41);
-    }
-
-    SUBCASE("Serialiation of the instance with references") {
-        const auto f1 = lm::comp::create<F>("test::comp::f1", nullptr, { {"v", 42} });
-        const auto f2 = lm::comp::create<F>("test::comp::f2", f1.get(), { {"v", 100} });
-        CHECK(f2->f1() == 143);
-        CHECK(f2->f2() == 141);
-        std::stringstream ss;
-        f2->save(ss);
-        const auto f2_new = lm::comp::create<F>("test::comp::f2", f1.get());
-        f2_new->load(ss);
-        CHECK(f2_new->f1() == 143);
-        CHECK(f2_new->f2() == 141);
-    }
-}
-#endif
 
 // ----------------------------------------------------------------------------
 
@@ -177,6 +120,96 @@ TEST_CASE_TEMPLATE("Templated component", T, int, double) {
         if constexpr (std::is_same_v<T, double>) {
             CHECK(p->f() == 2);
         }
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+namespace {
+
+struct H : public lm::Component {
+    virtual std::string name() const = 0;
+};
+
+struct H_Root_ : public H {
+    Ptr<H> p1;
+
+    virtual std::string name() const override {
+        return "root";
+    }
+
+    virtual bool construct(const lm::Json&) override {
+        p1 = lm::comp::create<H>("test::comp::h_p1_", makeLoc("p1"), {});
+        return true;
+    }
+
+    virtual Component* underlying(const std::string& name) const {
+        if (name == "p1") {
+            return p1.get();
+        }
+        return nullptr;
+    }
+};
+
+struct H_P1_ : public H {
+    Ptr<H> p2;
+
+    virtual std::string name() const override {
+        return "p1";
+    }
+
+    virtual bool construct(const lm::Json&) override {
+        p2 = lm::comp::create<H>("test::comp::h_p2_", makeLoc("p2"), {});
+        return true;
+    }
+
+    virtual Component* underlying(const std::string& name) const {
+        if (name == "p2") {
+            return p2.get();
+        }
+        return nullptr;
+    }
+};
+
+struct H_P2_ : public H {
+    virtual std::string name() const override {
+        return "p2";
+    }
+};
+
+LM_COMP_REG_IMPL(H_Root_, "test::comp::h_root_");
+LM_COMP_REG_IMPL(H_P1_, "test::comp::h_p1_");
+LM_COMP_REG_IMPL(H_P2_, "test::comp::h_p2_");
+
+}
+
+TEST_CASE("Component query") {
+    lm::log::ScopedInit log_;
+    
+    // Create a component and register it as a root component
+    const auto root = lm::comp::create<lm::Component>("test::comp::h_root_", "$", {});
+    lm::comp::detail::registerRootComp(root.get());
+
+    // Our hierarchy
+    // - $
+    //   - p1
+    //     - p2
+
+    SUBCASE("get") {
+        // Root component
+        const auto* root_ = lm::comp::get<H>("$");
+        CHECK(root_ == root.get());
+        CHECK(root_->name() == "root");
+
+        // p1
+        const auto* p1 = lm::comp::get<H>("$.p1");
+        CHECK(p1);
+        CHECK(p1->name() == "p1");
+
+        // p2
+        const auto* p2 = lm::comp::get<H>("$.p1.p2");
+        CHECK(p2);
+        CHECK(p2->name() == "p2");
     }
 }
 

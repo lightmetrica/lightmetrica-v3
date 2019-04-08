@@ -20,8 +20,13 @@ Lightmetrica -- Research-oriented renderer
 
    build
    tutorial
+
    component
-   api
+   user
+   test
+
+   component_ref
+   api_ref
 
 .. todolist::
 

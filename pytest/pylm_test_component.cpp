@@ -19,6 +19,7 @@ public:
         // Define a trampoline class (see ref) for the interface A
         // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
         struct A_Py final : public A {
+            PYLM_SERIALIZE_IMPL(A)
             virtual bool construct(const lm::Json& prop) override {
                 PYBIND11_OVERLOAD(bool, A, construct, prop);
             }
@@ -69,23 +70,6 @@ public:
 
         // --------------------------------------------------------------------
 
-#if 0
-        struct E_Py final : public E {
-            virtual bool construct(const lm::Json& prop) override {
-                PYBIND11_OVERLOAD(bool, E, construct, prop);
-            }
-            virtual int f() override {
-                PYBIND11_OVERLOAD_PURE(int, E, f);
-            }
-        };
-        py::class_<E, E_Py, lm::Component, Ptr<E>>(m, "E")
-            .def(py::init<>())
-            .def("f", &E::f)
-            .PYLM_DEF_COMP_BIND(E);
-#endif
-
-        // --------------------------------------------------------------------
-
         m.def("createA1", []() {
             return dynamic_cast<A*>(
                 lm::comp::detail::createComp("test::comp::a1"));
@@ -119,6 +103,51 @@ public:
                 v2 = p->f2(1, 2);
             }
             return { v1, v2 };
+        });
+
+        // --------------------------------------------------------------------
+
+        m.def("roundTripSerializedA", []() -> int {
+            // Create instance registered in Python side
+            auto p = lm::comp::create<A>("test::comp::serializable", "", {{"v",23}});
+
+            // Serialize it
+            std::ostringstream os;
+            {
+                lm::OutputArchive ar(os);
+                p->save(ar);
+            }
+            const auto serialized = os.str();
+            
+            // Create another instance and deserialize it
+            auto p2 = lm::comp::create<A>("test::comp::serializable", "");
+            {
+                std::istringstream is(serialized);
+                lm::InputArchive ar(is);
+                p2->load(ar);
+            }
+            
+            return p2->f1();
+        });
+
+        m.def("roundTripSerializedA_UseSerial", []() -> int {
+            auto p = lm::comp::create<A>("test::comp::serializable", "", {{"v",23}});
+            std::stringstream ss;
+            lm::serial::save(ss, p);
+            lm::Component::Ptr<A> p2;
+            lm::serial::load(ss, p2);
+            return p2->f1();
+        });
+
+        m.def("roundTripSerializedA_WithPickle", []() -> int {
+            auto p = lm::comp::create<A>("test::comp::serializable_with_pickle", "", {
+                {"v1",5}, {"v2",43}
+            });
+            std::stringstream ss;
+            lm::serial::save(ss, p);
+            lm::Component::Ptr<A> p2;
+            lm::serial::load(ss, p2);
+            return p2->f1();
         });
     }
 };

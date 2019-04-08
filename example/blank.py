@@ -13,6 +13,7 @@ def run(**kwargs):
     # _begin_init
     # Initialize the framework
     lm.init('user::default', {})
+    lm.info()
     # _end_init
 
     # _begin_assets
@@ -27,14 +28,14 @@ def run(**kwargs):
     # _begin_render
     # Render an image
     lm.render('renderer::blank', {
-        'output': 'film',
+        'output': lm.asset('film'),
         'color': [1,1,1]
     })
     # _end_render
 
     # _begin_save
     # Save rendered image
-    lm.save('film', kwargs['out'])
+    lm.save(lm.asset('film'), kwargs['out'])
     # _end_save
 
     # _begin_shutdown

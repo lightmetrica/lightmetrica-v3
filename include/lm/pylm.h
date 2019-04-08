@@ -293,6 +293,8 @@ template <typename InterfaceT>
 static void regCompWrap(pybind11::object implClass, const char* name) {
     lm::comp::detail::reg(name,
         [implClass = implClass]() -> lm::Component* {
+            pybind11::gil_scoped_acquire gil;
+
             // Create instance of python class
             auto instPy = implClass();
             // We need to keep track of the python object
@@ -304,6 +306,8 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             return instCpp;
         },
         [](lm::Component* p) -> void {
+            pybind11::gil_scoped_acquire gil;
+
             // Automatic deref of instPy causes invocation of GC.
             // Note we need one extra deref because one reference is still hold by ownerRef_.
             // The pointer of component is associated with instPy
@@ -374,7 +378,7 @@ static pybind11::object createCompWrap(const char* name, const char* loc, const 
 */
 template <typename InterfaceT>
 static std::optional<InterfaceT*> castFrom(Component* p) {
-    return comp::cast<InterfaceT>(p);
+    return dynamic_cast<InterfaceT*>(p);
 }
 
 /*!
@@ -391,7 +395,36 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
             &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
     .def_static("castFrom", \
         &LM_NAMESPACE::detail::castFrom<InterfaceT>, \
-        pybind11::return_value_policy::reference)
+        pybind11::return_value_policy::reference);
+
+/*!
+    \brief Implement save() and load() function for trampoline helper class.
+    This workaround casting facility of pybind11 for Input/OutputArchive.
+*/
+#define PYLM_SERIALIZE_IMPL(ComponentT) \
+    virtual void save(lm::OutputArchive& ar) override { \
+        pybind11::gil_scoped_acquire gil; \
+        auto overload = pybind11::get_overload(static_cast<const ComponentT*>(this), "save"); \
+        if (overload) { \
+            auto s = pybind11::detail::cast_safe<std::string>(overload()); \
+            ar(s); \
+        } \
+        else { \
+            ComponentT::save(ar); \
+        } \
+    } \
+    virtual void load(lm::InputArchive& ar) override { \
+        pybind11::gil_scoped_acquire gil; \
+        auto overload = pybind11::get_overload(static_cast<const ComponentT*>(this), "load"); \
+        if (overload) { \
+            std::string arg; \
+            ar(arg); \
+            overload(pybind11::bytes(arg)); \
+        } \
+        else { \
+            ComponentT::load(ar); \
+        } \
+    }
 
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(LM_NAMESPACE)

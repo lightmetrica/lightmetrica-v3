@@ -142,7 +142,10 @@ public:
     Component* createComp(const std::string& key) {
         auto it = funcMap_.find(key);
         if (it == funcMap_.end()) {
-            LM_ERROR("Missing component [key='{}']", key);
+            LM_ERROR("Missing component [key='{}']. Check if", key);
+            LM_ERROR("- Key is wrong");
+            LM_ERROR("- Component with the key is not registered");
+            LM_ERROR("- Plugin containing the component is not loaded");
             return nullptr;
         }
         auto* p = it->second.createFunc();
@@ -239,31 +242,49 @@ public:
         }
     }
 
-    void printRegistered() {
-        for (const auto&[k, v] : funcMap_) {
-            LM_INFO(k);
-        }
-    }
-
     void registerRootComp(Component* p) {
         root_ = p;
     }
 
-    Component* getRoot() {
-        return root_;
-    }
-
-    Component* get(const std::string& name) {
+    Component* get(const std::string& locator) {
         if (!root_) {
-            LM_WARN("Root component has not registered [name='{}'].", name);
+            LM_ERROR("Root component has not registered [name='{}'].", locator);
             return nullptr;
         }
-        return root_->underlying(name);
-    }
 
-    virtual void foreachComponent(const Component::ComponentVisitor& visit) {
-        // root_ is a reference to singleton
-        visit(root_, false);
+        if (locator.empty()) {
+            LM_ERROR("Locator is empty [loc='{}']", locator);
+            return nullptr;
+        }
+
+        // Given 'xxx.yyy.zzz', returns the pair of 'xxx' and 'yyy.zzz'.
+        const auto splitFirst = [&](const std::string& s) -> std::tuple<std::string, std::string> {
+            const auto i = s.find_first_of('.', 0);
+            if (i == std::string::npos) {
+                return { s, "" };
+            }
+            return { s.substr(0, i), s.substr(i + 1) };
+        };
+
+        // Trace down from the root
+        const auto [s0, r0] = splitFirst(locator);
+        if (s0 != "$") {
+            LM_ERROR("Locator must start with '$' [loc='{}'].", locator);
+            return nullptr;
+        }
+        auto remaining = r0;
+        auto* curr = root_;
+        while (curr && !remaining.empty()) {
+            const auto [s, r] = splitFirst(remaining);
+            curr = curr->underlying(s);
+            remaining = r;
+        }
+
+        if (!curr) {
+            LM_ERROR("Failed to find a component with locator [loc='{}']", locator);
+        }
+
+        return curr;
     }
 
 private:
@@ -315,24 +336,12 @@ LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string&
     Impl::instance().foreachRegistered(func);
 }
 
-LM_PUBLIC_API void printRegistered() {
-    Impl::instance().printRegistered();
-}
-
 LM_PUBLIC_API void registerRootComp(Component* p) {
     Impl::instance().registerRootComp(p);
 }
 
-LM_PUBLIC_API Component* getRoot() {
-    return Impl::instance().getRoot();
-}
-
-LM_PUBLIC_API Component* get(const std::string& name) {
-    return Impl::instance().get(name);
-}
-
-LM_PUBLIC_API void foreachComponent(const Component::ComponentVisitor& visit) {
-    Impl::instance().foreachComponent(visit);
+LM_PUBLIC_API Component* get(const std::string& locator) {
+    return Impl::instance().get(locator);
 }
 
 // ----------------------------------------------------------------------------

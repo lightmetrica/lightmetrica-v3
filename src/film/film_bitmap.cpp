@@ -43,6 +43,11 @@ struct AtomicWrapper {
         auto expected = v_.load();
         while (!v_.compare_exchange_weak(expected, src));
     }
+
+    void add(const T& v) {
+        auto expected = v_.load();
+        while (!v_.compare_exchange_weak(expected, expected + v));
+    }
 };
 
 /*
@@ -68,14 +73,14 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(w_, h_, data_);
+        ar(w_, h_, quality_, data_);
     }
 
 public:
     virtual bool construct(const Json& prop) override {
         w_ = prop["w"];
         h_ = prop["h"];
-        quality_ = json::valueOr<int>(prop, "quality", 90);
+        quality_ = json::value<int>(prop, "quality", 90);
         data_.assign(w_*h_, {});
         return true;
     }
@@ -132,7 +137,7 @@ public:
             }
         }
         else {
-            LM_ERROR("Invalid extension [ext='{}'", ext);
+            LM_ERROR("Invalid extension [ext='{}']", ext);
             return false;
         }
 
@@ -145,6 +150,26 @@ public:
             dataTemp_.push_back(v.v_);
         }
         return FilmBuffer{ w_, h_, &dataTemp_[0].x };
+    }
+
+    virtual void accum(const Film* film_) override {
+        const auto* film = dynamic_cast<const Film_Bitmap*>(film_);
+        if (!film) {
+            LM_ERROR("Could not accumuate film. Invalid film type.");
+            return;
+        }
+        if (w_ != film->w_ || h_ != film->h_) {
+            LM_ERROR("Film size is different [expected='({},{})', actual='({},{})']", w_, h_, film->w_, film->h_);
+            return;
+        }
+        for (int i = 0; i < w_*h_; i++) {
+            const auto v = film->data_[i].v_.load();
+            data_[i].add(v);
+        }
+    }
+
+    virtual void clear() override {
+        data_.assign(w_*h_, {});
     }
 
 private:

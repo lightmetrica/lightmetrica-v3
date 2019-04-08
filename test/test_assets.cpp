@@ -37,7 +37,7 @@ struct TestAsset_Dependent final : public TestAsset {
         // In this test an instance of Assets are registered as root component
         // thus we can access the underlying component via lm::comp::get function.
         LM_UNUSED(prop);
-        other = lm::comp::get<TestAsset>("asset1");
+        other = lm::comp::get<TestAsset>("$.asset1");
         return true;
     }
 
@@ -58,23 +58,23 @@ LM_COMP_REG_IMPL(TestAsset_Dependent, "testasset::dependent");
 TEST_CASE("Assets") {
     lm::log::ScopedInit init;
 
-    auto assets = lm::comp::create<lm::Assets>("assets::default", "");
+    auto assets = lm::comp::create<lm::Assets>("assets::default", "$");
     REQUIRE(assets);
 
     // Set assets as a root component
     lm::comp::detail::registerRootComp(assets.get());
 
     SUBCASE("Load asset without properties") {
-        bool result = assets->loadAsset("asset1", "testasset::simple", lm::Json());
+        auto result = assets->loadAsset("asset1", "testasset::simple", lm::Json());
         CHECK(result);
-        auto* a = assets->underlying<TestAsset>("asset1");
+        auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset1"));
         REQUIRE(a);
         CHECK(a->f() == -1);
     }
 
     SUBCASE("Load asset with properties") {
         CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
-        auto* a = assets->underlying<TestAsset>("asset1");
+        auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset1"));
         REQUIRE(a);
         CHECK(a->f() == 42);
     }
@@ -82,7 +82,7 @@ TEST_CASE("Assets") {
     SUBCASE("Load asset dependent on an other asset") {
         CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
         CHECK(assets->loadAsset("asset2", "testasset::dependent", {}));
-        auto* a = assets->underlying<TestAsset>("asset2");
+        auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset2"));
         REQUIRE(a);
         CHECK(a->f() == 43);
     }
@@ -91,14 +91,14 @@ TEST_CASE("Assets") {
         {
             // Load initial asset
             CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
-            auto* a = assets->underlying<TestAsset>("asset1");
+            auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset1"));
             REQUIRE(a);
             CHECK(a->f() == 42);
         }
         {
             // Load another asset with same name
             CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 43} }));
-            auto* a = assets->underlying<TestAsset>("asset1");
+            auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset1"));
             REQUIRE(a);
             CHECK(a->f() == 43);
         }
@@ -108,14 +108,14 @@ TEST_CASE("Assets") {
         {
             CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
             CHECK(assets->loadAsset("asset2", "testasset::dependent", {}));
-            auto* a = assets->underlying<TestAsset>("asset2");
+            auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset2"));
             REQUIRE(a);
             CHECK(a->f() == 43);
         }
         {
             // Replace asset1 referenced by asset2
             CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 1} }));
-            auto* a = assets->underlying<TestAsset>("asset2");
+            auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset2"));
             REQUIRE(a);
             CHECK(a->f() == 2);
         }

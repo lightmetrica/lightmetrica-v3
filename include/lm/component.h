@@ -24,8 +24,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 /*!
     \brief Base component.
 
+    \rst
     Base class of all components in Lightmetrica.
     All components interfaces and implementations must inherit this class.
+    For detail, see :ref:`component`.
+    \endrst
 */
 class Component {
 private:
@@ -33,17 +36,54 @@ private:
     friend struct ComponentDeleter;
 
 public:
-    //! Factory function type
+    /*!
+        \brief Factory function type.
+        \return Component instance.
+        
+        \rst
+        A type of the function to create an component instance.
+        The function of this type is registered automatically to the framework
+        with :c:func:`LM_COMP_REG_IMPL` macro.
+        \endrst
+    */
     using CreateFunction  = std::function<Component*()>;
 
-    //! Release function type
-    using ReleaseFunction = std::function<void(Component*)>;
+    /*!
+        \brief Release function type.
+        \param p Component instance to be deleted.
 
-    //! Unique pointer for component instances.
+        \rst
+        A type of the function to release an component instance.
+        The function of this type is registered automatically to the framework
+        with :c:func:`LM_COMP_REG_IMPL` macro.
+        \endrst
+    */
+    using ReleaseFunction = std::function<void(Component* p)>;
+
+    /*!
+        \brief Unique pointer for component instances.
+        \tparam InterfaceT Component interface type.
+
+        \rst
+        unique_ptr for component types.
+        All component instances must be managed by unique_ptr,
+        because we constrained an instance inside our component hierarchy
+        must be managed by a single component.
+        \endrst
+    */
     template <typename InterfaceT>
     using Ptr = std::unique_ptr<InterfaceT, ComponentDeleter>;
 
-    //! Visitor function type.
+    /*!
+        \brief Visitor function type.
+        \param p Visiting component instance.
+        \param weak True if the visiting instance is referred as a weak reference.
+
+        \rst
+        The function of this type is used to be a callback function of
+        :cpp:func:`lm::Component::foreachUnderlying` function.
+        \endrst
+    */
     using ComponentVisitor = std::function<void(Component*& p, bool weak)>;
 
 private:
@@ -70,20 +110,25 @@ public:
 public:
     /*!
         \brief Get name of component instance.
+
+        \rst
+        This function returns an unique identifier
+        of the component implementation of the instance.
+        \endrst
     */
     const std::string& key() const { return key_; }
 
     /*!
         \brief Get locator of the component.
+
+        \rst
+        If the instance is integrated into the component hierarchy,
+        this function returns the unique component locator of the instance.
+        If the instance is not in the component hierarchy,
+        the function returns an empty string.
+        \endrst
     */
     const std::string& loc() const { return loc_; }
-
-    /*!
-        \brief Get global locator.
-    */
-    const std::string globalLoc() const {
-        return "global//" + loc();
-    }
 
     /*!
         \brief Get parent locator.
@@ -104,7 +149,12 @@ public:
     }
 
     /*!
-        \brief Get last element of locator.
+        \brief Get name of the component instance.
+
+        \rst
+        This fuction returns name of the component instance
+        used as an identifier in parent component.
+        \endrst
     */
     const std::string name() const {
         const auto i = loc().find_last_of('.');
@@ -114,6 +164,13 @@ public:
 
     /*!
         \brief Make locator by appending string.
+        \param base Base locator.
+        \param child Child locator.
+
+        \rst
+        This function appends the specified ``child`` locator
+        into the back of ``base`` locator.
+        \endrst
     */
     const std::string makeLoc(const std::string& base, const std::string& child) const {
         assert(!child.empty());
@@ -122,6 +179,12 @@ public:
 
     /*!
         \brief Make locator by appending string to current locator.
+        \param child Child locator.
+
+        \rst
+        This function appends the specified locator into the back of
+        the locator of the current instance.
+        \endrst
     */
     const std::string makeLoc(const std::string& child) const {
         return makeLoc(loc(), child);
@@ -129,94 +192,69 @@ public:
 
 public:
     /*!
-        \brief Cast to specific component interface type.
-    */
-    template <typename InterfaceT>
-    const InterfaceT* cast() const { return dynamic_cast<InterfaceT*>(this); }
-    
-    /*!
-        \brief Cast to specific component interface type.
-    */
-    template <typename InterfaceT>
-    InterfaceT* cast() { return dynamic_cast<InterfaceT*>(this); }
-
-public:
-    /*!
         \brief Construct a component.
+        \param prop Configuration property.
+        
+        \rst
+        The function is called just after the component instance is created.
+        Mostly, the function is called internally by :cpp:func:`lm::comp::create` function.
+        The configuration properties are passed by JSON type.
+        The return values indicates if the construction suceeded or not.
+        \endrst
     */
     virtual bool construct(const Json& prop) { LM_UNUSED(prop); return true; }
     
     /*!
         \brief Deserialize a component.
+        \param ar Input archive.
+
+        \rst
+        The function deserialize the component using the archive ``ar``.
+        The function is called internally. The users do not want to use this directly.
+        \endrst
     */
     virtual void load(InputArchive& ar) { LM_UNUSED(ar); }
 
     /*!
         \brief Serialize a component.
+        \param ar Output archive.
+
+        \rst
+        The function serialize the component using the archive ``ar``.
+        The function is called internally. The users do not want to use this directly.
+        \endrst
     */
     virtual void save(OutputArchive& ar) { LM_UNUSED(ar); }
 
 public:
     /*!
         \brief Get underlying component instance.
-    */
-    virtual Component* underlying(const std::string& name = "") const { LM_UNUSED(name); return nullptr; }
+        \param name Name of the component instance being queried.
 
-    /*!
-        \brief Get underlying component instance with specific interface type.
-    */
-    template <typename UnderlyingComponentT>
-    UnderlyingComponentT* underlying(const std::string& name = "") const {
-        // Use dynamic_cast directly instead of cast() function
-        // to handle the case with nullptr.
-        return dynamic_cast<UnderlyingComponentT*>(underlying(name));
-    }
+        \rst
+        This function queries a component instance by the identifier ``name``.
+        If the component instance is found, the function returns a pointer to the instance.
+        If not component instance is found, the function returns nullptr.
 
-    /*!
-        \brief Get underlying component instance by index.
+        The name of the component instance found by this function must match ``name``,
+        that is, ``comp->name() == name``.
+        \endrst
     */
-    virtual Component* underlyingAt(int index) const { LM_UNUSED(index); return nullptr; }
-
-    /*!
-        \brief Get underlying component instance by index with specifc interface type.
-    */
-    template <typename UnderlyingComponentT>
-    UnderlyingComponentT* underlyingAt(int index) const {
-        return dynamic_cast<UnderlyingComponentT*>(underlyingAt(index));
-    }
-
-    /*!
-        \brief Get underlying comonent by property.
-        If there is no matching entry, return nullptr.
-    */
-    Component* underlying(const Json& prop, const std::string& name) const {
-        const auto it = prop.find(name);
-        if (it == prop.end()) {
-            // No entry
-            return nullptr;
-        }
-        if (it->is_string()) {
-            return underlying(*it);
-        }
-        else if (it->is_number()) {
-            return underlyingAt(*it);
-        }
-        // Invalid type
-        return nullptr;
-    }
-
-    /*!
-        \brief Get underlying comonent by property with specific interface type.
-    */
-    template <typename UnderlyingComponentT>
-    UnderlyingComponentT* underlying(const Json& prop, const std::string& name) const {
-        return dynamic_cast<UnderlyingComponentT*>(underlying(prop, name));
-    }
+    virtual Component* underlying(const std::string& name) const { LM_UNUSED(name); return nullptr; }
 
     /*!
         \brief Process given function for each underlying component call.
+        \param visitor Component visitor.
+
+        \rst
+        This function enumerates underlying component of the instance.
+        Every time a component instance (unique or weak) is found,
+        the callback function specified by an argument is called.
+        The callback function takes a flag to show the instance is weak reference or unique.
+        Use :cpp:func:`lm::comp::visit` function to automatically determine either of them.
+        \endrst
     */
-    virtual void foreachUnderlying(const ComponentVisitor& visit) { LM_UNUSED(visit); }
+    virtual void foreachUnderlying(const ComponentVisitor& visitor) { LM_UNUSED(visitor); }
 
     /*!
         \brief Get underlying value.
@@ -235,8 +273,11 @@ public:
 
 /*!
     \brief Deleter for component instances
+
+    \rst
     This must be default constructable because pybind11 library
     requires to construct unique_ptr from a single pointer.
+    \endrst
 */
 struct ComponentDeleter {
     ComponentDeleter() = default;
@@ -302,12 +343,29 @@ struct KeyGen<T<Ts...>> {
 
 /*!
     \brief Create component instance.
-    \param key Name of the implementation.
+    \param key Implementation key.
+
+    \rst
+    This function creates a component instance from the key.
+    The component implementation with the key must be registered beforehand
+    with :c:func:`LM_COMP_REG_IMPL` macro and loaded with :cpp:func:`loadPlugin` function
+    if the component is defined inside a plugin.
+    Otherwise the function returns nullptr with error message.
+    \endrst
 */
 LM_PUBLIC_API Component* createComp(const std::string& key);
 
 /*!
-    Register a component.
+    \brief Register a component.
+    \param key Implementation key.
+    \param createFunc Create function.
+    \param releaseFunc Release function.
+
+    \rst
+    This function registers a component implementation into the framework.
+    The function is internally and indirectly called by :c:func:`LM_COMP_REG_IMPL` macro.
+    The users do not want to use it directly.
+    \endrst
 */
 LM_PUBLIC_API void reg(
     const std::string& key,
@@ -316,53 +374,84 @@ LM_PUBLIC_API void reg(
 
 /*!
     \brief Unregister a component.
+    \param key Implementation key.
+
+    \rst
+    This function unregisters a component implementation specified by the key.
+    The users do not want to use it directly.
+    \endrst
 */
 LM_PUBLIC_API void unreg(const std::string& key);
 
 /*!
     \brief Load a plugin.
+    \param path Path to a plugin.
+    
+    \rst
+    This function loads a plugin from a specified path.
+    The components inside the plugin are automatically registered to the framework
+    and ready to use with :cpp:func:`lm::comp::create` function.
+    If the loading fails, the function returns false.
+    \endrst
 */
 LM_PUBLIC_API bool loadPlugin(const std::string& path);
 
 /*!
-    Load plugins inside a given directory.
+    \brief Load plugins inside a given directory.
+    \param directory Path to a directory containing plugins.
+
+    \rst
+    This functions loads all plugins inside the specified directory.
+    If the loading fails, it generates an error message but ignored.
+    \endrst
 */
 LM_PUBLIC_API void loadPlugins(const std::string& directory);
 
 /*!
     \brief Unload loaded plugins.
+    
+    \rst
+    This functions unloads all the plugins loaded so far.
+    \endrst
 */
 LM_PUBLIC_API void unloadPlugins();
 
 /*!
     \brief Iterate registered component names.
+    \param func Function called for each registered component.
+
+    \rst
+    This function enumerates registered component names.
+    The specified callback function is called for each registered component.
+    \endrst
 */
 LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func);
 
 /*!
-    \brief Print registered component names.
-*/
-LM_PUBLIC_API void printRegistered();
-
-/*!
     \brief Register root component.
+    \param p Component to be registered as a root.
+
+    \rst
+    This function registers the given component as a root component.
+    The registered component is used as a starting point of the component hierarchy.
+    The given component must have a locator ``$``.
+    The function is called internaly so the user do not want to use it directly.
+    \endrst
 */
 LM_PUBLIC_API void registerRootComp(Component* p);
 
 /*!
-    \brief Get root component.
-*/
-LM_PUBLIC_API Component* getRoot();
+    \brief Get component by locator.
+    \param locator Component locator.
 
-/*!
-    \brief Get underlying component of root by name.
+    \rst
+    This function queries an underlying component instance inside the component hierarchy
+    by a component locator. For detail of component locator, see :ref:`component_hierarchy_and_locator`.
+    If a component instance is not found, or the locator is ill-formed,
+    the function returns nullptr with error messages.
+    \endrst
 */
-LM_PUBLIC_API Component* get(const std::string& name);
-
-/*!
-    \brief Enumerate all component accessible from the root.
-*/
-LM_PUBLIC_API void foreachComponent(const Component::ComponentVisitor& visit);
+LM_PUBLIC_API Component* get(const std::string& locator);
 
 /*!
     @}
@@ -378,12 +467,13 @@ LM_NAMESPACE_END(detail)
 */
 
 /*!
-    \brief Get underlying component of root by name and type.
+    \brief Get component by locator.
     \tparam T Component interface type.
+    \param locator Component locator.
 */
 template <typename T>
-T* get(const std::string& name) {
-    return dynamic_cast<T*>(detail::get(name));
+T* get(const std::string& locator) {
+    return dynamic_cast<T*>(detail::get(locator));
 }
 
 /*!
@@ -409,49 +499,34 @@ updateWeakRef(T*& p) {
 
 /*!
     \brief Visit underlying asset overloaded for weak references.
-    \param visit Visitor function.
+    \param visitor Visitor function.
     \param p Reference to component pointer.
 */
 template <typename T>
 std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
-visit(const Component::ComponentVisitor& visit_, T*& p) {
+visit(const Component::ComponentVisitor& visitor, T*& p) {
     Component* temp = p;
-    visit_(temp, true);
+    visitor(temp, true);
     p = dynamic_cast<T*>(temp);
 }
 
 /*!
     \brief Visit underlying asset overloaded for unique pointers.
-    \param name Name of variable.
-    \param visit Visitor function.
+    \param visitor Visitor function.
     \param p Reference to component pointer.
 */
 template <typename T>
 std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
-visit(const Component::ComponentVisitor& visit_, Component::Ptr<T>& p) {
+visit(const Component::ComponentVisitor& visitor, Component::Ptr<T>& p) {
     Component* temp = p.get();
-    visit_(temp, false);
-}
-
-/*!
-    \brief Upcast/downcast of component types. 
-    Use this class if the component instance can be nullptr.
-*/
-template <typename InterfaceT>
-InterfaceT* cast(Component* p) {
-    return p ? p->cast<InterfaceT>() : nullptr;
+    visitor(temp, false);
 }
 
 /*!
     \brief Create component with specific interface type.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
-    \param loc Global locator of the instance.
-
-    \rst
-    You want to specify ``loc`` if the object can be accessible via
-    :func:`lm::comp::detail::underlying` function.
-    \endrst
+    \param loc Component locator of the instance.
 */
 template <typename InterfaceT>
 Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc) {
@@ -468,7 +543,7 @@ Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc
     \brief Create component with construction with given properties.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
-    \param loc Global locator of the instance.
+    \param loc Component locator of the instance.
     \param prop Properties.
 */
 template <typename InterfaceT>
@@ -478,24 +553,6 @@ Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc
         return {};
     }
     return inst;
-}
-
-/*
-    \brief Given 'xxx.yyy.zzz', returns the pair of 'xxx' and 'yyy.zzz'.
-*/
-static std::tuple<std::string, std::string> splitFirst(const std::string& s) {
-    const auto i = s.find_first_of('.', 0);
-    if (i == std::string::npos) {
-        return { s, "" };
-    }
-    return { s.substr(0, i), s.substr(i + 1) };
-}
-
-/*!
-    \brief Get a given component or its underlying component based on name.
-*/
-static Component* getCurrentOrUnderlying(const std::string& r, Component* p) {
-    return r.empty() ? p : p->underlying(r);
 }
 
 // ----------------------------------------------------------------------------
@@ -511,24 +568,6 @@ LM_NAMESPACE_BEGIN(detail)
     @{
 */
 
-#if 0
-/*!
-    \brief Create component instance directly with constructor.
-    \param loc Global locator of the instance.
-
-    \rst
-    Use this function when you want to construct a component instance
-    directly with the visibile component type.
-    \endrst
-*/
-template <typename ComponentT, typename... Ts>
-Component::Ptr<ComponentT> createDirect(const std::string& loc, Ts&&... args) {
-    auto comp = std::make_unique<ComponentT>(std::forward<Ts>(args)...);
-    detail::Access::loc(comp.get()) = loc;
-    return Component::Ptr<ComponentT>(comp.release());
-}
-#endif
-
 /*!
     \brief Singleton for a context component.
     \tparam ContextComponentT Component type.
@@ -536,6 +575,14 @@ Component::Ptr<ComponentT> createDirect(const std::string& loc, Ts&&... args) {
     \rst
     This singleton holds the ownership the context component where
     we manages the component hierarchy under the context.
+    Example:
+
+    .. code-block:: cpp
+
+        using Instance = lm::comp::detail::ContextInstance<YourComponentInterface>;
+
+        Instance::init("interface::yourcomponent", { ... });
+        Instance::get()->...
     \endrst
 */
 template <typename ContextComponentT>
@@ -554,23 +601,51 @@ public:
         return instance;
     }
 
+    /*!
+        \brief Get a reference to the underlying component.
+        \return Reference to the underlying component.
+    */
     static ContextComponentT& get() {
+        if (!initialized()) {
+            throw std::runtime_error(
+                "Uninitialized subsystem. Possible failure to call *::init() function.");
+        }
         return *instance().context.get();
     }
 
+    /*!
+        \brief Initialize the underlying component.
+        \param type Component type.
+        \param prop Configuration property.
+
+        \rst
+        This function initializes the underlying component
+        with the specified component type and properties.
+        \endrst
+    */
     static void init(const std::string& type, const Json& prop) {
         // Implicitly call shutdown() if the singleton was already initialized
         if (instance().context) {
             shutdown();
         }
-        instance().context = comp::create<ContextComponentT>(type, "", prop);
+        // Instance of the context component has root locator ($)
+        instance().context = comp::create<ContextComponentT>(type, "$", prop);
     }
 
+    /*!
+        \brief Delete the underlying component.
+    */
     static void shutdown() {
         instance().context.reset();
     }
 
-    // Check if the context instance is initialized
+    /*!
+        \brief Check if the context instance is initialized.
+        
+        \rst
+        This function returns true if the underlying component is initialized.
+        \endrst
+    */
     static bool initialized() {
         return bool(instance().context);
     }
@@ -605,6 +680,11 @@ public:
 /*!
     \brief Registration entry for component implementation.
     \tparam ImplType Type of component implementation.
+
+    \rst
+    This class is used internally by :c:func:`LM_COMP_REG_IMPL` macro.
+    The users do not want to use it directly.
+    \endrst
 */
 template <typename ImplType>
 class RegEntry {
@@ -658,6 +738,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     This macro registers an implementation of a component object into the framework.
     This macro can be placed under any translation unit irrespective to the kind of binaries it belongs,
     like a shared libraries or an user's application code.
+    See :ref:`implementing_interface` for detail.
 
     .. note::
        According to the C++ specification `[basic.start.dynamic]/5`_, dependening on the implementation, 

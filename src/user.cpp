@@ -17,6 +17,7 @@
 #include <lm/progress.h>
 #include <lm/serial.h>
 #include <lm/debugio.h>
+#include <lm/objloader.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -37,6 +38,7 @@ public:
     }
 
     ~UserContext_Default() {
+        objloader::shutdown();
         debugio::shutdown();
         debugio::server::shutdown();
         progress::shutdown();
@@ -51,39 +53,7 @@ public:
         exception::init();
 
         // Logger subsystem
-        log::init(json::valueOr<std::string>(prop, "logger", log::DefaultType));
-
-        // Initial message
-        // This must be called after logger subsystem is initialized.
-        {
-            LM_INFO("");
-            LM_INFO("Lightmetrica -- A research-oriented renderer");
-            LM_INFO("");
-            LM_INFO("Version {}", version::formatted());
-            LM_INFO("");
-            LM_INFO("Copyright (c) 2019 Hisanari Otsu");
-            LM_INFO("Distributed under MIT license. See LICENSE file for details.");
-            LM_INFO("");
-            const auto currentTime = []() -> std::string {
-                std::stringstream ss;
-                auto now = std::chrono::system_clock::now();
-                auto time = std::chrono::system_clock::to_time_t(now);
-                #if LM_PLATFORM_WINDOWS
-                struct tm timeinfo;
-                localtime_s(&timeinfo, &time);
-                ss << std::put_time(&timeinfo, "%Y-%m-%d %H.%M.%S");
-                #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
-                char timeStr[256];
-                std::strftime(timeStr, sizeof(timeStr), "%Y.%m.%d.%H.%M.%S", std::localtime(&time));
-                ss << timeStr;
-                #endif
-                return ss.str();
-            }();
-            LM_INFO("Platform {} {}", version::platform(), version::architecture());
-            LM_INFO("Build    {}", version::buildTimestamp());
-            LM_INFO("Current  {}", currentTime);
-            LM_INFO("");
-        }
+        log::init(json::value<std::string>(prop, "logger", log::DefaultType));
 
         // Parallel subsystem
         parallel::init("parallel::openmp", prop);
@@ -106,6 +76,9 @@ public:
             debugio::server::init(it.key(), it.value());
         }
 
+        // OBJ loader
+        objloader::init();
+
         // Create assets and scene
         reset();
 
@@ -114,14 +87,13 @@ public:
 
 public:
     virtual Component* underlying(const std::string& name) const override {
-        const auto[s, r] = comp::splitFirst(name);
-        if (s == "assets") {
-            return comp::getCurrentOrUnderlying(r, assets_.get());
+        if (name == "assets") {
+            return assets_.get();
         }
-        else if (s == "scene") {
-            return comp::getCurrentOrUnderlying(r, scene_.get());
+        else if (name == "scene") {
+            return scene_.get();
         }
-        else if (s == "renderer") {
+        else if (name == "renderer") {
             return renderer_.get();
         }
         return nullptr;
@@ -134,28 +106,36 @@ public:
     }
 
 public:
+    virtual void info() override {
+        // Print information of Lightmetrica
+        LM_INFO("Lightmetrica -- Version {} {} {}",
+            version::formatted(),
+            version::platform(),
+            version::architecture());
+    }
+
     virtual void reset() override {
-        assets_ = comp::create<Assets>("assets::default", makeLoc(loc(), "assets"));
+        assets_ = comp::create<Assets>("assets::default", makeLoc("assets"));
         assert(assets_);
-        scene_ = comp::create<Scene>("scene::default", makeLoc(loc(), "scene"));
+        scene_ = comp::create<Scene>("scene::default", makeLoc("scene"));
         assert(scene_);
         renderer_.reset();
     }
 
-    virtual void asset(const std::string& name, const std::string& implKey, const Json& prop) override {
-        if (!assets_->loadAsset(name, implKey, prop)) {
+    virtual std::string asset(const std::string& name, const std::string& implKey, const Json& prop) override {
+        const auto loc = assets_->loadAsset(name, implKey, prop);
+        if (!loc) {
             THROW_RUNTIME_ERROR();
         }
+        return *loc;
+    }
+
+    virtual std::string asset(const std::string& name) override {
+        return assets_->makeLoc(name);
     }
 
     virtual void primitive(Mat4 transform, const Json& prop) override {
-        if (!scene_->loadPrimitive(*assets_.get(), transform, prop)) {
-            THROW_RUNTIME_ERROR();
-        }
-    }
-
-    virtual void primitives(Mat4 transform, const std::string& modelName) override {
-        if (!scene_->loadPrimitives(*assets_.get(), transform, modelName)) {
+        if (!scene_->loadPrimitive(transform, prop)) {
             THROW_RUNTIME_ERROR();
         }
     }
@@ -165,7 +145,7 @@ public:
     }
 
     virtual void renderer(const std::string& rendererName, const Json& prop) override {
-        renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc(loc(), "renderer"), prop);
+        renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc("renderer"), prop);
         if (!renderer_) {
             LM_ERROR("Failed to render [renderer='{}']", rendererName);
             THROW_RUNTIME_ERROR();
@@ -177,11 +157,14 @@ public:
             LM_INFO("Starting render [name='{}']", renderer_->key());
             LM_INDENT();
         }
+        if (!scene_->renderable()) {
+            return;
+        }
         renderer_->render(scene_.get());
     }
 
     virtual void save(const std::string& filmName, const std::string& outpath) override {
-        const auto* film = assets_->underlying<Film>(filmName);
+        const auto* film = comp::get<Film>(filmName);
         if (!film) {
             THROW_RUNTIME_ERROR();
         }
@@ -191,7 +174,7 @@ public:
     }
 
     virtual FilmBuffer buffer(const std::string& filmName) override {
-        auto* film = assets_->underlying<Film>(filmName);
+        auto* film = comp::get<Film>(filmName);
         if (!film) {
             THROW_RUNTIME_ERROR();
         }
@@ -210,6 +193,35 @@ public:
         serial::load(is, assets_);
         serial::load(is, scene_);
         serial::load(is, renderer_);
+    }
+
+    virtual void validate() override {
+        // Check all components from the root
+        const lm::Component::ComponentVisitor visitor = [&](Component* comp, bool weak) {
+            if (!comp) {
+                LM_INFO("- nullptr");
+                return;
+            }
+            if (!weak) {
+                LM_INFO("- unique [key='{}', loc='{}']", comp->key(), comp->loc());
+
+                // Locator
+                const auto loc = comp->loc();
+                
+                // Check if the locator is valid
+                const auto p = comp::get<Component>(loc);
+                if (!p || p != comp) {
+                    LM_ERROR("Invalid locator [loc='{}']", loc);
+                }
+
+                LM_INDENT();
+                comp->foreachUnderlying(visitor);
+            }
+            else {
+                LM_INFO("-> weak [key='{}', loc='{}']", comp->key(), comp->loc());
+            }
+        };
+        comp::get<lm::Component>("$")->foreachUnderlying(visitor);
     }
 
 private:
@@ -236,16 +248,20 @@ LM_PUBLIC_API void reset() {
     Instance::get().reset();
 }
 
-LM_PUBLIC_API void asset(const std::string& name, const std::string& implKey, const Json& prop) {
-    Instance::get().asset(name, implKey, prop);
+LM_PUBLIC_API void info() {
+    Instance::get().info();
+}
+
+LM_PUBLIC_API std::string asset(const std::string& name, const std::string& implKey, const Json& prop) {
+    return Instance::get().asset(name, implKey, prop);
+}
+
+LM_PUBLIC_API std::string asset(const std::string& name) {
+    return Instance::get().asset(name);
 }
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
     Instance::get().primitive(transform, prop);
-}
-
-LM_PUBLIC_API void primitives(Mat4 transform, const std::string& modelName) {
-    Instance::get().primitives(transform, modelName);
 }
 
 LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
@@ -274,6 +290,10 @@ LM_PUBLIC_API void serialize(std::ostream& os) {
 
 LM_PUBLIC_API void deserialize(std::istream& is) {
     Instance::get().deserialize(is);
+}
+
+LM_PUBLIC_API void validate() {
+    Instance::get().validate();
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

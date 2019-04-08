@@ -50,15 +50,15 @@ private:
 public:
     virtual bool construct(const Json& prop) override {
         Ke_ = prop["Ke"];
-        mesh_ = getAsset<Mesh>(prop, "mesh");
+        mesh_ = comp::get<Mesh>(prop["mesh"]);
         if (!mesh_) {
             return false;
         }
         
         // Construct CDF for surface sampling
         // Note we construct the CDF before transformation
-        mesh_->foreachTriangle([&](int, Mesh::Point a, Mesh::Point b, Mesh::Point c) {
-            const auto cr = cross(b.p - a.p, c.p - a.p);
+        mesh_->foreachTriangle([&](int, const Mesh::Tri& tri) {
+            const auto cr = cross(tri.p2.p - tri.p1.p, tri.p3.p - tri.p1.p);
             dist_.add(math::safeSqrt(glm::dot(cr, cr)) * .5_f);
         });
         invA_ = 1_f / dist_.c.back();
@@ -70,7 +70,10 @@ public:
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
         const int i = dist_.samp(rng);
         const auto s = math::safeSqrt(rng.u());
-        const auto [a, b, c] = mesh_->triangleAt(i);
+        const auto tri = mesh_->triangleAt(i);
+        const auto a = tri.p1.p;
+        const auto b = tri.p2.p;
+        const auto c = tri.p3.p;
         const auto p = math::mixBarycentric(a, b, c, Vec2(1_f-s, rng.u()*s));
         const auto n = glm::normalize(glm::cross(b - a, c - a));
         const auto geomL = PointGeometry::makeOnSurface(

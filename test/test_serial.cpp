@@ -154,9 +154,7 @@ struct TestSerial_Container final : public lm::Component {
     }
 
     virtual Component* underlying(const std::string& name) const {
-        // This function is called via lm::comp::underlying()
-        const auto [s, r] = lm::comp::splitFirst(name);
-        return r.empty() ? v[m.at(s)].get() : v[m.at(s)]->underlying(r);
+        return v[m.at(name)].get();
     }
 
     LM_SERIALIZE_IMPL(ar) {
@@ -175,11 +173,14 @@ struct TestSerial_Root final : public lm::Component {
     TestSerial_Root() {
         // Register this component as root
         lm::comp::detail::registerRootComp(this);
+        lm::comp::detail::Access::loc(this) = "$";
     }
 
     virtual Component* underlying(const std::string& name) const {
-        // Redirect all
-        return p->underlying(name);
+        if (name == "p") {
+            return p.get();
+        }
+        return nullptr;
     }
 
     // Clear state. Returns old underlying component.
@@ -277,11 +278,12 @@ TEST_CASE("Serialization") {
         SUBCASE("Weak reference to another component instance") {
             // Register TestSerial_Container as root component for this specific test
             TestSerial_Container container;
+            lm::comp::detail::Access::loc(&container) = "$";
             container.add("p1", "testserial_simple", { { "v1", 1 }, { "v2", 2 } });
             lm::comp::detail::registerRootComp(&container);
             
             // Check serialization of Component*
-            auto* orig = lm::comp::get<lm::Component>("p1");
+            auto* orig = lm::comp::get<lm::Component>("$.p1");
             CHECK(orig);
                         
             // Round-trip test
@@ -307,22 +309,24 @@ TEST_CASE("Serialization") {
 
             // Root component
             TestSerial_Root root;
-            root.p = lm::comp::create<TestSerial_Container>("testserial_container", "");
-            auto* c = root.p->cast<TestSerial_Container>();
+            root.p = lm::comp::create<TestSerial_Container>("testserial_container", "$.p");
+            auto* c = dynamic_cast<TestSerial_Container*>(root.p.get());
             
             // Add nested containers
             c->add("instances", "testserial_container", {});
             c->add("references", "testserial_container", {});
 
             // Add instances to `instances`
-            auto* instances = lm::comp::get<TestSerial_Container>("instances");
+            auto* instances = lm::comp::get<TestSerial_Container>("$.p.instances");
+            CHECK(instances);
             instances->add("p1", "testserial_simple", { {"v1", 1}, {"v2", 2} });
             instances->add("p2", "testserial_simple", { {"v1", 3}, {"v2", 4} });
             
             // Add references to `references`
-            auto* refs = lm::comp::get<TestSerial_Container>("references");
-            refs->add("r1", "testserial_ref", { {"ref", "instances.p1"} });
-            refs->add("r2", "testserial_ref", { {"ref", "instances.p2"} });
+            auto* refs = lm::comp::get<TestSerial_Container>("$.p.references");
+            CHECK(refs);
+            refs->add("r1", "testserial_ref", { {"ref", "$.p.instances.p1"} });
+            refs->add("r2", "testserial_ref", { {"ref", "$.p.instances.p2"} });
             
             // Save current state
             auto s1 = root.saveState();
@@ -394,9 +398,6 @@ TEST_CASE("Serialization") {
                 );
                 checkSaveAndLoadRoundTripCompareLoaded(
                     lm::comp::create<lm::Component>("material::mirror", {}, {})
-                );
-                checkSaveAndLoadRoundTripCompareLoaded(
-                    lm::comp::create<lm::Component>("material::proxy", {}, {})
                 );
             }
         }

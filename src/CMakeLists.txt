@@ -18,6 +18,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/progress.h"
     "${_INCLUDE_DIR}/debugio.h"
+	"${_INCLUDE_DIR}/dist.h"
     "${_INCLUDE_DIR}/exception.h"
     "${_INCLUDE_DIR}/parallel.h"
     "${_INCLUDE_DIR}/math.h"
@@ -36,7 +37,8 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/common.h"
     "${_INCLUDE_DIR}/component.h"
     "${_INCLUDE_DIR}/serial.h"
-    "${_INCLUDE_DIR}/surface.h")
+    "${_INCLUDE_DIR}/surface.h"
+	"${_INCLUDE_DIR}/objloader.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"
@@ -47,9 +49,13 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/progress.cpp"
     "${_SOURCE_DIR}/debugio.cpp"
+	"${_SOURCE_DIR}/dist.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
+	"${_SOURCE_DIR}/parallel/parallel_dist.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
+	"${_SOURCE_DIR}/model/objloader.cpp"
+	"${_SOURCE_DIR}/model/objloader_simple.cpp"
     "${_SOURCE_DIR}/mesh/mesh_raw.cpp"
     "${_SOURCE_DIR}/camera/camera_pinhole.cpp"
     "${_SOURCE_DIR}/light/light_area.cpp"
@@ -106,6 +112,8 @@ target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/MP>)
 # Floating point behavior
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/fp:strict /fp:except>)
+# Big obj file
+target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/bigobj>)
 # filesystem
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:GNU>:-lstdc++fs>)
 # Remove `lib` prefix of the output library name in Linux enviroment
