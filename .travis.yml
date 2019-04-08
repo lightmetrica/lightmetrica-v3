@@ -71,7 +71,7 @@ matrix:
       export PATH="/c/Tools/miniconda3/Scripts:$PATH"
       conda update -y -n base -c defaults conda
       conda create -y -n lm3 python=3.6 
-      activate lm3
+      conda activate lm3
       conda install -y pytest numpy
     install:
     - |
