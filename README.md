@@ -36,7 +36,7 @@ You can find tutorials and API references from [here](https://hi2p-perim.github.
   - Parameter configuration as Json type
   - Tristimulus/spectral rendering
   - Volume rendering
-  - Network rendering
+  - Distributed rendering
   - Differential rendering
   - Pause and resume rendering 
   - Standard scene formats (Wavefront OBJ, Mitsuba, PBRT)

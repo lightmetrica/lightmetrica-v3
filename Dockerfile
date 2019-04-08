@@ -33,57 +33,44 @@ RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 \
 
 # -----------------------------------------------------------------------------
 
+ARG GITHUB_TOKEN
+
 WORKDIR /
-RUN git clone --depth 1 --branch v2.2.4 https://github.com/pybind/pybind11.git
-WORKDIR /pybind11
+RUN git clone --recursive https://${GITHUB_TOKEN}@github.com/hi2p-perim/lightmetrica-v3-external.git external
+
+WORKDIR /external/pybind11
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DPYBIND11_TEST=OFF && \
     cmake --build _build --target install
 
-WORKDIR /
-RUN git clone --depth 1 --branch v3.5.0 https://github.com/nlohmann/json.git
-WORKDIR /json
+WORKDIR /external/json
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DJSON_BuildTests=OFF && \
     cmake --build _build --target install
 
-WORKDIR /
-RUN git clone --depth 1 --branch 0.9.9.3 https://github.com/g-truc/glm.git
-WORKDIR /glm
+WORKDIR /external/glm
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DGLM_TEST_ENABLE=OFF && \
     cmake --build _build --target install
 
-WORKDIR /
-RUN git clone --depth 1 --branch v1.2.2 https://github.com/USCiLab/cereal.git
-WORKDIR /cereal
+WORKDIR /external/cereal
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DJUST_INSTALL_CEREAL=ON && \
     cmake --build _build --target install
 
-WORKDIR /
-RUN git clone --depth 1 --branch 2.2.0 https://github.com/onqtam/doctest.git
-WORKDIR /doctest
+WORKDIR /external/doctest
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DDOCTEST_WITH_TESTS=OFF && \
     cmake --build _build --target install
 
-WORKDIR /
-RUN git clone --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git
-WORKDIR /fmt
+WORKDIR /external/fmt
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DFMT_DOC=OFF -DFMT_TEST=OFF && \
     cmake --build _build --target install
 
-WORKDIR /
-RUN git clone --depth 1 --branch v4.3.0 https://github.com/zeromq/libzmq.git
-WORKDIR /libzmq
+WORKDIR /external/libzmq
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DWITH_PERF_TOOL=OFF -DBUILD_TESTS=OFF -DENABLE_CPACK=OFF && \
     cmake --build _build --target install
 
-WORKDIR /
-RUN git clone --depth 1 --branch v4.3.0 https://github.com/zeromq/cppzmq.git
-WORKDIR /cppzmq
+WORKDIR /external/cppzmq
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DCPPZMQ_BUILD_TESTS=OFF && \
     cmake --build _build --target install
 
-WORKDIR /
-RUN git clone --depth 1 --branch 3.2.1 https://github.com/glfw/glfw.git
-WORKDIR /glfw
+WORKDIR /external/glfw
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF && \
     cmake --build _build --target install
 

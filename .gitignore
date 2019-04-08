@@ -15,6 +15,7 @@
 *.tmp
 
 # Project files
+.token
 [Bb]uild*/
 [Rr]esults/
 misc/

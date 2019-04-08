@@ -53,7 +53,7 @@ Current major version is **3**. Upon the major update, we have redesigned most o
   - Parameter configuration as Json type
   - Tristimulus/spectral rendering
   - Volume rendering
-  - Network rendering
+  - Distributed rendering
   - Differential rendering
   - Pause and resume rendering 
   - Standard scene formats (Wavefront OBJ, Mitsuba, PBRT)
