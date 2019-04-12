@@ -18,18 +18,19 @@ struct Tri {
     Vec3 e1, e2;    // Two edges incident to p1
     Bound b;        // Bound of the triangle
     Vec3 c;         // Center of the bound
+    int group;      // Group index
     int primitive;  // Primitive index associated to the triangle
     int face;       // Face index of the mesh associated to the triangle
 
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(p1, e1, e2, b, c, primitive, face);
+        ar(p1, e1, e2, b, c, group, primitive, face);
     }
 
     Tri() {}
 
-    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int primitive, int face)
-        : p1(p1), primitive(primitive), face(face) {
+    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int group, int primitive, int face)
+        : p1(p1), group(group), primitive(primitive), face(face) {
         e1 = p2 - p1;
         e2 = p3 - p1;
         b = merge(b, p1);
@@ -112,8 +113,8 @@ public:
     virtual void build(const Scene& scene) override {
         // Setup triangle list
         trs_.clear();
-        scene.foreachTriangle([&](int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3) {
-            trs_.emplace_back(p1, p2, p3, primitive, face);
+        scene.foreachTriangle([&](int group, int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3) {
+            trs_.emplace_back(p1, p2, p3, group, primitive, face);
         });
         const int nt = int(trs_.size()); // Number of triangles
         struct Entry {
@@ -257,7 +258,7 @@ public:
             return {};
         }
         const auto& tr = trs_[indices_[mi]];
-        return Hit{ tmax, Vec2(mh->u, mh->v), tr.primitive, tr.face };
+        return Hit{ tmax, Vec2(mh->u, mh->v), tr.group, tr.primitive, tr.face };
     }
 };
 

@@ -5,6 +5,9 @@
 
 include(LmAddPlugin)
 
+# embree
+# https://github.com/embree/embree
+find_package(embree 3.0)
 if (embree_FOUND)
     lm_add_plugin(
         NAME accel_embree

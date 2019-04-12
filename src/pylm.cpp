@@ -168,7 +168,9 @@ static void bind(pybind11::module& m) {
     m.def("reset", &reset);
     m.def("asset", (std::string(*)(const std::string&, const std::string&, const Json&))&asset);
     m.def("asset", (std::string(*)(const std::string&))&asset);
-    m.def("primitive", &primitive);
+    m.def("primitive", (void(*)(int, Mat4, const Json&))&primitive);
+    m.def("primitive", (void(*)(Mat4, const Json&))&primitive);
+    m.def("group", &group);
     m.def("build", &build);
     m.def("renderer", &renderer, pybind11::call_guard<pybind11::gil_scoped_release>());
     m.def("render", (void(*)(bool))&render, "verbose"_a = true, pybind11::call_guard<pybind11::gil_scoped_release>());

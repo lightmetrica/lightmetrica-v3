@@ -176,6 +176,7 @@ namespace SurfaceComp {
     \endrst
 */
 struct SurfacePoint {
+    int group;              //!< Group index.
     int primitive;          //!< Primitive index.
     int comp;               //!< Component index.
     PointGeometry geom;     //!< Surface point geometry information.

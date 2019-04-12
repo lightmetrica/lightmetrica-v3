@@ -134,10 +134,14 @@ public:
         return assets_->makeLoc(name);
     }
 
-    virtual void primitive(Mat4 transform, const Json& prop) override {
-        if (!scene_->loadPrimitive(transform, prop)) {
+    virtual void primitive(int group, Mat4 transform, const Json& prop) override {
+        if (!scene_->loadPrimitive(group, transform, prop)) {
             THROW_RUNTIME_ERROR();
         }
+    }
+
+    virtual int group(const std::string& groupName) override {
+        return scene_->addGroup(groupName);
     }
 
     void build(const std::string& accelName, const Json& prop) {
@@ -260,8 +264,12 @@ LM_PUBLIC_API std::string asset(const std::string& name) {
     return Instance::get().asset(name);
 }
 
-LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
-    Instance::get().primitive(transform, prop);
+LM_PUBLIC_API void primitive(int group, Mat4 transform, const Json& prop) {
+    Instance::get().primitive(group, transform, prop);
+}
+
+LM_PUBLIC_API int group(const std::string& groupName) {
+    return Instance::get().group(groupName);
 }
 
 LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {

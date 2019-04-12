@@ -109,6 +109,7 @@ LM_PUBLIC_API std::string asset(const std::string& name);
 
 /*!
     \brief Create primitive(s) and add to the scene.
+    \param group Group index.
     \param transform Transformation matrix.
     \param prop Properties for configuration.
     \see `example/quad.cpp`
@@ -127,7 +128,18 @@ LM_PUBLIC_API std::string asset(const std::string& name);
     In this case, the transformation is applied to all primitives to be generated.
     \endrst
 */
-LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
+LM_PUBLIC_API void primitive(int group, Mat4 transform, const Json& prop);
+
+static void primitive(Mat4 transform, const Json& prop) {
+    primitive(0, transform, prop);
+}
+
+/*!
+    \brief Create primitive group.
+    \param groupName Name of the group.
+    \return Group index.
+*/
+LM_PUBLIC_API int group(const std::string& groupName);
 
 /*!
     \brief Build acceleration structure.
@@ -284,7 +296,8 @@ public:
     virtual void info() = 0;
     virtual std::string asset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
     virtual std::string asset(const std::string& name) = 0;
-    virtual void primitive(Mat4 transform, const Json& prop) = 0;
+    virtual void primitive(int group, Mat4 transform, const Json& prop) = 0;
+    virtual int group(const std::string& groupName) = 0;
     virtual void build(const std::string& accelName, const Json& prop) = 0;
     virtual void renderer(const std::string& rendererName, const Json& prop) = 0;
     virtual void render(bool verbose) = 0;

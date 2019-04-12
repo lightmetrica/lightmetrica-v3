@@ -20,6 +20,8 @@
 # %load_ext autoreload
 # %autoreload 2
 
+# + {"code_folding": [0]}
+# Imports
 import os
 import imageio
 import pandas as pd
@@ -30,19 +32,22 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
+# -
 
 os.getpid()
 
 # %load_ext lightmetrica_jupyter
 
+# + {"code_folding": [0]}
+# Initialize Lightmetrica
 lm.init()
 lm.log.init('logger::jupyter', {})
 lm.progress.init('progress::jupyter', {})
 
-# +
+# + {"code_folding": [0]}
 # Create a sphere geometry with triangle mesh
 r = 1
-numTheta = 5
+numTheta = 10
 numPhi = 2*numTheta
 vs = np.zeros((numPhi*(numTheta+1), 3))
 ns = np.zeros((numPhi*(numTheta+1), 3))
@@ -73,17 +78,78 @@ for i in range(1,numTheta+1):
         if i < numTheta:
             fs[idx,:] = np.array([p11,p01,p10])
             idx += 1
+
+
+# + {"code_folding": []}
+# Scene setup
+def scene_setup():
+    lm.reset()
+    lm.asset('mesh_sphere', 'mesh::raw', {
+        'ps': vs.flatten().tolist(),
+        'ns': ns.flatten().tolist(),
+        'ts': ts.flatten().tolist(),
+        'fs': {
+            'p': fs.flatten().tolist(),
+            't': fs.flatten().tolist(),
+            'n': fs.flatten().tolist()
+        }
+    })
+    lm.asset('camera_main', 'camera::pinhole', {
+        'position': [0,0,50],
+        'center': [0,0,0],
+        'up': [0,1,0],
+        'vfov': 30
+    })
+    lm.asset('material_white', 'material::diffuse', {
+        'Kd': [1,1,1]
+    })
+    lm.primitive(lm.identity(), {
+        'camera': lm.asset('camera_main')
+    })
+
+
 # -
 
-lm.asset('mesh_sphere', 'mesh::raw', {
-    'ps': vs.flatten().tolist(),
-    'ns': ns.flatten().tolist(),
-    'ts': ts.flatten().tolist(),
-    'fs': {
-        'p': fs.flatten().tolist(),
-        't': fs.flatten().tolist(),
-        'n': fs.flatten().tolist()
-    }
+# ### Rendering without instancing
+
+scene_setup()
+for y in np.linspace(-10,10,10):
+    for x in np.linspace(-10,10,10):
+        lm.primitive(lm.translate(np.array([x,y,0])), {
+            'mesh': lm.asset('mesh_sphere'),
+            'material': lm.asset('material_white')
+        })
+
+lm.build('accel::sahbvh', {})
+lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
+lm.render('renderer::raycast', {
+    'output': lm.asset('film_output'),
+    'visualize_normal': True,
+    'bg_color': [1,1,1]
 })
 
+img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+f = plt.figure(figsize=(15,15))
+ax = f.add_subplot(111)
+ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+plt.show()
 
+# ### Rendering with instancing (single level)
+
+# +
+scene_setup()
+
+# To use instancing, we want to create a primitive group.
+# lm.primitive function can take the group as an argument.
+g = lm.group('g')
+lm.primitive(g, lm.identity(), {
+    'mesh': lm.asset('mesh_sphere'),
+    'material': lm.asset('material_white')
+})
+for y in np.linspace(-10,10,10):
+    for x in np.linspace(-10,10,10):
+        # The primitive group can be specifed by 'group' parameter.
+        # The underlying mesh is used as an instanced mesh.
+        lm.primitive(lm.translate(np.array([x,y,0])), {
+            'group': g
+        })

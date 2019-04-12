@@ -52,28 +52,6 @@ set(LM_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
 # when the correponding in-project external directory exists.
 # Otherwise use find_package via config mode.
 
-# embree
-# https://github.com/embree/embree
-# This must be added before glm because both define the targets
-# with the same name and embree doesn't care about the exsiting target.
-if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/embree")
-    option(EMBREE_STATIC_LIB "" ON)
-    option(EMBREE_ISPC_SUPPORT "" OFF)
-    option(EMBREE_TUTORIALS "" OFF)
-    option(EMBREE_STAT_COUNTERS "" OFF)
-    option(EMBREE_TASKING_SYSTEM "" )
-    if (WIN32)
-        set(EMBREE_TASKING_SYSTEM "PPL")
-    else()
-        set(EMBREE_TASKING_SYSTEM "TBB")
-    endif()
-    # We need EXCLUDE_FROM_ALL to exclude install target of embree
-    add_subdirectory(${LM_EXTERNAL_DIR}/embree EXCLUDE_FROM_ALL)
-    set(embree_FOUND TRUE)
-else()
-    find_package(embree)
-endif()
-
 # nlohmann-json
 # https://github.com/nlohmann/json
 if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/json")

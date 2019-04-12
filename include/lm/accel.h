@@ -50,6 +50,7 @@ public:
     struct Hit {
         Float t;        //!< Distance to the hit point.
         Vec2 uv;        //!< Barycentric coordinates.
+        int group;      //!< Group index.
         int primitive;  //!< Primitive index.
         int face;       //!< Face index.
     };

@@ -80,16 +80,46 @@ struct RaySample {
     \endrst
 */
 struct Primitive {
+    int group;                      //!< Group index.
     int index;                      //!< Primitive index.
     Transform transform;            //!< Transformation associated to the primitive.
     Mesh* mesh = nullptr;           //!< Underlying mesh.
     Material* material = nullptr;   //!< Underlying material.
     Light* light = nullptr;         //!< Underlying light.
     Camera* camera = nullptr;       //!< Underlying camera.
+    int childGroup = -1;            //!< Child group index.
 
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(index, transform, mesh, material, light, camera);
+        ar(group, index, transform, mesh, material, light, camera, childGroup);
+    }
+
+    /*!
+        \brief Make primitive as scene object.
+    */
+    static Primitive makeSceneObject(int group, int primitiveIndex, const Transform& transform,
+        Mesh* mesh, Material* material, Light* light, Camera* camera) {
+        Primitive p;
+        p.group = group;
+        p.index = primitiveIndex;
+        p.transform = transform;
+        p.mesh = mesh;
+        p.material = material;
+        p.light = light;
+        p.camera = camera;
+        return p;
+    }
+
+    /*!
+        \brief Make primitive as primitive group.
+    */
+    static Primitive makePrimitiveGroup(int group, int primitiveIndex, const Transform& transform, int childGroup) {
+        Primitive p;
+        p.group = group;
+        p.index = primitiveIndex;
+        p.transform = transform;
+        p.childGroup = childGroup;
+        return p;
     }
 };
 
@@ -121,6 +151,7 @@ public:
 
     /*!
         \brief Load scene primitive(s).
+        \param group Group index.
         \param transform Transformation associated to the primitive.
         \param prop Property containing references to the scene components.
 
@@ -132,10 +163,24 @@ public:
         The function returns true if the loading is a success.
         \endrst
     */
-    virtual bool loadPrimitive(Mat4 transform, const Json& prop) = 0;
+    virtual bool loadPrimitive(int group, Mat4 transform, const Json& prop) = 0;
+
+    /*!
+        \brief Add primitive group.
+        \param groupName Name of the group.
+        
+        \rst
+        This function adds a primitive group to the scene
+        and returns index of the group.
+        If the group with the same name is already created,
+        this function returns the index of the registered group.
+        \endrst
+    */
+    virtual int addGroup(const std::string& groupName) = 0;
 
     /*!
         \brief Callback function to process a triangle.
+        \param group Group index.
         \param primitive Primitive index.
         \param face Face index.
         \param p1 First position.
@@ -147,7 +192,7 @@ public:
         :cpp:func:`lm::Scene::foreachTriangle` function.
         \endrst
     */
-    using ProcessTriangleFunc = std::function<void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
+    using ProcessTriangleFunc = std::function<void(int group, int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
 
     /*!
         \brief Enumerate triangles in the scene.
