@@ -9,6 +9,12 @@ include(LmAddPlugin)
 # https://github.com/embree/embree
 find_package(embree 3.0)
 if (embree_FOUND)
+    # Create embree target
+    add_library(embree INTERFACE)
+    target_link_libraries(embree INTERFACE "${EMBREE_LIBRARIES}")
+    target_include_directories(embree INTERFACE "${EMBREE_INCLUDE_DIRS}")
+
+    # Create plugin
     lm_add_plugin(
         NAME accel_embree
         INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"

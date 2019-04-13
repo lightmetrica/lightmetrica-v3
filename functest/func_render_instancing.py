@@ -20,9 +20,10 @@
 # %load_ext autoreload
 # %autoreload 2
 
-# + {"code_folding": [0]}
+# + {"code_folding": []}
 # Imports
 import os
+import traceback
 import imageio
 import pandas as pd
 import numpy as np
@@ -44,7 +45,7 @@ lm.init()
 lm.log.init('logger::jupyter', {})
 lm.progress.init('progress::jupyter', {})
 
-# + {"code_folding": [0]}
+# + {"code_folding": []}
 # Create a sphere geometry with triangle mesh
 r = 1
 numTheta = 10
@@ -110,7 +111,23 @@ def scene_setup():
 
 # -
 
-# ### Rendering without instancing
+# Rendering
+def render_and_visualize():
+    lm.build('accel::sahbvh', {})
+    lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
+    lm.render('renderer::raycast', {
+        'output': lm.asset('film_output'),
+        'visualize_normal': True,
+        'bg_color': [1,1,1]
+    })
+    img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    f = plt.figure(figsize=(15,15))
+    ax = f.add_subplot(111)
+    ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+    plt.show()
+
+
+# ### Without instancing
 
 scene_setup()
 for y in np.linspace(-10,10,10):
@@ -120,21 +137,9 @@ for y in np.linspace(-10,10,10):
             'material': lm.asset('material_white')
         })
 
-lm.build('accel::sahbvh', {})
-lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
-lm.render('renderer::raycast', {
-    'output': lm.asset('film_output'),
-    'visualize_normal': True,
-    'bg_color': [1,1,1]
-})
+render_and_visualize()
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
-f = plt.figure(figsize=(15,15))
-ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
-plt.show()
-
-# ### Rendering with instancing (single level)
+# ### Single-level instancing
 
 # +
 scene_setup()
@@ -155,16 +160,41 @@ for y in np.linspace(-10,10,10):
         })
 # -
 
-lm.build('accel::sahbvh', {})
-lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
-lm.render('renderer::raycast', {
-    'output': lm.asset('film_output'),
-    'visualize_normal': True,
-    'bg_color': [1,1,1]
-})
+render_and_visualize()
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
-f = plt.figure(figsize=(15,15))
-ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
-plt.show()
+# ### Multi-level instancing
+
+scene_setup()
+g1 = lm.group('g1')
+lm.primitive(g, lm.identity(), {
+    'mesh': lm.asset('mesh_sphere'),
+    'material': lm.asset('material_white')
+})
+g2 = lm.group('g2')
+for y in np.linspace(-10,10,10):
+    lm.primitive(g2, lm.translate(np.array([0,y,0])), {
+        'group': g
+    })
+for x in np.linspace(-10,10,10):
+    lm.primitive(lm.translate(np.array([x,0,0])), {
+        'group': g2
+    })
+
+render_and_visualize()
+
+# ### Detecting invalid group
+
+# Scene containing cyclic dependency is invalid
+scene_setup()
+g = lm.group('g')
+lm.primitive(g, lm.identity(), {
+    'group': g
+})
+try:
+    lm.primitive(lm.identity(), {
+        'group': g
+    })
+except Exception:
+    traceback.print_exc()
+
+

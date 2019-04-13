@@ -5,10 +5,17 @@
 
 #include <lm/accel.h>
 #include <lm/scene.h>
+#include <lm/mesh.h>
 #include <lm/exception.h>
 #include <nanort.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+struct FlattenedPrimitive {
+    Transform globalTransform;  // Global transform of the primitive
+    int group;                  // Group index
+    int primitive;              // Primitive index
+};
 
 /*
 \rst
@@ -22,16 +29,35 @@ private:
     std::vector<Float> vs_;
     std::vector<unsigned int> fs_;
     nanort::BVHAccel<Float> accel_;
-    std::vector<std::tuple<int, int, int>> primitiveFaceId_;
+    std::vector<std::tuple<int, int>> primitiveFaceId_;
+    std::vector<FlattenedPrimitive> flattenedPrimitives_;
 
 public:
     virtual void build(const Scene& scene) override {
         // Make a combined mesh
-        scene.foreachTriangle([&](int group, int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3) {
-            vs_.insert(vs_.end(), { p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z });
-            auto s = (unsigned int)(fs_.size());
-            fs_.insert(fs_.end(), { s, s+1, s+2 });
-            primitiveFaceId_.push_back({ group, primitive, face });
+        vs_.clear();
+        fs_.clear();
+        primitiveFaceId_.clear();
+        flattenedPrimitives_.clear();
+        scene.foreachPrimitive([&](const Primitive& primitive, Mat4 globalTransform) {
+            if (!primitive.mesh) {
+                return;
+            }
+
+            // Flattened primitive
+            const int flattenPrimitiveIndex = int(flattenedPrimitives_.size());
+            flattenedPrimitives_.push_back({ globalTransform, primitive.group, primitive.index });
+
+            // Triangles
+            primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
+                const auto p1 = globalTransform * Vec4(tri.p1.p, 1_f);
+                const auto p2 = globalTransform * Vec4(tri.p2.p, 1_f);
+                const auto p3 = globalTransform * Vec4(tri.p3.p, 1_f);
+                vs_.insert(vs_.end(), { p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z });
+                auto s = (unsigned int)(fs_.size());
+                fs_.insert(fs_.end(), { s, s+1, s+2 });
+                primitiveFaceId_.push_back({ flattenPrimitiveIndex, face });
+            });
         });
 
         // Build acceleration structure
@@ -60,8 +86,9 @@ public:
             return {};
         }
         
-        const auto [group, primitive, face] = primitiveFaceId_[isect.prim_id];
-        return Hit{ isect.t, Vec2(isect.u, isect.v), group, primitive, face };
+        const auto [flattenPrimitiveIndex, face] = primitiveFaceId_.at(isect.prim_id);
+        const auto& fp = flattenedPrimitives_.at(flattenPrimitiveIndex);
+        return Hit{ isect.t, Vec2(isect.u, isect.v), fp.globalTransform, fp.group, fp.primitive, face };
     }
 };
 

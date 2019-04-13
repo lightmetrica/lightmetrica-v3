@@ -209,7 +209,7 @@ public:
     /*!
         \brief Iterate primitives in the scene.
     */
-    using ProcessPrimitiveFunc = std::function<void(const Primitive& primitive, Mat4 transform)>;
+    using ProcessPrimitiveFunc = std::function<void(const Primitive& primitive, Mat4 globalTransform)>;
     virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const = 0;
 
     // ------------------------------------------------------------------------

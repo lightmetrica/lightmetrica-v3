@@ -48,11 +48,12 @@ public:
         \endrst
     */
     struct Hit {
-        Float t;        //!< Distance to the hit point.
-        Vec2 uv;        //!< Barycentric coordinates.
-        int group;      //!< Group index.
-        int primitive;  //!< Primitive index.
-        int face;       //!< Face index.
+        Float t;                    //!< Distance to the hit point.
+        Vec2 uv;                    //!< Barycentric coordinates.
+        Transform globalTransform;  //!< Global transformation.
+        int group;                  //!< Group index.
+        int primitive;              //!< Primitive index.
+        int face;                   //!< Face index.
     };
 
     /*!
