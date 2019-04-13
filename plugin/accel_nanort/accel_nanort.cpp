@@ -22,16 +22,16 @@ private:
     std::vector<Float> vs_;
     std::vector<unsigned int> fs_;
     nanort::BVHAccel<Float> accel_;
-    std::vector<std::tuple<int, int>> primitiveFaceId_;
+    std::vector<std::tuple<int, int, int>> primitiveFaceId_;
 
 public:
     virtual void build(const Scene& scene) override {
         // Make a combined mesh
-        scene.foreachTriangle([&](int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3) {
+        scene.foreachTriangle([&](int group, int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3) {
             vs_.insert(vs_.end(), { p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z });
             auto s = (unsigned int)(fs_.size());
             fs_.insert(fs_.end(), { s, s+1, s+2 });
-            primitiveFaceId_.push_back({ primitive, face });
+            primitiveFaceId_.push_back({ group, primitive, face });
         });
 
         // Build acceleration structure
@@ -60,8 +60,8 @@ public:
             return {};
         }
         
-        const auto [primitive, face] = primitiveFaceId_[isect.prim_id];
-        return Hit{ isect.t, Vec2(isect.u, isect.v), primitive, face };
+        const auto [group, primitive, face] = primitiveFaceId_[isect.prim_id];
+        return Hit{ isect.t, Vec2(isect.u, isect.v), group, primitive, face };
     }
 };
 

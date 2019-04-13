@@ -82,7 +82,7 @@ struct RaySample {
 struct Primitive {
     int group;                      //!< Group index.
     int index;                      //!< Primitive index.
-    Transform transform;            //!< Transformation associated to the primitive.
+    Transform transform;            //!< Local transformation associated to the primitive.
     Mesh* mesh = nullptr;           //!< Underlying mesh.
     Material* material = nullptr;   //!< Underlying material.
     Light* light = nullptr;         //!< Underlying light.
@@ -209,7 +209,7 @@ public:
     /*!
         \brief Iterate primitives in the scene.
     */
-    using ProcessPrimitiveFunc = std::function<void(const Primitive& primitive)>;
+    using ProcessPrimitiveFunc = std::function<void(const Primitive& primitive, Mat4 transform)>;
     virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const = 0;
 
     // ------------------------------------------------------------------------

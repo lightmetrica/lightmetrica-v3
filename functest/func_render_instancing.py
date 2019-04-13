@@ -153,3 +153,18 @@ for y in np.linspace(-10,10,10):
         lm.primitive(lm.translate(np.array([x,y,0])), {
             'group': g
         })
+# -
+
+lm.build('accel::sahbvh', {})
+lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
+lm.render('renderer::raycast', {
+    'output': lm.asset('film_output'),
+    'visualize_normal': True,
+    'bg_color': [1,1,1]
+})
+
+img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+f = plt.figure(figsize=(15,15))
+ax = f.add_subplot(111)
+ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+plt.show()

@@ -130,7 +130,7 @@ LM_PUBLIC_API std::string asset(const std::string& name);
 */
 LM_PUBLIC_API void primitive(int group, Mat4 transform, const Json& prop);
 
-static void primitive(Mat4 transform, const Json& prop) {
+LM_INLINE void primitive(Mat4 transform, const Json& prop) {
     primitive(0, transform, prop);
 }
 

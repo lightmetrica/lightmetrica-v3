@@ -17,12 +17,23 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+// Primitive group representing a set of primitives used for instacing.
 struct PrimitiveGroup {
     int index;                          // Group index.
     std::vector<Primitive> primitives;  // Underlying primitives.
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(primitives);
+        ar(index, primitives);
+    }
+};
+
+// Index describing a primitive in the scene.
+struct PrimitiveIndex {
+    int group;
+    int primitive;
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(group, primitive);
     }
 };
 
@@ -31,9 +42,9 @@ private:
     std::vector<PrimitiveGroup> primitiveGroups_;
     std::unordered_map<std::string, int> primitiveGroupMap_;
     Ptr<Accel> accel_;
-    int camera_ = -1;           // Camera primitive index
-    std::vector<int> lights_;   // Light primitive indices
-    int envLight_ = -1;         // Environment light primitive index
+    std::optional<PrimitiveIndex> camera_;      // Camera primitive index
+    std::vector<PrimitiveIndex> lights_;        // Light primitive indices
+    std::optional<PrimitiveIndex> envLight_;    // Environment light primitive index
 
 public:
     Scene_()
@@ -41,17 +52,13 @@ public:
     {}
 
 private:
-    const Primitive& primitiveAt(int group, int primitive) const {
-        return primitiveGroups_.at(group).primitives.at(primitive);
-    }
-
-    const Primitive& primitiveAt(const SurfacePoint& sp) const {
-        return primitiveAt(sp.primitive, sp.group);
+    const Primitive& primitiveAt(PrimitiveIndex idx) const {
+        return primitiveGroups_.at(idx.group).primitives.at(idx.primitive);
     }
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(primitives_, accel_, camera_, lights_);
+        ar(primitiveGroups_, primitiveGroupMap_, accel_, camera_, lights_, envLight_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
@@ -79,7 +86,7 @@ public:
             LM_ERROR("Missing primitives. Use lm::primitive() function to add primitives.");
             return false;
         }
-        if (camera_ == -1) {
+        if (!camera_) {
             LM_ERROR("Missing camera primitive. Use lm::primitive() function to add camera primitive.");
             return false;
         }
@@ -133,54 +140,57 @@ public:
                 return false;
             }
             model->createPrimitives([&](Component* mesh, Component* material, Component* light) {
-                primitives.push_back(Primitive::makeSceneObject(
+                const auto primitive = Primitive::makeSceneObject(
                     group,
                     int(primitives.size()),
                     Transform(transform),
                     dynamic_cast<Mesh*>(mesh),
                     dynamic_cast<Material*>(material),
                     dynamic_cast<Light*>(light),
-                    nullptr));
-                if (primitives.back().light) {
-                    lights_.push_back(primitives.back().index);
+                    nullptr);
+                if (primitive.light) {
+                    lights_.push_back({ group, primitive.index });
                 }
+                primitives.push_back(primitive);
             });
         }
         // Create primitive from scene object
         else {
-            // Add a primitive entry
-            primitives.push_back(Primitive::makeSceneObject(
+            const auto primitive = Primitive::makeSceneObject(
                 group,
                 int(primitives.size()),
                 Transform(transform),
                 dynamic_cast<Mesh*>(getAssetRefBy("mesh")),
                 dynamic_cast<Material*>(getAssetRefBy("material")),
                 dynamic_cast<Light*>(getAssetRefBy("light")),
-                dynamic_cast<Camera*>(getAssetRefBy("camera"))));
+                dynamic_cast<Camera*>(getAssetRefBy("camera")));
 
-            const auto& primitive = primitives.back();
             if (primitive.camera && primitive.light) {
                 LM_ERROR("Primitive cannot be both camera and light");
-                primitives.pop_back();
                 return false;
             }
             if (primitive.camera) {
-
-                camera_ = primitives.back().index;
+                if (group != 0) {
+                    LM_ERROR("Camera must be registered to root group [group='{}']", group);
+                    return false;
+                }
+                camera_ = PrimitiveIndex{ group, primitive.index };
             }
             if (primitive.light) {
-                const int lightIndex = primitive.index;
+                const auto lightIndex = PrimitiveIndex{ group, primitive.index };
                 if (primitive.light->isInfinite()) {
                     // Environment light
                     if (group != 0) {
-                        LM_ERROR("Environment light must be registered to the root group");
-                        primitives.pop_back();
+                        LM_ERROR("Environment light must be registered to root group [group='{}']", group);
                         return false;
                     }
                     envLight_ = lightIndex;
                 }
                 lights_.push_back(lightIndex);
             }
+
+            // Add primitive
+            primitives.push_back(primitive);
         }
 
         return true;
@@ -198,6 +208,47 @@ public:
     }
 
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
+        foreachPrimitive([&](const Primitive& primitive, Mat4 transform) {
+            const auto M = primitive.transform.M * transform;
+            primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
+                processTriangle(
+                    primitive.group,
+                    primitive.index,
+                    face,
+                    M * Vec4(tri.p1.p, 1_f),
+                    M * Vec4(tri.p2.p, 1_f),
+                    M * Vec4(tri.p3.p, 1_f)
+                );
+            });
+        });
+
+#if 0
+        // Traverse primitives
+        // TODO: avoid cyclic graph
+        std::function<void(int, Mat4)> visit = [&](int group, Mat4 transform) {
+            const auto& primitiveGroup = primitiveGroups_.at(group);
+            for (const auto& primitive : primitiveGroup.primitives) {
+                if (primitive.childGroup != -1) {
+                    visit(primitive.childGroup, primitive.transform.M * transform);
+                }
+                else {
+                    const auto M = primitive.transform.M * transform;
+                    primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
+                        processTriangle(
+                            primitiveGroup.index,
+                            primitive.index,
+                            face,
+                            M * Vec4(tri.p1.p, 1_f),
+                            M * Vec4(tri.p2.p, 1_f),
+                            M * Vec4(tri.p3.p, 1_f)
+                        );
+                    });
+                }
+            }
+        };
+        visit(0, Mat4(1_f));
+#endif
+#if 0
         for (const auto& primitiveGroup : primitiveGroups_) {
             for (const auto& primitive : primitiveGroup.primitives) {
                 if (!primitive.mesh) {
@@ -215,14 +266,31 @@ public:
                 });
             }
         }
+#endif
     }
 
     virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const override {
+        // Traverse primitives
+        // TODO: avoid cyclic graph
+        std::function<void(int, Mat4)> visit = [&](int group, Mat4 transform) {
+            const auto& primitiveGroup = primitiveGroups_.at(group);
+            for (const auto& primitive : primitiveGroup.primitives) {
+                if (primitive.childGroup != -1) {
+                    visit(primitive.childGroup, primitive.transform.M * transform);
+                }
+                else {
+                    processPrimitive(primitive, transform);
+                }
+            }
+        };
+        visit(0, Mat4(1_f));
+#if 0
         for (const auto& primitiveGroup : primitiveGroups_) {
             for (const auto& primitive : primitiveGroup.primitives) {
                 processPrimitive(primitive);
             }
         }
+#endif
     }
 
     // ------------------------------------------------------------------------
@@ -242,19 +310,19 @@ public:
             if (tmax < Inf) {
                 return {};
             }
-            if (envLight_ < 0) {
+            if (!envLight_) {
                 return {};
             }
             return SurfacePoint{
-                0,
-                envLight_,
+                envLight_->group,
+                envLight_->primitive,
                 0,
                 PointGeometry::makeInfinite(-ray.d),
                 true
             };
         }
         const auto [t, uv, groupIndex, primitiveIndex, faceIndex] = *hit;
-        const auto& primitive = primitiveAt(groupIndex, primitiveIndex);
+        const auto& primitive = primitiveAt({ groupIndex, primitiveIndex });
         const auto p = primitive.mesh->surfacePoint(faceIndex, uv);
         return SurfacePoint{
             groupIndex,
@@ -276,7 +344,7 @@ public:
     }
 
     virtual bool isSpecular(const SurfacePoint& sp) const override {
-        const auto& primitive = primitiveAt(sp);
+        const auto& primitive = primitiveAt({ sp.group, sp.primitive });
         if (sp.endpoint) {
             if (primitive.light) {
                 return primitive.light->isSpecular(sp.geom);
@@ -292,11 +360,11 @@ public:
     // ------------------------------------------------------------------------
 
     virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const {
-        return primitives_.at(camera_).camera->primaryRay(rp, aspectRatio);
+        return primitiveAt(*camera_).camera->primaryRay(rp, aspectRatio);
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
-        const auto* material = primitiveAt(sp).material;
+        const auto* material = primitiveAt({ sp.group, sp.primitive }).material;
         if (!material) {
             return {};
         }
@@ -306,6 +374,7 @@ public:
         }
         return RaySample{
             SurfacePoint{
+                sp.group,
                 sp.primitive,
                 s->comp,
                 sp.geom,
@@ -317,13 +386,14 @@ public:
     }
 
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
-        const auto s = primitives_.at(camera_).camera->samplePrimaryRay(rng, window, aspectRatio);
+        const auto s = primitiveAt(*camera_).camera->samplePrimaryRay(rng, window, aspectRatio);
         if (!s) {
             return {};
         }
         return RaySample{
             SurfacePoint{
-                camera_,
+                camera_->group,
+                camera_->primitive,
                 0,
                 s->geom,
                 true
@@ -340,14 +410,15 @@ public:
         const auto pL = 1_f / n;
         
         // Sample a position on the light
-        const auto& primitive = primitives_.at(lights_[i]);
+        const auto& primitive = primitiveAt(lights_[i]);
         const auto s = primitive.light->sample(rng, sp.geom, primitive.transform);
         if (!s) {
             return {};
         }
         return RaySample{
             SurfacePoint{
-                lights_[i],
+                lights_[i].group,
+                lights_[i].primitive,
                 0,
                 s->geom,
                 true
@@ -358,12 +429,12 @@ public:
     }
     
     virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-        const auto& prim = primitiveAt(sp);
+        const auto& prim = primitiveAt({ sp.group, sp.primitive });
         return prim.material->pdf(sp.geom, sp.comp, wi, wo);
     }
 
     virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const override {
-        const auto& prim = primitiveAt(spL);
+        const auto& prim = primitiveAt({ spL.group, spL.primitive });
         const auto pL = 1_f / int(lights_.size());
         return prim.light->pdf(sp.geom, spL.geom, prim.transform, wo) * pL;
     }
@@ -371,20 +442,21 @@ public:
     // ------------------------------------------------------------------------
 
     virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-        const auto& prim = primitiveAt(sp);
+        const auto& prim = primitiveAt({ sp.group, sp.primitive });
         if (sp.endpoint) {
-            if (sp.primitive == camera_) {
+            if (prim.camera) {
                 return prim.camera->eval(sp.geom, wo);
             }
-            else {
+            else if (prim.light) {
                 return prim.light->eval(sp.geom, wo);
             }
+            LM_UNREACHABLE();
         }
         return prim.material->eval(sp.geom, sp.comp, wi, wo);
     }
 
     virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
-        const auto& prim = primitiveAt(sp);
+        const auto& prim = primitiveAt({ sp.group, sp.primitive });
         if (!prim.light) {
             return {};
         }
@@ -392,7 +464,7 @@ public:
     }
 
     virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const override {
-        const auto& prim = primitiveAt(sp);
+        const auto& prim = primitiveAt({ sp.group, sp.primitive });
         if (!prim.material) {
             return {};
         }

@@ -444,8 +444,11 @@ static void bind(pybind11::module& m) {
         virtual bool renderable() const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, renderable);
         }
-        virtual bool loadPrimitive(Mat4 transform, const Json& prop) override {
-            PYBIND11_OVERLOAD_PURE(bool, Scene, loadPrimitive, transform, prop);
+        virtual bool loadPrimitive(int group, Mat4 transform, const Json& prop) override {
+            PYBIND11_OVERLOAD_PURE(bool, Scene, loadPrimitive, group, transform, prop);
+        }
+        virtual int addGroup(const std::string& groupName) override {
+            PYBIND11_OVERLOAD_PURE(int, Scene, addGroup, groupName);
         }
         virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, foreachTriangle, processTriangle);
