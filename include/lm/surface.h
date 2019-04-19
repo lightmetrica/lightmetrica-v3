@@ -176,9 +176,7 @@ namespace SurfaceComp {
     \endrst
 */
 struct SurfacePoint {
-    Transform globalTransform;  //!< Global transform materix of the primitive.
-    int group;                  //!< Group index.
-    int primitive;              //!< Primitive index.
+    int primitive;              //!< Primitive node index.
     int comp;                   //!< Component index.
     PointGeometry geom;         //!< Surface point geometry information.
     bool endpoint;              //!< True if endpoint of light path.

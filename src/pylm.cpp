@@ -168,9 +168,6 @@ static void bind(pybind11::module& m) {
     m.def("reset", &reset);
     m.def("asset", (std::string(*)(const std::string&, const std::string&, const Json&))&asset);
     m.def("asset", (std::string(*)(const std::string&))&asset);
-    m.def("primitive", (void(*)(int, Mat4, const Json&))&primitive);
-    m.def("primitive", (void(*)(Mat4, const Json&))&primitive);
-    m.def("group", &group);
     m.def("build", &build);
     m.def("renderer", &renderer, pybind11::call_guard<pybind11::gil_scoped_release>());
     m.def("render", (void(*)(bool))&render, "verbose"_a = true, pybind11::call_guard<pybind11::gil_scoped_release>());
@@ -179,7 +176,13 @@ static void bind(pybind11::module& m) {
     m.def("buffer", &buffer);
     m.def("serialize", (void(*)(const std::string&))&serialize);
     m.def("deserialize", (void(*)(const std::string&))&deserialize);
-    m.def("validate", &validate);
+    m.def("rootnode", &rootnode);
+    m.def("primitivenode", &primitivenode);
+    m.def("groupnode", &groupnode);
+    m.def("instancegroupnode", &instancegroupnode);
+    m.def("transformnode", &transformnode);
+    m.def("addchild", &addchild);
+    m.def("primitive", &primitive);
     #pragma endregion
 
     // ------------------------------------------------------------------------
@@ -437,6 +440,10 @@ static void bind(pybind11::module& m) {
         .def_readwrite("weight", &RaySample::weight)
         .def("ray", &RaySample::ray);
 
+    pybind11::enum_<SceneNodeType>(m, "SceneNodeType")
+        .value("Primitive", SceneNodeType::Primitive)
+        .value("Group", SceneNodeType::Group);
+
     class Scene_Py final : public Scene {
         virtual bool construct(const Json& prop) override {
             PYBIND11_OVERLOAD(bool, Scene, construct, prop);
@@ -444,17 +451,20 @@ static void bind(pybind11::module& m) {
         virtual bool renderable() const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, renderable);
         }
-        virtual bool loadPrimitive(int group, Mat4 transform, const Json& prop) override {
-            PYBIND11_OVERLOAD_PURE(bool, Scene, loadPrimitive, group, transform, prop);
+        virtual int rootNode() override {
+            PYBIND11_OVERLOAD_PURE(int, Scene, rootNode);
         }
-        virtual int addGroup(const std::string& groupName) override {
-            PYBIND11_OVERLOAD_PURE(int, Scene, addGroup, groupName);
+        virtual int createNode(SceneNodeType type, const Json& prop) override {
+            PYBIND11_OVERLOAD_PURE(int, Scene, loadPrimitive, type, prop);
         }
-        virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, foreachTriangle, processTriangle);
+        virtual void addChild(int parent, int child) override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, addChild, parent, child);
         }
-        virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, foreachPrimitive, processPrimitive);
+        virtual void addChildFromModel(int parent, const std::string& modelLoc) override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, addChildFromModel, parent, modelLoc);
+        }
+        virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, traverseNodes, traverseFunc);
         }
         virtual void build(const std::string& name, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
@@ -498,9 +508,12 @@ static void bind(pybind11::module& m) {
     };
     pybind11::class_<Scene, Scene_Py, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
-        .def("loadPrimitive", &Scene::loadPrimitive)
-        .def("foreachTriangle", &Scene::foreachTriangle)
-        .def("foreachPrimitive", &Scene::foreachPrimitive)
+        .def("renderable", &Scene::renderable)
+        .def("rootNode", &Scene::rootNode)
+        .def("createNode", &Scene::createNode)
+        .def("addChild", &Scene::addChild)
+        .def("addChildFromModel", &Scene::addChildFromModel)
+        .def("traverseNodes", &Scene::traverseNodes)
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
         .def("isLight", &Scene::isLight)

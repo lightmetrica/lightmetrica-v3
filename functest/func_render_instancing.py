@@ -39,11 +39,11 @@ os.getpid()
 
 # %load_ext lightmetrica_jupyter
 
-# + {"code_folding": [0]}
+# + {"code_folding": []}
 # Initialize Lightmetrica
 lm.init()
-lm.log.init('logger::jupyter', {})
-lm.progress.init('progress::jupyter', {})
+lm.log.init('logger::jupyter')
+lm.progress.init('progress::jupyter')
 
 # + {"code_folding": []}
 # Create a sphere geometry with triangle mesh
@@ -85,6 +85,26 @@ for i in range(1,numTheta+1):
 # Scene setup
 def scene_setup():
     lm.reset()
+#     lm.asset('mesh_sphere', 'mesh::raw',
+#         ps = vs.flatten().tolist(),
+#         ns = ns.flatten().tolist(),
+#         ts = ts.flatten().tolist(),
+#         fs_p = fs.flatten().tolist(),
+#         fs_t = fs.flatten().tolist(),
+#         fs_n = fs.flatten().tolist()
+#     )
+#     lm.asset('camera_main', 'camera::pinhole',
+#         position = [0,0,50],
+#         center = [0,0,0],
+#         up = [0,1,0],
+#         vfov = 30
+#     )
+#     lm.asset('material_white', 'material::diffuse',
+#          Kd = [1,1,1]
+#     )
+#     lm.primitive(
+#         camera = lm.asset('camera_main')
+#     )
     lm.asset('mesh_sphere', 'mesh::raw', {
         'ps': vs.flatten().tolist(),
         'ns': ns.flatten().tolist(),
@@ -114,6 +134,15 @@ def scene_setup():
 # Rendering
 def render_and_visualize():
     lm.build('accel::sahbvh', {})
+#     lm.asset('film_output', 'film::bitmap',
+#         w = 1920,
+#         h = 1080
+#     )
+#     lm.render('renderer::raycast',
+#         output = lm.asset('film_output'),
+#         visualize_normal = True,
+#         bg_color = [1,1,1]
+#     )
     lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output'),
@@ -132,10 +161,13 @@ def render_and_visualize():
 scene_setup()
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
-        lm.primitive(lm.translate(np.array([x,y,0])), {
+        p = lm.primitivenode({
             'mesh': lm.asset('mesh_sphere'),
             'material': lm.asset('material_white')
         })
+        t = lm.transformnode(lm.translate(np.array([x,y,0])))
+        lm.addchild(t, p)
+        lm.addchild(lm.rootnode(), t)
 
 render_and_visualize()
 
@@ -144,57 +176,61 @@ render_and_visualize()
 # +
 scene_setup()
 
-# To use instancing, we want to create a primitive group.
-# lm.primitive function can take the group as an argument.
-g = lm.group('g')
-lm.primitive(g, lm.identity(), {
+# Instance group
+g = lm.instancegroupnode()
+lm.addchild(g, lm.primitivenode({
     'mesh': lm.asset('mesh_sphere'),
     'material': lm.asset('material_white')
-})
+}))
+
+# Transformed instanced group
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
-        # The primitive group can be specifed by 'group' parameter.
-        # The underlying mesh is used as an instanced mesh.
-        lm.primitive(lm.translate(np.array([x,y,0])), {
-            'group': g
-        })
+        t = lm.transformnode(lm.translate(np.array([x,y,0])))
+        lm.addchild(t, g)
+        lm.addchild(lm.rootnode(), t)
 # -
 
 render_and_visualize()
 
 # ### Multi-level instancing
 
+# +
 scene_setup()
-g1 = lm.group('g1')
-lm.primitive(g, lm.identity(), {
+
+# Initial group
+g1 = lm.instancegroupnode()
+lm.addchild(g1, lm.primitivenode({
     'mesh': lm.asset('mesh_sphere'),
     'material': lm.asset('material_white')
-})
-g2 = lm.group('g2')
+}))
+
+# Second group using initial group as chilren
+g2 = lm.instancegroupnode()
 for y in np.linspace(-10,10,10):
-    lm.primitive(g2, lm.translate(np.array([0,y,0])), {
-        'group': g
-    })
+    t = lm.transformnode(lm.translate(np.array([0,y,0])))
+    lm.addchild(t, g)
+    lm.addchild(g2, t)
+    
+# Add transformed second group to the root node
 for x in np.linspace(-10,10,10):
-    lm.primitive(lm.translate(np.array([x,0,0])), {
-        'group': g2
-    })
+    t = lm.transformnode(lm.translate(np.array([x,0,0])))
+    lm.addchild(t, g2)
+    lm.addchild(lm.rootnode(), t)
+# -
 
 render_and_visualize()
 
 # ### Detecting invalid group
 
-# Scene containing cyclic dependency is invalid
-scene_setup()
-g = lm.group('g')
-lm.primitive(g, lm.identity(), {
-    'group': g
-})
-try:
-    lm.primitive(lm.identity(), {
-        'group': g
-    })
-except Exception:
-    traceback.print_exc()
+# +
+# # Scene containing cyclic dependency is invalid
+# scene_setup()
+# try:
+#     g = lm.group()
+#     lm.node.add(g, g)
+# except Exception:
+#     traceback.print_exc()
+# -
 
 

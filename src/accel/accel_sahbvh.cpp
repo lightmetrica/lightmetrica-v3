@@ -13,29 +13,28 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-struct FlattenedPrimitive {
+struct FlattenedPrimitiveNode {
     Transform globalTransform;  // Global transform of the primitive
-    int group;                  // Group index
-    int primitive;              // Primitive index
+    int primitive;              // Primitive node index
 };
 
 struct Tri {
-    Vec3 p1;                // One vertex of the triangle
-    Vec3 e1, e2;            // Two edges incident to p1
-    Bound b;                // Bound of the triangle
-    Vec3 c;                 // Center of the bound
-    int flattenedPrimitive; // Index of flattened primitive associated to the triangle
-    int face;               // Face index of the mesh associated to the triangle
+    Vec3 p1;            // One vertex of the triangle
+    Vec3 e1, e2;        // Two edges incident to p1
+    Bound b;            // Bound of the triangle
+    Vec3 c;             // Center of the bound
+    int flattenedNode;  // Index of flattened primitive associated to the triangle
+    int face;           // Face index of the mesh associated to the triangle
 
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(p1, e1, e2, b, c, flattenedPrimitive, face);
+        ar(p1, e1, e2, b, c, flattenedNode, face);
     }
 
     Tri() {}
 
-    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int flattenedPrimitive, int face)
-        : p1(p1), flattenedPrimitive(flattenedPrimitive), face(face) {
+    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int flattenedNode, int face)
+        : p1(p1), flattenedNode(flattenedNode), face(face) {
         e1 = p2 - p1;
         e2 = p3 - p1;
         b = merge(b, p1);
@@ -105,10 +104,10 @@ struct Node {
 */
 class Accel_SAHBVH final : public Accel {
 private:
-    std::vector<Node> nodes_;   // Nodes
-    std::vector<Tri> trs_;      // Triangles
-    std::vector<int> indices_;  // Triangle indices
-    std::vector<FlattenedPrimitive> flattenedPrimitives_;
+    std::vector<Node> nodes_;                             // Nodes
+    std::vector<Tri> trs_;                                // Triangles
+    std::vector<int> indices_;                            // Triangle indices
+    std::vector<FlattenedPrimitiveNode> flattenedNodes_;  // Flattened scene graph
     
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -117,26 +116,29 @@ public:
 
 public:
     virtual void build(const Scene& scene) override {
-        // Setup triangle list
+        // Flatten the scene graph and setup triangle list
         trs_.clear();
-        flattenedPrimitives_.clear();
-        scene.foreachPrimitive([&](const Primitive& primitive, Mat4 globalTransform) {
-            if (!primitive.mesh) {
+        flattenedNodes_.clear();
+        scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+            if (node.type != SceneNodeType::Primitive) {
+                return;
+            }
+            if (!node.primitive.mesh) {
                 return;
             }
 
-            // Flattened primitive
-            const int flattenPrimitiveIndex = int(flattenedPrimitives_.size());
-            flattenedPrimitives_.push_back({ globalTransform, primitive.group, primitive.index });
+            // Record flattened primitive
+            const int flattenNodeIndex = int(flattenedNodes_.size());
+            flattenedNodes_.push_back({ Transform(globalTransform), node.index });
 
-            // Triangles
-            primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
+            // Record triangles
+            node.primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
                 const auto p1 = globalTransform * Vec4(tri.p1.p, 1_f);
                 const auto p2 = globalTransform * Vec4(tri.p2.p, 1_f);
                 const auto p3 = globalTransform * Vec4(tri.p3.p, 1_f);
-                trs_.emplace_back(p1, p2, p3, flattenPrimitiveIndex, face);
+                trs_.emplace_back(p1, p2, p3, flattenNodeIndex, face);
             });
-    });
+        });
 
         // --------------------------------------------------------------------
 
@@ -281,8 +283,8 @@ public:
             return {};
         }
         const auto& tr = trs_.at(indices_.at(mi));
-        const auto& fp = flattenedPrimitives_.at(tr.flattenedPrimitive);
-        return Hit{ tmax, Vec2(mh->u, mh->v), fp.globalTransform, fp.group, fp.primitive, tr.face };
+        const auto& fn = flattenedNodes_.at(tr.flattenedNode);
+        return Hit{ tmax, Vec2(mh->u, mh->v), fn.globalTransform, fn.primitive, tr.face };
     }
 };
 

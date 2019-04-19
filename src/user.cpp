@@ -134,16 +134,6 @@ public:
         return assets_->makeLoc(name);
     }
 
-    virtual void primitive(int group, Mat4 transform, const Json& prop) override {
-        if (!scene_->loadPrimitive(group, transform, prop)) {
-            THROW_RUNTIME_ERROR();
-        }
-    }
-
-    virtual int group(const std::string& groupName) override {
-        return scene_->addGroup(groupName);
-    }
-
     void build(const std::string& accelName, const Json& prop) {
         scene_->build(accelName, prop);
     }
@@ -199,33 +189,32 @@ public:
         serial::load(is, renderer_);
     }
 
-    virtual void validate() override {
-        // Check all components from the root
-        const lm::Component::ComponentVisitor visitor = [&](Component* comp, bool weak) {
-            if (!comp) {
-                LM_INFO("- nullptr");
-                return;
-            }
-            if (!weak) {
-                LM_INFO("- unique [key='{}', loc='{}']", comp->key(), comp->loc());
+    virtual int rootnode() override {
+        return scene_->rootNode();
+    }
 
-                // Locator
-                const auto loc = comp->loc();
-                
-                // Check if the locator is valid
-                const auto p = comp::get<Component>(loc);
-                if (!p || p != comp) {
-                    LM_ERROR("Invalid locator [loc='{}']", loc);
-                }
+    virtual int primitivenode(const Json& prop) override {
+        return scene_->createNode(SceneNodeType::Primitive, prop);
+    }
 
-                LM_INDENT();
-                comp->foreachUnderlying(visitor);
-            }
-            else {
-                LM_INFO("-> weak [key='{}', loc='{}']", comp->key(), comp->loc());
-            }
-        };
-        comp::get<lm::Component>("$")->foreachUnderlying(visitor);
+    virtual int groupnode() override {
+        return scene_->createNode(SceneNodeType::Group, {});
+    }
+
+    virtual int instancegroupnode() override {
+        return scene_->createNode(SceneNodeType::Group, {
+            {"instanced", true}
+        });
+    }
+
+    virtual int transformnode(Mat4 transform) override {
+        return scene_->createNode(SceneNodeType::Group, {
+            {"transform", transform}
+        });
+    }
+
+    virtual void addchild(int parent, int child) override {
+        scene_->addChild(parent, child);
     }
 
 private:
@@ -264,14 +253,6 @@ LM_PUBLIC_API std::string asset(const std::string& name) {
     return Instance::get().asset(name);
 }
 
-LM_PUBLIC_API void primitive(int group, Mat4 transform, const Json& prop) {
-    Instance::get().primitive(group, transform, prop);
-}
-
-LM_PUBLIC_API int group(const std::string& groupName) {
-    return Instance::get().group(groupName);
-}
-
 LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
     Instance::get().build(accelName, prop);
 }
@@ -300,8 +281,28 @@ LM_PUBLIC_API void deserialize(std::istream& is) {
     Instance::get().deserialize(is);
 }
 
-LM_PUBLIC_API void validate() {
-    Instance::get().validate();
+LM_PUBLIC_API int rootnode() {
+    return Instance::get().rootnode();
+}
+
+LM_PUBLIC_API int primitivenode(const Json& prop) {
+    return Instance::get().primitivenode(prop);
+}
+
+LM_PUBLIC_API int groupnode() {
+    return Instance::get().groupnode();
+}
+
+LM_PUBLIC_API int instancegroupnode() {
+    return Instance::get().instancegroupnode();
+}
+
+LM_PUBLIC_API int transformnode(Mat4 transform) {
+    return Instance::get().transformnode(transform);
+}
+
+LM_PUBLIC_API void addchild(int parent, int child) {
+    Instance::get().addchild(parent, child);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)
