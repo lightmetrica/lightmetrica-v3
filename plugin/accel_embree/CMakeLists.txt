@@ -20,7 +20,9 @@ if (embree_FOUND)
         INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
         LIBRARIES embree
         SOURCES
-            "accel_embree.cpp")
+            "embree.h"
+            "accel_embree.cpp"
+            "accel_embree_instanced.cpp")
 
     # Configure to dynamic library
     if (WIN32)

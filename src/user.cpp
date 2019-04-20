@@ -189,31 +189,31 @@ public:
         serial::load(is, renderer_);
     }
 
-    virtual int rootnode() override {
+    virtual int rootNode() override {
         return scene_->rootNode();
     }
 
-    virtual int primitivenode(const Json& prop) override {
+    virtual int primitiveNode(const Json& prop) override {
         return scene_->createNode(SceneNodeType::Primitive, prop);
     }
 
-    virtual int groupnode() override {
+    virtual int groupNode() override {
         return scene_->createNode(SceneNodeType::Group, {});
     }
 
-    virtual int instancegroupnode() override {
+    virtual int instanceGroupNode() override {
         return scene_->createNode(SceneNodeType::Group, {
             {"instanced", true}
         });
     }
 
-    virtual int transformnode(Mat4 transform) override {
+    virtual int transformNode(Mat4 transform) override {
         return scene_->createNode(SceneNodeType::Group, {
             {"transform", transform}
         });
     }
 
-    virtual void addchild(int parent, int child) override {
+    virtual void addChild(int parent, int child) override {
         scene_->addChild(parent, child);
     }
 
@@ -281,28 +281,28 @@ LM_PUBLIC_API void deserialize(std::istream& is) {
     Instance::get().deserialize(is);
 }
 
-LM_PUBLIC_API int rootnode() {
-    return Instance::get().rootnode();
+LM_PUBLIC_API int rootNode() {
+    return Instance::get().rootNode();
 }
 
-LM_PUBLIC_API int primitivenode(const Json& prop) {
-    return Instance::get().primitivenode(prop);
+LM_PUBLIC_API int primitiveNode(const Json& prop) {
+    return Instance::get().primitiveNode(prop);
 }
 
-LM_PUBLIC_API int groupnode() {
-    return Instance::get().groupnode();
+LM_PUBLIC_API int groupNode() {
+    return Instance::get().groupNode();
 }
 
-LM_PUBLIC_API int instancegroupnode() {
-    return Instance::get().instancegroupnode();
+LM_PUBLIC_API int instanceGroupNode() {
+    return Instance::get().instanceGroupNode();
 }
 
-LM_PUBLIC_API int transformnode(Mat4 transform) {
-    return Instance::get().transformnode(transform);
+LM_PUBLIC_API int transformNode(Mat4 transform) {
+    return Instance::get().transformNode(transform);
 }
 
-LM_PUBLIC_API void addchild(int parent, int child) {
-    Instance::get().addchild(parent, child);
+LM_PUBLIC_API void addChild(int parent, int child) {
+    Instance::get().addChild(parent, child);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

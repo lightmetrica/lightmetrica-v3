@@ -246,12 +246,12 @@ public:
 
 // ----------------------------------------------------------------------------
 
-LM_PUBLIC_API int rootnode();
-LM_PUBLIC_API int primitivenode(const Json& prop);
-LM_PUBLIC_API int groupnode();
-LM_PUBLIC_API int instancegroupnode();
-LM_PUBLIC_API int transformnode(Mat4 transform);
-LM_PUBLIC_API void addchild(int parent, int child);
+LM_PUBLIC_API int rootNode();
+LM_PUBLIC_API int primitiveNode(const Json& prop);
+LM_PUBLIC_API int groupNode();
+LM_PUBLIC_API int instanceGroupNode();
+LM_PUBLIC_API int transformNode(Mat4 transform);
+LM_PUBLIC_API void addChild(int parent, int child);
 
 /*!
     \brief Create primitive(s) and add to the scene.
@@ -275,10 +275,10 @@ LM_PUBLIC_API void addchild(int parent, int child);
     \endrst
 */
 static void primitive(Mat4 transform, const Json& prop) {
-    auto p = primitivenode(prop);
-    auto t = transformnode(transform);
-    addchild(t, p);
-    addchild(rootnode(), t);
+    auto p = primitiveNode(prop);
+    auto t = transformNode(transform);
+    addChild(t, p);
+    addChild(rootNode(), t);
 }
 
 /*!
@@ -316,12 +316,12 @@ public:
     virtual FilmBuffer buffer(const std::string& filmName) = 0;
     virtual void serialize(std::ostream& os) = 0;
     virtual void deserialize(std::istream& is) = 0;
-    virtual int rootnode() = 0;
-    virtual int primitivenode(const Json& prop) = 0;
-    virtual int groupnode() = 0;
-    virtual int instancegroupnode() = 0;
-    virtual int transformnode(Mat4 transform) = 0;
-    virtual void addchild(int parent, int child) = 0;
+    virtual int rootNode() = 0;
+    virtual int primitiveNode(const Json& prop) = 0;
+    virtual int groupNode() = 0;
+    virtual int instanceGroupNode() = 0;
+    virtual int transformNode(Mat4 transform) = 0;
+    virtual void addChild(int parent, int child) = 0;
 };
 
 /*!

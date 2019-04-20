@@ -173,12 +173,12 @@ static void bind(pybind11::module& m) {
     m.def("buffer", &buffer);
     m.def("serialize", (void(*)(const std::string&))&serialize);
     m.def("deserialize", (void(*)(const std::string&))&deserialize);
-    m.def("rootnode", &rootnode);
-    m.def("primitivenode", &primitivenode);
-    m.def("groupnode", &groupnode);
-    m.def("instancegroupnode", &instancegroupnode);
-    m.def("transformnode", &transformnode);
-    m.def("addchild", &addchild);
+    m.def("rootNode", &rootNode);
+    m.def("primitiveNode", &primitiveNode);
+    m.def("groupNode", &groupNode);
+    m.def("instanceGroupNode", &instanceGroupNode);
+    m.def("transformNode", &transformNode);
+    m.def("addChild", &addChild);
     m.def("primitive", &primitive);
     #pragma endregion
 

@@ -7,42 +7,16 @@
 #include <lm/scene.h>
 #include <lm/mesh.h>
 #include <lm/exception.h>
-#include <lm/logger.h>
-#include <embree3/rtcore.h>
+#include "embree.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-namespace {
-    
+namespace {  
+
 struct FlattenedPrimitiveNode {
     Transform globalTransform;  // Global transform of the primitive
     int primitive;              // Primitive node index
 };
-
-void handleEmbreeError(void*, RTCError code, const char* str = nullptr) {
-    if (code == RTC_ERROR_NONE) {
-        return;
-    }
-
-    std::string codestr;
-    switch (code) {
-        case RTC_ERROR_UNKNOWN:           { codestr = "RTC_ERROR_UNKNOWN"; break; }
-        case RTC_ERROR_INVALID_ARGUMENT:  { codestr = "RTC_ERROR_INVALID_ARGUMENT"; break; }
-        case RTC_ERROR_INVALID_OPERATION: { codestr = "RTC_ERROR_INVALID_OPERATION"; break; }
-        case RTC_ERROR_OUT_OF_MEMORY:     { codestr = "RTC_ERROR_OUT_OF_MEMORY"; break; }
-        case RTC_ERROR_UNSUPPORTED_CPU:   { codestr = "RTC_ERROR_UNSUPPORTED_CPU"; break; }
-        case RTC_ERROR_CANCELLED:         { codestr = "RTC_ERROR_CANCELLED"; break; }
-        default:                          { codestr = "Invalid error code"; break; }
-    }
-
-    LM_ERROR("Embree error [code='{}']", codestr);
-    if (str) {
-        LM_INDENT();
-        LM_ERROR(str);
-    }
-
-    throw std::runtime_error(codestr);
-}
 
 }
 

@@ -164,13 +164,13 @@ def render_and_visualize():
 scene_setup()
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
-        p = lm.primitivenode({
+        p = lm.primitiveNode({
             'mesh': lm.asset('mesh_sphere'),
             'material': lm.asset('material_white')
         })
-        t = lm.transformnode(lm.translate(np.array([x,y,0])))
-        lm.addchild(t, p)
-        lm.addchild(lm.rootnode(), t)
+        t = lm.transformNode(lm.translate(np.array([x,y,0])))
+        lm.addChild(t, p)
+        lm.addChild(lm.rootNode(), t)
 
 render_and_visualize()
 
@@ -180,8 +180,8 @@ render_and_visualize()
 scene_setup()
 
 # Instance group
-g = lm.instancegroupnode()
-lm.addchild(g, lm.primitivenode({
+g = lm.instanceGroupNode()
+lm.addChild(g, lm.primitiveNode({
     'mesh': lm.asset('mesh_sphere'),
     'material': lm.asset('material_white')
 }))
@@ -189,9 +189,9 @@ lm.addchild(g, lm.primitivenode({
 # Transformed instanced group
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
-        t = lm.transformnode(lm.translate(np.array([x,y,0])))
-        lm.addchild(t, g)
-        lm.addchild(lm.rootnode(), t)
+        t = lm.transformNode(lm.translate(np.array([x,y,0])))
+        lm.addChild(t, g)
+        lm.addChild(lm.rootNode(), t)
 # -
 
 render_and_visualize()
@@ -202,24 +202,24 @@ render_and_visualize()
 scene_setup()
 
 # Initial group
-g1 = lm.instancegroupnode()
-lm.addchild(g1, lm.primitivenode({
+g1 = lm.instanceGroupNode()
+lm.addChild(g1, lm.primitiveNode({
     'mesh': lm.asset('mesh_sphere'),
     'material': lm.asset('material_white')
 }))
 
 # Second group using initial group as chilren
-g2 = lm.instancegroupnode()
+g2 = lm.instanceGroupNode()
 for y in np.linspace(-10,10,10):
-    t = lm.transformnode(lm.translate(np.array([0,y,0])))
-    lm.addchild(t, g)
-    lm.addchild(g2, t)
+    t = lm.transformNode(lm.translate(np.array([0,y,0])))
+    lm.addChild(t, g)
+    lm.addChild(g2, t)
     
 # Add transformed second group to the root node
 for x in np.linspace(-10,10,10):
-    t = lm.transformnode(lm.translate(np.array([x,0,0])))
-    lm.addchild(t, g2)
-    lm.addchild(lm.rootnode(), t)
+    t = lm.transformNode(lm.translate(np.array([x,0,0])))
+    lm.addChild(t, g2)
+    lm.addChild(lm.rootNode(), t)
 # -
 
 render_and_visualize()
