@@ -13,9 +13,16 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+namespace {
+
 struct FlattenedPrimitiveNode {
     Transform globalTransform;  // Global transform of the primitive
     int primitive;              // Primitive node index
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(globalTransform, primitive);
+    }
 };
 
 struct Tri {
@@ -83,6 +90,10 @@ struct Node {
     }
 };
 
+}
+
+// ----------------------------------------------------------------------------
+
 /*
 \rst
 .. function:: accel::sahbvh
@@ -111,7 +122,7 @@ private:
     
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(nodes_, trs_, indices_);
+        ar(nodes_, trs_, indices_, flattenedNodes_);
     }
 
 public:

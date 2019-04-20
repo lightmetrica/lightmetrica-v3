@@ -4,5 +4,5 @@
 #
 
 # add_subdirectory(accel_nanort)
-# add_subdirectory(accel_embree)
+add_subdirectory(accel_embree)
 add_subdirectory(objloader_tinyobjloader)

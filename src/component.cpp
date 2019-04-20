@@ -196,7 +196,7 @@ public:
         return true;
     }
 
-    void loadPlugins(const std::string& directory) {
+    void loadPluginDirectory(const std::string& directory) {
         namespace fs = std::filesystem;
 
         // Skip if directory does not exist
@@ -324,8 +324,8 @@ LM_PUBLIC_API bool loadPlugin(const std::string& path) {
     return Impl::instance().loadPlugin(path);
 }
 
-LM_PUBLIC_API void loadPlugins(const std::string& directory) {
-    Impl::instance().loadPlugins(directory);
+LM_PUBLIC_API void loadPluginDirectory(const std::string& directory) {
+    Impl::instance().loadPluginDirectory(directory);
 }
 
 LM_PUBLIC_API void unloadPlugins() {

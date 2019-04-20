@@ -148,13 +148,10 @@ static void bind(pybind11::module& m) {
         sm.def("get", [](const std::string& locator) -> Component* {
             return comp::get<Component>(locator);
         }, pybind11::return_value_policy::reference);
-        {
-            auto sm_detail = sm.def_submodule("detail");
-            sm_detail.def("loadPlugin", &comp::detail::loadPlugin);
-            sm_detail.def("loadPlugins", &comp::detail::loadPlugins);
-            sm_detail.def("unloadPlugins", &comp::detail::unloadPlugins);
-            sm_detail.def("foreachRegistered", &comp::detail::foreachRegistered);
-        }
+        sm.def("loadPlugin", &comp::loadPlugin);
+        sm.def("loadPluginDirectory", &comp::loadPluginDirectory);
+        sm.def("unloadPlugins", &comp::unloadPlugins);
+        sm.def("foreachRegistered", &comp::foreachRegistered);
     }
 
     #pragma endregion

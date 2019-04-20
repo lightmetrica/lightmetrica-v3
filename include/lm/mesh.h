@@ -73,26 +73,21 @@ public:
         A specified callback function is called for each triangle.
         \endrst
     */
-    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const {
-        LM_UNUSED(processTriangle);
-        LM_UNREACHABLE();
-    }
+    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const = 0;
 
     /*!
         \brief Get triangle by face index.
     */
-    virtual Tri triangleAt(int face) const {
-        LM_UNUSED(face);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual Tri triangleAt(int face) const = 0;
 
     /*!
         \brief Compute surface geometry information at a point.
     */
-    virtual Point surfacePoint(int face, Vec2 uv) const {
-        LM_UNUSED(face, uv);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual Point surfacePoint(int face, Vec2 uv) const = 0;
+
+    /*!
+    */
+    virtual int numTriangles() const = 0;
 };
 
 /*!

@@ -55,8 +55,8 @@ public:
     }
 
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
-        for (int fi = 0; fi < int(fs_.size()); fi += 3) {
-            processTriangle(fi, triangleAt(fi/3));
+        for (int fi = 0; fi < int(fs_.size())/3; fi++) {
+            processTriangle(fi, triangleAt(fi));
         }
     }
 
@@ -72,9 +72,9 @@ public:
     }
 
     virtual Point surfacePoint(int face, Vec2 uv) const override {
-        const auto i1 = fs_[face];
-        const auto i2 = fs_[face + 1];
-        const auto i3 = fs_[face + 2];
+        const auto i1 = fs_[3*face];
+        const auto i2 = fs_[3*face+1];
+        const auto i3 = fs_[3*face+2];
         return {
             math::mixBarycentric(
                 ps_[i1.p], ps_[i2.p], ps_[i3.p], uv),
@@ -83,6 +83,10 @@ public:
             math::mixBarycentric(
                 ts_[i1.t], ts_[i2.t], ts_[i3.t], uv)
         };
+    }
+
+    virtual int numTriangles() const override {
+        return int(fs_.size()) / 3;
     }
 };
 

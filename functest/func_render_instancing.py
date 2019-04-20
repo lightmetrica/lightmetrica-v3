@@ -44,6 +44,9 @@ os.getpid()
 lm.init()
 lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
+# -
+
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
 
 # + {"code_folding": []}
 # Create a sphere geometry with triangle mesh
@@ -133,7 +136,7 @@ def scene_setup():
 
 # Rendering
 def render_and_visualize():
-    lm.build('accel::sahbvh', {})
+    lm.build('accel::embree', {})
 #     lm.asset('film_output', 'film::bitmap',
 #         w = 1920,
 #         h = 1080

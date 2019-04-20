@@ -5,6 +5,7 @@
 
 #include <lm/accel.h>
 #include <lm/scene.h>
+#include <lm/mesh.h>
 #include <lm/exception.h>
 #include <lm/logger.h>
 #include <embree3/rtcore.h>
@@ -12,7 +13,13 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 namespace {
-void handleEmbreeError(void* userPtr, RTCError code, const char* str = nullptr) {
+    
+struct FlattenedPrimitiveNode {
+    Transform globalTransform;  // Global transform of the primitive
+    int primitive;              // Primitive node index
+};
+
+void handleEmbreeError(void*, RTCError code, const char* str = nullptr) {
     if (code == RTC_ERROR_NONE) {
         return;
     }
@@ -36,7 +43,10 @@ void handleEmbreeError(void* userPtr, RTCError code, const char* str = nullptr) 
 
     throw std::runtime_error(codestr);
 }
+
 }
+
+// ----------------------------------------------------------------------------
 
 /*
 \rst
@@ -49,6 +59,7 @@ class Accel_Embree final : public Accel {
 private:
     RTCDevice device_ = nullptr;
     RTCScene scene_ = nullptr;
+    std::vector<FlattenedPrimitiveNode> flattenedNodes_;
 
 public:
     Accel_Embree() {
@@ -63,22 +74,96 @@ public:
         }
     }
 
+private:
+    void reset() {
+        if (scene_) {
+            rtcReleaseScene(scene_);
+            scene_ = nullptr;
+        }
+        flattenedNodes_.clear();
+    }
+
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void build(const Scene& scene) override {
+        exception::ScopedDisableFPEx guard_;
+
+        reset();
         scene_ = rtcNewScene(device_);
 
-        // 
+        // Flatten the scene graph and setup geometries
+        scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+            if (node.type != SceneNodeType::Primitive) {
+                return;
+            }
+            if (!node.primitive.mesh) {
+                return;
+            }
+
+            // Record flattened primitive
+            const int flattenNodeIndex = int(flattenedNodes_.size());
+            flattenedNodes_.push_back({ Transform(globalTransform), node.index });
+
+            // Create triangle mesh
+            auto geom = rtcNewGeometry(device_, RTC_GEOMETRY_TYPE_TRIANGLE);
+            const int numTriangles = node.primitive.mesh->numTriangles();
+            auto* vs = (glm::vec3*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(glm::vec3), numTriangles*3);
+            auto* fs = (glm::uvec3*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(glm::uvec3), numTriangles);
+            node.primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
+                const auto p1 = globalTransform * Vec4(tri.p1.p, 1_f);
+                const auto p2 = globalTransform * Vec4(tri.p2.p, 1_f);
+                const auto p3 = globalTransform * Vec4(tri.p3.p, 1_f);
+                vs[3*face  ] = glm::vec3(p1);
+                vs[3*face+1] = glm::vec3(p2);
+                vs[3*face+2] = glm::vec3(p3);
+                fs[face][0] = 3*face;
+                fs[face][1] = 3*face+1;
+                fs[face][2] = 3*face+2;
+            });
+            rtcCommitGeometry(geom);
+            rtcAttachGeometryByID(scene_, geom, flattenNodeIndex);
+            rtcReleaseGeometry(geom);
+        });
 
         rtcCommitScene(scene_);
     }
 
-    virtual void build(const Scene& scene) override {
-        LM_UNUSED(scene);
-    }
-
     virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) const override {
-        LM_UNUSED(ray, tmin, tmax);
-        return {};
+        exception::ScopedDisableFPEx guard_;
+
+        RTCIntersectContext context;
+        rtcInitIntersectContext(&context);
+
+        // Setup ray
+        RTCRayHit rayhit;
+        rayhit.ray.org_x = float(ray.o.x);
+        rayhit.ray.org_y = float(ray.o.y);
+        rayhit.ray.org_z = float(ray.o.z);
+        rayhit.ray.tnear = float(tmin);
+        rayhit.ray.dir_x = float(ray.d.x);
+        rayhit.ray.dir_y = float(ray.d.y);
+        rayhit.ray.dir_z = float(ray.d.z);
+        rayhit.ray.time = 0.f;
+        rayhit.ray.tfar = float(tmax);
+        rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
+        rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+        rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+        
+        // Intersection query
+        rtcIntersect1(scene_, &context, &rayhit);
+        if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
+            // No intersection
+            return {};
+        }
+        
+        // Store hit information
+        const auto& fn = flattenedNodes_.at(rayhit.hit.geomID);
+        return Hit{
+            Float(rayhit.ray.tfar),
+            Vec2(Float(rayhit.hit.u), Float(rayhit.hit.v)),
+            fn.globalTransform,
+            fn.primitive,
+            int(rayhit.hit.primID)
+        };
     }
 };
 

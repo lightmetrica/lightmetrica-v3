@@ -405,7 +405,7 @@ LM_PUBLIC_API bool loadPlugin(const std::string& path);
     If the loading fails, it generates an error message but ignored.
     \endrst
 */
-LM_PUBLIC_API void loadPlugins(const std::string& directory);
+LM_PUBLIC_API void loadPluginDirectory(const std::string& directory);
 
 /*!
     \brief Unload loaded plugins.
@@ -465,6 +465,11 @@ LM_NAMESPACE_END(detail)
     \addtogroup comp
     @{
 */
+
+using detail::loadPlugin;
+using detail::loadPluginDirectory;
+using detail::unloadPlugins;
+using detail::foreachRegistered;
 
 /*!
     \brief Get component by locator.

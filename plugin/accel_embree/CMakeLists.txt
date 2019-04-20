@@ -21,4 +21,23 @@ if (embree_FOUND)
         LIBRARIES embree
         SOURCES
             "accel_embree.cpp")
+
+    # Configure to dynamic library
+    if (WIN32)
+        include(LmCopyDll)
+        add_custom_target(copydll_embree)
+        add_custom_command_copy_dll(
+            TARGET copydll_embree
+            NAME accel_embree
+            DLL ${embree_DIR}/bin/embree3.dll)
+        add_custom_command_copy_dll(
+            TARGET copydll_embree
+            NAME accel_embree
+            DLL ${embree_DIR}/bin/tbb.dll)
+        add_custom_command_copy_dll(
+            TARGET copydll_embree
+            NAME accel_embree
+            DLL ${embree_DIR}/bin/tbbmalloc.dll)
+        set_target_properties(copydll_embree PROPERTIES FOLDER "lm/plugin")
+    endif()
 endif()
