@@ -112,7 +112,7 @@ public:
 
             // Check validity
             if (!mesh && !material && !light && !camera) {
-                LM_ERROR("Invalid primitive node");
+                LM_ERROR("Invalid primitive node. Given assets are invalid.");
                 return false;
             }
             if (camera && light) {
@@ -241,6 +241,7 @@ public:
             return;
         }
         LM_INFO("Building acceleration structure [name='{}']", name);
+        LM_INDENT();
         accel_->build(*this);
     }
 

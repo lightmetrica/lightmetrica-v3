@@ -8,6 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import platform
 import lightmetrica as lm
+import time
+from IPython.display import display, Markdown
 
 def jupyter_init_config(outfilm):
     """ init() configuration for jupyter notebook extension """
@@ -55,11 +57,28 @@ def load_ipython_extension(ip):
         def construct(self, prop):
             self.severity = 0
             self.n = 0
+            self.start = time.time()
             return True
         def log(self, level, severity, filename, line, message):
             if self.severity > severity:
                 return
-            print((' ' * self.n * 2) + message)
+            if level == lm.log.LogLevel.Debug:
+                name = 'D'
+            elif level == lm.log.LogLevel.Info:
+                name = 'I'
+            elif level == lm.log.LogLevel.Warn:
+                name = 'W'
+            elif level == lm.log.LogLevel.Err:
+                name = 'E'
+            else:
+                name = 'I'
+            elapsed = time.time() - self.start
+            file_no_ext = os.path.splitext(os.path.basename(filename))[0]
+            line_and_file = '{}@{}'.format(line, file_no_ext)[:10]
+            header = '[{}|{:.3f}|{:<10}] '.format(name, elapsed, line_and_file)
+            spaces = (' ' * self.n * 2)
+            s = header + spaces + message
+            print(s)
         def updateIndentation(self, n):
             self.n = n
         def setSeverity(self, severity):

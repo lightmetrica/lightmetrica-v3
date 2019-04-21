@@ -252,6 +252,7 @@ LM_PUBLIC_API int groupNode();
 LM_PUBLIC_API int instanceGroupNode();
 LM_PUBLIC_API int transformNode(Mat4 transform);
 LM_PUBLIC_API void addChild(int parent, int child);
+LM_PUBLIC_API void addChildFromModel(int parent, const std::string& modelLoc);
 
 /*!
     \brief Create primitive(s) and add to the scene.
@@ -274,12 +275,7 @@ LM_PUBLIC_API void addChild(int parent, int child);
     In this case, the transformation is applied to all primitives to be generated.
     \endrst
 */
-static void primitive(Mat4 transform, const Json& prop) {
-    auto p = primitiveNode(prop);
-    auto t = transformNode(transform);
-    addChild(t, p);
-    addChild(rootNode(), t);
-}
+LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
 
 /*!
     @}
@@ -322,6 +318,7 @@ public:
     virtual int instanceGroupNode() = 0;
     virtual int transformNode(Mat4 transform) = 0;
     virtual void addChild(int parent, int child) = 0;
+    virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
 };
 
 /*!

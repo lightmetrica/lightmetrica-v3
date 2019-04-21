@@ -128,6 +128,7 @@ public:
 public:
     virtual void build(const Scene& scene) override {
         // Flatten the scene graph and setup triangle list
+        LM_INFO("Flattening scene");
         trs_.clear();
         flattenedNodes_.clear();
         scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
@@ -257,6 +258,7 @@ public:
                 cv.notify_one();
             }
         };
+        LM_INFO("Building");
         std::vector<std::thread> ths(std::thread::hardware_concurrency());
         for (auto& th : ths) {
             th = std::thread(process);

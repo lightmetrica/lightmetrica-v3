@@ -42,8 +42,9 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
-lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
 
 lm.objloader.init('objloader::tinyobjloader', {})
 
@@ -58,7 +59,9 @@ for scene in lmscene.scenes():
     
     # Render
     lmscene.load(ft.env.scene_path, scene)
-    lm.build('accel::nanort', {})
+    #lm.build('accel::sahbvh', {})
+    #lm.build('accel::nanort', {})
+    lm.build('accel::embreeinstanced', {})
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output'),
         #'use_constant_color': True

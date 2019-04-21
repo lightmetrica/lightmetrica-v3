@@ -7,14 +7,14 @@
 #include <lm/scene.h>
 #include <lm/mesh.h>
 #include <lm/exception.h>
+#include <lm/logger.h>
 #include <nanort.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-struct FlattenedPrimitive {
+struct FlattenedPrimitiveNode {
     Transform globalTransform;  // Global transform of the primitive
-    int group;                  // Group index
-    int primitive;              // Primitive index
+    int primitive;              // Primitive node index
 };
 
 /*
@@ -29,38 +29,43 @@ private:
     std::vector<Float> vs_;
     std::vector<unsigned int> fs_;
     nanort::BVHAccel<Float> accel_;
-    std::vector<std::tuple<int, int>> primitiveFaceId_;
-    std::vector<FlattenedPrimitive> flattenedPrimitives_;
+    std::vector<std::tuple<int, int>> flattenNodeAndFacePerTriangle_;
+    std::vector<FlattenedPrimitiveNode> flattenedNodes_;
 
 public:
     virtual void build(const Scene& scene) override {
         // Make a combined mesh
+        LM_INFO("Flattening scene");
         vs_.clear();
         fs_.clear();
-        primitiveFaceId_.clear();
-        flattenedPrimitives_.clear();
-        scene.foreachPrimitive([&](const Primitive& primitive, Mat4 globalTransform) {
-            if (!primitive.mesh) {
+        flattenNodeAndFacePerTriangle_.clear();
+        flattenedNodes_.clear();
+        scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+            if (node.type != SceneNodeType::Primitive) {
+                return;
+            }
+            if (!node.primitive.mesh) {
                 return;
             }
 
-            // Flattened primitive
-            const int flattenPrimitiveIndex = int(flattenedPrimitives_.size());
-            flattenedPrimitives_.push_back({ globalTransform, primitive.group, primitive.index });
+            // Record flattened primitive
+            const int flattenNodeIndex = int(flattenedNodes_.size());
+            flattenedNodes_.push_back({ Transform(globalTransform), node.index });
 
             // Triangles
-            primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
+            node.primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
                 const auto p1 = globalTransform * Vec4(tri.p1.p, 1_f);
                 const auto p2 = globalTransform * Vec4(tri.p2.p, 1_f);
                 const auto p3 = globalTransform * Vec4(tri.p3.p, 1_f);
                 vs_.insert(vs_.end(), { p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z });
                 auto s = (unsigned int)(fs_.size());
                 fs_.insert(fs_.end(), { s, s+1, s+2 });
-                primitiveFaceId_.push_back({ flattenPrimitiveIndex, face });
+                flattenNodeAndFacePerTriangle_.push_back({ flattenNodeIndex, face });
             });
         });
 
         // Build acceleration structure
+        LM_INFO("Building");
         nanort::BVHBuildOptions<Float> options;
         nanort::TriangleMesh<Float> mesh(vs_.data(), fs_.data(), sizeof(Float) * 3);
         nanort::TriangleSAHPred<Float> pred(vs_.data(), fs_.data(), sizeof(Float) * 3);
@@ -86,9 +91,9 @@ public:
             return {};
         }
         
-        const auto [flattenPrimitiveIndex, face] = primitiveFaceId_.at(isect.prim_id);
-        const auto& fp = flattenedPrimitives_.at(flattenPrimitiveIndex);
-        return Hit{ isect.t, Vec2(isect.u, isect.v), fp.globalTransform, fp.group, fp.primitive, face };
+        const auto [node, face] = flattenNodeAndFacePerTriangle_.at(isect.prim_id);
+        const auto& fn = flattenedNodes_.at(node);
+        return Hit{ isect.t, Vec2(isect.u, isect.v), fn.globalTransform, fn.primitive, face };
     }
 };
 

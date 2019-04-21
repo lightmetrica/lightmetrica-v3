@@ -40,7 +40,7 @@ public:
     virtual bool construct(const Json& prop) override {
         // Image path
         const std::string path = sanitizeDirectorySeparator(prop["path"]);
-        LM_INFO("Loading texture [path='{}']", path);
+        LM_INFO("Loading texture [path='{}']", std::filesystem::path(path).filename().string());
 
         // Load as HDR image
         // LDR image is internally converted to HDR

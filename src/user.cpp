@@ -217,6 +217,10 @@ public:
         scene_->addChild(parent, child);
     }
 
+    virtual void addChildFromModel(int parent, const std::string& modelLoc) override {
+        scene_->addChildFromModel(parent, modelLoc);
+    }
+
 private:
     Component::Ptr<Assets> assets_;
     Component::Ptr<Scene> scene_;
@@ -303,6 +307,21 @@ LM_PUBLIC_API int transformNode(Mat4 transform) {
 
 LM_PUBLIC_API void addChild(int parent, int child) {
     Instance::get().addChild(parent, child);
+}
+
+LM_PUBLIC_API void addChildFromModel(int parent, const std::string& modelLoc) {
+    Instance::get().addChildFromModel(parent, modelLoc);
+}
+
+LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
+    auto t = transformNode(transform);
+    if (prop.find("model") != prop.end()) {
+        addChildFromModel(t, prop["model"]);
+    }
+    else {
+        addChild(t, primitiveNode(prop));
+    }
+    addChild(rootNode(), t);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

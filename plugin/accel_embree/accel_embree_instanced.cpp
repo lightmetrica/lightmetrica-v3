@@ -69,6 +69,7 @@ public:
         // --------------------------------------------------------------------
 
         // Flatten the scene with single-level instance group
+        LM_INFO("Flattening scene");
         std::unordered_map<int, int> nodeToFlattenedSceneMap;     // Node index -> flattened scene index
         using VisitSceneNodeFunc = std::function<void(const SceneNode, Mat4, int, bool)>;
         VisitSceneNodeFunc visitSceneNode = [&](const SceneNode& node, Mat4 globalTransform, int flattenedSceneIndex, bool ignoreInstanceGroup) {
@@ -146,6 +147,7 @@ public:
 
         // Traverse the flattened scene and create embree scene
         // Process from backward because the instanced scene must be created prior to the scene.
+        LM_INFO("Building");
         std::vector<RTCScene> rtcscenes(flattenedScenes_.size());
         for (int i = int(flattenedScenes_.size())-1; i >= 0; i--) {
             const auto& fscene = flattenedScenes_.at(i);

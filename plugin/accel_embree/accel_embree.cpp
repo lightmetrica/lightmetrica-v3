@@ -65,6 +65,7 @@ public:
         scene_ = rtcNewScene(device_);
 
         // Flatten the scene graph and setup geometries
+        LM_INFO("Flattening scene");
         scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
             if (node.type != SceneNodeType::Primitive) {
                 return;
@@ -98,6 +99,7 @@ public:
             rtcReleaseGeometry(geom);
         });
 
+        LM_INFO("Building");
         rtcCommitScene(scene_);
     }
 
