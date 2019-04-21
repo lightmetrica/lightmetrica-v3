@@ -463,6 +463,12 @@ static void bind(pybind11::module& m) {
         virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, traverseNodes, traverseFunc);
         }
+        virtual void visitNode(int nodeIndex, const VisitNodeFunc& visit) const override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, visitNode, nodeIndex, visit);
+        }
+        virtual const SceneNode& nodeAt(int nodeIndex) const override {
+            PYBIND11_OVERLOAD_PURE(const SceneNode&, Scene, nodeAt, nodeIndex);
+        }
         virtual void build(const std::string& name, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
         }

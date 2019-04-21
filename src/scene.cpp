@@ -189,6 +189,8 @@ public:
         });
     }
 
+    // ------------------------------------------------------------------------
+
     virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const override {
         std::function<void(int, Mat4)> visit = [&](int index, Mat4 globalTransform) {
             const auto& node = nodes_.at(index);
@@ -203,6 +205,14 @@ public:
             }
         };
         visit(0, Mat4(1_f));
+    }
+
+    virtual void visitNode(int nodeIndex, const VisitNodeFunc& visit) const override {
+        visit(nodes_.at(nodeIndex));
+    }
+
+    virtual const SceneNode& nodeAt(int nodeIndex) const override {
+        return nodes_.at(nodeIndex);
     }
 
     // ------------------------------------------------------------------------

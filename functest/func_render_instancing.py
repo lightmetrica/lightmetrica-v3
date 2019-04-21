@@ -136,7 +136,7 @@ def scene_setup():
 
 # Rendering
 def render_and_visualize():
-    lm.build('accel::embree', {})
+    lm.build('accel::embreeinstanced', {})
 #     lm.asset('film_output', 'film::bitmap',
 #         w = 1920,
 #         h = 1080
@@ -212,7 +212,7 @@ lm.addChild(g1, lm.primitiveNode({
 g2 = lm.instanceGroupNode()
 for y in np.linspace(-10,10,10):
     t = lm.transformNode(lm.translate(np.array([0,y,0])))
-    lm.addChild(t, g)
+    lm.addChild(t, g1)
     lm.addChild(g2, t)
     
 # Add transformed second group to the root node

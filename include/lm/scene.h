@@ -223,6 +223,15 @@ public:
     using NodeTraverseFunc = std::function<void(const SceneNode& node, Mat4 globalTransform)>;
     virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const = 0;
 
+    /*!
+    */
+    using VisitNodeFunc = std::function<void(const SceneNode& node)>;
+    virtual void visitNode(int nodeIndex, const VisitNodeFunc& visit) const = 0;
+
+    /*!
+    */
+    virtual const SceneNode& nodeAt(int nodeIndex) const = 0;
+
     // ------------------------------------------------------------------------
 
     /*!
