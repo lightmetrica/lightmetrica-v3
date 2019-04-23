@@ -16,6 +16,13 @@ def scenes():
         'powerplant'
     ]
 
+def scenes_small():
+    return [
+        'fireplace_room',
+        'cornell_box_sphere',
+        'cube',
+    ]
+
 def load(scene_path, name):
     return globals()[name](scene_path)
 

@@ -89,26 +89,6 @@ for i in range(1,numTheta+1):
 # Scene setup
 def scene_setup():
     lm.reset()
-#     lm.asset('mesh_sphere', 'mesh::raw',
-#         ps = vs.flatten().tolist(),
-#         ns = ns.flatten().tolist(),
-#         ts = ts.flatten().tolist(),
-#         fs_p = fs.flatten().tolist(),
-#         fs_t = fs.flatten().tolist(),
-#         fs_n = fs.flatten().tolist()
-#     )
-#     lm.asset('camera_main', 'camera::pinhole',
-#         position = [0,0,50],
-#         center = [0,0,0],
-#         up = [0,1,0],
-#         vfov = 30
-#     )
-#     lm.asset('material_white', 'material::diffuse',
-#          Kd = [1,1,1]
-#     )
-#     lm.primitive(
-#         camera = lm.asset('camera_main')
-#     )
     lm.asset('mesh_sphere', 'mesh::raw', {
         'ps': vs.flatten().tolist(),
         'ns': ns.flatten().tolist(),
@@ -138,15 +118,6 @@ def scene_setup():
 # Rendering
 def render_and_visualize():
     lm.build('accel::nanort', {})
-#     lm.asset('film_output', 'film::bitmap',
-#         w = 1920,
-#         h = 1080
-#     )
-#     lm.render('renderer::raycast',
-#         output = lm.asset('film_output'),
-#         visualize_normal = True,
-#         bg_color = [1,1,1]
-#     )
     lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output'),
@@ -235,6 +206,3 @@ render_and_visualize()
 #     lm.node.add(g, g)
 # except Exception:
 #     traceback.print_exc()
-# -
-
-

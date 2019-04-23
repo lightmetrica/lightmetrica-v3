@@ -38,10 +38,12 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
+scenes = lmscene.scenes_small()
+
 scene_setup_time_df = pd.DataFrame(
     columns=['scene loading', 'serialization', 'deserialization'],
-    index=lmscene.scenes())
-for scene in lmscene.scenes():
+    index=scenes)
+for scene in scenes:
     lm.reset()
     
     lm.asset('film_output', 'film::bitmap', {

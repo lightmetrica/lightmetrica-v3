@@ -13,9 +13,9 @@
 #     name: python3
 # ---
 
-# ## Multiprocess rendering
+# ## Distributed rendering with extension
 #
-# This test demonstrates multiprocess rendering. This is useful to accelerate Python extensions.
+# This test demonstrates distributed rendering with user-defined component.
 
 # %load_ext autoreload
 # %autoreload 2
@@ -40,7 +40,7 @@ os.getpid()
 #
 # To create an process on Jupyter notebook in Windows, we need to separate the function to be processed in a different file and add the invocation of the process must be enclosed by `if __name__ == '__main__'` clause.
 
-# + {"magic_args": "lm_renderer_ao.py", "language": "writefile"}
+# + {"magic_args": "_lm_renderer_ao.py", "language": "writefile"}
 # import lightmetrica as lm
 # import pickle
 # import numpy as np
@@ -86,12 +86,12 @@ os.getpid()
 #             self.film.setPixel(x, y, np.full(3, V))
 #         lm.parallel.foreach(w*h, process)
 
-# + {"magic_args": "run_worker_process.py", "language": "writefile"}
+# + {"magic_args": "_run_worker_process.py", "language": "writefile"}
 # import os
 # import uuid
 # import traceback
 # import lightmetrica as lm
-# import lm_renderer_ao
+# import _lm_renderer_ao
 # def run_worker_process():
 #     try:
 #         lm.init('user::default', {})
@@ -112,13 +112,13 @@ os.getpid()
 #         lm.log.log(lm.log.LogLevel.Err, lm.log.LogLevel.Info, '', 0, str(tr))
 # -
 
-from run_worker_process import *
+from _run_worker_process import *
 if __name__ == '__main__':
-    pool = mp.Pool(16, run_worker_process)
+    pool = mp.Pool(4, run_worker_process)
 
 # ### Master process
 
-import lm_renderer_ao
+import _lm_renderer_ao
 
 lm.init()
 lm.log.init('logger::jupyter', {})
@@ -133,7 +133,7 @@ lm.build('accel::sahbvh', {})
 lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
 lm.renderer('renderer::ao', {
     'output': lm.asset('film_output'),
-    'spp': 100
+    'spp': 3
 })
 
 lm.dist.allowWorkerConnection(False)
@@ -153,5 +153,3 @@ plt.show()
 # cf. https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
 pool.terminate()
 pool.join()
-
-

@@ -36,25 +36,32 @@ lm.parallel.init('parallel::openmp', {
     'numThreads': -1
 })
 lm.log.init('logger::jupyter', {})
-#lm.log.setSeverity(lm.log.LogLevel.Warn)
 lm.info()
 
-lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
 
-build_time_df = pd.DataFrame(columns=ft.accels(), index=lmscene.scenes())
-render_time_df = pd.DataFrame(columns=ft.accels(), index=lmscene.scenes())
-for scene in lmscene.scenes():
-    for accel in ft.accels():
-        lm.reset()
+accels = [
+    'accel::sahbvh',
+    'accel::nanort',
+    'accel::embree',
+    'accel::embreeinstanced'
+]
+scenes = lmscene.scenes_small()
 
+build_time_df = pd.DataFrame(columns=accels, index=scenes)
+render_time_df = pd.DataFrame(columns=accels, index=scenes)
+for scene in scenes:
+    lm.reset()
+    lmscene.load(ft.env.scene_path, scene)
+    for accel in accels:
         lm.asset('film_output', 'film::bitmap', {
             'w': 1920,
             'h': 1080
         })
         
-        lmscene.load(ft.env.scene_path, scene)
         def build():
-            lm.build('accel::' + accel, {})
+            lm.build(accel, {})
         build_time = timeit.timeit(stmt=build, number=1)
         build_time_df[accel][scene] = build_time
 

@@ -20,6 +20,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Renderer : public Component {
 public:
     /*!
+        \brief True if the scene is required.
+    */
+    virtual bool requiresScene() const { return true; }
+
+    /*!
         \brief Process rendering.
     */
     virtual void render(const Scene* scene) const = 0;

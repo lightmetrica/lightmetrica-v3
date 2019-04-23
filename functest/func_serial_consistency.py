@@ -39,8 +39,12 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-rmse_series = pd.Series(index=lmscene.scenes())
-for scene in lmscene.scenes():
+scenes = lmscene.scenes_small()
+
+rmse_series = pd.Series(index=scenes)
+for scene in scenes:
+    print("Testing [scene='{}']".format(scene))
+    
     lm.reset()
     
     lm.asset('film_output', 'film::bitmap', {

@@ -37,6 +37,10 @@ public:
         return true;
     }
 
+    virtual bool requiresScene() const override {
+        return false;
+    }
+
     virtual void render(const Scene* scene) const override {
         LM_UNUSED(scene);
         const auto [w, h] = film_->size();

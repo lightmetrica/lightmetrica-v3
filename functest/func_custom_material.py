@@ -52,24 +52,15 @@ class Material_VisualizeNormal(lm.Material):
         return np.zeros(3)
 
 
-def print_comp(name):
-    print(name)
-lm.comp.detail.foreachRegistered(print_comp)
-
 lm.init('user::default', {})
 lm.parallel.init('parallel::openmp', {
     'numThreads': 1
 })
-lm.log.init('logger::jupyter', {})
+lm.log.init('logger::jupyter')
+lm.progress.init('progress::jupyter')
 lm.info()
 
 # +
-# Film
-lm.asset('film_output', 'film::bitmap', {
-    'w': 640,
-    'h': 360
-})
-
 # Original material
 lm.asset('mat_vis_normal', 'material::visualize_normal', {})
 
@@ -96,9 +87,12 @@ lm.build('accel::sahbvh', {})
 
 # +
 # Render
+lm.asset('film_output', 'film::bitmap', {
+    'w': 640,
+    'h': 360
+})
 lm.render('renderer::raycast', {
-    'output': lm.asset('film_output'),
-    #'use_constant_color': True
+    'output': lm.asset('film_output')
 })
 img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
 
@@ -107,6 +101,3 @@ f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1))
 plt.show()
-# -
-
-

@@ -24,6 +24,7 @@ import os
 import imageio
 import pandas as pd
 import numpy as np
+import multiprocessing as mp
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -35,34 +36,58 @@ os.getpid()
 
 # %load_ext lightmetrica_jupyter
 
+# ### Worker process
+
+# + {"magic_args": "_run_worker_process.py", "language": "writefile"}
+# import os
+# import uuid
+# import traceback
+# import lightmetrica as lm
+# def run_worker_process():
+#     try:
+#         lm.init('user::default', {})
+#         lm.info()
+#         lm.log.setSeverity(1000)
+#         lm.log.log(lm.log.LogLevel.Err, lm.log.LogLevel.Info, '', 0, 'pid={}'.format(os.getpid()))
+#         lm.dist.worker.init('dist::worker::default', {
+#             'name': uuid.uuid4().hex,
+#             'address': 'localhost',
+#             'port': 5000,
+#             'numThreads': 1
+#         })
+#         lm.dist.worker.run()
+#         lm.dist.shutdown()
+#         lm.shutdown()
+#     except Exception:
+#         tr = traceback.print_exc()
+#         lm.log.log(lm.log.LogLevel.Err, lm.log.LogLevel.Info, '', 0, str(tr))
+# -
+
+from _run_worker_process import *
+if __name__ == '__main__':
+    pool = mp.Pool(4, run_worker_process)
+
+# ### Master process
+
 lm.init()
 lm.log.init('logger::jupyter', {})
 lm.progress.init('progress::jupyter', {})
-
 lm.dist.init('dist::master::default', {
     'port': 5000
 })
-
 lm.dist.printWorkerInfo()
 
 lmscene.load(ft.env.scene_path, 'fireplace_room')
-#lmscene.load(ft.env.scene_path, 'cornell_box_sphere')
-
 lm.build('accel::sahbvh', {})
-
 lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
 lm.renderer('renderer::raycast', {
     'output': lm.asset('film_output')
 })
 
 lm.dist.allowWorkerConnection(False)
-
 lm.dist.sync()
-
 lm.render()
-
 lm.dist.gatherFilm(lm.asset('film_output'))
-
 lm.dist.allowWorkerConnection(True)
 
 img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
@@ -70,5 +95,3 @@ f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1))
 plt.show()
-
-

@@ -38,24 +38,28 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
 
 
 def build_and_render(scene):
     lm.reset()
+    lmscene.load(ft.env.scene_path, scene)
+    lm.build('accel::nanort', {})
     lm.asset('film_output', 'film::bitmap', {
         'w': 1920,
         'h': 1080
     })
-    lmscene.load(ft.env.scene_path, scene)
-    lm.build('accel::nanort', {})
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output')
     })
     return np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
 
 
-for scene in lmscene.scenes():
+objloaders = ['objloader::tinyobjloader']
+scenes = lmscene.scenes_small()
+
+for scene in scenes:
     # Reference
     lm.objloader.init('objloader::simple', {})
     ref = build_and_render(scene)
@@ -68,7 +72,7 @@ for scene in lmscene.scenes():
     plt.show()
     
     # Check consistency with other loaders
-    for objloader in ['objloader::tinyobjloader']:
+    for objloader in objloaders:
         # Render
         lm.objloader.init(objloader, {})
         img = build_and_render(scene)
@@ -90,5 +94,3 @@ for scene in lmscene.scenes():
         plt.colorbar(im, cax=cax)
         ax.set_title('{}, objloader::simple vs. {}'.format(scene, objloader))
         plt.show()
-
-

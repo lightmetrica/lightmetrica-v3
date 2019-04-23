@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# ## Error handling of Lightmetrica
+# ## Error handling
 #
 # This test covers typical runtime error outputs from Lightmetrica.
 
@@ -166,5 +166,3 @@ lm.render('renderer::raycast', {
     'output': lm.asset('film1'),
     'color': [0,0,0]
 })
-
-

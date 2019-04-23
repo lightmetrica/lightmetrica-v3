@@ -48,7 +48,9 @@ lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
 
 lm.objloader.init('objloader::tinyobjloader', {})
 
-for scene in lmscene.scenes():
+scenes = lmscene.scenes_small()
+
+for scene in scenes:
     lm.reset()
     
     # Film
@@ -74,5 +76,3 @@ for scene in lmscene.scenes():
     ax.imshow(np.clip(np.power(img,1/2.2),0,1))
     ax.set_title(scene)
     plt.show()
-
-

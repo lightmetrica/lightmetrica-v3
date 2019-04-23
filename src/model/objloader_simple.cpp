@@ -26,7 +26,7 @@ public:
         ms_.clear();
         msmap_.clear();
 
-        LM_INFO("Loading OBJ file [path='{}']", path);
+        LM_INFO("Loading OBJ file [path='{}']", std::filesystem::path(path).filename().string());
         char l[4096], name[256];
         std::ifstream f(path);
         if (!f) {
@@ -166,7 +166,7 @@ private:
 
     // Parses .mtl file
     bool loadmtl(std::string p, const ProcessMaterialFunc& processMaterial) {
-        LM_INFO("Loading MTL file [path='{}']", p);
+        LM_INFO("Loading MTL file [path='{}']", std::filesystem::path(p).filename().string());
         std::ifstream f(p);
         if (!f) {
             LM_ERROR("Missing MLT file [path='{}']", p);

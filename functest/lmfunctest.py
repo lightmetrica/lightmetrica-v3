@@ -22,10 +22,6 @@ def loadenv(config_path):
 # Environment configuration
 env = loadenv('.lmenv')
 
-def accels():
-    """Names of acceleration structures"""
-    return ['sahbvh', 'nanort']
-
 def save(path, img):
     """Save image"""
     imageio.imwrite(path, np.clip(np.power(img, 1/2.2) * 256, 0, 255).astype(np.uint8))
