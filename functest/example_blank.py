@@ -18,27 +18,40 @@
 # ==========================
 #
 # Let's start to use Lightmetrica by rendering a blank image.
-# For C++, the first line includes everything necessary to use Lightmetrica.
-# For Python, we import the ``lightmetrica`` module, where we use ``lm`` as an alias of ``lightmetrica`` for simplicity.
+# We first import the ``lightmetrica`` module, where we use ``lm`` as an alias of ``lightmetrica`` for simplicity. Although we recommend to use Python API to organize the experiments, similar APIs can be accessible from C++. See `example directory`_ for the detail.
+#
+# .. _example directory: https://github.com/hi2p-perim/lightmetrica-v3/tree/master/example
 #
 # .. note::
-#    You can ignore the comments starting from ``_begin_*`` and ``_end_*``. These comments are only used for the documentation purpose.
+#     ``lmfunctest`` is a simple module to configure Lightmetrica envrionment from a file named ``.lmenv``. You want to create your own `.lmenv` file if you want to execute examples or tests by yourself. For detail, see todo.
 # -
 
 import lmfunctest as ft
 
 import lightmetrica as lm
 
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# Lightmetrica offers an extension for the Jupyter notebook to support logging or interactive progress reporting inside the notebook. The extension can be loaded by a line magic command as below.
+# -
+
 # %load_ext lightmetrica_jupyter
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# After including header, you can initialize the framwork by calling :cpp:func:`lm::init` function. You can pass various arguments to configure the framework to the funciton, but here we keep it empty so that everything is configured to be default.
+# After importing the module, you can initialize the framwork by calling :cpp:func:`lm::init` function. You can pass various arguments to configure the framework to the function, but here we keep it empty so that everything is configured to be default.
 # -
 
 lm.init()
 
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# Logging and progress reporting in Jupyter notebook can be enabled by :cpp:func:`lm::log::init` and :cpp:func:`lm::progress::init` functions with corresponding types.
+# -
+
 lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
+
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# Once the framework has been initialized properly, you can get an splash message from :cpp:func:`lm::info()` function.
+# -
 
 lm.info()
 
@@ -66,16 +79,13 @@ lm.render('renderer::blank', {
 
 lm.save(lm.asset('film'), 'blank.png')
 
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# You can also visualize the film directly in Jupyter notebook. :cpp:func:`lm::buffer` gets the internal image data as numpy array which you can visualize using matplotlib.
+# -
+
 import numpy as np
-import imageio
 # %matplotlib inline
 import matplotlib.pyplot as plt
-
-img = imageio.imread('blank.png')
-f = plt.figure(figsize=(15,15))
-ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
-plt.show()
 
 img = np.flip(np.copy(lm.buffer(lm.asset('film'))), axis=0)
 f = plt.figure(figsize=(15,15))
@@ -84,7 +94,7 @@ ax.imshow(np.clip(np.power(img,1/2.2),0,1))
 plt.show()
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Finally, we gracefully shutdown the framework with :cpp:func:`lm::shutdown` function.
+# Finally, we gracefully shutdown the framework with :cpp:func:`lm::shutdown` function. Usually you don't want to explicitly call shutdown function.
 # -
 
 lm.shutdown()
