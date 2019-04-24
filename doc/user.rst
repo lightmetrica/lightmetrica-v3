@@ -1,4 +1,4 @@
-User context
+Basic rendering
 ######################
 
 *User context* subsystem provides user-friendly wrapper for the high-level manipulation of the assets, scenes, or rendering. The users want to use this subsystem to implement their experiments. 

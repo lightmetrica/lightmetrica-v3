@@ -21,15 +21,17 @@ Lightmetrica -- Research-oriented renderer
     build
     tutorial
 
-    component
     user
-    test
+    component
 
 .. toctree::
     :maxdepth: 2
     :caption: Examples and tests
 
+    test
+    example
     functest
+    perftest
 
 .. toctree::
     :maxdepth: 2

@@ -1,16 +1,7 @@
-Examples
-==========================
-
-.. toctree::
-    :maxdepth: 1
-
-    executed_functest/example_blank
-    executed_functest/example_quad
-    executed_functest/example_raycast
-    executed_functest/example_pt
+.. _functest:
 
 Functional tests
-==========================
+########################
 
 .. toctree::
     :maxdepth: 1
@@ -25,13 +16,3 @@ Functional tests
     executed_functest/func_render_instancing
     executed_functest/func_serial_consistency
     executed_functest/func_update_asset
-
-Performance tests
-==========================
-
-.. toctree::
-    :maxdepth: 1
-
-    executed_functest/perf_accel
-    executed_functest/perf_obj_loader
-    executed_functest/perf_serial
