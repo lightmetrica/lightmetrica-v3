@@ -14,12 +14,14 @@
 # ---
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# .. _example_pt
+#
 # Rendering with path tracing
 # ===========================
 #
-# This section describes how to render the scene with path tracing. Path tracing is a rendering technique based on Monte Carlo method and notably one of the most basic (yet practical) rendering algorithms taking global illumination into account. Our framework implements path tracing as ``renderer::pt`` renderer. 
+# This example describes how to render the scene with path tracing. Path tracing is a rendering technique based on Monte Carlo method and notably one of the most basic (yet practical) rendering algorithms taking global illumination into account. Our framework implements path tracing as ``renderer::pt`` renderer. 
 #
-# The use of the renderer is straightforward; we just need to specify ``renderer::pt`` with :cpp:func:`lm::render` function with some renderer-specific parameters. Thanks to the modular design of the framework, the most of the code can be the same as the case of ray casting. 
+# The use of the renderer is straightforward; we just need to specify ``renderer::pt`` with :cpp:func:`lm::render` function with some renderer-specific parameters. Thanks to the modular design of the framework, the most of the code can be the same as :ref:`_example_raycast`.
 # -
 
 import os

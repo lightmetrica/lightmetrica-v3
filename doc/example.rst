@@ -10,3 +10,4 @@ Examples
     executed_functest/example_quad
     executed_functest/example_raycast
     executed_functest/example_pt
+    executed_functest/example_cpp

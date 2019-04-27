@@ -14,10 +14,12 @@
 # ---
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# .. _example_raycast
+#
 # Raycasting a scene with OBJ models
 # =======================================
 #
-# This example demonstrates how to render a scene with OBJ models using raycasting. For preparation, we parsed command line arguments, which include the scene path, image size, and camera configuration.
+# This example demonstrates how to render a scene with OBJ models using raycasting.
 # -
 
 import os
@@ -35,7 +37,10 @@ lm.progress.init('progress::jupyter')
 lm.info()
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Following is the definition of assets. We used the aforementioned command line arguments to parametrize the assets. To load an OBJ model, we can use ``model::wavefrontobj`` asset. This asset internally creates meshes and materials by reading the associated MTL file.
+# Following is the definition of assets. To load an OBJ model, we can use ``model::wavefrontobj`` asset. This asset internally creates meshes and materials by reading the associated MTL file.
+#
+# .. node::
+#     A model asset can be considered as a special asset containing (a part of) the scene graph and assets reference by the structure. 
 
 # +
 # Film for the rendered image
@@ -73,7 +78,6 @@ lm.primitive(lm.identity(), {
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # Executing the renderer will produce the following image.
-# For command line parameters, please refer to ``example/run_all.py``.
 # -
 
 lm.build('accel::sahbvh', {})

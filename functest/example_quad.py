@@ -14,12 +14,12 @@
 # ---
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# .. _example_quad
+#
 # Rendering quad
 # ==========================
 #
-# This section describes how to render a simple scene containing a quad represented by two triangles. From this example we do not provide the full source code inside this page. Please follow the files inside ``example`` directory if necessary.
-#
-# The code starts again with :cpp:func:`lm::init` function. Yet in this time, we specify the number of threads used for parallel processes by ``numThread`` parameter. The negative number configures the number of threads deducted from the maximum number of threads. For instance, if we specify ``-1`` on the machine with the maximum number of threads ``32``, the function configures the number of threads by ``31``. 
+# This example describes how to render a simple scene containing a quad represented by two triangles. The code starts again with :cpp:func:`lm::init` function.
 # -
 
 import numpy as np
@@ -36,7 +36,7 @@ lm.progress.init('progress::jupyter')
 lm.info()
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Next we define the assets. In addition to ``film``, we define ``camera``, ``mesh``, and ``material``. Although the types of assets are different, we can use consistent interface to define the assets. Here we prepare for a pinhole camera (``camera::pinhole``), a raw mesh (``mesh::raw``), and a diffuse material (``material::diffuse``) with the corrsponding parameters. Please refer to the corresponding pages for the detailed description of the parameters.
+# Similarly we define the assets. In addition to ``film``, we define ``camera``, ``mesh``, and ``material``. Although the types of assets are different, we can use consistent interface to define the assets. Here we prepare for a pinhole camera (``camera::pinhole``), a raw mesh (``mesh::raw``), and a diffuse material (``material::diffuse``) with the corrsponding parameters. Please refer to :ref:`component_ref` for the detailed description of the parameters.
 
 # +
 # Film for the rendered image
@@ -73,6 +73,9 @@ lm.asset('material1', 'material::diffuse', {
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # The scene of Lightmetrica is defined by a set of ``primitives``. A primitive specifies an object inside the scene by associating geometries and materials with transformation. We can define a primitive by :cpp:func:`lm::primitive` function where we specifies transformation matrix and associating assets as arguments.
 # In this example we define two pritimives; one for camera and the other for quad mesh with diffuse material. Transformation is given by 4x4 matrix. Here we specified identify matrix meaning no transformation.
+#
+# .. note::
+#     Specifically, the scene is represented by a *scene graph*, a directed acyclic graph representing spatial structure and attributes of the scene. Each node of the scene graph describes either a primitive or a pritmive group. We provide a set of APIs to manipulate the structure of scene graph for advanced usage like instancing. For detail, please refer to TODO.
 
 # +
 # Camera
@@ -87,7 +90,7 @@ lm.primitive(lm.identity(), {
 })
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# For this example we used ``renderer::raycast`` for rendering. 
+# This example used ``renderer::raycast`` for rendering. 
 # This renderer internally uses acceleration structure for ray-scene intersections. 
 # The acceleration structure can be given by :cpp:func:`lm::build` function. In this example we used ``accel::sahbvh``.
 # -

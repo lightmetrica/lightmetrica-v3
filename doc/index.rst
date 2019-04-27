@@ -19,8 +19,6 @@ Lightmetrica -- Research-oriented renderer
     :caption: Guide
 
     build
-    tutorial
-
     user
     component
 

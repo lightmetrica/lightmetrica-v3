@@ -14,16 +14,21 @@
 # ---
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# .. _example_blank
+#
 # Rendering blank image
 # ==========================
 #
 # Let's start to use Lightmetrica by rendering a blank image.
-# We first import the ``lightmetrica`` module, where we use ``lm`` as an alias of ``lightmetrica`` for simplicity. Although we recommend to use Python API to organize the experiments, similar APIs can be accessible from C++. See `example directory`_ for the detail.
-#
-# .. _example directory: https://github.com/hi2p-perim/lightmetrica-v3/tree/master/example
+# We first import the ``lightmetrica`` module, where we use ``lm`` as an alias of ``lightmetrica`` for simplicity.
 #
 # .. note::
-#     ``lmfunctest`` is a simple module to configure Lightmetrica envrionment from a file named ``.lmenv``. You want to create your own `.lmenv` file if you want to execute examples or tests by yourself. For detail, see todo.
+#     Although we recommend to use Python API to organize the experiments, similar APIs can be accessible from C++. See `example directory`_ for the detail.
+#
+#     .. _example directory: https://github.com/hi2p-perim/lightmetrica-v3/tree/master/example
+#
+# .. note::
+#     ``lmfunctest`` is a simple module to configure Lightmetrica envrionment from a file named ``.lmenv``. You want to create your own ``.lmenv`` file if you want to execute examples or tests by yourself. For detail, see todo.
 # -
 
 import lmfunctest as ft
