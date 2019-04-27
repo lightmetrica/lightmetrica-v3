@@ -220,6 +220,7 @@ endif()
 if (LM_BUILD_TESTS)
     add_subdirectory(test)
     add_subdirectory(pytest)
+    add_subdirectory(functest)
 endif()
 
 # -----------------------------------------------------------------------------

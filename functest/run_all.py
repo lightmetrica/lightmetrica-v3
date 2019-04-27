@@ -31,11 +31,12 @@ def run_single(name):
     ])
 
 tests = [
-    'example_blank',
-    'example_quad',
-    'example_raycast',
-    'example_pt',
-    'example_cpp',
+    # 'example_blank',
+    # 'example_quad',
+    # 'example_raycast',
+    # 'example_pt',
+    'example_custom_material'
+    #'example_cpp',
     # 'func_render_all',
     # 'func_render_instancing',
     # 'func_accel_consistency',
