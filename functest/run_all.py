@@ -31,26 +31,27 @@ def run_single(name):
     ])
 
 tests = [
-    # 'example_blank',
-    # 'example_quad',
-    # 'example_raycast',
-    # 'example_pt',
-    'example_custom_material'
-    #'example_cpp',
-    # 'func_render_all',
-    # 'func_render_instancing',
-    # 'func_accel_consistency',
-    # 'func_custom_material',
-    # 'func_distributed_rendering',
-    # 'func_distributed_rendering_ext',
-    # 'func_error_handling',
-    # 'func_obj_loader_consistency',
-    # 'func_render_instancing',
-    # 'func_serial_consistency',
-    # 'func_update_asset',
-    # 'perf_accel',
-    # 'perf_obj_loader',
-    # 'perf_serial'
+    'example_blank',
+    'example_quad',
+    'example_raycast',
+    'example_pt',
+    'example_custom_material',
+    'example_custom_renderer',
+    'example_cpp',
+    'func_render_all',
+    'func_render_instancing',
+    'func_accel_consistency',
+    'func_custom_material',
+    'func_distributed_rendering',
+    'func_distributed_rendering_ext',
+    'func_error_handling',
+    'func_obj_loader_consistency',
+    'func_render_instancing',
+    'func_serial_consistency',
+    'func_update_asset',
+    'perf_accel',
+    'perf_obj_loader',
+    'perf_serial'
 ]
 for test in tests:
     print("Running test [name='{}']".format(test), flush=True)

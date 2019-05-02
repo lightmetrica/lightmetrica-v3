@@ -11,25 +11,51 @@ RUN apt update && apt install -y \
     cmake \
     curl \
     ninja-build \
-    python3-dev \
-    python3-distutils \
-    python3-pip \
-    python3-numpy \
     doctest-dev \
     gdb \
     tmux \
     vim \
     xorg-dev \
-    libgl1-mesa-dev
-    
-RUN pip3 install --upgrade pip
-RUN pip install pytest
-RUN pip install imageio && imageio_download_bin freeimage
+    libgl1-mesa-dev \
+    alien \
+    dpkg-dev \
+    debhelper \
+    libtbb-dev
 
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test
 RUN apt update && apt install -y gcc-8 g++-8
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 \
                         --slave /usr/bin/g++ g++ /usr/bin/g++-8
+
+# -----------------------------------------------------------------------------
+
+# Embree
+WORKDIR /
+RUN curl -OJLs https://github.com/embree/embree/releases/download/v3.5.2/embree-3.5.2.x86_64.rpm.tar.gz && \
+    tar xvf embree-3.5.2.x86_64.rpm.tar.gz && \
+    alien embree3-lib-3.5.2-1.x86_64.rpm && \
+    alien embree3-devel-3.5.2-1.noarch.rpm && \
+    dpkg -i embree3-lib_3.5.2-2_amd64.deb && \
+    dpkg -i embree3-devel_3.5.2-2_all.deb
+
+# -----------------------------------------------------------------------------
+
+# miniconda
+WORKDIR /
+RUN curl -OJLs https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+RUN bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda -b
+ENV PATH=${PATH}:/miniconda/bin
+RUN conda update -y conda && conda install -y -c conda-forge \
+    jupyter \
+    nbconvert \
+    jupytext \
+    numpy \
+    imageio \
+    pytest \
+    tqdm \
+    matplotlib \
+    pandas
+RUN imageio_download_bin freeimage
 
 # -----------------------------------------------------------------------------
 
@@ -83,7 +109,7 @@ RUN cmake -G "Ninja" -H. -B_build -DCMAKE_BUILD_TYPE=Release && \
 
 WORKDIR /lightmetrica-v3/_build/bin
 RUN LD_LIBRARY_PATH=. ./lm_test
-RUN python3 -m pytest --lm . ../../pytest
+RUN python -m pytest --lm . ../../pytest
 
 WORKDIR /lightmetrica-v3/example/ext
 RUN cmake -G "Ninja" -H. -B_build -DCMAKE_BUILD_TYPE=Release && \

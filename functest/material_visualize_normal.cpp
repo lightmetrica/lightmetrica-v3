@@ -12,12 +12,10 @@ public:
     virtual bool construct(const Json&) override {
         return true;
     }
-
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int) const override {
         return glm::abs(geom.n);
     }
 };
 
 LM_COMP_REG_IMPL(Material_VisualizeNormal, "material::visualize_normal");
-
 LM_NAMESPACE_END(LM_NAMESPACE)

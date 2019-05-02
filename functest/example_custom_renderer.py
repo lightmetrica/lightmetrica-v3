@@ -14,12 +14,18 @@
 # ---
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# .. _example_raycast:
+# .. _example_renderer:
 #
-# Raycasting a scene with OBJ models
-# =======================================
+# Rendering with custom renderer
+# ================================
 #
-# This example demonstrates how to render a scene with OBJ models using raycasting.
+# This example demostrates how to create user-defined renderer by implementing :cpp:class:`lm::Renderer` interface. The implementation is defined in ``custom_renderer.cpp``:
+#
+# .. literalinclude:: ../../functest/renderer_ao.cpp
+#     :language: cpp
+#     :lines: 6-
+#
+# In this time, we implemented two functions: :cpp:func:`lm::Component::construct` and :cpp:func:`lm::Renderer::render`. :cpp:func:`lm::Component::construct` function provides a type-agnostic way to initialize the instance with JSON values. You want to implement main logic of the renderer inside the :cpp:func:`lm::Renderer::render` function. We will not explain the detail here, but this renderer implements a simple ambient occlusion. As for the usage of APIs, please refer to the corresponding pages for detail.
 # -
 
 import os
@@ -36,11 +42,7 @@ lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
 lm.info()
 
-# + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Following is the definition of assets. To load an OBJ model, we can use ``model::wavefrontobj`` asset. This asset internally creates meshes and materials by reading the associated MTL file.
-#
-# .. node::
-#     A model asset can be considered as a special asset containing (a part of) the scene graph and assets reference by the structure. 
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'functest_renderer_ao'))
 
 # +
 # Film for the rendered image
@@ -62,10 +64,6 @@ lm.asset('obj1', 'model::wavefrontobj', {
     'path': os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj')
 })
 
-# + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# We can create primitives from the loaded ``model::wavefrontobj`` asset by using :cpp:func:`lm::primitives` function. 
-
-# +
 # Camera
 lm.primitive(lm.identity(), {
     'camera': lm.asset('camera1')
@@ -75,15 +73,12 @@ lm.primitive(lm.identity(), {
 lm.primitive(lm.identity(), {
     'model': lm.asset('obj1')
 })
-
-# + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Executing the renderer will produce the following image.
 # -
 
 lm.build('accel::sahbvh', {})
-lm.render('renderer::raycast', {
+lm.render('renderer::ao', {
     'output': lm.asset('film1'),
-    'color': [0,0,0]
+    'spp': 10
 })
 
 img = np.flip(np.copy(lm.buffer(lm.asset('film1'))), axis=0)

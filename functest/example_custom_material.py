@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -14,18 +14,26 @@
 # ---
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# .. _example_custom_material
+# .. _example_custom_material:
 #
 # Rendering with custom material
 # ================================
 #
-# This example demostrates how to extend the framework using user-defined plugins. We extend :cpp:class:`lm::Material` interface to implement an user-defined material. The implementation is defined in ``renderer_ao.cpp``.
+# This example demostrates how to extend the framework using user-defined plugins. We extend :cpp:class:`lm::Material` interface to implement an user-defined material. We will implement the extension using C++ as a plugin. The implementation is defined in ``material_visualize_normal.cpp``:
 #
-# :cpp:class:`lm::Material` interface provides several virtual function to be implemented.
-# In this example, we are only interested in :cpp:func:`lm::Material::reflectance` function being used to fetch colors in ``raycast`` renderer.
-#
-# .. literalinclude:: ../functest/custom_material.cpp
+# .. literalinclude:: ../../functest/material_visualize_normal.cpp
 #     :language: cpp
+#     :lines: 6-
+#    
+# In the first line you want to include ``lm.h``. The header provides everything necessary to use Lightmetrica in C++. :cpp:class:`lm::Material` interface provides several virtual function to be implemented. In this example, we are only interested in :cpp:func:`lm::Material::reflectance` function being used to fetch colors in ``raycast`` renderer.
+#
+# To register the implementation to the framework, you want to use :cpp:func:`LM_COMP_REG_IMPL` macro in the global scope. The second argument describes the name of the implementation, which will be used to instantiate the class.
+#
+# Once you prepared the code, you can easily build the plugin with ``lm_add_plugin`` in the cmake script. To use the function, you need to include ``LmAddPlugin.cmake``. You want to specify the name of the plugin with ``NAME`` argument. The dynamic library of the specified name will be built. In ``SOURCES`` argugment, you can specify the sources containing component implementations.
+#
+# .. literalinclude:: ../../functest/CMakeLists.txt
+#     :language: cmake
+#     :lines: 8-11
 # -
 
 import os
@@ -42,8 +50,15 @@ lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
 lm.info()
 
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# A plugin can be loaded by :cpp:func:`lm::comp::loadPlugin` function where you specify the path to the plugin as an argument. You don't want to specify the extension of the dynamic library because it is inferred according to the platform.
+# -
+
 # Load plugin
 lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'functest_material_visualize_normal'))
+
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# We can use the loaded extension in the same way as build-in assets using :cpp:func:`lm::asset` function. We feed the material to the obj model to apply the loaded material to the mesh.
 
 # +
 # Custom material
@@ -79,6 +94,9 @@ lm.primitive(lm.identity(), {
 lm.primitive(lm.identity(), {
     'model': lm.asset('obj1')
 })
+
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# Executing the renderer will produce the following image.
 # -
 
 lm.build('accel::sahbvh', {})

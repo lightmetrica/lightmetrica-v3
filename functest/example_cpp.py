@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -132,6 +132,10 @@ visualize(out)
 
 # ### custom_material.cpp
 
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# Corresponding Python example: :ref:`example_custom_material`
+# -
+
 out = os.path.join(outdir, 'custom_material.pfm')
 run_example('custom_material', [
     os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
@@ -144,6 +148,10 @@ run_example('custom_material', [
 visualize(out)
 
 # ### custom_renderer.cpp
+
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# Corresponding Python example: :ref:`example_custom_renderer`
+# -
 
 out = os.path.join(outdir, 'custom_renderer.pfm')
 run_example('custom_renderer', [

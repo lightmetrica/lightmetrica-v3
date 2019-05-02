@@ -17,7 +17,7 @@ matrix:
           - doxygen
           - graphviz
     install:
-      # We need sphinx<2 because breathe doesn't support it
+      # We need sphinx<2 because breathe doesn't support version 3
       - pip install 'sphinx<2' sphinx_rtd_theme breathe sphinx_tabs
     script:
       - |

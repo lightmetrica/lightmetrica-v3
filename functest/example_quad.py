@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -14,7 +14,7 @@
 # ---
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# .. _example_quad
+# .. _example_quad:
 #
 # Rendering quad
 # ==========================

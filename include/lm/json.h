@@ -212,7 +212,8 @@ T value(const Json& j, const std::string& name, T&& def) {
 template <typename T>
 std::optional<T> valueOrNone(const Json& j, const std::string& name) {
     if (const auto it = j.find(name); it != j.end()) {
-        return *it;
+        T v = *it;
+        return v;
     }
     return {};
 }
