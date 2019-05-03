@@ -46,13 +46,13 @@ matrix:
     script:
     - docker build -t lm3 --build-arg GITHUB_TOKEN=$GITHUB_TOKEN .
     - docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c \
-        'cd /lightmetrica-v3/functest && \
-        python run_all.py && \
-        cp -r executed_functest /lm3/doc/ && \
-        cd /lm3/doc && \
-        mkdir _build && \
-        doxygen && \
-        make html && \
+        'cd /lightmetrica-v3/functest &&
+        python run_all.py &&
+        cp -r executed_functest /lm3/doc/ &&
+        cd /lm3/doc &&
+        mkdir _build &&
+        doxygen &&
+        make html &&
         touch _build/html/.nojekyll'
     deploy:
       provider: pages
