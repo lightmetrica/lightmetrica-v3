@@ -20,7 +20,9 @@ RUN apt update && apt install -y \
     alien \
     dpkg-dev \
     debhelper \
-    libtbb-dev
+    libtbb-dev \
+    doxygen \
+    graphviz
 
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test
 RUN apt update && apt install -y gcc-8 g++-8
@@ -54,7 +56,10 @@ RUN conda update -y conda && conda install -y -c conda-forge \
     pytest \
     tqdm \
     matplotlib \
-    pandas
+    pandas \
+    sphinx \
+    sphinx_rtd_theme
+RUN pip install breathe sphinx_tabs nbsphinx
 RUN imageio_download_bin freeimage
 
 # -----------------------------------------------------------------------------
