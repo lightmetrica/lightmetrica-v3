@@ -73,24 +73,8 @@ WORKDIR /external/pybind11
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DPYBIND11_TEST=OFF && \
     cmake --build _build --target install
 
-WORKDIR /external/json
-RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DJSON_BuildTests=OFF && \
-    cmake --build _build --target install
-
-WORKDIR /external/glm
-RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DGLM_TEST_ENABLE=OFF && \
-    cmake --build _build --target install
-
-WORKDIR /external/cereal
-RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DJUST_INSTALL_CEREAL=ON && \
-    cmake --build _build --target install
-
 WORKDIR /external/doctest
 RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DDOCTEST_WITH_TESTS=OFF && \
-    cmake --build _build --target install
-
-WORKDIR /external/fmt
-RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DFMT_DOC=OFF -DFMT_TEST=OFF && \
     cmake --build _build --target install
 
 WORKDIR /external/libzmq

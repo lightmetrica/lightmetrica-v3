@@ -4,7 +4,6 @@
 */
 
 #include "common.h"
-#include <fmt/format.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(version)
