@@ -69,47 +69,48 @@ ARG GITHUB_TOKEN
 WORKDIR /
 RUN git clone --recursive https://${GITHUB_TOKEN}@github.com/hi2p-perim/lightmetrica-v3-external.git external
 
-# WORKDIR /external/pybind11
-# RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DPYBIND11_TEST=OFF && \
-#     cmake --build _build --target install
+WORKDIR /external/pybind11
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DPYBIND11_TEST=OFF && \
+    cmake --build _build --target install
 
-# WORKDIR /external/json
-# RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DJSON_BuildTests=OFF && \
-#     cmake --build _build --target install
+WORKDIR /external/json
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DJSON_BuildTests=OFF && \
+    cmake --build _build --target install
 
-# WORKDIR /external/glm
-# RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DGLM_TEST_ENABLE=OFF && \
-#     cmake --build _build --target install
+WORKDIR /external/glm
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DGLM_TEST_ENABLE=OFF && \
+    cmake --build _build --target install
 
-# WORKDIR /external/cereal
-# RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DJUST_INSTALL_CEREAL=ON && \
-#     cmake --build _build --target install
+WORKDIR /external/cereal
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DJUST_INSTALL_CEREAL=ON && \
+    cmake --build _build --target install
 
-# WORKDIR /external/doctest
-# RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DDOCTEST_WITH_TESTS=OFF && \
-#     cmake --build _build --target install
+WORKDIR /external/doctest
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DDOCTEST_WITH_TESTS=OFF && \
+    cmake --build _build --target install
 
-# WORKDIR /external/fmt
-# RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DFMT_DOC=OFF -DFMT_TEST=OFF && \
-#     cmake --build _build --target install
+WORKDIR /external/fmt
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DFMT_DOC=OFF -DFMT_TEST=OFF && \
+    cmake --build _build --target install
 
-# WORKDIR /external/libzmq
-# RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DWITH_PERF_TOOL=OFF -DBUILD_TESTS=OFF -DENABLE_CPACK=OFF && \
-#     cmake --build _build --target install
+WORKDIR /external/libzmq
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DWITH_PERF_TOOL=OFF -DBUILD_TESTS=OFF -DENABLE_CPACK=OFF && \
+    cmake --build _build --target install
 
-# WORKDIR /external/cppzmq
-# RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DCPPZMQ_BUILD_TESTS=OFF && \
-#     cmake --build _build --target install
+WORKDIR /external/cppzmq
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DENABLE_DRAFTS=OFF -DCPPZMQ_BUILD_TESTS=OFF && \
+    cmake --build _build --target install
 
-# WORKDIR /external/glfw
-# RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF && \
-#     cmake --build _build --target install
+WORKDIR /external/glfw
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF && \
+    cmake --build _build --target install
 
 # -----------------------------------------------------------------------------
 
 COPY . /lightmetrica-v3
 WORKDIR /lightmetrica-v3
-RUN ln -s /external /lightmetrica-v3/external
+RUN ln -s /external/nanort ./plugin/accel_nanort/nanort
+RUN ln -s /external/tinyobjloader ./plugin/objloader_tinyobjloader/tinyobjloader
 RUN cmake -G "Ninja" -H. -B_build -DCMAKE_BUILD_TYPE=Release && \
     cmake --build _build --target install -- -j 4
 
@@ -121,4 +122,6 @@ WORKDIR /lightmetrica-v3/example/ext
 RUN cmake -G "Ninja" -H. -B_build -DCMAKE_BUILD_TYPE=Release && \
     cmake --build _build
 
+ENV LD_LIBRARY_PATH=/usr/lib64
 ENV PYTHONPATH="/lightmetrica-v3:/lightmetrica-v3/_build/bin"
+WORKDIR /lightmetrica-v3
