@@ -5,15 +5,15 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
-# ## Error handling of Lightmetrica
+# ## Error handling
 #
 # This test covers typical runtime error outputs from Lightmetrica.
 
@@ -166,5 +166,3 @@ lm.render('renderer::raycast', {
     'output': lm.asset('film1'),
     'color': [0,0,0]
 })
-
-

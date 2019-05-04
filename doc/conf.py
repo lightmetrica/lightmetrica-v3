@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../build/bin/Release'))
-
+sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
 
@@ -43,6 +43,7 @@ release = ''
 # ones.
 extensions = [
     'breathe',
+    'nbsphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
@@ -66,6 +67,9 @@ mathjax_config = {
         'scale': 90
     }
 }
+
+# Disbale notebook execution
+nbsphinx_execute = 'never'
 
 #todo_include_todos = True
 

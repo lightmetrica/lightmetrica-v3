@@ -20,10 +20,10 @@ def lm_logger_scope():
 def lm_plugin_scope(name):
     """Enables plugin in the context"""
     try:
-        lm.comp.detail.loadPlugin(os.path.join(pytest.lm_binary_dir, name))
+        lm.comp.loadPlugin(os.path.join(pytest.lm_binary_dir, name))
         yield
     finally:
-        lm.comp.detail.unloadPlugins()
+        lm.comp.unloadPlugins()
 
 def test_construction():
     """Construction of instances"""

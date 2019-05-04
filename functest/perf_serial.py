@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -38,10 +38,12 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
+scenes = lmscene.scenes_small()
+
 scene_setup_time_df = pd.DataFrame(
     columns=['scene loading', 'serialization', 'deserialization'],
-    index=lmscene.scenes())
-for scene in lmscene.scenes():
+    index=scenes)
+for scene in scenes:
     lm.reset()
     
     lm.asset('film_output', 'film::bitmap', {

@@ -9,24 +9,34 @@ Lightmetrica -- Research-oriented renderer
 `This project is under development for the initial release of Version 3. Please be careful to use the versions in development because they might incur abrupt API changes.`
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   intro
-   changelog
+    intro
+    changelog
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents
+    :maxdepth: 2
+    :caption: Guide
 
-   build
-   tutorial
+    build
+    user
+    component
 
-   component
-   user
-   test
+.. toctree::
+    :maxdepth: 2
+    :caption: Examples and tests
 
-   component_ref
-   api_ref
+    test
+    example
+    functest
+    perftest
+
+.. toctree::
+    :maxdepth: 2
+    :caption: References
+
+    component_ref
+    api_ref
 
 .. todolist::
 

@@ -57,6 +57,35 @@ struct adl_serializer<glm::vec<N, T, Q>> {
     }
 };
 
+template <int C, int R, typename T, glm::qualifier Q>
+struct adl_serializer<glm::mat<C, R, T, Q>> {
+    using MatT = glm::mat<C, R, T, Q>;
+    static void to_json(lm::Json& json, const MatT& v) {
+        std::array<T, C*R> a;
+        for (int i = 0; i < C; i++) {
+            for (int j = 0; j < R; j++) {
+                a[i*R+j] = static_cast<lm::Json::number_float_t>(v[i][j]);
+            }
+        }
+        json = std::move(a);
+    }
+    static void from_json(const lm::Json& json, MatT& v) {
+        if (!json.is_array()) {
+            throw std::runtime_error(
+                fmt::format("Invalid JSON type [expected='array', actual='{}']", json.type_name()));
+        }
+        if (json.size() != C*R) {
+            throw std::runtime_error(
+                fmt::format("Invalid number of elements [expected={}, actual={}]", C*R, json.size()));
+        }
+        for (int i = 0; i < C; i++) {
+            for (int j = 0; j < R; j++) {
+                v[i][j] = static_cast<T>(json[i*R+j]);
+            }
+        }
+    }
+};
+
 template <typename T>
 struct adl_serializer<T, std::enable_if_t<std::is_pointer_v<T>, void>> {
     template <typename BasicJsonType>
@@ -176,6 +205,17 @@ T value(const Json& j, const std::string& name, T&& def) {
         return *it;
     }
     return def;
+}
+
+/*!
+*/
+template <typename T>
+std::optional<T> valueOrNone(const Json& j, const std::string& name) {
+    if (const auto it = j.find(name); it != j.end()) {
+        T v = *it;
+        return v;
+    }
+    return {};
 }
 
 /*!

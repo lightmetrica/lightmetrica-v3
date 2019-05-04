@@ -8,7 +8,6 @@
 #include "component.h"
 #include "math.h"
 #include "surface.h"
-#include <variant>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -48,6 +47,11 @@ struct RaySample {
 
 // ----------------------------------------------------------------------------
 
+enum class SceneNodeType {
+    Primitive,
+    Group,
+};
+
 /*!
     \brief Scene primitive.
 
@@ -79,17 +83,70 @@ struct RaySample {
     component interfaces of a primitive.
     \endrst
 */
-struct Primitive {
-    int index;                      //!< Primitive index.
-    Transform transform;            //!< Transformation associated to the primitive.
-    Mesh* mesh = nullptr;           //!< Underlying mesh.
-    Material* material = nullptr;   //!< Underlying material.
-    Light* light = nullptr;         //!< Underlying light.
-    Camera* camera = nullptr;       //!< Underlying camera.
+struct SceneNode {
+    SceneNodeType type;                     //!< Scene node type.
+    int index;                              //!< Node index.
+
+    // ------------------------------------------------------------------------
+    
+    struct {
+        Mesh* mesh = nullptr;               //!< Underlying mesh.
+        Material* material = nullptr;       //!< Underlying material.
+        Light* light = nullptr;             //!< Underlying light.
+        Camera* camera = nullptr;           //!< Underlying camera.
+
+        template <typename Archive>
+        void serialize(Archive& ar) {
+            ar(mesh, material, light, camera);
+        }
+    } primitive;
+
+    // ------------------------------------------------------------------------
+
+    struct {
+        std::vector<int> children;          //!< Child primitives.
+        bool instanced;                     //!< True if the group is an instance group.
+        std::optional<Mat4> localTransform; //!< Transformation applied to children.
+
+        template <typename Archive>
+        void serialize(Archive& ar) {
+            ar(children, instanced, localTransform);
+        }
+    } group;
+
+    // ------------------------------------------------------------------------
 
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(index, transform, mesh, material, light, camera);
+        ar(type, index, primitive, group);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /*!
+        \brief Make primitive node.
+    */
+    static SceneNode makePrimitive(int index, Mesh* mesh, Material* material, Light* light, Camera* camera) {
+        SceneNode p;
+        p.type = SceneNodeType::Primitive;
+        p.index = index;
+        p.primitive.mesh = mesh;
+        p.primitive.material = material;
+        p.primitive.light = light;
+        p.primitive.camera = camera;
+        return p;
+    }
+
+    /*!
+        \brief Make group node.
+    */
+    static SceneNode makeGroup(int index, bool instanced, std::optional<Mat4> localTransform) {
+        SceneNode p;
+        p.type = SceneNodeType::Group;
+        p.index = index;
+        p.group.instanced = instanced;
+        p.group.localTransform = localTransform;
+        return p;
     }
 };
 
@@ -119,8 +176,15 @@ public:
     */
     virtual bool renderable() const = 0;
 
+    // ------------------------------------------------------------------------
+
     /*!
-        \brief Load scene primitive(s).
+    */
+    virtual int rootNode() = 0;
+
+    /*!
+        \brief Load scene node(s).
+        \param groupPrimitiveIndex Group index.
         \param transform Transformation associated to the primitive.
         \param prop Property containing references to the scene components.
 
@@ -132,40 +196,41 @@ public:
         The function returns true if the loading is a success.
         \endrst
     */
-    virtual bool loadPrimitive(Mat4 transform, const Json& prop) = 0;
+    virtual int createNode(SceneNodeType type, const Json& prop) = 0;
 
     /*!
-        \brief Callback function to process a triangle.
-        \param primitive Primitive index.
-        \param face Face index.
-        \param p1 First position.
-        \param p2 Second position.
-        \param p3 Third position.
-        
+        \brief Add primitive group.
+        \param groupName Name of the group.
+
         \rst
-        The function of this type is used as an argument of
-        :cpp:func:`lm::Scene::foreachTriangle` function.
+        This function adds a primitive group to the scene
+        and returns index of the group.
+        If the group with the same name is already created,
+        this function returns the index of the registered group.
         \endrst
     */
-    using ProcessTriangleFunc = std::function<void(int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3)>;
+    virtual void addChild(int parent, int child) = 0;
 
     /*!
-        \brief Enumerate triangles in the scene.
-        \param processTriangle Callback function to process a triangle.
-
-        \rst
-        This function enumerates triangles of all the transformed meshes in the scene.
-        The specified callback function is called per a triangle.
-        The primitive and face indices associated to the triangle is also given.
-        \endrst
     */
-    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const = 0;
+    virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
+
+    // ------------------------------------------------------------------------
 
     /*!
         \brief Iterate primitives in the scene.
     */
-    using ProcessPrimitiveFunc = std::function<void(const Primitive& primitive)>;
-    virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const = 0;
+    using NodeTraverseFunc = std::function<void(const SceneNode& node, Mat4 globalTransform)>;
+    virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const = 0;
+
+    /*!
+    */
+    using VisitNodeFunc = std::function<void(const SceneNode& node)>;
+    virtual void visitNode(int nodeIndex, const VisitNodeFunc& visit) const = 0;
+
+    /*!
+    */
+    virtual const SceneNode& nodeAt(int nodeIndex) const = 0;
 
     // ------------------------------------------------------------------------
 

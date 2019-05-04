@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -39,8 +39,12 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-rmse_series = pd.Series(index=lmscene.scenes())
-for scene in lmscene.scenes():
+scenes = lmscene.scenes_small()
+
+rmse_series = pd.Series(index=scenes)
+for scene in scenes:
+    print("Testing [scene='{}']".format(scene))
+    
     lm.reset()
     
     lm.asset('film_output', 'film::bitmap', {
@@ -54,7 +58,7 @@ for scene in lmscene.scenes():
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output')
     })
-    img_orig = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    img_orig = np.copy(lm.buffer(lm.asset('film_output')))
     
     # Serialize, reset, deserialize, and render
     lm.serialize('lm.serialized')
@@ -63,7 +67,7 @@ for scene in lmscene.scenes():
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output')
     })
-    img_serial = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    img_serial = np.copy(lm.buffer(lm.asset('film_output')))
     
     # Compare two images
     rmse = ft.rmse(img_orig, img_serial)

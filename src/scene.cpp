@@ -14,29 +14,49 @@
 #include <lm/model.h>
 #include <lm/logger.h>
 #include <lm/serial.h>
+#include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+struct LightPrimitiveIndex {
+    Transform globalTransform; // Global transform matrix
+    int index;                 // Primitive node index
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(globalTransform, index);
+    }
+};
+
 class Scene_ final : public Scene {
 private:
-    std::vector<Primitive> primitives_;
-    Ptr<Accel> accel_;
-    int camera_ = -1;           // Camera primitive index
-    std::vector<int> lights_;   // Light primitive indices
-    int envLight_ = -1;         // Environment light primitive index
+    std::vector<SceneNode> nodes_;                  // Scene nodes
+    Ptr<Accel> accel_;                              // Acceleration structure
+    std::optional<int> camera_;                     // Camera index
+    std::vector<LightPrimitiveIndex> lights_;       // Primitive node indices of lights and global transforms
+    std::unordered_map<int, int> lightIndicesMap_;  // Map from node indices to light indices.
+    std::optional<int> envLight_;                   // Environment light index
+
+public:
+    Scene_() {
+        // Index 0 is fixed to the scene group
+        nodes_.push_back(SceneNode::makeGroup(0, false, {}));
+    }
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(primitives_, accel_, camera_, lights_);
+        ar(nodes_, accel_, camera_, lights_, lightIndicesMap_, envLight_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
         comp::visit(visit, accel_);
-        for (auto& primitive : primitives_) {
-            comp::visit(visit, primitive.mesh);
-            comp::visit(visit, primitive.material);
-            comp::visit(visit, primitive.light);
-            comp::visit(visit, primitive.camera);
+        for (auto& node : nodes_) {
+            if (node.type == SceneNodeType::Primitive) {
+                comp::visit(visit, node.primitive.mesh);
+                comp::visit(visit, node.primitive.material);
+                comp::visit(visit, node.primitive.light);
+                comp::visit(visit, node.primitive.camera);
+            }
         }
     }
 
@@ -49,11 +69,11 @@ public:
 
 public:
     virtual bool renderable() const override {
-        if (primitives_.empty()) {
+        if (nodes_.size() == 1) {
             LM_ERROR("Missing primitives. Use lm::primitive() function to add primitives.");
             return false;
         }
-        if (camera_ == -1) {
+        if (!camera_) {
             LM_ERROR("Missing camera primitive. Use lm::primitive() function to add camera primitive.");
             return false;
         }
@@ -64,103 +84,164 @@ public:
         return true;
     }
 
-    virtual bool loadPrimitive(Mat4 transform, const Json& prop) override {
-        // Helper function to find an asset by property name
-        const auto getAssetRefBy = [&](const std::string& propName) -> Component* {
-            if (propName.empty()) {
-                return nullptr;
-            }
-            // Find reference to an asset
-            const auto it = prop.find(propName);
-            if (it == prop.end()) {
-                return nullptr;
-            }
-            // Obtain the referenced asset
-            return comp::get<Component>(it.value().get<std::string>());
-        };
+    // ------------------------------------------------------------------------
 
-        if (prop.find("model") != prop.end()) {
-            const std::string modelLoc = prop["model"];
-            auto* model = comp::get<Model>(modelLoc);
-            if (!model) {
+    virtual int rootNode() override {
+        return 0;
+    }
+
+    virtual int createNode(SceneNodeType type, const Json& prop) override {
+        if (type == SceneNodeType::Primitive) {
+            // Find an asset by property name
+            const auto getAssetRefBy = [&](const std::string& propName) -> Component* {
+                const auto it = prop.find(propName);
+                if (it == prop.end()) {
+                    return nullptr;
+                }
+                return comp::get<Component>(it.value().get<std::string>());
+            };
+
+            // Node index
+            const int index = int(nodes_.size());
+
+            // Get asset references
+            auto* mesh = dynamic_cast<Mesh*>(getAssetRefBy("mesh"));
+            auto* material = dynamic_cast<Material*>(getAssetRefBy("material"));
+            auto* light = dynamic_cast<Light*>(getAssetRefBy("light"));
+            auto* camera = dynamic_cast<Camera*>(getAssetRefBy("camera"));
+
+            // Check validity
+            if (!mesh && !material && !light && !camera) {
+                LM_ERROR("Invalid primitive node. Given assets are invalid.");
                 return false;
             }
-            model->createPrimitives([&](Component* mesh, Component* material, Component* light) {
-                primitives_.push_back(Primitive{
-                    int(primitives_.size()),
-                    Transform(transform),
-                    dynamic_cast<Mesh*>(mesh),
-                    dynamic_cast<Material*>(material),
-                    dynamic_cast<Light*>(light),
-                    nullptr
-                });
-                if (primitives_.back().light) {
-                    lights_.push_back(primitives_.back().index);
-                }
-            });
-        }
-        else {
-            // Add a primitive entry
-            primitives_.push_back(Primitive{
-                int(primitives_.size()),
-                Transform(transform),
-                dynamic_cast<Mesh*>(getAssetRefBy("mesh")),
-                dynamic_cast<Material*>(getAssetRefBy("material")),
-                dynamic_cast<Light*>(getAssetRefBy("light")),
-                dynamic_cast<Camera*>(getAssetRefBy("camera"))
-            });
-
-            const auto& primitive = primitives_.back();
-            if (primitive.camera && primitive.light) {
+            if (camera && light) {
                 LM_ERROR("Primitive cannot be both camera and light");
                 return false;
             }
-            if (primitive.camera) {
-                camera_ = primitives_.back().index;
+
+            // Check camera and envlight
+            if (camera) {
+                camera_ = index;
             }
-            if (primitive.light) {
-                const int lightIndex = primitive.index;
-                lights_.push_back(lightIndex);
-                if (primitive.light->isInfinite()) {
-                    // Environment light
-                    envLight_ = lightIndex;
+            if (light && light->isInfinite()) {
+                envLight_ = index;
+            }
+
+            // Create primitive node
+            nodes_.push_back(SceneNode::makePrimitive(index, mesh, material, light, camera));
+
+            return index;
+        }
+            
+        // ----------------------------------------------------------------
+        
+        if (type == SceneNodeType::Group) {
+            const int index = int(nodes_.size());
+            nodes_.push_back(SceneNode::makeGroup(
+                index,
+                json::value<bool>(prop, "instanced", false),
+                json::valueOrNone<Mat4>(prop, "transform")
+            ));
+            return index;
+        }
+
+        // ----------------------------------------------------------------
+
+        LM_UNREACHABLE_RETURN();
+    }
+
+    virtual void addChild(int parent, int child) override {
+        if (parent < 0 || parent >= int(nodes_.size())) {
+            LM_ERROR("Missing parent index [index='{}'", parent);
+            return;
+        }
+
+        auto& node = nodes_.at(parent);
+        if (node.type != SceneNodeType::Group) {
+            LM_ERROR("Adding child to non-group node [parent='{}', child='{}']", parent, child);
+            return;
+        }
+        
+        node.group.children.push_back(child);
+    }
+
+    virtual void addChildFromModel(int parent, const std::string& modelLoc) override {
+        if (parent < 0 || parent >= int(nodes_.size())) {
+            LM_ERROR("Missing parent index [index='{}'", parent);
+            return;
+        }
+
+        auto* model = comp::get<Model>(modelLoc);
+        if (!model) {
+            return;
+        }
+        
+        model->createPrimitives([&](Component* mesh, Component* material, Component* light) {
+            const int index = int(nodes_.size());
+            nodes_.push_back(SceneNode::makePrimitive(
+                index,
+                dynamic_cast<Mesh*>(mesh),
+                dynamic_cast<Material*>(material),
+                dynamic_cast<Light*>(light),
+                nullptr));
+            addChild(parent, index);
+        });
+    }
+
+    // ------------------------------------------------------------------------
+
+    virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const override {
+        std::function<void(int, Mat4)> visit = [&](int index, Mat4 globalTransform) {
+            const auto& node = nodes_.at(index);
+            traverseFunc(node, globalTransform);
+            if (node.type == SceneNodeType::Group) {
+                const auto M = node.group.localTransform
+                    ? globalTransform * *node.group.localTransform
+                    : globalTransform;
+                for (int child : node.group.children) {
+                    visit(child, M);
                 }
             }
-        }
-
-        return true;
+        };
+        visit(0, Mat4(1_f));
     }
 
-    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
-        for (const auto& primitive : primitives_) {
-            if (!primitive.mesh) {
-                continue;
-            }
-            primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
-                processTriangle(
-                    primitive.index,
-                    face,
-                    primitive.transform.M * Vec4(tri.p1.p, 1_f),
-                    primitive.transform.M * Vec4(tri.p2.p, 1_f),
-                    primitive.transform.M * Vec4(tri.p3.p, 1_f)
-                );
-            });
-        }
+    virtual void visitNode(int nodeIndex, const VisitNodeFunc& visit) const override {
+        visit(nodes_.at(nodeIndex));
     }
 
-    virtual void foreachPrimitive(const ProcessPrimitiveFunc& processPrimitive) const override {
-        for (const auto& primitive : primitives_) {
-            processPrimitive(primitive);
-        }
+    virtual const SceneNode& nodeAt(int nodeIndex) const override {
+        return nodes_.at(nodeIndex);
     }
 
     // ------------------------------------------------------------------------
 
     virtual void build(const std::string& name, const Json& prop) override {
+        // Update light indices
+        // We keep the global transformation of the light primitive as well as the references.
+        // We need to recompute the indices when an update of the scene happens,
+        // because the global tranformation can only be obtained by traversing the nodes.
+        lightIndicesMap_.clear();
+        lights_.clear();
+        if (envLight_) {
+            lightIndicesMap_[*envLight_] = 0;
+            lights_.push_back({ Transform(Mat4(1_f)), *envLight_ });
+        }
+        traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+            if (node.type == SceneNodeType::Primitive && node.primitive.light) {
+                lightIndicesMap_[node.index] = int(lights_.size());
+                lights_.push_back({ Transform(globalTransform), node.index });
+            }
+        });
+
+        // Build acceleration structure
         accel_ = comp::create<Accel>(name, makeLoc(loc(), "accel"), prop);
         if (!accel_) {
             return;
         }
+        LM_INFO("Building acceleration structure [name='{}']", name);
+        LM_INDENT();
         accel_->build(*this);
     }
 
@@ -171,25 +252,25 @@ public:
             if (tmax < Inf) {
                 return {};
             }
-            if (envLight_ < 0) {
+            if (!envLight_) {
                 return {};
             }
             return SurfacePoint{
-                envLight_,
+                *envLight_,
                 0,
                 PointGeometry::makeInfinite(-ray.d),
                 true
             };
         }
-        const auto [t, uv, primitiveIndex, face] = *hit;
-        const auto& primitive = primitives_.at(primitiveIndex);
-        const auto p = primitive.mesh->surfacePoint(face, uv);
+        const auto [t, uv, globalTransform, primitiveIndex, faceIndex] = *hit;
+        const auto& primitive = nodes_.at(primitiveIndex).primitive;
+        const auto p = primitive.mesh->surfacePoint(faceIndex, uv);
         return SurfacePoint{
             primitiveIndex,
             -1,
             PointGeometry::makeOnSurface(
-                primitive.transform.M * Vec4(p.p, 1_f),
-                primitive.transform.normalM * p.n,
+                globalTransform.M * Vec4(p.p, 1_f),
+                globalTransform.normalM * p.n,
                 p.t
             ),
             false
@@ -199,11 +280,11 @@ public:
     // ------------------------------------------------------------------------
 
     virtual bool isLight(const SurfacePoint& sp) const override {
-        return primitives_.at(sp.primitive).light;
+        return nodes_.at(sp.primitive).primitive.light;
     }
 
     virtual bool isSpecular(const SurfacePoint& sp) const override {
-        const auto& primitive = primitives_.at(sp.primitive);
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
         if (sp.endpoint) {
             if (primitive.light) {
                 return primitive.light->isSpecular(sp.geom);
@@ -219,11 +300,11 @@ public:
     // ------------------------------------------------------------------------
 
     virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const {
-        return primitives_.at(camera_).camera->primaryRay(rp, aspectRatio);
+        return nodes_.at(*camera_).primitive.camera->primaryRay(rp, aspectRatio);
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
-        const auto* material = primitives_.at(sp.primitive).material;
+        const auto* material = nodes_.at(sp.primitive).primitive.material;
         if (!material) {
             return {};
         }
@@ -244,13 +325,13 @@ public:
     }
 
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
-        const auto s = primitives_.at(camera_).camera->samplePrimaryRay(rng, window, aspectRatio);
+        const auto s = nodes_.at(*camera_).primitive.camera->samplePrimaryRay(rng, window, aspectRatio);
         if (!s) {
             return {};
         }
         return RaySample{
             SurfacePoint{
-                camera_,
+                *camera_,
                 0,
                 s->geom,
                 true
@@ -267,14 +348,15 @@ public:
         const auto pL = 1_f / n;
         
         // Sample a position on the light
-        const auto& primitive = primitives_.at(lights_[i]);
-        const auto s = primitive.light->sample(rng, sp.geom, primitive.transform);
+        const auto light = lights_.at(i);
+        const auto& primitive = nodes_.at(light.index).primitive;
+        const auto s = primitive.light->sample(rng, sp.geom, light.globalTransform);
         if (!s) {
             return {};
         }
         return RaySample{
             SurfacePoint{
-                lights_[i],
+                light.index,
                 0,
                 s->geom,
                 true
@@ -285,45 +367,47 @@ public:
     }
     
     virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-        const auto& prim = primitives_.at(sp.primitive);
-        return prim.material->pdf(sp.geom, sp.comp, wi, wo);
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
+        return primitive.material->pdf(sp.geom, sp.comp, wi, wo);
     }
 
     virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const override {
-        const auto& prim = primitives_.at(spL.primitive);
+        const auto& primitive = nodes_.at(spL.primitive).primitive;
+        const auto lightTransform = lights_.at(lightIndicesMap_.at(spL.primitive)).globalTransform;
         const auto pL = 1_f / int(lights_.size());
-        return prim.light->pdf(sp.geom, spL.geom, prim.transform, wo) * pL;
+        return primitive.light->pdf(sp.geom, spL.geom, lightTransform, wo) * pL;
     }
 
     // ------------------------------------------------------------------------
 
     virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-        const auto& prim = primitives_.at(sp.primitive);
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
         if (sp.endpoint) {
-            if (sp.primitive == camera_) {
-                return prim.camera->eval(sp.geom, wo);
+            if (primitive.camera) {
+                return primitive.camera->eval(sp.geom, wo);
             }
-            else {
-                return prim.light->eval(sp.geom, wo);
+            else if (primitive.light) {
+                return primitive.light->eval(sp.geom, wo);
             }
+            LM_UNREACHABLE();
         }
-        return prim.material->eval(sp.geom, sp.comp, wi, wo);
+        return primitive.material->eval(sp.geom, sp.comp, wi, wo);
     }
 
     virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
-        const auto& prim = primitives_.at(sp.primitive);
-        if (!prim.light) {
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
+        if (!primitive.light) {
             return {};
         }
-        return prim.light->eval(sp.geom, wo);
+        return primitive.light->eval(sp.geom, wo);
     }
 
     virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const override {
-        const auto& prim = primitives_.at(sp.primitive);
-        if (!prim.material) {
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
+        if (!primitive.material) {
             return {};
         }
-        return prim.material->reflectance(sp.geom, sp.comp);
+        return primitive.material->reflectance(sp.geom, sp.comp);
     }
 };
 

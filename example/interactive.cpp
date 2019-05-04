@@ -61,11 +61,11 @@ int main(int argc, char** argv) {
 
         // Create OpenGL-ready assets and register primitives
         const auto* scene = lm::comp::get<lm::Scene>("scene");
-        scene->foreachPrimitive([&](const lm::Primitive& p) {
+        scene->foreachPrimitive([&](const lm::Primitive& p, lm::Mat4 transform) {
             if (!p.mesh || !p.material) {
                 return;
             }
-            app.glscene.add(p.transform.M, p.mesh, p.material);
+            app.glscene.add(transform * p.transform.M, p.mesh, p.material);
         });
 
         // --------------------------------------------------------------------

@@ -37,6 +37,9 @@ include(PrecompiledHeader)
 # Use project filters in Visual Studio
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Enable the search of lib64 directory
+set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
+
 # -----------------------------------------------------------------------------
 
 # Thread
@@ -220,6 +223,7 @@ endif()
 if (LM_BUILD_TESTS)
     add_subdirectory(test)
     add_subdirectory(pytest)
+    add_subdirectory(functest)
 endif()
 
 # -----------------------------------------------------------------------------

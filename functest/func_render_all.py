@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -42,12 +42,14 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
-lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
 
 lm.objloader.init('objloader::tinyobjloader', {})
 
-for scene in lmscene.scenes():
+scenes = lmscene.scenes_small()
+
+for scene in scenes:
     lm.reset()
     
     # Film
@@ -58,18 +60,15 @@ for scene in lmscene.scenes():
     
     # Render
     lmscene.load(ft.env.scene_path, scene)
-    lm.build('accel::nanort', {})
+    lm.build('accel::embree', {})
     lm.render('renderer::raycast', {
-        'output': lm.asset('film_output'),
-        #'use_constant_color': True
+        'output': lm.asset('film_output')
     })
-    img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    img = np.copy(lm.buffer(lm.asset('film_output')))
     
     # Visualize
     f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(111)
-    ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+    ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
     ax.set_title(scene)
     plt.show()
-
-

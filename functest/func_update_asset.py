@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -36,42 +36,35 @@ lm.init('user::default', {
     'logger': 'logger::jupyter'
 })
 
-# +
-lm.asset('film_output', 'film::bitmap', {
-    'w': 1920,
-    'h': 1080
-})
 lm.asset('camera_main', 'camera::pinhole', {
-    'film': 'film_output',
     'position': [5.101118, 1.083746, -2.756308],
     'center': [4.167568, 1.078925, -2.397892],
     'up': [0,1,0],
     'vfov': 43.001194
 })
-
 lm.asset('obj_base_mat', 'material::diffuse', {
     'Kd': [.8,.2,.2]
 })
-
 lm.asset('model_obj', 'model::wavefrontobj', {
     'path': os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
-    'base_material': 'obj_base_mat'
+    'base_material': lm.asset('obj_base_mat')
 })
-
-lm.primitive(lm.identity(), {'camera': 'camera_main'})
-lm.primitives(lm.identity(), 'model_obj')
-# -
+lm.primitive(lm.identity(), {
+    'camera': lm.asset('camera_main')
+})
+lm.primitive(lm.identity(), {
+    'model': lm.asset('model_obj')
+})
 
 lm.build('accel::sahbvh', {})
+lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
 lm.render('renderer::raycast', {
-    'output': 'film_output'
+    'output': lm.asset('film_output')
 })
-
-# %matplotlib inline
-img = np.flip(lm.buffer('film_output'), axis=0)
+img = lm.buffer(lm.asset('film_output'))
 f = plt.figure(figsize=(10,10))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 ax.set_title('orig')
 
 # Replace `obj_base_mat` with different color
@@ -80,15 +73,12 @@ ax.set_title('orig')
 lm.asset('obj_base_mat', 'material::diffuse', {
     'Kd': [.2,.8,.2]
 })
+lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
 lm.render('renderer::raycast', {
-    'output': 'film_output'
+    'output': lm.asset('film_output')
 })
-
-# %matplotlib inline
-img = np.flip(lm.buffer('film_output'), axis=0)
+img = lm.buffer(lm.asset('film_output'))
 f = plt.figure(figsize=(10,10))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 ax.set_title('updated')
-
-

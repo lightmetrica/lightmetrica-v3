@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -30,44 +30,57 @@ import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter
 
+# + {"code_folding": [0]}
+# Initialize Lightmetrica
 lm.init('user::default', {})
 lm.log.init('logger::jupyter', {})
 lm.parallel.init('parallel::openmp', {
     'numThreads': -1
 })
 lm.info()
-lm.log.setSeverity(lm.log.LogLevel.Warn)
-lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
 
 
-def build_and_render(scene, accel):
-    lm.reset()
-    lmscene.load(ft.env.scene_path, scene)
-    lm.build('accel::' + accel, {})
-    lm.render('renderer::raycast', {
-        'output': lm.asset('film_output')
-    })
-    return np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
-
+# -
 
 # ### Difference images (pixelwised RMSE)
 #
 # Correct if the difference images are blank.
 
+# + {"code_folding": [0]}
+# Function to build and render the image
+def build_and_render(accel):
+    lm.build(accel, {})
+    lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
+    lm.render('renderer::raycast', {
+        'output': lm.asset('film_output')
+    })
+    return np.copy(lm.buffer(lm.asset('film_output')))
+
+
+# + {"code_folding": []}
+# Accels and scenes
+accels = ['accel::nanort', 'accel::embree', 'accel::embreeinstanced']
+scenes = lmscene.scenes_small()
+# -
+
 # Execute rendering for each scene and accel
-rmse_df = pd.DataFrame(columns=ft.accels(), index=lmscene.scenes())
-rmse_df.drop(columns='sahbvh', inplace=True)
-for scene in lmscene.scenes():
+rmse_df = pd.DataFrame(columns=accels, index=scenes)
+for scene in scenes:
+    print("Rendering [scene='{}']".format(scene))
+    
+    # Load scene
+    lm.reset()
+    lmscene.load(ft.env.scene_path, scene)
+    
     # Use the image for 'accel::sahbvh' as reference
-    ref = build_and_render(scene, 'sahbvh')
+    ref = build_and_render('accel::sahbvh')
     
     # Check consistency for other accels
-    for accel in ft.accels():
-        if accel == 'sahbvh':
-            continue
-            
+    for accel in accels:
         # Render and compute a different image
-        img = build_and_render(scene, accel)
+        img = build_and_render(accel)
         diff = ft.rmse_pixelwised(ref, img)
         
         # Record rmse
@@ -77,11 +90,11 @@ for scene in lmscene.scenes():
         # Visualize the difference image
         f = plt.figure(figsize=(10,10))
         ax = f.add_subplot(111)
-        im = ax.imshow(diff)
+        im = ax.imshow(diff, origin='lower')
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax)
-        ax.set_title('{}, sahbvh vs. {}'.format(scene, accel))
+        ax.set_title('{}, accel::sahbvh vs. {}'.format(scene, accel))
         plt.show()
 
 # ### RMSE

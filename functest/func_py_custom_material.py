@@ -5,17 +5,17 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
-# ## Custom material
+# ## Custom material in Python
 #
-# This test demostrates how to create an custom material from python side. Due to GIL, the execution of the python function is limited to a single thread. 
+# This test demostrates how to create an custom material using component extension in Python. Due to GIL, the execution of the python function is limited to a single thread. 
 
 # %load_ext autoreload
 # %autoreload 2
@@ -52,24 +52,15 @@ class Material_VisualizeNormal(lm.Material):
         return np.zeros(3)
 
 
-def print_comp(name):
-    print(name)
-lm.comp.detail.foreachRegistered(print_comp)
-
 lm.init('user::default', {})
 lm.parallel.init('parallel::openmp', {
     'numThreads': 1
 })
-lm.log.init('logger::jupyter', {})
+lm.log.init('logger::jupyter')
+lm.progress.init('progress::jupyter')
 lm.info()
 
 # +
-# Film
-lm.asset('film_output', 'film::bitmap', {
-    'w': 640,
-    'h': 360
-})
-
 # Original material
 lm.asset('mat_vis_normal', 'material::visualize_normal', {})
 
@@ -96,17 +87,17 @@ lm.build('accel::sahbvh', {})
 
 # +
 # Render
-lm.render('renderer::raycast', {
-    'output': lm.asset('film_output'),
-    #'use_constant_color': True
+lm.asset('film_output', 'film::bitmap', {
+    'w': 640,
+    'h': 360
 })
-img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+lm.render('renderer::raycast', {
+    'output': lm.asset('film_output')
+})
+img = np.copy(lm.buffer(lm.asset('film_output')))
 
 # Visualize
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()
-# -
-
-

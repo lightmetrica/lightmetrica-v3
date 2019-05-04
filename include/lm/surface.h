@@ -176,10 +176,10 @@ namespace SurfaceComp {
     \endrst
 */
 struct SurfacePoint {
-    int primitive;          //!< Primitive index.
-    int comp;               //!< Component index.
-    PointGeometry geom;     //!< Surface point geometry information.
-    bool endpoint;          //!< True if endpoint of light path.
+    int primitive;              //!< Primitive node index.
+    int comp;                   //!< Component index.
+    PointGeometry geom;         //!< Surface point geometry information.
+    bool endpoint;              //!< True if endpoint of light path.
 };
 
 /*!

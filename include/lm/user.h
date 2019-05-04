@@ -79,6 +79,8 @@ LM_PUBLIC_API void reset();
 */
 LM_PUBLIC_API void info();
 
+// ----------------------------------------------------------------------------
+
 /*!
     \brief Create an asset.
     \param name Identifier of the asset.
@@ -107,27 +109,7 @@ LM_PUBLIC_API std::string asset(const std::string& name, const std::string& impl
 */
 LM_PUBLIC_API std::string asset(const std::string& name);
 
-/*!
-    \brief Create primitive(s) and add to the scene.
-    \param transform Transformation matrix.
-    \param prop Properties for configuration.
-    \see `example/quad.cpp`
-    \see `example/raycast.cpp`
-
-    \rst
-    This function creates primitive(s) and registers to the framework.
-    A primitive is a scene object associating the assets such as
-    meshes or materials. The coordinates of the object is
-    speficied by a 4x4 transformation matrix.
-    We can use the same assets to define different primitives
-    with different transformations.
-
-    If ``model`` parameter is specified,
-    the function will register primitives generated from the model.
-    In this case, the transformation is applied to all primitives to be generated.
-    \endrst
-*/
-LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
+// ----------------------------------------------------------------------------
 
 /*!
     \brief Build acceleration structure.
@@ -174,6 +156,8 @@ static void render(const std::string& rendererName, const Json& prop = {}) {
     render();
 }
 
+// ----------------------------------------------------------------------------
+
 /*!
     \brief Save an image.
     \param filmName Identifier of a film asset.
@@ -197,6 +181,8 @@ LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath)
     \endrst
 */
 LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
+
+// ----------------------------------------------------------------------------
 
 /*!
     \brief Serialize the internal state of the framework to a stream.
@@ -228,6 +214,8 @@ LM_INLINE void deserialize(const std::string& path) {
     deserialize(is);
 }
 
+// ----------------------------------------------------------------------------
+
 /*!
     \brief Validate consistency of the component instances.
 */
@@ -255,6 +243,39 @@ public:
     ~ScopedInit() { shutdown(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
+
+// ----------------------------------------------------------------------------
+
+LM_PUBLIC_API int rootNode();
+LM_PUBLIC_API int primitiveNode(const Json& prop);
+LM_PUBLIC_API int groupNode();
+LM_PUBLIC_API int instanceGroupNode();
+LM_PUBLIC_API int transformNode(Mat4 transform);
+LM_PUBLIC_API void addChild(int parent, int child);
+LM_PUBLIC_API void addChildFromModel(int parent, const std::string& modelLoc);
+
+/*!
+    \brief Create primitive(s) and add to the scene.
+    \param group Group index.
+    \param transform Transformation matrix.
+    \param prop Properties for configuration.
+    \see `example/quad.cpp`
+    \see `example/raycast.cpp`
+
+    \rst
+    This function creates primitive(s) and registers to the framework.
+    A primitive is a scene object associating the assets such as
+    meshes or materials. The coordinates of the object is
+    speficied by a 4x4 transformation matrix.
+    We can use the same assets to define different primitives
+    with different transformations.
+
+    If ``model`` parameter is specified,
+    the function will register primitives generated from the model.
+    In this case, the transformation is applied to all primitives to be generated.
+    \endrst
+*/
+LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
 
 /*!
     @}
@@ -284,7 +305,6 @@ public:
     virtual void info() = 0;
     virtual std::string asset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
     virtual std::string asset(const std::string& name) = 0;
-    virtual void primitive(Mat4 transform, const Json& prop) = 0;
     virtual void build(const std::string& accelName, const Json& prop) = 0;
     virtual void renderer(const std::string& rendererName, const Json& prop) = 0;
     virtual void render(bool verbose) = 0;
@@ -292,7 +312,13 @@ public:
     virtual FilmBuffer buffer(const std::string& filmName) = 0;
     virtual void serialize(std::ostream& os) = 0;
     virtual void deserialize(std::istream& is) = 0;
-    virtual void validate() = 0;
+    virtual int rootNode() = 0;
+    virtual int primitiveNode(const Json& prop) = 0;
+    virtual int groupNode() = 0;
+    virtual int instanceGroupNode() = 0;
+    virtual int transformNode(Mat4 transform) = 0;
+    virtual void addChild(int parent, int child) = 0;
+    virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
 };
 
 /*!

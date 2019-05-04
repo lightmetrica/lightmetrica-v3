@@ -134,12 +134,6 @@ public:
         return assets_->makeLoc(name);
     }
 
-    virtual void primitive(Mat4 transform, const Json& prop) override {
-        if (!scene_->loadPrimitive(transform, prop)) {
-            THROW_RUNTIME_ERROR();
-        }
-    }
-
     void build(const std::string& accelName, const Json& prop) {
         scene_->build(accelName, prop);
     }
@@ -157,7 +151,7 @@ public:
             LM_INFO("Starting render [name='{}']", renderer_->key());
             LM_INDENT();
         }
-        if (!scene_->renderable()) {
+        if (renderer_->requiresScene() && !scene_->renderable()) {
             return;
         }
         renderer_->render(scene_.get());
@@ -195,33 +189,36 @@ public:
         serial::load(is, renderer_);
     }
 
-    virtual void validate() override {
-        // Check all components from the root
-        const lm::Component::ComponentVisitor visitor = [&](Component* comp, bool weak) {
-            if (!comp) {
-                LM_INFO("- nullptr");
-                return;
-            }
-            if (!weak) {
-                LM_INFO("- unique [key='{}', loc='{}']", comp->key(), comp->loc());
+    virtual int rootNode() override {
+        return scene_->rootNode();
+    }
 
-                // Locator
-                const auto loc = comp->loc();
-                
-                // Check if the locator is valid
-                const auto p = comp::get<Component>(loc);
-                if (!p || p != comp) {
-                    LM_ERROR("Invalid locator [loc='{}']", loc);
-                }
+    virtual int primitiveNode(const Json& prop) override {
+        return scene_->createNode(SceneNodeType::Primitive, prop);
+    }
 
-                LM_INDENT();
-                comp->foreachUnderlying(visitor);
-            }
-            else {
-                LM_INFO("-> weak [key='{}', loc='{}']", comp->key(), comp->loc());
-            }
-        };
-        comp::get<lm::Component>("$")->foreachUnderlying(visitor);
+    virtual int groupNode() override {
+        return scene_->createNode(SceneNodeType::Group, {});
+    }
+
+    virtual int instanceGroupNode() override {
+        return scene_->createNode(SceneNodeType::Group, {
+            {"instanced", true}
+        });
+    }
+
+    virtual int transformNode(Mat4 transform) override {
+        return scene_->createNode(SceneNodeType::Group, {
+            {"transform", transform}
+        });
+    }
+
+    virtual void addChild(int parent, int child) override {
+        scene_->addChild(parent, child);
+    }
+
+    virtual void addChildFromModel(int parent, const std::string& modelLoc) override {
+        scene_->addChildFromModel(parent, modelLoc);
     }
 
 private:
@@ -260,10 +257,6 @@ LM_PUBLIC_API std::string asset(const std::string& name) {
     return Instance::get().asset(name);
 }
 
-LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
-    Instance::get().primitive(transform, prop);
-}
-
 LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
     Instance::get().build(accelName, prop);
 }
@@ -292,8 +285,43 @@ LM_PUBLIC_API void deserialize(std::istream& is) {
     Instance::get().deserialize(is);
 }
 
-LM_PUBLIC_API void validate() {
-    Instance::get().validate();
+LM_PUBLIC_API int rootNode() {
+    return Instance::get().rootNode();
+}
+
+LM_PUBLIC_API int primitiveNode(const Json& prop) {
+    return Instance::get().primitiveNode(prop);
+}
+
+LM_PUBLIC_API int groupNode() {
+    return Instance::get().groupNode();
+}
+
+LM_PUBLIC_API int instanceGroupNode() {
+    return Instance::get().instanceGroupNode();
+}
+
+LM_PUBLIC_API int transformNode(Mat4 transform) {
+    return Instance::get().transformNode(transform);
+}
+
+LM_PUBLIC_API void addChild(int parent, int child) {
+    Instance::get().addChild(parent, child);
+}
+
+LM_PUBLIC_API void addChildFromModel(int parent, const std::string& modelLoc) {
+    Instance::get().addChildFromModel(parent, modelLoc);
+}
+
+LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
+    auto t = transformNode(transform);
+    if (prop.find("model") != prop.end()) {
+        addChildFromModel(t, prop["model"]);
+    }
+    else {
+        addChild(t, primitiveNode(prop));
+    }
+    addChild(rootNode(), t);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

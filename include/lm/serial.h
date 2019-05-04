@@ -16,6 +16,38 @@
 LM_NAMESPACE_BEGIN(cereal)
 
 /*
+    Serialize function specialized for std::optional.
+*/
+template <class Archive, typename T>
+void save(Archive& ar, const std::optional<T>& optional) {
+    if (!optional) {
+        ar(CEREAL_NVP_("nullopt", true));
+    }
+    else {
+        ar(CEREAL_NVP_("nullopt", false), CEREAL_NVP_("data", *optional));
+    }
+}
+
+/*
+    Serialize function specialized for std::optional.
+*/
+template <class Archive, typename T>
+void load(Archive& ar, std::optional<T>& optional) {
+    bool nullopt;
+    ar(CEREAL_NVP_("nullopt", nullopt));
+    if (nullopt) {
+        optional = std::nullopt;
+    }
+    else {
+        T value;
+        ar(CEREAL_NVP_("data", value));
+        optional = std::move(value);
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+/*
     Serialize function specialized for glm::vec<>.
 */
 template <typename Archive, int N, typename T, glm::qualifier Q>

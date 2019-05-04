@@ -5,10 +5,17 @@
 
 #include <lm/accel.h>
 #include <lm/scene.h>
+#include <lm/mesh.h>
 #include <lm/exception.h>
+#include <lm/logger.h>
 #include <nanort.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+struct FlattenedPrimitiveNode {
+    Transform globalTransform;  // Global transform of the primitive
+    int primitive;              // Primitive node index
+};
 
 /*
 \rst
@@ -22,19 +29,43 @@ private:
     std::vector<Float> vs_;
     std::vector<unsigned int> fs_;
     nanort::BVHAccel<Float> accel_;
-    std::vector<std::tuple<int, int>> primitiveFaceId_;
+    std::vector<std::tuple<int, int>> flattenNodeAndFacePerTriangle_;
+    std::vector<FlattenedPrimitiveNode> flattenedNodes_;
 
 public:
     virtual void build(const Scene& scene) override {
         // Make a combined mesh
-        scene.foreachTriangle([&](int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3) {
-            vs_.insert(vs_.end(), { p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z });
-            auto s = (unsigned int)(fs_.size());
-            fs_.insert(fs_.end(), { s, s+1, s+2 });
-            primitiveFaceId_.push_back({ primitive, face });
+        LM_INFO("Flattening scene");
+        vs_.clear();
+        fs_.clear();
+        flattenNodeAndFacePerTriangle_.clear();
+        flattenedNodes_.clear();
+        scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+            if (node.type != SceneNodeType::Primitive) {
+                return;
+            }
+            if (!node.primitive.mesh) {
+                return;
+            }
+
+            // Record flattened primitive
+            const int flattenNodeIndex = int(flattenedNodes_.size());
+            flattenedNodes_.push_back({ Transform(globalTransform), node.index });
+
+            // Triangles
+            node.primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
+                const auto p1 = globalTransform * Vec4(tri.p1.p, 1_f);
+                const auto p2 = globalTransform * Vec4(tri.p2.p, 1_f);
+                const auto p3 = globalTransform * Vec4(tri.p3.p, 1_f);
+                vs_.insert(vs_.end(), { p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z });
+                auto s = (unsigned int)(fs_.size());
+                fs_.insert(fs_.end(), { s, s+1, s+2 });
+                flattenNodeAndFacePerTriangle_.push_back({ flattenNodeIndex, face });
+            });
         });
 
         // Build acceleration structure
+        LM_INFO("Building");
         nanort::BVHBuildOptions<Float> options;
         nanort::TriangleMesh<Float> mesh(vs_.data(), fs_.data(), sizeof(Float) * 3);
         nanort::TriangleSAHPred<Float> pred(vs_.data(), fs_.data(), sizeof(Float) * 3);
@@ -60,8 +91,9 @@ public:
             return {};
         }
         
-        const auto [primitive, face] = primitiveFaceId_[isect.prim_id];
-        return Hit{ isect.t, Vec2(isect.u, isect.v), primitive, face };
+        const auto [node, face] = flattenNodeAndFacePerTriangle_.at(isect.prim_id);
+        const auto& fn = flattenedNodes_.at(node);
+        return Hit{ isect.t, Vec2(isect.u, isect.v), fn.globalTransform, fn.primitive, face };
     }
 };
 

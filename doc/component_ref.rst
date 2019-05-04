@@ -1,3 +1,5 @@
+.. _component_ref:
+
 Built-in component reference
 ################################
 

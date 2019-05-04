@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -36,11 +36,13 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.detail.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
+lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
 
 objloaders = ['objloader::simple', 'objloader::tinyobjloader']
-loading_time_df = pd.DataFrame(columns=objloaders, index=lmscene.scenes())
-for scene in lmscene.scenes():
+scenes = lmscene.scenes_small()
+
+loading_time_df = pd.DataFrame(columns=objloaders, index=scenes)
+for scene in scenes:
     # Check consistency with other loaders
     for objloader in objloaders:
         # Load the scene with selected obj loader

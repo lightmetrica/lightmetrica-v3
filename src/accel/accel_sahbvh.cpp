@@ -13,23 +13,35 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-struct Tri {
-    Vec3 p1;        // One vertex of the triangle
-    Vec3 e1, e2;    // Two edges incident to p1
-    Bound b;        // Bound of the triangle
-    Vec3 c;         // Center of the bound
-    int primitive;  // Primitive index associated to the triangle
-    int face;       // Face index of the mesh associated to the triangle
+namespace {
+
+struct FlattenedPrimitiveNode {
+    Transform globalTransform;  // Global transform of the primitive
+    int primitive;              // Primitive node index
 
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(p1, e1, e2, b, c, primitive, face);
+        ar(globalTransform, primitive);
+    }
+};
+
+struct Tri {
+    Vec3 p1;            // One vertex of the triangle
+    Vec3 e1, e2;        // Two edges incident to p1
+    Bound b;            // Bound of the triangle
+    Vec3 c;             // Center of the bound
+    int flattenedNode;  // Index of flattened primitive associated to the triangle
+    int face;           // Face index of the mesh associated to the triangle
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(p1, e1, e2, b, c, flattenedNode, face);
     }
 
     Tri() {}
 
-    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int primitive, int face)
-        : p1(p1), primitive(primitive), face(face) {
+    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int flattenedNode, int face)
+        : p1(p1), flattenedNode(flattenedNode), face(face) {
         e1 = p2 - p1;
         e2 = p3 - p1;
         b = merge(b, p1);
@@ -78,6 +90,10 @@ struct Node {
     }
 };
 
+}
+
+// ----------------------------------------------------------------------------
+
 /*
 \rst
 .. function:: accel::sahbvh
@@ -99,22 +115,45 @@ struct Node {
 */
 class Accel_SAHBVH final : public Accel {
 private:
-    std::vector<Node> nodes_;   // Nodes
-    std::vector<Tri> trs_;      // Triangles
-    std::vector<int> indices_;  // Triangle indices
+    std::vector<Node> nodes_;                             // Nodes
+    std::vector<Tri> trs_;                                // Triangles
+    std::vector<int> indices_;                            // Triangle indices
+    std::vector<FlattenedPrimitiveNode> flattenedNodes_;  // Flattened scene graph
     
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(nodes_, trs_, indices_);
+        ar(nodes_, trs_, indices_, flattenedNodes_);
     }
 
 public:
     virtual void build(const Scene& scene) override {
-        // Setup triangle list
+        // Flatten the scene graph and setup triangle list
+        LM_INFO("Flattening scene");
         trs_.clear();
-        scene.foreachTriangle([&](int primitive, int face, Vec3 p1, Vec3 p2, Vec3 p3) {
-            trs_.emplace_back(p1, p2, p3, primitive, face);
+        flattenedNodes_.clear();
+        scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+            if (node.type != SceneNodeType::Primitive) {
+                return;
+            }
+            if (!node.primitive.mesh) {
+                return;
+            }
+
+            // Record flattened primitive
+            const int flattenNodeIndex = int(flattenedNodes_.size());
+            flattenedNodes_.push_back({ Transform(globalTransform), node.index });
+
+            // Record triangles
+            node.primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
+                const auto p1 = globalTransform * Vec4(tri.p1.p, 1_f);
+                const auto p2 = globalTransform * Vec4(tri.p2.p, 1_f);
+                const auto p3 = globalTransform * Vec4(tri.p3.p, 1_f);
+                trs_.emplace_back(p1, p2, p3, flattenNodeIndex, face);
+            });
         });
+
+        // --------------------------------------------------------------------
+
         const int nt = int(trs_.size()); // Number of triangles
         struct Entry {
             int index;
@@ -132,7 +171,6 @@ public:
         std::atomic<int> nn = 1;        // Number of current nodes
         bool done = 0;                  // True if the build process is done
 
-        LM_INFO("Building acceleration structure [name='sahbvh']");
         auto process = [&]() {
             while (!done) {
                 // Each step construct a node for the triangles ranges in [s,e)
@@ -220,6 +258,7 @@ public:
                 cv.notify_one();
             }
         };
+        LM_INFO("Building");
         std::vector<std::thread> ths(std::thread::hardware_concurrency());
         for (auto& th : ths) {
             th = std::thread(process);
@@ -256,8 +295,9 @@ public:
         if (!mh) {
             return {};
         }
-        const auto& tr = trs_[indices_[mi]];
-        return Hit{ tmax, Vec2(mh->u, mh->v), tr.primitive, tr.face };
+        const auto& tr = trs_.at(indices_.at(mi));
+        const auto& fn = flattenedNodes_.at(tr.flattenedNode);
+        return Hit{ tmax, Vec2(mh->u, mh->v), fn.globalTransform, fn.primitive, tr.face };
     }
 };
 
