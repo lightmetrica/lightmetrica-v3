@@ -53,7 +53,7 @@ def build_and_render(scene):
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output')
     })
-    return np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    return np.copy(lm.buffer(lm.asset('film_output')))
 
 
 objloaders = ['objloader::tinyobjloader']
@@ -67,7 +67,7 @@ for scene in scenes:
     # Visualize reference
     f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(111)
-    ax.imshow(np.clip(np.power(ref,1/2.2),0,1))
+    ax.imshow(np.clip(np.power(ref,1/2.2),0,1), origin='lower')
     ax.set_title('{}, objloader::simple'.format(scene))
     plt.show()
     
@@ -81,14 +81,14 @@ for scene in scenes:
         # Visualize
         f = plt.figure(figsize=(15,15))
         ax = f.add_subplot(111)
-        ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+        ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
         ax.set_title('{}, {}'.format(scene, objloader))
         plt.show()
     
         # Visualize the difference image
         f = plt.figure(figsize=(15,15))
         ax = f.add_subplot(111)
-        im = ax.imshow(diff)
+        im = ax.imshow(diff, origin='lower')
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax)

@@ -15,7 +15,7 @@
 
 # ## Distributed rendering
 #
-# This test demonstrates network rendering feature of Lightmetrica.
+# This test demonstrates distributed rendering feature of Lightmetrica.
 
 # %load_ext autoreload
 # %autoreload 2
@@ -90,8 +90,14 @@ lm.render()
 lm.dist.gatherFilm(lm.asset('film_output'))
 lm.dist.allowWorkerConnection(True)
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+img = np.copy(lm.buffer(lm.asset('film_output')))
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()
+
+# Termination of the worker process is necessary for Windows
+# because fork() is not supported in Windows.
+# cf. https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+pool.terminate()
+pool.join()

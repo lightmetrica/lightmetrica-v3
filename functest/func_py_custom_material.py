@@ -13,9 +13,9 @@
 #     name: python3
 # ---
 
-# ## Custom material
+# ## Custom material in Python
 #
-# This test demostrates how to create an custom material from python side. Due to GIL, the execution of the python function is limited to a single thread. 
+# This test demostrates how to create an custom material using component extension in Python. Due to GIL, the execution of the python function is limited to a single thread. 
 
 # %load_ext autoreload
 # %autoreload 2
@@ -94,10 +94,10 @@ lm.asset('film_output', 'film::bitmap', {
 lm.render('renderer::raycast', {
     'output': lm.asset('film_output')
 })
-img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+img = np.copy(lm.buffer(lm.asset('film_output')))
 
 # Visualize
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()

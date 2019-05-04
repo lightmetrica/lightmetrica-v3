@@ -5,17 +5,17 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
-# ## Custom renderer
+# ## Custom renderer in Python
 #
-# This test demostrates how to create an custom renderer from python side.
+# This test demostrates how to create an custom renderer using component extension in Python.
 
 # %load_ext autoreload
 # %autoreload 2
@@ -70,8 +70,6 @@ class Renderer_AO(lm.Renderer):
             V /= self.spp
             self.film.setPixel(x, y, np.full(3, V))
             lm.progress.update(y*w+x)
-#         for index in range(w*h):
-#             process(index, 0)
         lm.parallel.foreach(w*h, process)
         lm.progress.end()
 
@@ -108,5 +106,3 @@ f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1))
 plt.show()
-
-

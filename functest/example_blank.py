@@ -55,7 +55,7 @@ lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Once the framework has been initialized properly, you can get an splash message from :cpp:func:`lm::info()` function.
+# Once the framework has been initialized properly, you can get an splash message using :cpp:func:`lm::info()` function.
 # -
 
 lm.info()
@@ -85,17 +85,17 @@ lm.render('renderer::blank', {
 lm.save(lm.asset('film'), 'blank.png')
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# You can also visualize the film directly in Jupyter notebook. :cpp:func:`lm::buffer` gets the internal image data as numpy array which you can visualize using matplotlib.
+# You can also visualize the film directly in Jupyter notebook. :cpp:func:`lm::buffer` gets the internal image data as numpy array which you can visualize using matplotlib. We rendered a white blank image thus the following image is as we expected.
 # -
 
 import numpy as np
 # %matplotlib inline
 import matplotlib.pyplot as plt
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film'))), axis=0)
+img = np.copy(lm.buffer(lm.asset('film')))
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}

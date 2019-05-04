@@ -58,7 +58,7 @@ for scene in scenes:
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output')
     })
-    img_orig = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    img_orig = np.copy(lm.buffer(lm.asset('film_output')))
     
     # Serialize, reset, deserialize, and render
     lm.serialize('lm.serialized')
@@ -67,7 +67,7 @@ for scene in scenes:
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output')
     })
-    img_serial = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    img_serial = np.copy(lm.buffer(lm.asset('film_output')))
     
     # Compare two images
     rmse = ft.rmse(img_orig, img_serial)

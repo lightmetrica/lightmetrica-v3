@@ -21,7 +21,7 @@
 #
 # This example describes how to render the scene with path tracing. Path tracing is a rendering technique based on Monte Carlo method and notably one of the most basic (yet practical) rendering algorithms taking global illumination into account. Our framework implements path tracing as ``renderer::pt`` renderer. 
 #
-# The use of the renderer is straightforward; we just need to specify ``renderer::pt`` with :cpp:func:`lm::render` function with some renderer-specific parameters. Thanks to the modular design of the framework, the most of the code can be the same as :ref:`_example_raycast`.
+# The use of the renderer is straightforward; we just need to specify ``renderer::pt`` with :cpp:func:`lm::render` function with some renderer-specific parameters. Thanks to the modular design of the framework, the most of the code can be the same as :ref:`example_raycast`.
 # -
 
 import os
@@ -77,8 +77,8 @@ lm.render('renderer::pt', {
     'maxLength': 20
 })
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film1'))), axis=0)
+img = np.copy(lm.buffer(lm.asset('film1')))
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()

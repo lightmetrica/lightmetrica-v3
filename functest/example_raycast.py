@@ -86,8 +86,8 @@ lm.render('renderer::raycast', {
     'color': [0,0,0]
 })
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film1'))), axis=0)
+img = np.copy(lm.buffer(lm.asset('film1')))
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()

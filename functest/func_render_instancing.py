@@ -124,10 +124,10 @@ def render_and_visualize():
         'visualize_normal': True,
         'bg_color': [1,1,1]
     })
-    img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    img = np.copy(lm.buffer(lm.asset('film_output')))
     f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(111)
-    ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+    ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
     plt.show()
 
 
@@ -146,7 +146,7 @@ for y in np.linspace(-10,10,10):
 
 render_and_visualize()
 
-# ### Single-level instancing
+# ### Single-level
 
 # +
 scene_setup()
@@ -168,7 +168,7 @@ for y in np.linspace(-10,10,10):
 
 render_and_visualize()
 
-# ### Multi-level instancing
+# ### Multi-level
 
 # +
 scene_setup()
@@ -195,14 +195,3 @@ for x in np.linspace(-10,10,10):
 # -
 
 render_and_visualize()
-
-# ### Detecting invalid group
-
-# +
-# # Scene containing cyclic dependency is invalid
-# scene_setup()
-# try:
-#     g = lm.group()
-#     lm.node.add(g, g)
-# except Exception:
-#     traceback.print_exc()

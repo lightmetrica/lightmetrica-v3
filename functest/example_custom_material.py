@@ -19,7 +19,7 @@
 # Rendering with custom material
 # ================================
 #
-# This example demostrates how to extend the framework using user-defined plugins. We extend :cpp:class:`lm::Material` interface to implement an user-defined material. We will implement the extension using C++ as a plugin. The implementation is defined in ``material_visualize_normal.cpp``:
+# This example demostrates how to extend the framework using user-defined plugins. We extend :cpp:class:`lm::Material` interface to implement an user-defined material. We will implement the extension using C++ as a plugin. The implementation is defined in ``material_visualize_normal.cpp`` (`code <https://github.com/hi2p-perim/lightmetrica-v3/tree/master/functest/material_visualize_normal.cpp>`__):
 #
 # .. literalinclude:: ../../functest/material_visualize_normal.cpp
 #     :language: cpp
@@ -29,7 +29,7 @@
 #
 # To register the implementation to the framework, you want to use :cpp:func:`LM_COMP_REG_IMPL` macro in the global scope. The second argument describes the name of the implementation, which will be used to instantiate the class.
 #
-# Once you prepared the code, you can easily build the plugin with ``lm_add_plugin`` in the cmake script. To use the function, you need to include ``LmAddPlugin.cmake``. You want to specify the name of the plugin with ``NAME`` argument. The dynamic library of the specified name will be built. In ``SOURCES`` argugment, you can specify the sources containing component implementations.
+# Once you prepared the code, you can easily build the plugin with ``lm_add_plugin`` in the `CMake script <https://github.com/hi2p-perim/lightmetrica-v3/tree/master/functest/CMakeLists.txt>`__. To use the function, you need to include ``LmAddPlugin.cmake``. You want to specify the name of the plugin with ``NAME`` argument. The dynamic library of the specified name will be built. In ``SOURCES`` argugment, you can specify the sources containing component implementations.
 #
 # .. literalinclude:: ../../functest/CMakeLists.txt
 #     :language: cmake
@@ -105,8 +105,8 @@ lm.render('renderer::raycast', {
     'use_constant_color': True
 })
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film1'))), axis=0)
+img = np.copy(lm.buffer(lm.asset('film1')))
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()

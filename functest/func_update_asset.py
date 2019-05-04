@@ -61,10 +61,10 @@ lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
 lm.render('renderer::raycast', {
     'output': lm.asset('film_output')
 })
-img = np.flip(lm.buffer(lm.asset('film_output')), axis=0)
+img = lm.buffer(lm.asset('film_output'))
 f = plt.figure(figsize=(10,10))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 ax.set_title('orig')
 
 # Replace `obj_base_mat` with different color
@@ -77,8 +77,8 @@ lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
 lm.render('renderer::raycast', {
     'output': lm.asset('film_output')
 })
-img = np.flip(lm.buffer(lm.asset('film_output')), axis=0)
+img = lm.buffer(lm.asset('film_output'))
 f = plt.figure(figsize=(10,10))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 ax.set_title('updated')

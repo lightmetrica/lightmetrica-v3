@@ -56,7 +56,7 @@ def build_and_render(accel):
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output')
     })
-    return np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    return np.copy(lm.buffer(lm.asset('film_output')))
 
 
 # + {"code_folding": []}
@@ -90,7 +90,7 @@ for scene in scenes:
         # Visualize the difference image
         f = plt.figure(figsize=(10,10))
         ax = f.add_subplot(111)
-        im = ax.imshow(diff)
+        im = ax.imshow(diff, origin='lower')
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax)

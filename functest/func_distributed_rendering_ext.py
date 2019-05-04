@@ -142,10 +142,10 @@ lm.render()
 lm.dist.gatherFilm(lm.asset('film_output'))
 lm.dist.allowWorkerConnection(True)
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+img = np.copy(lm.buffer(lm.asset('film_output')))
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()
 
 # Termination of the worker process is necessary for Windows

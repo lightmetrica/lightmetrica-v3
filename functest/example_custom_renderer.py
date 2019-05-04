@@ -14,18 +14,18 @@
 # ---
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# .. _example_renderer:
+# .. _example_custom_renderer:
 #
 # Rendering with custom renderer
 # ================================
 #
-# This example demostrates how to create user-defined renderer by implementing :cpp:class:`lm::Renderer` interface. The implementation is defined in ``custom_renderer.cpp``:
+# This example demostrates how to create user-defined renderer by implementing :cpp:class:`lm::Renderer` interface. The implementation is defined in ``renderer_ao.cpp`` (`code <https://github.com/hi2p-perim/lightmetrica-v3/tree/master/functest/renderer_ao.cpp>`__):
 #
 # .. literalinclude:: ../../functest/renderer_ao.cpp
 #     :language: cpp
 #     :lines: 6-
 #
-# In this time, we implemented two functions: :cpp:func:`lm::Component::construct` and :cpp:func:`lm::Renderer::render`. :cpp:func:`lm::Component::construct` function provides a type-agnostic way to initialize the instance with JSON values. You want to implement main logic of the renderer inside the :cpp:func:`lm::Renderer::render` function. We will not explain the detail here, but this renderer implements a simple ambient occlusion. As for the usage of APIs, please refer to the corresponding pages for detail.
+# In this time, we implemented two functions: :cpp:func:`lm::Component::construct` and :cpp:func:`lm::Renderer::render`. :cpp:func:`lm::Component::construct` function provides a type-agnostic way to initialize the instance with JSON values. You want to implement main logic of the renderer inside the :cpp:func:`lm::Renderer::render` function. We will not explain the detail here, but this renderer implements a simple ambient occlusion. As for the usage of APIs, please refer to the :ref:`corresponding references <api_ref>` for detail.
 # -
 
 import os
@@ -81,8 +81,8 @@ lm.render('renderer::ao', {
     'spp': 10
 })
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film1'))), axis=0)
+img = np.copy(lm.buffer(lm.asset('film1')))
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()

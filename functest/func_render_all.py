@@ -42,7 +42,6 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
 lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
 lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
 
@@ -61,18 +60,15 @@ for scene in scenes:
     
     # Render
     lmscene.load(ft.env.scene_path, scene)
-    #lm.build('accel::sahbvh', {})
-    #lm.build('accel::nanort', {})
-    lm.build('accel::embreeinstanced', {})
+    lm.build('accel::embree', {})
     lm.render('renderer::raycast', {
-        'output': lm.asset('film_output'),
-        #'use_constant_color': True
+        'output': lm.asset('film_output')
     })
-    img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
+    img = np.copy(lm.buffer(lm.asset('film_output')))
     
     # Visualize
     f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(111)
-    ax.imshow(np.clip(np.power(img,1/2.2),0,1))
+    ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
     ax.set_title(scene)
     plt.show()

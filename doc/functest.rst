@@ -8,7 +8,8 @@ Functional tests
 
     executed_functest/func_render_all
     executed_functest/func_accel_consistency
-    executed_functest/func_custom_material
+    executed_functest/func_py_custom_material
+    executed_functest/func_py_custom_renderer
     executed_functest/func_distributed_rendering
     executed_functest/func_distributed_rendering_ext
     executed_functest/func_error_handling
