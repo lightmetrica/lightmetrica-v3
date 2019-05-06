@@ -31,4 +31,11 @@ function(lm_add_plugin)
     set_target_properties(${_ARG_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     source_group("Header Files" FILES ${_ARG_HEADERS})
     source_group("Source Files" FILES ${_ARG_SOURCES})
+    if (LM_INSTALL)
+        install(
+            TARGETS ${_ARG_NAME}
+            EXPORT ${PROJECT_NAME}Targets
+            LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+    endif()
 endfunction()

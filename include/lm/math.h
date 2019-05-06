@@ -11,11 +11,11 @@
 #pragma warning(disable:4201)  // nonstandard extension used: nameless struct/union
 #pragma warning(disable:4127)  // conditional expression is constant
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtx/component_wise.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "ext/glm/glm.hpp"
+#include "ext/glm/gtx/component_wise.hpp"
+#include "ext/glm/gtx/transform.hpp"
+#include "ext/glm/gtc/type_ptr.hpp"
+#include "ext/glm/gtc/matrix_transform.hpp"
 #pragma warning(pop)
 
 #include <tuple>

@@ -224,17 +224,21 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 #pragma warning(push)
 #pragma warning(disable:4127)  // conditional expression is constant
-#include <nlohmann/json.hpp>
+#include "ext/nlohmann/json.hpp"
 #pragma warning(pop)
 
 // cereal library
-#include <cereal/cereal.hpp>
+#include "ext/cereal/cereal.hpp"
 #define LM_USE_JSON_ARCHIVE 0
 #if LM_USE_JSON_ARCHIVE
-#include <cereal/archives/json.hpp>
+#include "ext/cereal/archives/json.hpp"
 #else
-#include <cereal/archives/portable_binary.hpp>
+#include "ext/cereal/archives/portable_binary.hpp"
 #endif
+
+// fmt library
+#define FMT_HEADER_ONLY
+#include "ext/fmt/format.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

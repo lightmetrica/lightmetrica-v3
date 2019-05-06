@@ -55,25 +55,6 @@ set(LM_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
 # when the correponding in-project external directory exists.
 # Otherwise use find_package via config mode.
 
-# nlohmann-json
-# https://github.com/nlohmann/json
-if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/json")
-    option(JSON_BuildTests "" OFF)
-    option(JSON_MultipleHeaders "" OFF)
-    add_subdirectory(external/json)
-else()
-    find_package(nlohmann_json REQUIRED)
-endif()
-
-# OpenGL mathematics (glm)
-# https://github.com/g-truc/glm
-if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/glm")
-    option(GLM_TEST_ENABLE "" OFF)
-    add_subdirectory(external/glm)
-else()
-    find_package(glm REQUIRED)
-endif()
-
 # doctest
 # https://github.com/onqtam/doctest
 if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/doctest")
@@ -95,23 +76,6 @@ else()
     find_package(pybind11 REQUIRED)
 endif()
 
-# fmt
-# https://github.com/fmtlib/fmt
-if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/fmt")
-    add_subdirectory(external/fmt)
-else()
-    find_package(fmt REQUIRED)
-endif()
-
-# cereal
-# https://github.com/USCiLab/cereal
-if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/cereal")
-    option(JUST_INSTALL_CEREAL "" ON)
-    add_subdirectory(external/cereal)
-else()
-    find_package(cereal REQUIRED)
-endif()
-
 # libzmq & cppzmq
 # https://github.com/zeromq/libzmq
 # https://github.com/zeromq/cppzmq
@@ -122,7 +86,9 @@ if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/libzmq" AND EXISTS "${LM_
     option(WITH_PERF_TOOL "" OFF)
     option(BUILD_TESTS "" OFF)
     option(ENABLE_CPACK "" OFF)
-    add_subdirectory(external/libzmq)
+    # We need to specify EXCLUDE_FROM_ALL to prevent install()
+    # command of the subdirectory being called.
+    add_subdirectory(external/libzmq EXCLUDE_FROM_ALL)
 
     # cppzmq
     # We workaround cppzmq's CMakeLists.txt
@@ -134,7 +100,12 @@ if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/libzmq" AND EXISTS "${LM_
     target_include_directories(cppzmq-static INTERFACE "${_CPPZMQ_DIR}")
 else()
     find_package(ZeroMQ REQUIRED)
-    find_package(cppzmq REQUIRED)
+    #find_package(cppzmq REQUIRED)
+
+    set(_CPPZMQ_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq")
+    add_library(cppzmq-static INTERFACE)
+    target_link_libraries(cppzmq-static INTERFACE libzmq-static)
+    target_include_directories(cppzmq-static INTERFACE "${_CPPZMQ_DIR}")
 endif()
 
 # stb
@@ -229,7 +200,7 @@ endif()
 # -----------------------------------------------------------------------------
 
 # Install
-if (LM_INSTALL AND NOT EXISTS ${LM_EXTERNAL_DIR})
+if (LM_INSTALL)
     # Install include directory
     install(DIRECTORY include/lm DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
     

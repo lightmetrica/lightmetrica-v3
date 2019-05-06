@@ -6,9 +6,9 @@
 #include "component.h"
 #include "math.h"
 #include "logger.h"
-#include <cereal/types/string.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/types/unordered_map.hpp>
+#include "ext/cereal/types/string.hpp"
+#include "ext/cereal/types/vector.hpp"
+#include "ext/cereal/types/unordered_map.hpp"
 #include <atomic>
 
 // ----------------------------------------------------------------------------

@@ -2,7 +2,7 @@ PROJECT_NAME           = lightmetrica-v3
 INPUT                  = ../include/lm/ ../example/ ../src/
 RECURSIVE              = YES
 EXAMPLE_PATH           = ../
-EXCLUDE_PATTERNS       = */src/ext/*
+EXCLUDE_PATTERNS       = */src/ext/* */include/lm/ext/*
 
 GENERATE_HTML          = YES
 GENERATE_LATEX         = NO

@@ -8,7 +8,6 @@
 #include "common.h"
 #include "math.h"
 #include <array>
-#include <fmt/format.h>
 
 // ----------------------------------------------------------------------------
 

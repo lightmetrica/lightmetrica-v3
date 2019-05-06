@@ -6,7 +6,6 @@
 #pragma once
 
 #include "component.h"
-#include <fmt/format.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(log)

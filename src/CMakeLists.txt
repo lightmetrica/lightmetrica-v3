@@ -18,7 +18,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/progress.h"
     "${_INCLUDE_DIR}/debugio.h"
-	"${_INCLUDE_DIR}/dist.h"
+    "${_INCLUDE_DIR}/dist.h"
     "${_INCLUDE_DIR}/exception.h"
     "${_INCLUDE_DIR}/parallel.h"
     "${_INCLUDE_DIR}/math.h"
@@ -38,7 +38,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/component.h"
     "${_INCLUDE_DIR}/serial.h"
     "${_INCLUDE_DIR}/surface.h"
-	"${_INCLUDE_DIR}/objloader.h")
+    "${_INCLUDE_DIR}/objloader.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"
@@ -49,13 +49,13 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/progress.cpp"
     "${_SOURCE_DIR}/debugio.cpp"
-	"${_SOURCE_DIR}/dist.cpp"
+    "${_SOURCE_DIR}/dist.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
-	"${_SOURCE_DIR}/parallel/parallel_dist.cpp"
+    "${_SOURCE_DIR}/parallel/parallel_dist.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
-	"${_SOURCE_DIR}/model/objloader.cpp"
-	"${_SOURCE_DIR}/model/objloader_simple.cpp"
+    "${_SOURCE_DIR}/model/objloader.cpp"
+    "${_SOURCE_DIR}/model/objloader_simple.cpp"
     "${_SOURCE_DIR}/mesh/mesh_raw.cpp"
     "${_SOURCE_DIR}/camera/camera_pinhole.cpp"
     "${_SOURCE_DIR}/light/light_area.cpp"
@@ -87,7 +87,6 @@ if (MSVC)
 endif()
 # Configure dependency
 target_link_libraries(${_PROJECT_NAME}
-    PUBLIC nlohmann_json glm fmt::fmt-header-only cereal
     PRIVATE lm_version
             stb_image
             OpenMP::OpenMP_CXX
@@ -129,12 +128,13 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES
 # Note that install(TARGET) must be written here because
 # adding target defined in different directory requires CMake>=3.13.
 # https://gitlab.kitware.com/cmake/cmake/merge_requests/2152
-if (LM_INSTALL AND NOT EXISTS ${LM_EXTERNAL_DIR})
+if (LM_INSTALL)
     install(
-        TARGETS liblm
+        TARGETS ${_PROJECT_NAME}
         EXPORT ${PROJECT_NAME}Targets
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endif()    
 
@@ -153,3 +153,10 @@ target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+if (LM_INSTALL)
+    install(
+        TARGETS ${_PROJECT_NAME}
+        EXPORT ${PROJECT_NAME}Targets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+endif()

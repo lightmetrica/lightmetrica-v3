@@ -6,18 +6,8 @@
 @PACKAGE_INIT@
 
 # Avoid to include the target if it is already loaded.
-# This can happen if lightmetrica is already loaded as a transitive
+# This can happen if Lightmetrica is already loaded as a transitive
 # dependency of an other project.
 if (NOT TARGET lightmetrica::liblm)
-    # Find dependencies
-    include(CMakeFindDependencyMacro)
-    find_dependency(nlohmann_json REQUIRED)
-    find_dependency(glm REQUIRED)
-    find_dependency(doctest REQUIRED)
-    find_dependency(pybind11 REQUIRED)
-    find_dependency(fmt REQUIRED)
-    find_dependency(cereal REQUIRED)
-
-    # Include exported targets
     include(${CMAKE_CURRENT_LIST_DIR}/lightmetricaTargets.cmake)
 endif()
