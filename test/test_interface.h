@@ -9,8 +9,8 @@
 #include <lm/json.h>
 #include <lm/math.h>
 #include <iostream>
-#include <lm/ext/cereal/cereal.hpp>
-#include <lm/ext/cereal/archives/portable_binary.hpp>
+#include <cereal/cereal.hpp>
+#include <cereal/archives/portable_binary.hpp>
 
 LM_NAMESPACE_BEGIN(lmtest)
 

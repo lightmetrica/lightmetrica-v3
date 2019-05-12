@@ -38,6 +38,13 @@ public:
         comp::visit(visitor, envmap_);
     }
 
+    virtual Component* underlying(const std::string& name) const override {
+        if (name == "envmap") {
+            return envmap_.get();
+        }
+        return nullptr;
+    }
+
 public:
     virtual bool construct(const Json& prop) override {
         envmap_ = comp::create<Texture>("texture::bitmap", "", prop);

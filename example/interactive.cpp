@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
             "vfov": {}
         }})");
 
-        #if LM_DEBUG_MODE
+        #if LM_DEBUG_MODE && 0
         lm::deserialize("lm.serialized");
         #else
         lm::asset("film_render", "film::bitmap", {
@@ -59,13 +59,21 @@ int main(int argc, char** argv) {
             THROW_RUNTIME_ERROR();
         }
 
+        // --------------------------------------------------------------------
+
+        // Reset camera
+        app.glcamera.reset(opt["eye"], opt["lookat"], lm::Vec3(0, 1, 0), opt["vfov"]);
+
         // Create OpenGL-ready assets and register primitives
-        const auto* scene = lm::comp::get<lm::Scene>("scene");
-        scene->foreachPrimitive([&](const lm::Primitive& p, lm::Mat4 transform) {
-            if (!p.mesh || !p.material) {
+        const auto* scene = lm::comp::get<lm::Scene>("$.scene");
+        scene->traverseNodes([&](const lm::SceneNode& node, lm::Mat4 globalTransform) {
+            if (node.type != lm::SceneNodeType::Primitive) {
                 return;
             }
-            app.glscene.add(transform * p.transform.M, p.mesh, p.material);
+            if (!node.primitive.mesh || !node.primitive.material) {
+                return;
+            }
+            app.glscene.add(globalTransform, node.primitive.mesh, node.primitive.material);
         });
 
         // --------------------------------------------------------------------
@@ -121,7 +129,7 @@ int main(int argc, char** argv) {
             static std::optional<GLuint> texture;
             const auto updateTexture = [&]() {
                 // Underlying data
-                auto [w, h, data] = lm::buffer("film_render");
+                auto [w, h, data] = lm::buffer(lm::asset("film_render"));
 
                 // Convert data to float
                 std::vector<float> data_(w*h * 3);
@@ -183,7 +191,7 @@ int main(int argc, char** argv) {
         });
     }
     catch (const std::exception& e) {
-        LM_ERROR("Runtime error: {}", e.what());
+        std::cerr << "Runtime error: " << e.what() << std::endl;
     }
 
     return EXIT_SUCCESS;

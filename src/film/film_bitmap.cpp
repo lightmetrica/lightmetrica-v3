@@ -168,6 +168,12 @@ public:
         }
     }
 
+    virtual void splat(Vec2 rp, Vec3 v) override {
+        const int x = glm::clamp(int(rp.x * w_), 0, w_-1);
+        const int y = glm::clamp(int(rp.y * h_), 0, h_-1);
+        data_[y*w_+x].add(v);
+    }
+
     virtual void clear() override {
         data_.assign(w_*h_, {});
     }

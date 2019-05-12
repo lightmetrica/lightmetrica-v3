@@ -274,7 +274,10 @@ public:
     }
 
     virtual Component* underlying(const std::string& name) const override {
-        return materials_.at(typeToIndexMap_.at(name)).get();
+        if (auto it = typeToIndexMap_.find(name); it != typeToIndexMap_.end()) {
+            return materials_.at(it->second).get();
+        }
+        return nullptr;
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {

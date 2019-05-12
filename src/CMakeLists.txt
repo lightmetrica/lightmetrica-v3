@@ -87,10 +87,14 @@ if (MSVC)
 endif()
 # Configure dependency
 target_link_libraries(${_PROJECT_NAME}
+    PUBLIC  cereal
+            glm
+            nlohmann_json
+            fmt::fmt-header-only
     PRIVATE lm_version
             stb_image
             OpenMP::OpenMP_CXX
-            cppzmq-static
+            cppzmq
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
             $<$<CXX_COMPILER_ID:GNU>:atomic>)
 # Include directories
@@ -104,6 +108,9 @@ target_include_directories(${_PROJECT_NAME}
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_CRT_SECURE_NO_WARNINGS)
+# Use SIMD in glm
+target_compile_definitions(${_PROJECT_NAME} PUBLIC -DGLM_FORCE_INTRINSICS)
+# Use C++17
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 # Enable warning level 4, treat warning as errors, enable SEH
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHa>)

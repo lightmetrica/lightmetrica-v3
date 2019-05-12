@@ -42,100 +42,36 @@ set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
 # -----------------------------------------------------------------------------
 
-# Thread
+# External dependencies
 find_package(Threads REQUIRED)
-
-# OpenMP
 find_package(OpenMP REQUIRED)
+find_package(doctest REQUIRED)
+find_package(pybind11 REQUIRED)
+find_package(cppzmq REQUIRED)
+find_package(cereal REQUIRED)
+find_package(glm REQUIRED)
+find_package(nlohmann_json REQUIRED)
+find_package(fmt REQUIRED)
 
-# Directory for in-project external dependencies
-set(LM_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
+# -----------------------------------------------------------------------------
 
-# Include dependencies via add_subdirectory
-# when the correponding in-project external directory exists.
-# Otherwise use find_package via config mode.
-
-# doctest
-# https://github.com/onqtam/doctest
-if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/doctest")
-    option(DOCTEST_WITH_TESTS "" OFF)
-    option(DOCTEST_NO_INSTALL "" ON)
-    add_subdirectory(external/doctest)
-    # We need this line because exported target uses doctest::doctest
-    # while add_subdirectory only finds doctest target.
-    add_library(doctest::doctest ALIAS doctest)
-else()
-    find_package(doctest REQUIRED)
-endif()
-
-# pybind11
-# https://github.com/pybind/pybind11
-if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/pybind11")
-    add_subdirectory(external/pybind11)
-else()
-    find_package(pybind11 REQUIRED)
-endif()
-
-# libzmq & cppzmq
-# https://github.com/zeromq/libzmq
-# https://github.com/zeromq/cppzmq
-if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/libzmq" AND EXISTS "${LM_EXTERNAL_DIR}/cppzmq")
-    # libzmq
-    option(ENABLE_DRAFTS "" OFF)
-    option(BUILD_SHARED "" OFF)
-    option(WITH_PERF_TOOL "" OFF)
-    option(BUILD_TESTS "" OFF)
-    option(ENABLE_CPACK "" OFF)
-    # We need to specify EXCLUDE_FROM_ALL to prevent install()
-    # command of the subdirectory being called.
-    add_subdirectory(external/libzmq EXCLUDE_FROM_ALL)
-
-    # cppzmq
-    # We workaround cppzmq's CMakeLists.txt
-    # because it internally tries to find ZeroMQ package
-    # where we already loaded via add_subdirectory.
-    set(_CPPZMQ_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq")
-    add_library(cppzmq-static INTERFACE)
-    target_link_libraries(cppzmq-static INTERFACE libzmq-static)
-    target_include_directories(cppzmq-static INTERFACE "${_CPPZMQ_DIR}")
-else()
-    find_package(ZeroMQ REQUIRED)
-    #find_package(cppzmq REQUIRED)
-
-    set(_CPPZMQ_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/cppzmq")
-    add_library(cppzmq-static INTERFACE)
-    target_link_libraries(cppzmq-static INTERFACE libzmq-static)
-    target_include_directories(cppzmq-static INTERFACE "${_CPPZMQ_DIR}")
-endif()
-
+# In-source external dependencies
 # stb
-# https://github.com/nothings/stb
 add_library(stb_image INTERFACE)
 target_include_directories(stb_image INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/stb")
+
+# -----------------------------------------------------------------------------
 
 # OpenGL
 find_package(OpenGL REQUIRED)
 
-# gl3w
-# https://github.com/skaslev/gl3w
-add_library(gl3w STATIC "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/GL/gl3w.c")
-target_include_directories(gl3w PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/ext")
-target_link_libraries(gl3w PUBLIC OpenGL::GL)
+# glew
+find_package(glew REQUIRED)
 
-# GLFW
-# https://github.com/glfw/glfw
-if (LM_USE_EXTERNAL_DIR AND EXISTS "${LM_EXTERNAL_DIR}/glfw")
-    option(GLFW_BUILD_DOCS "" OFF)
-    option(GLFW_BUILD_TESTS "" OFF)
-    option(GLFW_BUILD_EXAMPLES "" OFF)
-    option(GLFW_INSTALL "" OFF)
-    add_subdirectory(${LM_EXTERNAL_DIR}/glfw)
-else()
-    find_package(glfw3 REQUIRED)
-endif()
+# glfw
+find_package(glfw3 REQUIRED)
 
 # imgui
-# https://github.com/ocornut/imgui
 set(_IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/imgui")
 add_library(imgui STATIC
     "${_IMGUI_DIR}/imgui.cpp"
@@ -144,10 +80,11 @@ add_library(imgui STATIC
     "${_IMGUI_DIR}/imgui_demo.cpp"
     "${_IMGUI_DIR}/examples/imgui_impl_glfw.cpp"
     "${_IMGUI_DIR}/examples/imgui_impl_opengl3.cpp")
-target_link_libraries(imgui PUBLIC glm glfw gl3w)
+target_link_libraries(imgui PUBLIC glm glfw GLEW::GLEW OpenGL::GL)
 target_include_directories(imgui PUBLIC
     "${_IMGUI_DIR}"
     "${_IMGUI_DIR}/examples")
+target_compile_definitions(imgui PUBLIC -DIMGUI_IMPL_OPENGL_LOADER_GLEW)
 
 # -----------------------------------------------------------------------------
 
