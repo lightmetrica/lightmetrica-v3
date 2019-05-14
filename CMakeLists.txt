@@ -53,32 +53,12 @@ find_package(glm REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(fmt REQUIRED)
 find_package(stb REQUIRED)
-
-# -----------------------------------------------------------------------------
-
-# OpenGL
-find_package(OpenGL REQUIRED)
-
-# glew
-find_package(glew REQUIRED)
-
-# glfw
-find_package(glfw3 REQUIRED)
-
-# imgui
-set(_IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/imgui")
-add_library(imgui STATIC
-    "${_IMGUI_DIR}/imgui.cpp"
-    "${_IMGUI_DIR}/imgui_draw.cpp"
-    "${_IMGUI_DIR}/imgui_widgets.cpp"
-    "${_IMGUI_DIR}/imgui_demo.cpp"
-    "${_IMGUI_DIR}/examples/imgui_impl_glfw.cpp"
-    "${_IMGUI_DIR}/examples/imgui_impl_opengl3.cpp")
-target_link_libraries(imgui PUBLIC glm glfw GLEW::GLEW OpenGL::GL)
-target_include_directories(imgui PUBLIC
-    "${_IMGUI_DIR}"
-    "${_IMGUI_DIR}/examples")
-target_compile_definitions(imgui PUBLIC -DIMGUI_IMPL_OPENGL_LOADER_GLEW)
+if (LM_BUILD_EXAMPLES)
+    find_package(OpenGL REQUIRED)
+    find_package(glew REQUIRED)
+    find_package(glfw3 REQUIRED)
+    find_package(imgui REQUIRED)
+endif()
 
 # -----------------------------------------------------------------------------
 
