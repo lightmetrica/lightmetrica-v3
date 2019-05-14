@@ -92,7 +92,7 @@ target_link_libraries(${_PROJECT_NAME}
             nlohmann_json
             fmt::fmt-header-only
     PRIVATE lm_version
-            stb_image
+            stb::stb_image
             OpenMP::OpenMP_CXX
             cppzmq
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>

@@ -9,7 +9,7 @@
 #include <lm/serial.h>
 #include <lm/json.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
+#include <stb/stb_image_write.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

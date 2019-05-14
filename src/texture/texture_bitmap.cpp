@@ -11,7 +11,7 @@
 #pragma warning(push)
 #pragma warning(disable:4244) // possible loss of data
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include <stb/stb_image.h>
 #pragma warning(pop)
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

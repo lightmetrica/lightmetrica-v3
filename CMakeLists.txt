@@ -52,13 +52,7 @@ find_package(cereal REQUIRED)
 find_package(glm REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(fmt REQUIRED)
-
-# -----------------------------------------------------------------------------
-
-# In-source external dependencies
-# stb
-add_library(stb_image INTERFACE)
-target_include_directories(stb_image INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/stb")
+find_package(stb REQUIRED)
 
 # -----------------------------------------------------------------------------
 
@@ -182,5 +176,6 @@ if (LM_INSTALL)
     export(
         EXPORT ${PROJECT_NAME}Targets
         FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake
-        NAMESPACE ${PROJECT_NAME}::)
+        NAMESPACE ${PROJECT_NAME}::
+    )
 endif()
