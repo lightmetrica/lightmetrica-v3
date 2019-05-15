@@ -9,5 +9,10 @@
 # This can happen if Lightmetrica is already loaded as a transitive
 # dependency of an other project.
 if (NOT TARGET lightmetrica::liblm)
+    include(CMakeFindDependencyMacro)
+    find_dependency(cereal REQUIRED)
+    find_dependency(glm REQUIRED)
+    find_dependency(nlohmann_json REQUIRED)
+    find_dependency(fmt REQUIRED)
     include(${CMAKE_CURRENT_LIST_DIR}/lightmetricaTargets.cmake)
 endif()
