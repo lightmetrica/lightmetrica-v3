@@ -172,7 +172,11 @@ public:
     bool loadPlugin(const std::string& p) {
         namespace fs = std::filesystem;
 
+        #if LM_DEBUG_MODE
+        fs::path path(p + "-debug");
+        #else
         fs::path path(p);
+        #endif
 
         LM_INFO("Loading plugin [name='{}']", path.filename().string());
         LM_INDENT();

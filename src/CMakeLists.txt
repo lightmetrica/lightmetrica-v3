@@ -124,6 +124,8 @@ target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/bigobj
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:GNU>:-lstdc++fs>)
 # Remove `lib` prefix of the output library name in Linux enviroment
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "")
+# Add postfix '-debug' for debug build to differentiate both binaries in a distribution
+set_target_properties(${_PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "-debug")
 # Folder name for Visual Studio IDE where the project is
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 # Output directories
@@ -143,7 +145,7 @@ if (LM_INSTALL)
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
-endif()    
+endif()
 
 # -----------------------------------------------------------------------------
 
@@ -157,6 +159,7 @@ add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES})
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
+set_target_properties(${_PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "-debug")
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

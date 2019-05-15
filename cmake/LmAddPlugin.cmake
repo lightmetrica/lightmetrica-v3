@@ -27,6 +27,7 @@ function(lm_add_plugin)
             $<${_INTERFACE_DEFINED}:${_ARG_NAME}_interface>
             ${_ARG_LIBRARIES})
     set_target_properties(${_ARG_NAME} PROPERTIES PREFIX "")
+    set_target_properties(${_ARG_NAME} PROPERTIES DEBUG_POSTFIX "-debug")
     set_target_properties(${_ARG_NAME} PROPERTIES FOLDER "lm/plugin")
     set_target_properties(${_ARG_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     source_group("Header Files" FILES ${_ARG_HEADERS})

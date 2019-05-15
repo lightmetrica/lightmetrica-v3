@@ -629,7 +629,7 @@ public:
             return false;
         }
 
-        #if LM_DEBUG_MODE
+        #if LM_DEBUG_MODE && 0
         // Debug output of OpenGL
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

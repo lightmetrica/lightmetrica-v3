@@ -14,13 +14,6 @@ function(lm_add_example)
     set_target_properties(${_ARG_NAME} PROPERTIES FOLDER "lm/example")
     set_target_properties(${_ARG_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     source_group("Source Files" FILES ${_ARG_SOURCES})
-    if (LM_INSTALL)
-        install(
-            TARGETS ${_ARG_NAME}
-            EXPORT ${PROJECT_NAME}Targets
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        )
-    endif()
 endfunction()
 
 # -----------------------------------------------------------------------------

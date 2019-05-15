@@ -43,10 +43,3 @@ set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/test")
 set_target_properties(${_PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 source_group("Header Files" FILES ${_HEADER_FILES})
 source_group("Source Files" FILES ${_SOURCE_FILES})
-if (LM_INSTALL)
-    install(
-        TARGETS ${_PROJECT_NAME}
-        EXPORT ${PROJECT_NAME}Targets
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-endif()
