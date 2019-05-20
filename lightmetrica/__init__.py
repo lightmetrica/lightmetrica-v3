@@ -1,7 +1,12 @@
 """Entry point for Lightmetrica's Python binding"""
-# pylm module must be in sys.path
-from pylm import *
+
+import os
 import numpy as np
+
+if 'LM_DEBUG' in os.environ:
+    from .pylm_debug import *
+else:
+    from .pylm import *
 
 def pylm_component(name):
     """Decorator for registering a class to lightmetrica"""

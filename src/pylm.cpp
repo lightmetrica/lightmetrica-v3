@@ -622,7 +622,12 @@ static void bind(pybind11::module& m) {
 
 // ----------------------------------------------------------------------------
 
-PYBIND11_MODULE(pylm, m) {
+#if LM_DEBUG_MODE
+PYBIND11_MODULE(pylm_debug, m)
+#else
+PYBIND11_MODULE(pylm, m)
+#endif
+{
     m.doc() = R"x(
         pylm: Python binding of Lightmetrica.
     )x";

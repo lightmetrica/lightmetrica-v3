@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='lightmetrica',
+    name='lightmetrica-py',
     version='3.0.0',
     description='A research-oriented renderer',
     author='Hisanari Otsu',
@@ -21,4 +21,5 @@ setup(
     ],
     keywords='Compute graphics, Renderer',
     long_description='Lightmetrica is a research-oriented renderer. The development of the framework is motivated by the goal to provide a practical environment for rendering research and development, where the researchers and developers need to tackle various challenging requirements through the development process.',
+    include_package_data=True,
 )

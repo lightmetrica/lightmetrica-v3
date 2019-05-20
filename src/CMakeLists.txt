@@ -159,10 +159,15 @@ add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES})
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
-set_target_properties(${_PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "-debug")
+# Use postfix '_debug' because python's import doesn't support hypens in a module name
+set_target_properties(${_PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "_debug")
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
-set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+# Export extension modules to the module directory
+set(_PYTHON_MODULE_DIR "${PROJECT_SOURCE_DIR}/lightmetrica")
+set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${_PYTHON_MODULE_DIR}")
+set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG "${_PYTHON_MODULE_DIR}")
+set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE "${_PYTHON_MODULE_DIR}")
 if (LM_INSTALL)
     install(
         TARGETS ${_PROJECT_NAME}
