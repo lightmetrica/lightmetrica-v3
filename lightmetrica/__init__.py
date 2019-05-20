@@ -3,7 +3,7 @@
 import os
 import numpy as np
 
-if 'LM_DEBUG' in os.environ:
+if 'LM_DEBUG' in os.environ and os.environ['LM_DEBUG'] == '1':
     from .pylm_debug import *
 else:
     from .pylm import *
