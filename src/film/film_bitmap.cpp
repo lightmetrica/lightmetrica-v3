@@ -98,10 +98,10 @@ public:
         LM_INDENT();
 
         // Create directory if not found
-        const auto parent = std::filesystem::path(outpath).parent_path();
-        if (!parent.empty() && !std::filesystem::exists(parent)) {
+        const auto parent = fs::path(outpath).parent_path();
+        if (!parent.empty() && !fs::exists(parent)) {
             LM_INFO("Creating directory [path='{}']", parent.string());
-            if (!std::filesystem::create_directories(parent)) {
+            if (!fs::create_directories(parent)) {
                 LM_INFO("Failed to create directory [path='{}']", parent.string());
                 return false;
             }
@@ -109,7 +109,7 @@ public:
 
         // Save file
         // Check extension of the output file
-        const auto ext = std::filesystem::path(outpath).extension().string();
+        const auto ext = fs::path(outpath).extension().string();
         if (ext == ".png") {
             const auto data = copy<unsigned char>(true);
             if (!stbi_write_png(outpath.c_str(), w_, h_, 3, data.data(), w_*3)) {

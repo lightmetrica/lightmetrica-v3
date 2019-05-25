@@ -170,8 +170,6 @@ public:
     }
 
     bool loadPlugin(const std::string& p) {
-        namespace fs = std::filesystem;
-
         #if LM_DEBUG_MODE
         fs::path path(p + "-debug");
         #else
@@ -201,8 +199,6 @@ public:
     }
 
     void loadPluginDirectory(const std::string& directory) {
-        namespace fs = std::filesystem;
-
         // Skip if directory does not exist
         if (!fs::is_directory(fs::path(directory))) {
             LM_WARN("Missing plugin directory [directory='{}']. Skipping.", directory);

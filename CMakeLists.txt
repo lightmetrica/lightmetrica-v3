@@ -22,6 +22,7 @@ option(LM_USE_EXTERNAL_DIR   "Use in-project external directory to find dependen
 option(LM_INSTALL            "Enable install"  ${LM_MASTER_PROJECT})
 option(LM_BUILD_TESTS        "Enable tests"    ${LM_MASTER_PROJECT})
 option(LM_BUILD_EXAMPLES     "Enable examples" ${LM_MASTER_PROJECT})
+option(LM_BUILD_GUI_EXAMPLES "Enable GUI examples" ${LM_MASTER_PROJECT})
 
 # -----------------------------------------------------------------------------
 
@@ -55,9 +56,9 @@ find_package(stb REQUIRED)
 if (LM_BUILD_TESTS)
     find_package(doctest REQUIRED)
 endif()
-if (LM_BUILD_EXAMPLES)
+if (LM_BUILD_EXAMPLES AND LM_BUILD_GUI_EXAMPLES)
     find_package(OpenGL REQUIRED)
-    find_package(glew REQUIRED)
+    find_package(GLEW REQUIRED)
     find_package(glfw3 REQUIRED)
     find_package(imgui REQUIRED)
 endif()

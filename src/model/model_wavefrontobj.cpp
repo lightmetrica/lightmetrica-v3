@@ -124,14 +124,14 @@ public:
                 std::string mapKd_loc;
                 if (!m.mapKd.empty()) {
                     // Use texture_<filename> as an identifier
-                    const auto id = "texture_" + std::filesystem::path(m.mapKd).stem().string();
+                    const auto id = "texture_" + fs::path(m.mapKd).stem().string();
 
                     // Check if already loaded
                     if (auto it = assetsMap_.find(id); it == assetsMap_.end()) {
                         // If not loaded, load the texture
                         const auto textureAssetName = json::value<std::string>(prop, "texture", "texture::bitmap");
                         auto texture = comp::create<Texture>(textureAssetName, makeLoc(id), {
-                            {"path", (std::filesystem::path(path).remove_filename()/m.mapKd).string()}
+                            {"path", (fs::path(path).remove_filename()/m.mapKd).string()}
                         });
                         if (!texture) {
                             return false;

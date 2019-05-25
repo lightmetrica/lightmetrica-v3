@@ -19,7 +19,13 @@
 #include <tuple>
 #include <numeric>
 #include <condition_variable>
+#ifdef __GNUC__
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 #include <any>
 #include <variant>
 #include <type_traits>

@@ -26,7 +26,7 @@ public:
         ms_.clear();
         msmap_.clear();
 
-        LM_INFO("Loading OBJ file [path='{}']", std::filesystem::path(path).filename().string());
+        LM_INFO("Loading OBJ file [path='{}']", fs::path(path).filename().string());
         char l[4096], name[256];
         std::ifstream f(path);
         if (!f) {
@@ -81,7 +81,7 @@ public:
                 currMaterialIdx = msmap_.at(name);
             } else if (command(t, "mtllib", 6)) {
                 nextString(t += 7, name);
-                if (!loadmtl((std::filesystem::path(path).remove_filename() / name).string(), processMaterial)) {
+                if (!loadmtl((fs::path(path).remove_filename() / name).string(), processMaterial)) {
                     return false;
                 }
             } else {
@@ -166,7 +166,7 @@ private:
 
     // Parses .mtl file
     bool loadmtl(std::string p, const ProcessMaterialFunc& processMaterial) {
-        LM_INFO("Loading MTL file [path='{}']", std::filesystem::path(p).filename().string());
+        LM_INFO("Loading MTL file [path='{}']", fs::path(p).filename().string());
         std::ifstream f(p);
         if (!f) {
             LM_ERROR("Missing MLT file [path='{}']", p);
