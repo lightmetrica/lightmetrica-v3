@@ -4,6 +4,37 @@ MAINTAINER Hisanari Otsu <hi2p.perim@gmail.com>
 # -----------------------------------------------------------------------------
 
 RUN apt update && apt install -y \
+    tmux \
+    vim \
+    curl \
+    git \
+    git-lfs \
+    software-properties-common \
+    build-essential \
+    xorg-dev \
+    libgl1-mesa-dev
+    
+RUN add-apt-repository ppa:ubuntu-toolchain-r/test
+RUN apt update && apt install -y gcc-8 g++-8
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 \
+                        --slave /usr/bin/g++ g++ /usr/bin/g++-8
+
+# miniconda
+WORKDIR /
+RUN curl -OJLs https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+RUN bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda -b
+ENV PATH=${PATH}:/miniconda/bin
+RUN conda update -y conda && conda install -y -c conda-forge \
+    cmake ninja \
+    zeromq cppzmq pybind11 embree3 glfw glm nlohmann_json glew \
+
+
+
+
+
+# -----------------------------------------------------------------------------
+
+RUN apt update && apt install -y \
     git \
     git-lfs \
     software-properties-common \
