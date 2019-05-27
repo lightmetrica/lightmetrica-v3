@@ -10,16 +10,14 @@ dependencies:
   - jupytext
   - tqdm
   - imageio
+  - pytest
   - zeromq
   - cppzmq
   - pybind11
   - embree3
-  - glfw
   - glm
   - nlohmann_json
-  - glew
   - doctest-cpp
   - fmt
   - stb
-  - imgui-glfw
   - cereal

@@ -4,7 +4,7 @@ import pytest
 import gc
 import pickle
 from contextlib import contextmanager
-import pylm as lm
+import lightmetrica as lm
 from pylm_test import component as m
 
 @contextmanager
@@ -20,7 +20,7 @@ def lm_logger_scope():
 def lm_plugin_scope(name):
     """Enables plugin in the context"""
     try:
-        lm.comp.loadPlugin(os.path.join(pytest.lm_binary_dir, name))
+        lm.comp.loadPlugin(name)
         yield
     finally:
         lm.comp.unloadPlugins()

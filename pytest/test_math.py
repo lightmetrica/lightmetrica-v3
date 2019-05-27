@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
-import pylm as lm
+import lightmetrica as lm
 from pylm_test import math as m
 
 def to_lmfloat(v):
