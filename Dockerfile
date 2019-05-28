@@ -11,7 +11,9 @@ RUN apt update && apt install -y \
     git \
     git-lfs \
     software-properties-common \
-    build-essential
+    build-essential \
+    doxygen \
+    graphviz
 
 # -----------------------------------------------------------------------------
 
@@ -26,6 +28,7 @@ RUN conda update -y conda && conda install -y -c conda-forge -c hi2p-perim \
     ninja \
     jupyter \
     matplotlib \
+    pandas \
     jupytext \
     tqdm \
     imageio \
@@ -41,6 +44,7 @@ RUN conda update -y conda && conda install -y -c conda-forge -c hi2p-perim \
     stb \
     cereal
 RUN pip install breathe sphinx_tabs nbsphinx
+RUN imageio_download_bin freeimage
 
 # -----------------------------------------------------------------------------
 
