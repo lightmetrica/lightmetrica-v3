@@ -1,0 +1,6 @@
+[submodule "plugin/objloader_tinyobjloader/tinyobjloader"]
+	path = plugin/objloader_tinyobjloader/tinyobjloader
+	url = git@github.com:syoyo/tinyobjloader.git
+[submodule "plugin/accel_nanort/nanort"]
+	path = plugin/accel_nanort/nanort
+	url = git@github.com:lighttransport/nanort.git
