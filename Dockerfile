@@ -29,6 +29,8 @@ RUN conda update -y conda && conda install -y -c conda-forge -c hi2p-perim \
     jupyter \
     matplotlib \
     pandas \
+    sphinx \
+    sphinx_rtd_theme \
     jupytext \
     tqdm \
     imageio \
