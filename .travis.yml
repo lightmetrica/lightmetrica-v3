@@ -4,6 +4,7 @@ matrix:
   include:
   - name: "Build on Linux environment with Docker"
     os: linux
+    sudo: required
     services: docker
     before_install:
     - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git scenes
