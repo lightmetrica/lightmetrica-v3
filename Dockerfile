@@ -58,4 +58,4 @@ RUN cmake -G "Ninja" -H. -B_build -DCMAKE_BUILD_TYPE=Release -DLM_BUILD_GUI_EXAM
 WORKDIR /lightmetrica-v3/_build/bin
 RUN LD_LIBRARY_PATH=. ./lm_test
 WORKDIR /lightmetrica-v3
-RUN LD_LIBRARY_PATH=./_build/bin PYTHONPATH=./_build/bin python -m pytest .
+RUN LD_LIBRARY_PATH=./_build/bin PYTHONPATH=./_build/bin python -m pytest ./pytest
