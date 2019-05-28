@@ -7,8 +7,8 @@ setup(
     author='Hisanari Otsu',
     author_email='hi2p.perim@gmail.com',
     url='https://github.com/hi2p-perim/lightmetrica-v3',
-    #packages=['lightmetrica', 'lightmetrica_jupyter'],
     packages=find_packages(),
+    include_package_data=True,
     license='MIT',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -21,5 +21,4 @@ setup(
     ],
     keywords='Compute graphics, Renderer',
     long_description='Lightmetrica is a research-oriented renderer. The development of the framework is motivated by the goal to provide a practical environment for rendering research and development, where the researchers and developers need to tackle various challenging requirements through the development process.',
-    include_package_data=True,
 )

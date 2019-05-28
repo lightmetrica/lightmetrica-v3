@@ -1,1 +1,3 @@
+recursive-exclude __pycache__ *.pyc *pyo
 recursive-include lightmetrica *.pyd
+recursive-include lightmetrica *.so
