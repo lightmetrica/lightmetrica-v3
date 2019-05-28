@@ -17,8 +17,8 @@ Lightmetrica -- A research-oriented renderer
 Install [miniconda](https://docs.conda.io/en/latest/miniconda.html) and type the following commands.
 
 ```bash
-$ conda create -n lm3_test python=3.7
-$ conda activate lm3_test 
+$ conda create -n lm3 python=3.7
+$ conda activate lm3
 $ conda install lightmetrica -c conda-forge -c hi2p-perim
 $ python
 >>> import lightmetrica as lm

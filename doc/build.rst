@@ -3,24 +3,49 @@ Build
 
 This section describes build process of Lightmetrica.
 
-.. ----------------------------------------------------------------------------
 
 Prerequisites
 =============
 
-We need CMake_ (>= 3.10) and Python_ (>=3) to build and use the framework.
-Optionally, we need doxygen_ to generate documentation.
+We recommend to use miniconda_ to manage build and runtime environment of the framework.
 
-.. _CMake: https://cmake.org/
-.. _Python: https://www.python.org/
-.. _doxygen: http://www.doxygen.nl/
+.. _miniconda: https://docs.conda.io/en/latest/miniconda.html
+
+.. ----------------------------------------------------------------------------
+
+Using pre-built binaries
+==========================
+
+We distribute the pre-built binaries of the framework as a conda package.
+You can easily install the framework including dependencies by conda install command.
+This option is especially useful when you don't want to modify the framework itself.
+To install the framework, you just need the following commands:
+
+.. code-block:: console
+
+    $ conda create -n lm3 python=3.7
+    $ conda activate lm3
+    $ conda install lightmetrica -c conda-forge -c hi2p-perim
+
+The first line create a new conda environment with Python 3.7.
+Currently, the pre-built package only supports Python 3.7 and other Python versions are not supported.
+If you want to use different Python version, consider to build the framework by yourself.
+
+The package is shipped with development files for the plugin development. The distributed binaries are built with Visual Studio 2017 (Windows) and GCC 7 (Linux).
+Although you can develop plugins as long as the ABI compatibility allows,
+we highly recommend to use the compiler with the same version in which the framework is built.
+If you want to use compilers that might break ABI compatibility for instance due to the change of compiler versions, consider to build the framework by yourself.
+
+.. note::
+    As a development goes by, you might want to change the pre-built binaries to your own build.
+    In this case, we highly recommends to create a fresh new conda environment
+    to avoid serious dependency issues that might be caused by having both builds in the same environment.
 
 .. ----------------------------------------------------------------------------
 
 Installing dependencies
 ==========================
 
-First you want to setup the external dependencies.
 The external dependencies of the framework is all header-only libraries.
 We suppose two strategies to introduce dependencies based on whether to use 1) in-project directory or 2) pre-installed packages.
 

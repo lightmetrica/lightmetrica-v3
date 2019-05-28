@@ -47,7 +47,6 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
-    'sphinx_tabs.tabs',
     'sphinx.ext.mathjax',
     'sphinx.ext.todo'
 ]
