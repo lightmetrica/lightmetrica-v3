@@ -13,8 +13,22 @@ We recommend to use miniconda_ to manage build and runtime environment of the fr
 
 .. ----------------------------------------------------------------------------
 
+Installing framework
+==========================
+
+There are two different options to use the framework. You want to choose either of them according to your requirements.
+
+1. **Using pre-built binaries**. This option is suitable when you want to use the framework as a renderer without user-defined extensions, or when you want to develope your own plugins but you don't need to extend the framework itself.
+
+2. **Bulilding from source**. This option is suitable for for the framework developers, or for the situation where you have the requirements that cannot be achieved only by plugins.
+
+.. ----------------------------------------------------------------------------
+
 Using pre-built binaries
 ==========================
+
+Installing framework
+--------------------------
 
 We distribute the pre-built binaries of the framework as a conda package.
 You can easily install the framework including dependencies by conda install command.
@@ -31,6 +45,20 @@ The first line create a new conda environment with Python 3.7.
 Currently, the pre-built package only supports Python 3.7 and other Python versions are not supported.
 If you want to use different Python version, consider to build the framework by yourself.
 
+If you could successfully install the framework, executing the following commands will get you the information of the framework. Note that python command must be executed in the same conda environment.
+
+.. code-block:: console
+
+    $ python
+    >>> import lightmetrica as lm
+    >>> lm.init()
+    >>> lm.info()
+
+Building plugins
+--------------------------
+
+We can also easily build Lightmetrica plugins using the pre-built binaries. To do this, you need CMake (>=3.10.0) and build environments according to the platform: Visual Studio 2017 (Windows) and GCC 7 (Linux).
+
 The package is shipped with development files for the plugin development. The distributed binaries are built with Visual Studio 2017 (Windows) and GCC 7 (Linux).
 Although you can develop plugins as long as the ABI compatibility allows,
 we highly recommend to use the compiler with the same version in which the framework is built.
@@ -40,6 +68,8 @@ If you want to use compilers that might break ABI compatibility for instance due
     As a development goes by, you might want to change the pre-built binaries to your own build.
     In this case, we highly recommends to create a fresh new conda environment
     to avoid serious dependency issues that might be caused by having both builds in the same environment.
+
+
 
 .. ----------------------------------------------------------------------------
 
