@@ -27,3 +27,8 @@ dependencies:
   - stb
   - imgui-glfw
   - cereal
+  - pip:
+    - sphinx-autobuild
+    - breathe
+    - sphinx_tabs
+    - nbsphinx

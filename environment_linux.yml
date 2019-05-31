@@ -24,3 +24,8 @@ dependencies:
   - fmt
   - stb
   - cereal
+  - pip:
+    - sphinx-autobuild
+    - breathe
+    - sphinx_tabs
+    - nbsphinx
