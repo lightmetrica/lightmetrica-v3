@@ -7,10 +7,11 @@
 #include <lm/texture.h>
 #include <lm/logger.h>
 #include <lm/serial.h>
+#include <lm/json.h>
 #pragma warning(push)
 #pragma warning(disable:4244) // possible loss of data
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include <stb/stb_image.h>
 #pragma warning(pop)
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -40,11 +41,12 @@ public:
     virtual bool construct(const Json& prop) override {
         // Image path
         const std::string path = sanitizeDirectorySeparator(prop["path"]);
-        LM_INFO("Loading texture [path='{}']", std::filesystem::path(path).filename().string());
+        LM_INFO("Loading texture [path='{}']", fs::path(path).filename().string());
 
         // Load as HDR image
         // LDR image is internally converted to HDR
-        stbi_set_flip_vertically_on_load(true);
+        const bool flip = json::value<bool>(prop, "flip", true);
+        stbi_set_flip_vertically_on_load(flip);
         float* data = stbi_loadf(path.c_str(), &w_, &h_, &c_, 0);
         if (data == nullptr) {
             LM_ERROR("Failed to load image: {} [path='{}']", stbi_failure_reason(), path);

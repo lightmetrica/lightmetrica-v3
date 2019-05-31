@@ -125,9 +125,11 @@ public:
 
     /*!
         \brief Get projection matrix if available.
+        \param aspectRatio Aspect ratio of the film.
         \return Projection matrix.
     */
-    virtual Mat4 projectionMatrix() const {
+    virtual Mat4 projectionMatrix(Float aspectRatio) const {
+        LM_UNUSED(aspectRatio);
         LM_UNREACHABLE_RETURN();
     }
 };

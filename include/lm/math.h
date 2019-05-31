@@ -11,11 +11,11 @@
 #pragma warning(disable:4201)  // nonstandard extension used: nameless struct/union
 #pragma warning(disable:4127)  // conditional expression is constant
 #define GLM_ENABLE_EXPERIMENTAL
-#include "ext/glm/glm.hpp"
-#include "ext/glm/gtx/component_wise.hpp"
-#include "ext/glm/gtx/transform.hpp"
-#include "ext/glm/gtc/type_ptr.hpp"
-#include "ext/glm/gtc/matrix_transform.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtx/component_wise.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #pragma warning(pop)
 
 #include <tuple>
@@ -60,6 +60,11 @@ constexpr Float Pi  = 3.14159265358979323846_f; //!< Value of Pi
 struct Ray {
     Vec3 o;     //!< Origin
     Vec3 d;     //!< Direction
+
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(o, d);
+    }
 };
 
 /*!

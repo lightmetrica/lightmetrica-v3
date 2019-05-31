@@ -103,6 +103,14 @@ public:
         LM_UNUSED(geom, wo);
         LM_TBA_RUNTIME();
     }
+
+    virtual Mat4 viewMatrix() const override {
+        return glm::lookAt(position_, position_ - w_, up_);
+    }
+
+    virtual Mat4 projectionMatrix(Float aspectRatio) const override {
+        return glm::perspective(glm::radians(vfov_), aspectRatio, 0.01_f, 10000_f);
+    }
 };
 
 LM_COMP_REG_IMPL(Camera_Pinhole, "camera::pinhole");

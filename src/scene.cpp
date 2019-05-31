@@ -64,6 +64,9 @@ public:
         if (name == "accel") {
             return accel_.get();
         }
+        if (name == "camera") {
+            return nodes_.at(*camera_).primitive.camera;
+        }
         return nullptr;
     }
 

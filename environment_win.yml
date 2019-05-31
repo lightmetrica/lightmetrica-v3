@@ -1,0 +1,34 @@
+name: lm3_dev
+channels:
+  - conda-forge
+  - hi2p-perim
+dependencies:
+  - python=3.7
+  - cmake
+  - jupyter
+  - matplotlib
+  - pandas
+  - sphinx
+  - sphinx_rtd_theme
+  - jupytext
+  - tqdm
+  - imageio
+  - pytest
+  - zeromq
+  - cppzmq
+  - pybind11
+  - embree3
+  - glfw
+  - glm
+  - nlohmann_json
+  - glew
+  - doctest-cpp
+  - fmt
+  - stb
+  - imgui-glfw
+  - cereal
+  - pip:
+    - sphinx-autobuild
+    - breathe
+    - sphinx_tabs
+    - nbsphinx

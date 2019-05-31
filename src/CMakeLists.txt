@@ -87,10 +87,14 @@ if (MSVC)
 endif()
 # Configure dependency
 target_link_libraries(${_PROJECT_NAME}
+    PUBLIC  cereal
+            glm
+            nlohmann_json
+            fmt::fmt-header-only
     PRIVATE lm_version
-            stb_image
+            stb::stb_image
             OpenMP::OpenMP_CXX
-            cppzmq-static
+            cppzmq
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
             $<$<CXX_COMPILER_ID:GNU>:atomic>)
 # Include directories
@@ -104,6 +108,9 @@ target_include_directories(${_PROJECT_NAME}
 target_compile_definitions(${_PROJECT_NAME} PRIVATE -DLM_EXPORTS)
 target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_CRT_SECURE_NO_WARNINGS)
+# Use SIMD in glm
+target_compile_definitions(${_PROJECT_NAME} PUBLIC -DGLM_FORCE_INTRINSICS)
+# Use C++17
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 # Enable warning level 4, treat warning as errors, enable SEH
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHa>)
@@ -117,6 +124,8 @@ target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/bigobj
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:GNU>:-lstdc++fs>)
 # Remove `lib` prefix of the output library name in Linux enviroment
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "")
+# Add postfix '-debug' for debug build to differentiate both binaries in a distribution
+set_target_properties(${_PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "-debug")
 # Folder name for Visual Studio IDE where the project is
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 # Output directories
@@ -136,7 +145,7 @@ if (LM_INSTALL)
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
-endif()    
+endif()
 
 # -----------------------------------------------------------------------------
 
@@ -150,9 +159,15 @@ add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES})
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
+# Use postfix '_debug' because python's import doesn't support hypens in a module name
+set_target_properties(${_PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "_debug")
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
-set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+# Export extension modules to the module directory
+set(_PYTHON_MODULE_DIR "${PROJECT_SOURCE_DIR}/lightmetrica")
+set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${_PYTHON_MODULE_DIR}")
+set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG "${_PYTHON_MODULE_DIR}")
+set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE "${_PYTHON_MODULE_DIR}")
 if (LM_INSTALL)
     install(
         TARGETS ${_PROJECT_NAME}

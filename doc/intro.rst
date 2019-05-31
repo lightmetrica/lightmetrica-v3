@@ -10,7 +10,7 @@ About this project
 
 .. Background and motivation of this project.
 
-Unlike many other renderers, Lightmetrica is *not* a stand-alone renderer, but an *environment* to support entire process of renderer development. Stand-alone renderers are typically used by artists and its development focuses on the usability for artists and the performance to fully utilize the limited time or budgets of a production. On the other hand, research-oriented renderer is mainly utilized by researchers and renderer developers, to prototype new approaches where the developer needs to extend the renderer and setup various experiments utilizing the extended renderer. Moreover, research-oriented renderer needs to be verifiable, meaning the features must be correctly implemented and ready to be comparable. To achieve the goal, we believe stand-alone renderer is insufficient and this is why we rather focus on developing an environment.
+Unlike many other renderers, Lightmetrica is *not* a stand-alone renderer, but an *environment* to support entire process of renderer development. Stand-alone renderers are typically used by artists and its development focuses on the usability for artists and the performance to fully utilize the limited time or budgets of a production. On the other hand, research-oriented renderer is mainly utilized by researchers and renderer developers, to prototype new approaches where the developer needs to extend the renderer and setup various experiments utilizing the extended renderer. Moreover, research-oriented renderer needs to be verifiable, meaning the features must be correctly implemented and ready to be comparable.
 
 Characteristics
 ===============
@@ -40,24 +40,12 @@ Our framework provides a comprehensible solution to design various experiments i
 
 Although it is still possible to use stand-alone renderers in the experiments, it requires another layer of API to manage input/output of the renderer where we usually needs constant maintenance as the renderer specification change (and it happens a lot for research purpose, by design). On the other hand, our framework exposes internal features directly to the developers, which enables broader applicability to the experiments. For instance, we can design an experiment where the data is shared among renderings with different parameters. This is obviously not possible with stand-alone renderers because we need to dispatch another process to execute the renderer where additional data transfer is unavoidable. 
 
-Features (incl. plans)
+Features
 ==========================
 
 .. TODO: add link
 
 Current major version is **3**. Upon the major update, we have redesigned most of the features from the previous version, and rewrote the entire framework from scratch.
-
-- Basic rendering support
-
-  - Easy-to-use API for rendering
-  - Parameter configuration as Json type
-  - Tristimulus/spectral rendering
-  - Volume rendering
-  - Distributed rendering
-  - Differential rendering
-  - Pause and resume rendering 
-  - Standard scene formats (Wavefront OBJ, Mitsuba, PBRT)
-  - Various implementation of rendering techniques
 
 - Extension support
 

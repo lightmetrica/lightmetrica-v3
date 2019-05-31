@@ -8,7 +8,7 @@
 #include <imgui_internal.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-#include <GL/gl3w.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <thread>
@@ -48,7 +48,7 @@ public:
         , shade_(shade)
     {}
 
-    GLMaterial(lm::Material* material) {
+    GLMaterial(lm::Material* material, bool wireframe, bool shade) : wireframe_(wireframe), shade_(shade) {
         if (material->key() != "material::wavefrontobj") {
             color_ = glm::vec3(0);
             return;
@@ -102,12 +102,17 @@ public:
 public:
     // Enable material parameters
     void apply(GLuint name, const std::function<void()>& process) const {
+        // Wireframe mode
         if (wireframe_) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
         else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
+
+        // Point size
+        glPointSize(20);
+
         glProgramUniform3fv(name, glGetUniformLocation(name, "Color"), 1, &color_.x);
         glProgramUniform1i(name, glGetUniformLocation(name, "Shade"), shade_ ? 1 : 0);
         if (texture_) {
@@ -119,6 +124,7 @@ public:
             glProgramUniform1i(name, glGetUniformLocation(name, "UseTexture"), 0);
         }
         process();
+
         if (texture_) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -263,15 +269,16 @@ public:
 // OpenGL scene
 struct GLPrimitive {
     lm::Mat4 transform;
-    GLMesh* mesh;
-    GLMaterial* material;
+    int mesh;
+    int material;
 };
 class GLScene {
-private:
+public:
     std::vector<std::unique_ptr<GLMesh>> meshes_;
     std::vector<std::unique_ptr<GLMaterial>> materials_;
     std::unordered_map<std::string, int> materialMap_;
     std::vector<GLPrimitive> primitives_;
+    std::unordered_map<std::string, int> namedPrimitiveMap_;
 
 public:
     // Reset the internal state
@@ -280,6 +287,7 @@ public:
         materials_.clear();
         materialMap_.clear();
         primitives_.clear();
+        namedPrimitiveMap_.clear();
     }
 
     // Add mesh and material pair
@@ -287,30 +295,56 @@ public:
         LM_INFO("Creating GL primitive [#{}]", primitives_.size());
 
         // Mesh
-        auto* glmesh = [&]() {
+        int meshidx = [&]() {
+            int idx = int(meshes_.size());
             meshes_.emplace_back(new GLMesh(mesh));
-            return meshes_.back().get();
+            return idx;
         }();
 
         // Material
-        auto* glmaterial = [&]() {
+        int materialidx = [&]() {
             if (auto it = materialMap_.find(material->name()); it != materialMap_.end()) {
-                return materials_.at(it->second).get();
+                return it->second;
             }
-            materialMap_[material->name()] = int(materials_.size());
-            materials_.emplace_back(new GLMaterial(material));
-            return materials_.back().get();
+            int idx = int(materials_.size());
+            materialMap_[material->name()] = idx;
+            materials_.emplace_back(new GLMaterial(material, true, true));
+            return idx;
         }();
         
         // Primitive
-        primitives_.push_back({transform, glmesh, glmaterial});
+        primitives_.push_back({transform, meshidx, materialidx });
     }
 
     void add(int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
         LM_INFO("Creating GL primitive [#{}]", primitives_.size());
+        int meshidx = int(meshes_.size());
+        int materialidx = int(materials_.size());
         meshes_.emplace_back(new GLMesh(type, vs));
         materials_.emplace_back(new GLMaterial(color, true, false));
-        primitives_.push_back({lm::Mat4(1_f), meshes_.back().get(), materials_.back().get()});
+        primitives_.push_back({lm::Mat4(1_f), meshidx, materialidx });
+    }
+
+    void addByName(const std::string& name, int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
+        auto* mesh = new GLMesh(type, vs);
+        auto* material = new GLMaterial(color, true, false);
+        if (namedPrimitiveMap_.find(name) != namedPrimitiveMap_.end()) {
+            const auto& p = primitives_[namedPrimitiveMap_[name]];
+            meshes_[p.mesh].reset(mesh);
+            materials_[p.material].reset(material);
+        }
+        else {
+            int meshidx = int(meshes_.size());
+            int materialidx = int(materials_.size());
+            meshes_.emplace_back(mesh);
+            materials_.emplace_back(material);
+            namedPrimitiveMap_[name] = int(primitives_.size());
+            primitives_.push_back({ lm::Mat4(1_f), meshidx, materialidx });
+        }
+    }
+
+    GLPrimitive& primitiveByName(const std::string& name) {
+        return primitives_.at(namedPrimitiveMap_.at(name));
     }
 
     // Iterate primitives
@@ -527,8 +561,8 @@ public:
         glBindProgramPipeline(pipeline_);
         scene.foreachPrimitive([&](const GLPrimitive& p) {
             glProgramUniformMatrix4fv(progV_, glGetUniformLocation(progV_, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(glm::mat4(p.transform)));
-            p.material->apply(progF_, [&]() {
-                p.mesh->render();
+             scene.materials_[p.material]->apply(progF_, [&]() {
+                scene.meshes_[p.mesh]->render();
             });
         });
         glBindProgramPipeline(0);
@@ -573,10 +607,15 @@ public:
             glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
             #endif
             GLFWwindow* window = glfwCreateWindow(opt["w"], opt["h"], title.c_str(), nullptr, nullptr);
-            if (!window) { return nullptr; }
+            if (!window) {
+                return nullptr;
+            }
             glfwMakeContextCurrent(window);
             glfwSwapInterval(0);
-            gl3wInit();
+            if (glewInit() != GLEW_OK) {
+                glfwDestroyWindow(window);
+                return nullptr;
+            }
             // ImGui context
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
@@ -590,7 +629,7 @@ public:
             return false;
         }
 
-        #if LM_DEBUG_MODE
+        #if LM_DEBUG_MODE && 0
         // Debug output of OpenGL
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -612,7 +651,7 @@ public:
         }
 
         // GL camera
-        glcamera.reset(opt["eye"], opt["lookat"], lm::Vec3(0, 1, 0), opt["vfov"]);
+        glcamera.reset(lm::Vec3(1,1,1), lm::Vec3(0), lm::Vec3(0,1,0), 30);
 
         return true;
     }
@@ -646,6 +685,7 @@ public:
 
             // ----------------------------------------------------------------
 
+            ImGui::SetNextWindowPos(ImVec2(0, 200), ImGuiCond_Once);
             updateFunc(display_w, display_h);
 
             // ----------------------------------------------------------------

@@ -8,7 +8,7 @@
 #include <lm/common.h>
 #include <lm/logger.h>
 #include <functional>
-#include <doctest.h>
+#include <doctest/doctest.h>
 
 #define LM_TEST_NAMESPACE lmtest
 

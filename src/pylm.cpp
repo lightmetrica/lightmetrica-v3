@@ -128,6 +128,8 @@ static void bind(pybind11::module& m) {
         .def("loc", &Component::loc)
         .def("parentLoc", &Component::parentLoc)
         .def("construct", &Component::construct)
+        .def("underlying", &Component::underlying, pybind11::return_value_policy::reference)
+        .def("underlyingValue", &Component::underlyingValue, "query"_a = "")
         .def("save", [](Component* self) -> pybind11::bytes {
             std::ostringstream os;
             {
@@ -376,6 +378,9 @@ static void bind(pybind11::module& m) {
         virtual void accum(const Film* film) override {
             PYBIND11_OVERLOAD_PURE(void, Film, accum, film);
         }
+        virtual void splat(Vec2 rp, Vec3 v) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, splat, rp, v);
+        }
         virtual void clear() override {
             PYBIND11_OVERLOAD_PURE(void, Film, clear);
         }
@@ -550,6 +555,31 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
+    #pragma region texture.h
+    pybind11::class_<TextureSize>(m, "TextureSize")
+        .def_readwrite("w", &TextureSize::w)
+        .def_readwrite("h", &TextureSize::h);
+    class Texture_Py final : public Texture {
+        virtual TextureSize size() const override {
+            PYBIND11_OVERLOAD_PURE(TextureSize, Texture, size);
+        }
+        virtual Vec3 eval(Vec2 t) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Texture, eval, t);
+        }
+        virtual Vec3 evalByPixelCoords(int x, int y) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Texture, evalByPixelCoords, x, y);
+        }
+    };
+    pybind11::class_<Texture, Texture_Py, Component::Ptr<Texture>>(m, "Texture")
+        .def(pybind11::init<>())
+        .def("size", &Texture::size)
+        .def("eval", &Texture::eval)
+        .def("evalByPixelCoords", &Texture::evalByPixelCoords)
+        .PYLM_DEF_COMP_BIND(Texture);
+    #pragma endregion
+
+    // ------------------------------------------------------------------------
+
     #pragma region material.h
 
     pybind11::class_<MaterialDirectionSample>(m, "MaterialDirectionSample")
@@ -592,7 +622,12 @@ static void bind(pybind11::module& m) {
 
 // ----------------------------------------------------------------------------
 
-PYBIND11_MODULE(pylm, m) {
+#if LM_DEBUG_MODE
+PYBIND11_MODULE(pylm_debug, m)
+#else
+PYBIND11_MODULE(pylm, m)
+#endif
+{
     m.doc() = R"x(
         pylm: Python binding of Lightmetrica.
     )x";

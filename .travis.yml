@@ -4,6 +4,7 @@ matrix:
   include:
   - name: "Build on Linux environment with Docker"
     os: linux
+    sudo: required
     services: docker
     before_install:
     - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git scenes
@@ -44,13 +45,9 @@ matrix:
       # For workaround, we stick to 4.6.8.
       # https://github.com/conda/conda/issues/8506
       conda install -y -n base conda=4.6.8
-      conda create -y -n lm3 python=3.6 
-      source activate lm3
-      conda install -y pytest numpy
-    install:
-    - |
       cd ${TRAVIS_BUILD_DIR}
-      git clone --recursive https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-external.git external
+      conda env create -f environment_win.yml
+      source activate lm3_dev
     script:
     - |
       cd ${TRAVIS_BUILD_DIR}

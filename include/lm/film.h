@@ -113,6 +113,13 @@ public:
     virtual void accum(const Film* film) = 0;
 
     /*!
+        \brief Splat the color to the film.
+        \param rp Raster position.
+        \param v Color.
+    */
+    virtual void splat(Vec2 rp, Vec3 v) = 0;
+
+    /*!
         \brief Clear the film.
     */
     virtual void clear() = 0;

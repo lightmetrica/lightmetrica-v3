@@ -4,7 +4,13 @@
 */
 
 #include <lm/lm.h>
+#ifdef __GNUC__
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 #define TINYOBJLOADER_USE_DOUBLE
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
@@ -28,7 +34,7 @@ public:
         std::string err;
 
         // Load OBJ file
-        const auto basedir = std::filesystem::path(path).parent_path().string();
+        const auto basedir = fs::path(path).parent_path().string();
         const bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str(), basedir.c_str(), true);
         if (!err.empty()) {
             LM_ERROR(err);

@@ -14,15 +14,16 @@ Lightmetrica -- A research-oriented renderer
 
 ## Quick start
 
+Install [miniconda](https://docs.conda.io/en/latest/miniconda.html) and type the following commands.
+
 ```bash
-$ pip install lightmetrica
-```
-
-Create a Python script and run:
-
-```python
-import lightmetrica as lm
-print(lm.version())
+$ conda create -n lm3 python=3.7
+$ conda activate lm3
+$ conda install lightmetrica -c conda-forge -c hi2p-perim
+$ python
+>>> import lightmetrica as lm
+>>> lm.init()
+>>> lm.info()
 ```
 
 ## Documentation
@@ -31,16 +32,6 @@ You can find tutorials and API references from [here](https://hi2p-perim.github.
 
 ## Features
 
-- Basic rendering support
-  - Easy-to-use API for rendering
-  - Parameter configuration as Json type
-  - Tristimulus/spectral rendering
-  - Volume rendering
-  - Distributed rendering
-  - Differential rendering
-  - Pause and resume rendering 
-  - Standard scene formats (Wavefront OBJ, Mitsuba, PBRT)
-  - Various implementation of rendering techniques
 - Extension support
   - Component object model that allows to extend any interfaces as plugins
   - Serialization of component objects

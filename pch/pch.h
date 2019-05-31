@@ -19,14 +19,19 @@
 #include <tuple>
 #include <numeric>
 #include <condition_variable>
+#ifdef __GNUC__
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 #include <any>
 #include <variant>
 #include <type_traits>
 #include <queue>
 
 #define WIN32_LEAN_AND_MEAN
-#define FMT_HEADER_ONLY
-#include <lm/ext/fmt/format.h>
-#include <lm/ext/cereal/cereal.hpp>
-#include <lm/ext/cereal/archives/portable_binary.hpp>
+#include <fmt/format.h>
+#include <cereal/cereal.hpp>
+#include <cereal/archives/portable_binary.hpp>

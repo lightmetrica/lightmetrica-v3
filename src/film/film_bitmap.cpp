@@ -9,7 +9,7 @@
 #include <lm/serial.h>
 #include <lm/json.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
+#include <stb/stb_image_write.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -98,10 +98,10 @@ public:
         LM_INDENT();
 
         // Create directory if not found
-        const auto parent = std::filesystem::path(outpath).parent_path();
-        if (!parent.empty() && !std::filesystem::exists(parent)) {
+        const auto parent = fs::path(outpath).parent_path();
+        if (!parent.empty() && !fs::exists(parent)) {
             LM_INFO("Creating directory [path='{}']", parent.string());
-            if (!std::filesystem::create_directories(parent)) {
+            if (!fs::create_directories(parent)) {
                 LM_INFO("Failed to create directory [path='{}']", parent.string());
                 return false;
             }
@@ -109,7 +109,7 @@ public:
 
         // Save file
         // Check extension of the output file
-        const auto ext = std::filesystem::path(outpath).extension().string();
+        const auto ext = fs::path(outpath).extension().string();
         if (ext == ".png") {
             const auto data = copy<unsigned char>(true);
             if (!stbi_write_png(outpath.c_str(), w_, h_, 3, data.data(), w_*3)) {
@@ -166,6 +166,12 @@ public:
             const auto v = film->data_[i].v_.load();
             data_[i].add(v);
         }
+    }
+
+    virtual void splat(Vec2 rp, Vec3 v) override {
+        const int x = glm::clamp(int(rp.x * w_), 0, w_-1);
+        const int y = glm::clamp(int(rp.y * h_), 0, h_-1);
+        data_[y*w_+x].add(v);
     }
 
     virtual void clear() override {

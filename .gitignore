@@ -14,9 +14,14 @@
 *.pyc
 *.tmp
 
+# VS
+*.ilk
+*.pdb
+
 # Project files
 .token
 [Bb]uild*/
+_build/
 [Rr]esults/
 misc/
 resources/

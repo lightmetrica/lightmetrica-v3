@@ -61,7 +61,7 @@ public:
         // Line and filename
         const auto lineAndFilename = fmt::format("{}@{}",
             line,
-            std::filesystem::path(filename).stem().string());
+            fs::path(filename).stem().string());
 
         // Style
         const auto style = styles_[level];

@@ -1,6 +1,7 @@
 """JSON tests"""
 import pytest
 from numpy.testing import assert_allclose
+import lightmetrica as lm
 from pylm_test import json as m
 
 def test_round_trip_simple():

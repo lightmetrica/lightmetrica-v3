@@ -124,14 +124,14 @@ public:
                 std::string mapKd_loc;
                 if (!m.mapKd.empty()) {
                     // Use texture_<filename> as an identifier
-                    const auto id = "texture_" + std::filesystem::path(m.mapKd).stem().string();
+                    const auto id = "texture_" + fs::path(m.mapKd).stem().string();
 
                     // Check if already loaded
                     if (auto it = assetsMap_.find(id); it == assetsMap_.end()) {
                         // If not loaded, load the texture
                         const auto textureAssetName = json::value<std::string>(prop, "texture", "texture::bitmap");
                         auto texture = comp::create<Texture>(textureAssetName, makeLoc(id), {
-                            {"path", (std::filesystem::path(path).remove_filename()/m.mapKd).string()}
+                            {"path", (fs::path(path).remove_filename()/m.mapKd).string()}
                         });
                         if (!texture) {
                             return false;
@@ -274,7 +274,10 @@ public:
     }
 
     virtual Component* underlying(const std::string& name) const override {
-        return materials_.at(typeToIndexMap_.at(name)).get();
+        if (auto it = typeToIndexMap_.find(name); it != typeToIndexMap_.end()) {
+            return materials_.at(it->second).get();
+        }
+        return nullptr;
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
