@@ -10,7 +10,7 @@ About this project
 
 .. Background and motivation of this project.
 
-Unlike many other renderers, Lightmetrica is *not* a stand-alone renderer, but an *environment* to support entire process of renderer development. Stand-alone renderers are typically used by artists and its development focuses on the usability for artists and the performance to fully utilize the limited time or budgets of a production. On the other hand, research-oriented renderer is mainly utilized by researchers and renderer developers, to prototype new approaches where the developer needs to extend the renderer and setup various experiments utilizing the extended renderer. Moreover, research-oriented renderer needs to be verifiable, meaning the features must be correctly implemented and ready to be comparable. To achieve the goal, we believe stand-alone renderer is insufficient and this is why we rather focus on developing an environment.
+Unlike many other renderers, Lightmetrica is *not* a stand-alone renderer, but an *environment* to support entire process of renderer development. Stand-alone renderers are typically used by artists and its development focuses on the usability for artists and the performance to fully utilize the limited time or budgets of a production. On the other hand, research-oriented renderer is mainly utilized by researchers and renderer developers, to prototype new approaches where the developer needs to extend the renderer and setup various experiments utilizing the extended renderer. Moreover, research-oriented renderer needs to be verifiable, meaning the features must be correctly implemented and ready to be comparable.
 
 Characteristics
 ===============
