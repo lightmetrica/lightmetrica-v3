@@ -7,7 +7,7 @@ matrix:
     sudo: required
     services: docker
     before_install:
-    - git clone https://github.com/lightmetrica/lightmetrica-v3-scenes.git scenes
+    - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git scenes
     script:
     - docker build -t lm3 .
     - docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c \
