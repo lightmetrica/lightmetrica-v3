@@ -9,7 +9,7 @@ matrix:
     before_install:
     - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git scenes
     script:
-    - docker build -t lm3 --build-arg GITHUB_TOKEN=$GITHUB_TOKEN .
+    - docker build -t lm3 .
     - docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c \
         'cd /lightmetrica-v3/functest &&
         mv .lmenv_docker .lmenv &&
@@ -22,14 +22,13 @@ matrix:
         touch _build/html/.nojekyll'
     deploy:
       provider: pages
-      repo: hi2p-perim/lightmetrica-v3-doc
+      repo: lightmetrica/lightmetrica-v3-doc
       local_dir: doc/_build/html
       skip_cleanup: true
-      github_token: $GITHUB_TOKEN
       keep_history: false
       target-branch: master
       on:
-        all_branches: true
+        branch: master
 
   - name: "Build on Windows environment"
     os: windows
