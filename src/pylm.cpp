@@ -16,6 +16,49 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
+    // Special function to attach to a debugger
+    // https://stackoverflow.com/questions/20337870/what-is-the-equivalent-of-system-diagnostics-debugger-launch-in-unmanaged-code
+    m.def("attachToDebugger", []() -> void {
+        #if LM_PLATFORM_WINDOWS
+        // Get Windows system directory
+        std::wstring systemDir(MAX_PATH + 1, '\0');
+        auto nc = GetSystemDirectoryW(&systemDir[0], UINT(systemDir.length()));
+        if (nc == 0) {
+            LM_ERROR("Failed to get system directory");
+            return;
+        }
+        systemDir.resize(nc);
+
+        // Get process ID and create the command line
+        DWORD pid = GetCurrentProcessId();
+        std::wostringstream s;
+        s << systemDir << L"\\vsjitdebugger.exe -p " << pid;
+        std::wstring cmdLine = s.str();
+
+        // Start debugger process
+        STARTUPINFOW si;
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        PROCESS_INFORMATION pi;
+        ZeroMemory(&pi, sizeof(pi));
+        if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+            LM_ERROR("Failed to launch vsjitdebugger.exe");
+            return;
+        }
+
+        // Close debugger process handles to eliminate resource leak
+        CloseHandle(pi.hThread);
+        CloseHandle(pi.hProcess);
+
+        // Wait for the debugger to attach
+        while (!IsDebuggerPresent()) {
+            Sleep(100);
+        }
+        #endif
+    });
+
+    // ------------------------------------------------------------------------
+
     #pragma region common.h
 
     // Debug or Release mode
@@ -381,6 +424,9 @@ static void bind(pybind11::module& m) {
         virtual void splat(Vec2 rp, Vec3 v) override {
             PYBIND11_OVERLOAD_PURE(void, Film, splat, rp, v);
         }
+        virtual void splatPixel(int x, int y, Vec3 v) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, splatPixel, x, y, v);
+        }
         virtual void clear() override {
             PYBIND11_OVERLOAD_PURE(void, Film, clear);
         }
@@ -622,12 +668,7 @@ static void bind(pybind11::module& m) {
 
 // ----------------------------------------------------------------------------
 
-#if LM_DEBUG_MODE
-PYBIND11_MODULE(pylm_debug, m)
-#else
-PYBIND11_MODULE(pylm, m)
-#endif
-{
+PYBIND11_MODULE(pylm, m) {
     m.doc() = R"x(
         pylm: Python binding of Lightmetrica.
     )x";

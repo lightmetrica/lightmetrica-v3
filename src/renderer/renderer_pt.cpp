@@ -18,11 +18,10 @@ private:
     Film* film_;
     long long spp_;
     int maxLength_;
-    int rngSeed_ = 42;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, spp_, maxLength_, rngSeed_);
+        ar(film_, spp_, maxLength_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
@@ -42,9 +41,9 @@ public:
 
     virtual void render(const Scene* scene) const override {
         const auto [w, h] = film_->size();
-        parallel::foreach(w*h, [&](long long index, int threadId) -> void {
+        parallel::foreach(w*h, [&](long long index, int) -> void {
             // Per-thread random number generator
-            thread_local Rng rng(rngSeed_ + threadId);
+            thread_local Rng rng;
 
             // Pixel positions
             const int x = int(index % w);

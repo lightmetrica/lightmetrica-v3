@@ -165,10 +165,12 @@ private:
     std::uniform_real_distribution<double> dist;  // Always use double
 
 protected:
-    RngImplBase() = default;
+    RngImplBase() {
+        // Initialize eng with random_device
+        eng.seed(std::random_device{}());
+    }
     RngImplBase(int seed) {
         eng.seed(seed);
-        dist.reset();
     }
     double u() { return dist(eng); }
 };

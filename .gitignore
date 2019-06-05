@@ -35,6 +35,7 @@ doc/_build
 jupyter
 *.serialized
 .lmenv
+.lmenv_debug
 *.ipynb
 functest/output
 functest/executed_functest

@@ -13,25 +13,29 @@
 #     name: python3
 # ---
 
-# + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# .. _example_pt:
+# ## Debugging volume rendering support
 #
-# Rendering with path tracing
-# ===========================
-#
-# This example describes how to render the scene with path tracing. Path tracing is a rendering technique based on Monte Carlo method and notably one of the most basic (yet practical) rendering algorithms taking global illumination into account. Our framework implements path tracing as ``renderer::pt`` renderer. 
-#
-# The use of the renderer is straightforward; we just need to specify ``renderer::pt`` with :cpp:func:`lm::render` function with some renderer-specific parameters. Thanks to the modular design of the framework, the most of the code can be the same as :ref:`example_raycast`.
-# -
+# This notebooks debugs volumetric rendering support of Lightmetrica.
+
+import sys
+import json
+with open('.lmenv') as f:
+    config = json.load(f)
+    if config['path'] not in sys.path:
+        sys.path.insert(0, config['path'])
+    if config['bin_path'] not in sys.path:
+        sys.path.insert(0, config['bin_path'])
 
 import os
 import numpy as np
 import imageio
 # %matplotlib inline
 import matplotlib.pyplot as plt
-import lmfunctest as ft
 import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
+
+if lm.Debug:
+    lm.attachToDebugger()
 
 lm.init()
 lm.log.init('logger::jupyter')
@@ -55,7 +59,7 @@ lm.asset('camera1', 'camera::pinhole', {
 
 # OBJ model
 lm.asset('obj1', 'model::wavefrontobj', {
-    'path': os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj')
+    'path': os.path.join(config['scene_path'], 'fireplace_room/fireplace_room.obj')
 })
 
 # +
@@ -71,7 +75,7 @@ lm.primitive(lm.identity(), {
 # -
 
 lm.build('accel::sahbvh', {})
-lm.render('renderer::pt', {
+lm.render('renderer::volpt_naive', {
     'output': lm.asset('film1'),
     'spp': 10,
     'maxLength': 20

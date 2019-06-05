@@ -3,9 +3,12 @@
 import os
 import numpy as np
 
-if 'LM_DEBUG' in os.environ and os.environ['LM_DEBUG'] == '1':
-    from .pylm_debug import *
-else:
+try:
+    # Import lightmetrica module on development.
+    # sys.path is assumed to include module and binary directories.
+    from pylm import *
+except:
+    # Otherwise try to import from current directory
     from .pylm import *
 
 def pylm_component(name):
