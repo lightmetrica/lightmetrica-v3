@@ -77,7 +77,7 @@ lm.primitive(lm.identity(), {
 lm.build('accel::sahbvh', {})
 lm.render('renderer::volpt_naive', {
     'output': lm.asset('film1'),
-    'spp': 10,
+    'spp': 1000,
     'maxLength': 20
 })
 

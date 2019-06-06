@@ -24,7 +24,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     like sampling or evaluation of terms.
     The structure represents three types of points.
 
-    (1) *A point on the scene surface*.
+    (1) *A point on a scene surface*.
         The structure describes a point on the scene surface if ``degenerated=false``.
         You can access the following associated information.
 
@@ -33,8 +33,8 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
         - Texture coordinates ``t``
         - Tangent vectors ``u`` and ``v``
 
-    (2) *A point in the air*.
-        The sturcture describes a point in the air if ``degenerated=true``,
+    (2) *A point in a media*.
+        The sturcture describes a point in a media if ``degenerated=true``,
         for instance used to represent a position of point light or pinhole camera.
         The associated information is the position ``p``.
 
@@ -166,16 +166,18 @@ namespace SurfaceComp {
 }
 
 /*!
-    \brief Scene surface point.
+    \brief Scene interaction.
 
     \rst
-    Represents single point on the scene surface, which contains
-    geometry information around a point and an index of
-    the primitive associated with the point.
+    This structure represents a point of interaction between a light and the scene.
+    The point represents a scattering point of an endpoint of a light transportation path,
+    defined either on a surface or in a media.
+    The point is associated with a geometry information around the point
+    and an index of the primitive.
     The structure is used by the functions of :cpp:class:`lm::Scene` class.
     \endrst
 */
-struct SurfacePoint {
+struct SceneInteraction {
     int primitive;              //!< Primitive node index.
     int comp;                   //!< Component index.
     PointGeometry geom;         //!< Surface point geometry information.

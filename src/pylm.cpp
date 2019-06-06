@@ -464,12 +464,12 @@ static void bind(pybind11::module& m) {
         .def("opposite", &PointGeometry::opposite)
         .def("orthonormalBasis", &PointGeometry::orthonormalBasis);
 
-    pybind11::class_<SurfacePoint>(m, "SurfacePoint")
+    pybind11::class_<SceneInteraction>(m, "SceneInteraction")
         .def(pybind11::init<>())
-        .def_readwrite("primitive", &SurfacePoint::primitive)
-        .def_readwrite("comp", &SurfacePoint::comp)
-        .def_readwrite("geom", &SurfacePoint::geom)
-        .def_readwrite("endpoint", &SurfacePoint::endpoint);
+        .def_readwrite("primitive", &SceneInteraction::primitive)
+        .def_readwrite("comp", &SceneInteraction::comp)
+        .def_readwrite("geom", &SceneInteraction::geom)
+        .def_readwrite("endpoint", &SceneInteraction::endpoint);
 
     {
         auto sm = m.def_submodule("surface");
@@ -523,40 +523,40 @@ static void bind(pybind11::module& m) {
         virtual void build(const std::string& name, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
         }
-        virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin, Float tmax) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<SurfacePoint>, Scene, intersect, ray, tmin, tmax);
+        virtual std::optional<SceneInteraction> intersect(Ray ray, Float tmin, Float tmax) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<SceneInteraction>, Scene, intersect, ray, tmin, tmax);
         }
-        virtual bool isLight(const SurfacePoint& sp) const override {
+        virtual bool isLight(const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, isLight, sp);
         }
-        virtual bool isSpecular(const SurfacePoint& sp) const override {
+        virtual bool isSpecular(const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, isSpecular, sp);
         }
         virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const override {
             PYBIND11_OVERLOAD_PURE(Ray, Scene, primaryRay, rp, aspectRatio);
         }
-        virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
+        virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleRay, rng, sp, wi);
         }
         virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, samplePrimaryRay, rng, window, aspectRatio);
         }
-        virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+        virtual std::optional<RaySample> sampleLight(Rng& rng, const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleLight, rng, sp);
         }
-        virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+        virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, wi, wo);
         }
-        virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const override {
+        virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdfLight, sp, spL, wo);
         }
-        virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+        virtual Vec3 evalBsdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalBsdf, sp, wi, wo);
         }
-        virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
+        virtual Vec3 evalContrbEndpoint(const SceneInteraction& sp, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrbEndpoint, sp, wo);
         }
-        virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const override {
+        virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp);
         }
     };

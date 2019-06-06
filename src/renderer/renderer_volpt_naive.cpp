@@ -71,18 +71,18 @@ public:
                     break;
                 }
 
-                // Update throughput
-                throughput *= s->weight;
-
-                // Intersection to next surface
-                const auto hit = scene->intersect(s->ray());
-                if (!hit) {
+                // Sample next scene interaction
+                const auto sd = scene->sampleDistance(rng, s->sp, s->wo);
+                if (!sd) {
                     break;
                 }
 
-                // Accumulate contribution from light
-                if (scene->isLight(*hit)) {
-                    L += throughput * scene->evalContrbEndpoint(*hit, -s->wo);
+                // Update throughput
+                throughput *= s->weight * sd->weight;
+
+                // Accumulate contribution from emissive interaction
+                if (scene->isLight(sd->sp)) {
+                    L += throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
                 }
 
                 // Russian roulette
@@ -95,7 +95,7 @@ public:
                 }
 
                 // Update
-                sampleRay = [&, wi = -s->wo, sp = *hit]() {
+                sampleRay = [&, wi = -s->wo, sp = sd->sp]() {
                     return scene->sampleRay(rng, sp, wi);
                 };
             }

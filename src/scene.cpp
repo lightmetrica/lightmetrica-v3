@@ -248,7 +248,7 @@ public:
         accel_->build(*this);
     }
 
-    virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin, Float tmax) const override {
+    virtual std::optional<SceneInteraction> intersect(Ray ray, Float tmin, Float tmax) const override {
         const auto hit = accel_->intersect(ray, tmin, tmax);
         if (!hit) {
             // Use environment light when tmax = Inf
@@ -258,7 +258,7 @@ public:
             if (!envLight_) {
                 return {};
             }
-            return SurfacePoint{
+            return SceneInteraction{
                 *envLight_,
                 0,
                 PointGeometry::makeInfinite(-ray.d),
@@ -268,7 +268,7 @@ public:
         const auto [t, uv, globalTransform, primitiveIndex, faceIndex] = *hit;
         const auto& primitive = nodes_.at(primitiveIndex).primitive;
         const auto p = primitive.mesh->surfacePoint(faceIndex, uv);
-        return SurfacePoint{
+        return SceneInteraction{
             primitiveIndex,
             -1,
             PointGeometry::makeOnSurface(
@@ -282,11 +282,11 @@ public:
 
     // ------------------------------------------------------------------------
 
-    virtual bool isLight(const SurfacePoint& sp) const override {
+    virtual bool isLight(const SceneInteraction& sp) const override {
         return nodes_.at(sp.primitive).primitive.light;
     }
 
-    virtual bool isSpecular(const SurfacePoint& sp) const override {
+    virtual bool isSpecular(const SceneInteraction& sp) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         if (sp.endpoint) {
             if (primitive.light) {
@@ -306,7 +306,7 @@ public:
         return nodes_.at(*camera_).primitive.camera->primaryRay(rp, aspectRatio);
     }
 
-    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
+    virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
         const auto* material = nodes_.at(sp.primitive).primitive.material;
         if (!material) {
             return {};
@@ -316,7 +316,7 @@ public:
             return {};
         }
         return RaySample{
-            SurfacePoint{
+            SceneInteraction{
                 sp.primitive,
                 s->comp,
                 sp.geom,
@@ -333,7 +333,7 @@ public:
             return {};
         }
         return RaySample{
-            SurfacePoint{
+            SceneInteraction{
                 *camera_,
                 0,
                 s->geom,
@@ -344,7 +344,7 @@ public:
         };
     }
 
-    virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+    virtual std::optional<RaySample> sampleLight(Rng& rng, const SceneInteraction& sp) const override {
         // Sample a light
         const int n  = int(lights_.size());
         const int i  = glm::clamp(int(rng.u() * n), 0, n-1);
@@ -358,7 +358,7 @@ public:
             return {};
         }
         return RaySample{
-            SurfacePoint{
+            SceneInteraction{
                 light.index,
                 0,
                 s->geom,
@@ -369,12 +369,12 @@ public:
         };
     }
     
-    virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         return primitive.material->pdf(sp.geom, sp.comp, wi, wo);
     }
 
-    virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const override {
+    virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
         const auto& primitive = nodes_.at(spL.primitive).primitive;
         const auto lightTransform = lights_.at(lightIndicesMap_.at(spL.primitive)).globalTransform;
         const auto pL = 1_f / int(lights_.size());
@@ -383,7 +383,13 @@ public:
 
     // ------------------------------------------------------------------------
 
-    virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+    virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
+        
+    }
+
+    // ------------------------------------------------------------------------
+
+    virtual Vec3 evalBsdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         if (sp.endpoint) {
             if (primitive.camera) {
@@ -397,7 +403,7 @@ public:
         return primitive.material->eval(sp.geom, sp.comp, wi, wo);
     }
 
-    virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
+    virtual Vec3 evalContrbEndpoint(const SceneInteraction& sp, Vec3 wo) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         if (!primitive.light) {
             return {};
@@ -405,7 +411,7 @@ public:
         return primitive.light->eval(sp.geom, wo);
     }
 
-    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const override {
+    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         if (!primitive.material) {
             return {};

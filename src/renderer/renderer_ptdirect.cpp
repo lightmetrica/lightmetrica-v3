@@ -58,7 +58,7 @@ public:
 
                 // Incident direction and current surface point
                 Vec3 wi = {};
-                SurfacePoint sp;
+                SceneInteraction sp;
 
                 // Initial sampleRay function
                 std::function<std::optional<RaySample>()> sampleRay = [&]() {

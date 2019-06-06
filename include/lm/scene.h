@@ -27,9 +27,9 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \endrst
 */
 struct RaySample {
-    SurfacePoint sp;   //!< Surface point information.
-    Vec3 wo;           //!< Sampled direction.
-    Vec3 weight;       //!< Contribution divided by probability.
+    SceneInteraction sp;   //!< Surface point information.
+    Vec3 wo;               //!< Sampled direction.
+    Vec3 weight;           //!< Contribution divided by probability.
 
     /*!
         \brief Get a ray from the sample.
@@ -43,6 +43,14 @@ struct RaySample {
         assert(!sp.geom.infinite);
         return { sp.geom.p, wo };
     }
+};
+
+/*!
+    \brief Result of distance sampling.
+*/
+struct DistanceSample {
+    SceneInteraction sp;    //!< Sampled interaction point.
+    Vec3 weight;            //!< Contribution divided by probability.
 };
 
 // ----------------------------------------------------------------------------
@@ -244,14 +252,14 @@ public:
     /*!
         \brief Compute closest intersection point.
     */
-    virtual std::optional<SurfacePoint> intersect(
+    virtual std::optional<SceneInteraction> intersect(
         Ray ray, Float tmin = Eps, Float tmax = Inf) const = 0;
 
     /*!
         \brief Check if two surface points are mutually visible.
     */
-    bool visible(const SurfacePoint& sp1, const SurfacePoint& sp2) const {
-        const auto visible_ = [this](const SurfacePoint& sp1, const SurfacePoint& sp2) -> bool {
+    bool visible(const SceneInteraction& sp1, const SceneInteraction& sp2) const {
+        const auto visible_ = [this](const SceneInteraction& sp1, const SceneInteraction& sp2) -> bool {
             assert(!sp1.geom.infinite);
             const auto wo = sp2.geom.infinite
                 ? -sp2.geom.wo
@@ -278,12 +286,12 @@ public:
     /*!
         \brief Check if given surface point is light.
     */
-    virtual bool isLight(const SurfacePoint& sp) const = 0;
+    virtual bool isLight(const SceneInteraction& sp) const = 0;
 
     /*!
         \brief Check if given surface point is specular.
     */
-    virtual bool isSpecular(const SurfacePoint& sp) const = 0;
+    virtual bool isSpecular(const SceneInteraction& sp) const = 0;
 
     // ------------------------------------------------------------------------
 
@@ -298,7 +306,7 @@ public:
         (x,wo) ~ p(x,wo|sp,wi)
         \endrst
     */
-    virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const = 0;
+    virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
 
     /*!
         \brief Sample a ray given pixel position.
@@ -311,24 +319,31 @@ public:
     /*!
         \brief Sample a position on a light.
     */
-    virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const = 0;
+    virtual std::optional<RaySample> sampleLight(Rng& rng, const SceneInteraction& sp) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
     */
-    virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate pdf for light sampling.
     */
-    virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const = 0;
+    virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const = 0;
+
+    // ------------------------------------------------------------------------
+
+    /*!
+        \brief Sample a distance in a ray direction.
+    */
+    virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const = 0;
 
     // ------------------------------------------------------------------------
 
     /*!
         \brief Evaluate extended BSDF.
     */
-    virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Vec3 evalBsdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate endpoint contribution.
@@ -336,7 +351,7 @@ public:
         f(x,wo) where x is endpoint
         \endrst
     */
-    virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const = 0;
+    virtual Vec3 evalContrbEndpoint(const SceneInteraction& sp, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate reflectance (if available).
@@ -344,7 +359,7 @@ public:
         \rho(x)
         \endrst
     */
-    virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const = 0;
+    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const = 0;
 };
 
 /*!
