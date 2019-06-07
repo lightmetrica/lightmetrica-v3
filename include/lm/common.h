@@ -251,6 +251,7 @@ class Mesh;               // mesh.h
 class Material;           // material.h
 class Light;              // light.h
 class Camera;             // camera.h
+class Medium;             // medium.h
 struct FilmBuffer;        // film.h
 class Film;
 struct PointGeometry;     // surface.h

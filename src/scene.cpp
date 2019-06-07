@@ -15,6 +15,7 @@
 #include <lm/logger.h>
 #include <lm/serial.h>
 #include <lm/json.h>
+#include <lm/medium.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -36,6 +37,7 @@ private:
     std::vector<LightPrimitiveIndex> lights_;       // Primitive node indices of lights and global transforms
     std::unordered_map<int, int> lightIndicesMap_;  // Map from node indices to light indices.
     std::optional<int> envLight_;                   // Environment light index
+    std::optional<int> medium_;                     // Medium index
 
 public:
     Scene_() {
@@ -112,9 +114,10 @@ public:
             auto* material = dynamic_cast<Material*>(getAssetRefBy("material"));
             auto* light = dynamic_cast<Light*>(getAssetRefBy("light"));
             auto* camera = dynamic_cast<Camera*>(getAssetRefBy("camera"));
+            auto* medium = dynamic_cast<Medium*>(getAssetRefBy("medium"));
 
             // Check validity
-            if (!mesh && !material && !light && !camera) {
+            if (!mesh && !material && !light && !camera && !medium) {
                 LM_ERROR("Invalid primitive node. Given assets are invalid.");
                 return false;
             }
@@ -123,16 +126,24 @@ public:
                 return false;
             }
 
-            // Check camera and envlight
+            // Camera
             if (camera) {
                 camera_ = index;
             }
+
+            // Envlight
             if (light && light->isInfinite()) {
                 envLight_ = index;
             }
 
+            // Medium
+            if (medium) {
+                // For now, consider the medium as global asset.
+                medium_ = index;
+            }
+
             // Create primitive node
-            nodes_.push_back(SceneNode::makePrimitive(index, mesh, material, light, camera));
+            nodes_.push_back(SceneNode::makePrimitive(index, mesh, material, light, camera, medium));
 
             return index;
         }
@@ -384,7 +395,35 @@ public:
     // ------------------------------------------------------------------------
 
     virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
+        // Intersection to next surface
+        const auto hit = Scene::intersect(Ray{ sp.geom.p, wo });
+        const auto dist = hit ? glm::length(hit->geom.p - sp.geom.p) : Inf;
         
+        // Sample a distance
+        const auto* medium = nodes_.at(*medium_).primitive.medium;
+        const auto ds = medium->sampleDistance(rng, sp.geom, wo, dist);
+        
+        if (ds) {
+            // Medium interaction
+            return DistanceSample{
+                SceneInteraction{
+                    *medium_,
+                    0,
+                    PointGeometry::makeDegenerated(ds->p),
+                    false
+                },
+                ds->weight
+            };
+        }
+        else {
+            // Surface interaction
+            return DistanceSample{
+                *hit,
+                ds->weight
+            };
+        }
+
+        LM_UNREACHABLE_RETURN();
     }
 
     // ------------------------------------------------------------------------

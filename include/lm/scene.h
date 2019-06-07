@@ -102,10 +102,11 @@ struct SceneNode {
         Material* material = nullptr;       //!< Underlying material.
         Light* light = nullptr;             //!< Underlying light.
         Camera* camera = nullptr;           //!< Underlying camera.
+        Medium* medium = nullptr;           //!< Underlying medium.
 
         template <typename Archive>
         void serialize(Archive& ar) {
-            ar(mesh, material, light, camera);
+            ar(mesh, material, light, camera, medium);
         }
     } primitive;
 
@@ -134,7 +135,7 @@ struct SceneNode {
     /*!
         \brief Make primitive node.
     */
-    static SceneNode makePrimitive(int index, Mesh* mesh, Material* material, Light* light, Camera* camera) {
+    static SceneNode makePrimitive(int index, Mesh* mesh, Material* material, Light* light, Camera* camera, Medium* medium) {
         SceneNode p;
         p.type = SceneNodeType::Primitive;
         p.index = index;
@@ -142,6 +143,7 @@ struct SceneNode {
         p.primitive.material = material;
         p.primitive.light = light;
         p.primitive.camera = camera;
+        p.primitive.medium = medium;
         return p;
     }
 
