@@ -5,6 +5,7 @@
 
 #include <pch.h>
 #include <lm/medium.h>
+#include <lm/phase.h>
 #include <lm/json.h>
 #include <lm/serial.h>
 #include <lm/surface.h>
@@ -14,9 +15,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // Assume the medium is non-emissive
 class Medium_Homogeneous final : public Medium {
 private:
-    Float muA_;     // Absorption coefficient
-    Float muS_;     // Scattering coefficient
-    Float muT_;     // Extinction coefficient
+    Float muA_;             // Absorption coefficient.
+    Float muS_;             // Scattering coefficient.
+    Float muT_;             // Extinction coefficient.
+    const Phase* phase_;    // Underlying phase function.
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -28,6 +30,11 @@ public:
         muA_ = json::value<Float>(prop, "muA");
         muS_ = json::value<Float>(prop, "muS");
         muT_ = muA_ + muS_;
+        phase_ = comp::get<Phase>(prop["phase"]);
+        if (!phase_) {
+            return false;
+        }
+        return true;
     }
 
     /*
@@ -58,11 +65,17 @@ public:
                 Vec3(1_f)
             };
         }
+    }
 
-        LM_UNREACHABLE_RETURN();
+    virtual bool isEmitter() const override {
+        return false;
+    }
+
+    virtual const Phase* phase() const override {
+        return phase_;
     }
 };
 
-LM_COMP_REG_IMPL(Medium_Homogeneous, "material::diffuse");
+LM_COMP_REG_IMPL(Medium_Homogeneous, "medium::homogeneous");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

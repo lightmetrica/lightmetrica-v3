@@ -12,8 +12,25 @@ public:
     virtual bool construct(const Json&) override {
         return true;
     }
+
+    virtual bool isSpecular(const PointGeometry&, int) const override {
+        return false;
+    }
+
+    virtual std::optional<MaterialDirectionSample> sample(Rng&, const PointGeometry&, Vec3) const override {
+        LM_UNREACHABLE_RETURN();
+    }
+
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int) const override {
         return glm::abs(geom.n);
+    }
+
+    virtual Float pdf(const PointGeometry&, int, Vec3, Vec3) const override {
+        LM_UNREACHABLE_RETURN();
+    }
+
+    virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {
+        LM_UNREACHABLE_RETURN();
     }
 };
 

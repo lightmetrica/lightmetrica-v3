@@ -182,6 +182,7 @@ struct SceneInteraction {
     int comp;                   //!< Component index.
     PointGeometry geom;         //!< Surface point geometry information.
     bool endpoint;              //!< True if endpoint of light path.
+    bool medium;                //!< True if it is medium interaction. 
 };
 
 /*!

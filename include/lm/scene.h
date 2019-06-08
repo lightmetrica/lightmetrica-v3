@@ -343,9 +343,13 @@ public:
     // ------------------------------------------------------------------------
 
     /*!
-        \brief Evaluate extended BSDF.
+        \brief Evaluate contribution.
+        \rst
+        This function evaluates either BSDF for surface interaction
+        or phase function for medium interaction.
+        \endrst
     */
-    virtual Vec3 evalBsdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate endpoint contribution.

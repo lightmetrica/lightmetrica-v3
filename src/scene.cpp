@@ -16,6 +16,7 @@
 #include <lm/serial.h>
 #include <lm/json.h>
 #include <lm/medium.h>
+#include <lm/phase.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -198,6 +199,7 @@ public:
                 dynamic_cast<Mesh*>(mesh),
                 dynamic_cast<Material*>(material),
                 dynamic_cast<Light*>(light),
+                nullptr,
                 nullptr));
             addChild(parent, index);
         });
@@ -273,7 +275,8 @@ public:
                 *envLight_,
                 0,
                 PointGeometry::makeInfinite(-ray.d),
-                true
+                true,
+                false
             };
         }
         const auto [t, uv, globalTransform, primitiveIndex, faceIndex] = *hit;
@@ -287,6 +290,7 @@ public:
                 globalTransform.normalM * p.n,
                 p.t
             ),
+            false,
             false
         };
     }
@@ -294,11 +298,17 @@ public:
     // ------------------------------------------------------------------------
 
     virtual bool isLight(const SceneInteraction& sp) const override {
-        return nodes_.at(sp.primitive).primitive.light;
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
+        return sp.medium
+            ? primitive.medium->isEmitter()
+            : primitive.light;
     }
 
     virtual bool isSpecular(const SceneInteraction& sp) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
+        if (sp.medium) {
+            return primitive.medium->phase()->isSpecular(sp.geom);
+        }
         if (sp.endpoint) {
             if (primitive.light) {
                 return primitive.light->isSpecular(sp.geom);
@@ -318,24 +328,40 @@ public:
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
-        const auto* material = nodes_.at(sp.primitive).primitive.material;
-        if (!material) {
-            return {};
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
+        if (sp.medium) {
+            // Medium interaction
+            const auto s = primitive.medium->phase()->sample(rng, sp.geom, wi);
+            if (!s) {
+                return {};
+            }
+            return RaySample{
+                sp,
+                s->wo,
+                s->weight
+            };
         }
-        const auto s = material->sample(rng, sp.geom, wi);
-        if (!s) {
-            return {};
+        else {
+            // Surface interaction
+            if (!primitive.material) {
+                return {};
+            }
+            const auto s = primitive.material->sample(rng, sp.geom, wi);
+            if (!s) {
+                return {};
+            }
+            return RaySample{
+                SceneInteraction{
+                    sp.primitive,
+                    s->comp,
+                    sp.geom,
+                    false,
+                    false
+                },
+                s->wo,
+                s->weight
+            };
         }
-        return RaySample{
-            SceneInteraction{
-                sp.primitive,
-                s->comp,
-                sp.geom,
-                false
-            },
-            s->wo,
-            s->weight
-        };
     }
 
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
@@ -348,7 +374,8 @@ public:
                 *camera_,
                 0,
                 s->geom,
-                true
+                true,
+                false
             },
             s->wo,
             s->weight
@@ -373,7 +400,8 @@ public:
                 light.index,
                 0,
                 s->geom,
-                true
+                true,
+                false
             },
             s->wo,
             s->weight / pL
@@ -382,7 +410,12 @@ public:
     
     virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
-        return primitive.material->pdf(sp.geom, sp.comp, wi, wo);
+        if (sp.medium) {
+            return primitive.medium->phase()->pdf(sp.geom, wi, wo);
+        }
+        else {
+            return primitive.material->pdf(sp.geom, sp.comp, wi, wo);
+        }
     }
 
     virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
@@ -396,7 +429,7 @@ public:
 
     virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
         // Intersection to next surface
-        const auto hit = Scene::intersect(Ray{ sp.geom.p, wo });
+        const auto hit = intersect(Ray{ sp.geom.p, wo }, Eps, Inf);
         const auto dist = hit ? glm::length(hit->geom.p - sp.geom.p) : Inf;
         
         // Sample a distance
@@ -410,7 +443,8 @@ public:
                     *medium_,
                     0,
                     PointGeometry::makeDegenerated(ds->p),
-                    false
+                    false,
+                    true
                 },
                 ds->weight
             };
@@ -422,24 +456,29 @@ public:
                 ds->weight
             };
         }
-
-        LM_UNREACHABLE_RETURN();
     }
 
     // ------------------------------------------------------------------------
 
-    virtual Vec3 evalBsdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
+    virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (sp.endpoint) {
-            if (primitive.camera) {
-                return primitive.camera->eval(sp.geom, wo);
-            }
-            else if (primitive.light) {
-                return primitive.light->eval(sp.geom, wo);
-            }
-            LM_UNREACHABLE();
+        if (sp.medium) {
+            // Medium interaction
+            return primitive.medium->phase()->eval(sp.geom, wi, wo);
         }
-        return primitive.material->eval(sp.geom, sp.comp, wi, wo);
+        else {
+            // Surface interaction
+            if (sp.endpoint) {
+                if (primitive.camera) {
+                    return primitive.camera->eval(sp.geom, wo);
+                }
+                else if (primitive.light) {
+                    return primitive.light->eval(sp.geom, wo);
+                }
+                LM_UNREACHABLE();
+            }
+            return primitive.material->eval(sp.geom, sp.comp, wi, wo);
+        }
     }
 
     virtual Vec3 evalContrbEndpoint(const SceneInteraction& sp, Vec3 wo) const override {

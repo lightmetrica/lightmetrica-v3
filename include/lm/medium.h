@@ -32,6 +32,16 @@ public:
         \brief Sample a distance in a ray direction.
     */
     virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, const PointGeometry& geom, Vec3 wo, Float distToSurf) const = 0;
+
+    /*!
+        \brief Check if the medium has emissive component.
+    */
+    virtual bool isEmitter() const = 0;
+
+    /*!
+        \brief Get underlying phase function.
+    */
+    virtual const Phase* phase() const = 0;
 };
 
 /*!

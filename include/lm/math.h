@@ -477,6 +477,28 @@ static Vec3 sampleCosineWeighted(Rng& rng) {
 }
 
 /*!
+    \brief Uniformly sample a direction from an sphere.
+    \param rng Random number generator.
+    \return Sampled value.
+*/
+static Vec3 sampleUniformSphere(Rng& rng) {
+    const auto z = 1_f - 2_f*rng.u();
+    const auto r = safeSqrt(1_f - z*z);
+    const auto t = 2_f * Pi * rng.u();
+    const auto x = r * std::cos(t);
+    const auto y = r * std::sin(t);
+    return { x, y, z };
+}
+
+/*!
+    \brief Pdf of uniformly sampled directions from an sphere in solid angle measure.
+    \return Evaluated density.
+*/
+static constexpr Float pdfUniformSphere() {
+    return 1_f / (4_f * Pi);
+}
+
+/*!
     \brief Balance heuristics.
 */
 static Float balanceHeuristic(Float p1, Float p2) {

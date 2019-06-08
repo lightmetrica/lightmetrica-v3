@@ -87,7 +87,7 @@ public:
                         }
                         // Evaluate and accumulate contribution
                         const auto wo = -sL->wo;
-                        const auto fs = scene->evalBsdf(s->sp, wi, wo);
+                        const auto fs = scene->evalContrb(s->sp, wi, wo);
                         const auto misw = math::balanceHeuristic(
                             scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
                         L += throughput * fs * sL->weight * misw;

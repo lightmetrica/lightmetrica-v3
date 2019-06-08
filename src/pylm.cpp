@@ -550,8 +550,11 @@ static void bind(pybind11::module& m) {
         virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdfLight, sp, spL, wo);
         }
-        virtual Vec3 evalBsdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalBsdf, sp, wi, wo);
+        virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Scene, sampleDistance, rng, sp, wo);
+        }
+        virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrb, sp, wi, wo);
         }
         virtual Vec3 evalContrbEndpoint(const SceneInteraction& sp, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrbEndpoint, sp, wo);
@@ -639,19 +642,19 @@ static void bind(pybind11::module& m) {
             PYBIND11_OVERLOAD(bool, Material, construct, prop);
         }
         virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
-            PYBIND11_OVERLOAD(bool, Material, isSpecular, geom, comp);
+            PYBIND11_OVERLOAD_PURE(bool, Material, isSpecular, geom, comp);
         }
         virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-            PYBIND11_OVERLOAD(std::optional<MaterialDirectionSample>, Material, sample, rng, geom, wi);
+            PYBIND11_OVERLOAD_PURE(std::optional<MaterialDirectionSample>, Material, sample, rng, geom, wi);
         }
         virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
             PYBIND11_OVERLOAD(std::optional<Vec3>, Material, reflectance, geom, comp);
         }
         virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD(Float, Material, pdf, geom, comp, wi, wo);
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdf, geom, comp, wi, wo);
         }
         virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD(Vec3, Material, eval, geom, comp, wi, wo);
+            PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, comp, wi, wo);
         }
     };
     pybind11::class_<Material, Material_Py, Component::Ptr<Material>>(m, "Material")

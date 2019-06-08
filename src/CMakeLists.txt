@@ -39,7 +39,8 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/serial.h"
     "${_INCLUDE_DIR}/surface.h"
     "${_INCLUDE_DIR}/objloader.h"
-    "${_INCLUDE_DIR}/medium.h")
+    "${_INCLUDE_DIR}/medium.h"
+    "${_INCLUDE_DIR}/phase.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"
@@ -76,6 +77,8 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_ptdirect.cpp"
     "${_SOURCE_DIR}/renderer/renderer_volpt_naive.cpp"
     "${_SOURCE_DIR}/medium/medium_homogeneous.cpp"
+    "${_SOURCE_DIR}/phase/phase_hg.cpp"
+    "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
 # Add a shared library
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
