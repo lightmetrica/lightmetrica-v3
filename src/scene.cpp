@@ -435,8 +435,9 @@ public:
         // Sample a distance
         const auto* medium = nodes_.at(*medium_).primitive.medium;
         const auto ds = medium->sampleDistance(rng, sp.geom, wo, dist);
+        assert(ds);
         
-        if (ds) {
+        if (ds->medium) {
             // Medium interaction
             return DistanceSample{
                 SceneInteraction{
@@ -456,6 +457,16 @@ public:
                 ds->weight
             };
         }
+    }
+
+    virtual std::optional<Vec3> evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
+        if (!visible(sp1, sp2)) {
+            return {};
+        }
+        if (!medium_) {
+            return Vec3(1_f);
+        }
+        return nodes_.at(*medium_).primitive.medium->evalTransmittance(rng, sp1.geom, sp2.geom);
     }
 
     // ------------------------------------------------------------------------

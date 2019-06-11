@@ -553,6 +553,9 @@ static void bind(pybind11::module& m) {
         virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Scene, sampleDistance, rng, sp, wo);
         }
+        virtual std::optional<Vec3> evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, evalTransmittance, rng, sp1, sp2);
+        }
         virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrb, sp, wi, wo);
         }

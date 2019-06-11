@@ -10,11 +10,10 @@
 #include <lm/film.h>
 #include <lm/parallel.h>
 #include <lm/serial.h>
-#include <lm/debugio.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-class Renderer_PTDirect final : public Renderer {
+class Renderer_PTNaive final : public Renderer {
 private:
     Film* film_;
     long long spp_;
@@ -56,10 +55,6 @@ public:
                 // Path throughput
                 Vec3 throughput(1_f);
 
-                // Incident direction and current surface point
-                Vec3 wi = {};
-                SceneInteraction sp;
-
                 // Initial sampleRay function
                 std::function<std::optional<RaySample>()> sampleRay = [&]() {
                     Float dx = 1_f/w, dy = 1_f/h;
@@ -74,24 +69,8 @@ public:
                         break;
                     }
 
-                    // Sample a NEE edge
-                    const bool nee = length > 0 && !scene->isSpecular(s->sp);
-                    if (nee) [&] {
-                        // Sample a light
-                        const auto sL = scene->sampleLight(rng, s->sp);
-                        if (!sL) {
-                            return;
-                        }
-                        if (!scene->visible(s->sp, sL->sp)) {
-                            return;
-                        }
-                        // Evaluate and accumulate contribution
-                        const auto wo = -sL->wo;
-                        const auto fs = scene->evalContrb(s->sp, wi, wo);
-                        const auto misw = math::balanceHeuristic(
-                            scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
-                        L += throughput * fs * sL->weight * misw;
-                    }();
+                    // Update throughput
+                    throughput *= s->weight;
 
                     // Intersection to next surface
                     const auto hit = scene->intersect(s->ray());
@@ -99,16 +78,9 @@ public:
                         break;
                     }
 
-                    // Update throughput
-                    throughput *= s->weight;
-
                     // Accumulate contribution from light
                     if (scene->isLight(*hit)) {
-                        const auto woL = -s->wo;
-                        const auto fs = scene->evalContrbEndpoint(*hit, woL);
-                        const auto misw = !nee ? 1_f : math::balanceHeuristic(
-                            scene->pdf(s->sp, wi, s->wo), scene->pdfLight(s->sp, *hit, woL));
-                        L += throughput * fs * misw;
+                        L += throughput * scene->evalContrbEndpoint(*hit, -s->wo);
                     }
 
                     // Russian roulette
@@ -121,9 +93,7 @@ public:
                     }
 
                     // Update
-                    wi = -s->wo;
-                    sp = *hit;
-                    sampleRay = [&]() {
+                    sampleRay = [&, wi = -s->wo, sp = *hit]() {
                         return scene->sampleRay(rng, sp, wi);
                     };
                 }
@@ -136,6 +106,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Renderer_PTDirect, "renderer::ptdirect");
+LM_COMP_REG_IMPL(Renderer_PTNaive, "renderer::pt_naive");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

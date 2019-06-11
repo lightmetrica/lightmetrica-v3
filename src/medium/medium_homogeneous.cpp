@@ -55,16 +55,23 @@ public:
             // Medium interaction
             return MediumDistanceSample{
                 geom.p + wo*t,
-                Vec3(muS_ / muT_)
+                Vec3(muS_ / muT_),
+                true
             };
         }
         else {
             // Surface interaction
             return MediumDistanceSample{
                 geom.p + wo*distToSurf,
-                Vec3(1_f)
+                Vec3(1_f),
+                false
             };
         }
+    }
+
+    virtual std::optional<Vec3> evalTransmittance(Rng&, const PointGeometry& geom1, const PointGeometry& geom2) const override {
+        const auto dist = glm::length(geom1.p - geom2.p);
+        return Vec3(std::exp(-muT_ * dist));
     }
 
     virtual bool isEmitter() const override {

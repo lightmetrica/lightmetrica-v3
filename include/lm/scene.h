@@ -340,6 +340,11 @@ public:
     */
     virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const = 0;
 
+    /*!
+        \brief Evaluate transmittance.
+    */
+    virtual std::optional<Vec3> evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const = 0;
+
     // ------------------------------------------------------------------------
 
     /*!
