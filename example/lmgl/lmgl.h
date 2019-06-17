@@ -677,14 +677,25 @@ public:
 
             // General information
             ImGui::Begin("Information / Control");
-            ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             int display_w, display_h;
-            glfwGetFramebufferSize(window, &display_w, &display_h);
-            ImGui::Text("Framebuffer size: (%d, %d)", display_w, display_h);
+            {
+                // FPS, framebuffer
+                ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                glfwGetFramebufferSize(window, &display_w, &display_h);
+                ImGui::Text("Framebuffer size: (%d, %d)", display_w, display_h);
+
+                // Demo window
+                static bool showDemoWindow = false;
+                ImGui::Checkbox("Demo Window", &showDemoWindow);
+                if (showDemoWindow) {
+                    ImGui::ShowDemoWindow(&showDemoWindow);
+                }
+            }
             ImGui::End();
 
             // ----------------------------------------------------------------
 
+            // User-defined update function
             ImGui::SetNextWindowPos(ImVec2(0, 200), ImGuiCond_Once);
             updateFunc(display_w, display_h);
 
