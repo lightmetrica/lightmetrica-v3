@@ -40,6 +40,7 @@ public:
     }
 
     virtual void render(const Scene* scene) const override {
+        film_->clear();
         const auto [w, h] = film_->size();
         long long numSamples = (long long)(w*h)*spp_;
         parallel::foreach(numSamples, [&](long long index, int) -> void {

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.1.2
+#       jupytext_version: 1.1.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -36,6 +36,8 @@ import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 import lmscene
 
+# ### Initialize the framework
+
 if lm.Debug:
     lm.attachToDebugger()
 
@@ -47,6 +49,10 @@ if lm.Debug:
         'numThreads': 1
     })
 lm.info()
+
+temp_dir = os.path.join('temp', '20190607')
+
+# ### Setup the scene
 
 # +
 #lmscene.load(config['scene_path'], 'fireplace_room')
@@ -92,30 +98,84 @@ lm.primitive(lm.identity(), {
         'phase': lm.asset('phase_iso', 'phase::isotropic', {})
     })
 })
+
+# Film
+lm.asset('film1', 'film::bitmap', {
+    'w': 1920,
+    'h': 1080
+})
 # -
 
-lm.build('accel::sahbvh', {})
-lm.render('renderer::volpt', {
-    'output': lm.asset('film1', 'film::bitmap', {
-        'w': 1920,
-        'h': 1080
-    }),
-    'spp': 10,
+# ### Rendering w/ naive pt
+
+shared_renderer_params = {
+    'output': lm.asset('film1'),
+    'spp': 100,
     'maxLength': 2
+}
+
+lm.build('accel::sahbvh', {})
+
+lm.render('renderer::volpt_naive', {
+    **shared_renderer_params
 })
 
-img = np.copy(lm.buffer(lm.asset('film1')))
+lm.save(lm.asset('film1'), os.path.join(temp_dir, 'naive.hdr'))
+
+img_naive = np.copy(lm.buffer(lm.asset('film1')))
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
+ax.imshow(np.clip(np.power(img_naive,1/2.2),0,1), origin='lower')
 plt.show()
+
+# ### Rendering w/ nee
+
+lm.render('renderer::volpt', {
+    **shared_renderer_params
+})
+
+lm.save(lm.asset('film1'), os.path.join(temp_dir, 'nee.hdr'))
+
+img_nee = np.copy(lm.buffer(lm.asset('film1')))
+f = plt.figure(figsize=(15,15))
+ax = f.add_subplot(111)
+ax.imshow(np.clip(np.power(img_nee,1/2.2),0,1), origin='lower')
+plt.show()
+
+
+# ### Comparison
+
+# +
+def rmse(img1, img2):
+    return np.sqrt(np.mean((img1 - img2) ** 2))
+
+def rmse_pixelwised(img1, img2):
+    return np.sqrt(np.sum((img1 - img2) ** 2, axis=2) / 3)
+
+
+# -
+
+diff = rmse_pixelwised(img_naive, img_nee)
 
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
-im = ax.imshow(img[:,:,0], origin='lower')
+im = ax.imshow(diff, origin='lower', vmax=0.0001)
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
 plt.colorbar(im, cax=cax)
+ax.set_title('naive vs. nee')
 plt.show()
+
+# ### Comparison (consistency checking)
+
+from scipy.ndimage import gaussian_filter
+
+diff_gauss = gaussian_filter(np.abs(img_naive - img_nee), sigma=5)
+f = plt.figure(figsize=(15,15))
+ax = f.add_subplot(111)
+ax.imshow(np.clip(np.power(diff_gauss,1/2.2),0,1), origin='lower')
+plt.show()
+
+
 
 

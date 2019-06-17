@@ -40,6 +40,7 @@ public:
     }
 
     virtual void render(const Scene* scene) const override {
+        film_->clear();
         const auto [w, h] = film_->size();
         parallel::foreach(w*h, [&](long long index, int) -> void {
             // Per-thread random number generator
