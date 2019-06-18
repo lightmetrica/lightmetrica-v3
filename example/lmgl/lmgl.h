@@ -33,13 +33,22 @@ static void checkGLError(const char* filename, const int line) {
 
 // ----------------------------------------------------------------------------
 
+class GLScene;
+
 // OpenGL material
 class GLMaterial {
 private:
-    glm::vec3 color_;
+    friend class GLScene;
+
+private:
+    glm::vec3 color_{};
     bool wireframe_ = false;
     bool shade_ = true;
     std::optional<GLuint> texture_;
+    int w_;
+    int h_;
+    float lineWidth_ = 1.f;
+    float lineWidthScale_ = 1.f;
 
 public:
     GLMaterial(glm::vec3 color, bool wireframe, bool shade)
@@ -68,6 +77,8 @@ public:
 
         // Create OpenGL texture
         const auto [w, h, c, data] = tex->buffer();
+        w_ = w;
+        h_ = h;
 
 #if 0
         // Convert the texture to float type
@@ -113,6 +124,9 @@ public:
         // Point size
         glPointSize(20);
 
+        // Line width
+        glLineWidth(lineWidth_ * lineWidthScale_);
+
         glProgramUniform3fv(name, glGetUniformLocation(name, "Color"), 1, &color_.x);
         glProgramUniform1i(name, glGetUniformLocation(name, "Shade"), shade_ ? 1 : 0);
         if (texture_) {
@@ -144,6 +158,9 @@ namespace MeshType {
     };
 }
 class GLMesh {
+private:
+    friend class GLScene;
+
 private:
     int type_;
     GLuint count_;
@@ -268,9 +285,10 @@ public:
 
 // OpenGL scene
 struct GLPrimitive {
-    lm::Mat4 transform;
-    int mesh;
-    int material;
+    std::string name;       // This can be empty
+    lm::Mat4 transform;     // Transformation
+    int mesh;               // Mesh index
+    int material;           // Material index
 };
 class GLScene {
 public:
@@ -313,7 +331,7 @@ public:
         }();
         
         // Primitive
-        primitives_.push_back({transform, meshidx, materialidx });
+        primitives_.push_back({ "", transform, meshidx, materialidx });
     }
 
     void add(int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
@@ -322,7 +340,7 @@ public:
         int materialidx = int(materials_.size());
         meshes_.emplace_back(new GLMesh(type, vs));
         materials_.emplace_back(new GLMaterial(color, true, false));
-        primitives_.push_back({lm::Mat4(1_f), meshidx, materialidx });
+        primitives_.push_back({ "", lm::Mat4(1_f), meshidx, materialidx });
     }
 
     void addByName(const std::string& name, int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
@@ -339,7 +357,7 @@ public:
             meshes_.emplace_back(mesh);
             materials_.emplace_back(material);
             namedPrimitiveMap_[name] = int(primitives_.size());
-            primitives_.push_back({ lm::Mat4(1_f), meshidx, materialidx });
+            primitives_.push_back({ name, lm::Mat4(1_f), meshidx, materialidx });
         }
     }
 
@@ -353,6 +371,108 @@ public:
         for (const auto& primitive : primitives_) {
             processPrimitive(primitive);
         }
+    }
+
+    void updateGUI() {
+        ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 400, 0), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_Once);
+        ImGui::Begin("OpenGL scene");
+
+        // Selected primitive index
+        static int selectedNodeIndex = -1;
+
+        // List of primitives
+        if (ImGui::CollapsingHeader("Primitives", ImGuiTreeNodeFlags_DefaultOpen)) {
+            for (int i = 0; i < (int)(primitives_.size()); i++) {
+                // Current primitive
+                const auto& primitive = primitives_[i];
+
+                // Primitive name
+                const std::string name = primitive.name.empty() ? "<empty>" : primitive.name;
+
+                // Flag for tree node
+                auto treeNodeFlag = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+                if (selectedNodeIndex == i) {
+                    treeNodeFlag |= ImGuiTreeNodeFlags_Selected;
+                }
+
+                // Primitive information
+                const bool open = ImGui::TreeNodeEx((void*)(intptr_t)i, treeNodeFlag, fmt::format("Primitive [name={}]", name).c_str());
+
+                // Change appearance according to hovering/clicking
+                if (ImGui::IsItemClicked()) {
+                    // Deselect if the node is already selected
+                    selectedNodeIndex = selectedNodeIndex == i ? -1 : i;
+                }
+                if (selectedNodeIndex == i || ImGui::IsItemHovered()) {
+                    auto* material = materials_[primitive.material].get();
+                    material->wireframe_ = false;
+                }
+                else {
+                    auto* material = materials_[primitive.material].get();
+                    material->wireframe_ = true;
+                }
+
+                if (open) {
+                    // Mesh information
+                    if (ImGui::TreeNode(fmt::format("Mesh [id={}]", primitive.mesh).c_str())) {
+                        // Current mesh
+                        const auto* mesh = meshes_[primitive.mesh].get();
+
+                        // Mesh type
+                        if ((mesh->type_ & MeshType::Triangles) > 0) {
+                            ImGui::Text("Triangles");
+                        }
+                        if ((mesh->type_ & MeshType::LineStrip) > 0) {
+                            ImGui::Text("LineStrip");
+                        }
+                        if ((mesh->type_ & MeshType::Lines) > 0) {
+                            ImGui::Text("Lines");
+                        }
+                        if ((mesh->type_ & MeshType::Points) > 0) {
+                            ImGui::Text("Points");
+                        }
+
+                        ImGui::TreePop();
+                    }
+
+                    // Material information
+                    if (ImGui::TreeNode(fmt::format("Material [id={}]", primitive.material).c_str())) {
+                        // Current material
+                        auto* material = materials_[primitive.material].get();
+
+                        // Wireframe and shaded flag
+                        ImGui::Checkbox("Enable wireframe", &material->wireframe_);
+                        ImGui::Checkbox("Enable shade", &material->shade_);
+
+                        // Texture or color
+                        if (material->texture_) {
+                            ImGui::Text("Texture");
+                            #pragma warning(push)
+                            #pragma warning(disable:4312)
+                            const auto aspect = float(material->h_) / material->w_;
+                            ImGui::Image(
+                                reinterpret_cast<ImTextureID*>(*material->texture_),
+                                ImVec2(200.f, 200.f*aspect),
+                                ImVec2(0, 1),
+                                ImVec2(1, 0),
+                                ImColor(255, 255, 255, 255),
+                                ImColor(255, 255, 255, 128));
+                                #pragma warning(pop)
+                        }
+                        else {
+                            ImGui::ColorEdit3("Color", &material->color_.x);
+                        }
+
+                        ImGui::TreePop();
+                    }
+
+                    ImGui::TreePop();
+                }
+            }
+        }
+
+        ImGui::End();
     }
 };
 
@@ -671,7 +791,7 @@ public:
 
             // Windows position and size
             ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
-            ImGui::SetNextWindowSize(ImVec2(350, 200), ImGuiCond_Once);
+            ImGui::SetNextWindowSize(ImVec2(400, 200), ImGuiCond_Once);
 
             // ----------------------------------------------------------------
 
@@ -692,6 +812,11 @@ public:
                 }
             }
             ImGui::End();
+
+            // ----------------------------------------------------------------
+
+            // Scene window
+            glscene.updateGUI();
 
             // ----------------------------------------------------------------
 
