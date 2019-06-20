@@ -11,7 +11,7 @@
 #include <lm/parallel.h>
 #include <lm/serial.h>
 
-#define VOLPT_DEBUG_VIS 1
+#define VOLPT_DEBUG_VIS 0
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -62,6 +62,8 @@ public:
         const auto [w, h] = film_->size();
         long long numSamples = (long long)(w*h)*spp_;
         parallel::foreach(numSamples, [&](long long index, int threadId) -> void {
+            LM_UNUSED(threadId);
+
             // Per-thread random number generator
             thread_local Rng rng;
 
