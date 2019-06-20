@@ -26,7 +26,7 @@ public:
     }
 
     virtual Vec3 eval(const PointGeometry&, Vec3, Vec3) const override {
-        // Normalizing constant = 1/(4*pi)
+        // Normalization constant = 1/(4*pi)
         return Vec3(math::pdfUniformSphere());
     }
 };

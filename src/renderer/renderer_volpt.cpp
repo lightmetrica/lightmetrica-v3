@@ -11,6 +11,8 @@
 #include <lm/parallel.h>
 #include <lm/serial.h>
 
+#define VOLPT_DEBUG_VIS 1
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_VolPT final : public Renderer {
@@ -19,14 +21,30 @@ private:
     long long spp_;
     int maxLength_;
 
+    #if VOLPT_DEBUG_VIS
+    mutable std::vector<Ray> sampledRays_;
+    #endif
+
 public:
     LM_SERIALIZE_IMPL(ar) {
         ar(film_, spp_, maxLength_);
+        #if VOLPT_DEBUG_VIS
+        ar(sampledRays_);
+        #endif
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
         comp::visit(visit, film_);
     }
+
+    #if VOLPT_DEBUG_VIS
+    virtual void* underlyingRawPointer(const std::string& query) const override {
+        if (query == "sampledRays") {
+            return &sampledRays_;
+        }
+        return nullptr;
+    }
+    #endif
 
 public:
     virtual bool construct(const Json& prop) override {
@@ -43,7 +61,7 @@ public:
         film_->clear();
         const auto [w, h] = film_->size();
         long long numSamples = (long long)(w*h)*spp_;
-        parallel::foreach(numSamples, [&](long long index, int) -> void {
+        parallel::foreach(numSamples, [&](long long index, int threadId) -> void {
             // Per-thread random number generator
             thread_local Rng rng;
 
@@ -90,13 +108,17 @@ public:
                         return;
                     }
 
+                    #if VOLPT_DEBUG_VIS
+                    const bool record = 500 < x && x < 600 && 500 < y && y < 600;
+                    if (threadId == 0 && sampledRays_.size() < 1000 && record) {
+                        sampledRays_.push_back({ s->sp.geom.p, -sL->wo });
+                    }
+                    #endif
+
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
                     const auto fs = scene->evalContrb(s->sp, wi, wo);
-                    const auto misw = 1_f;
-                    //const auto misw = math::balanceHeuristic(
-                    //    scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
-                    L += throughput * *Tr * fs * sL->weight * misw;
+                    L += throughput * *Tr * fs * sL->weight;
                 }();
 
                 // Sample next scene interaction
@@ -109,9 +131,9 @@ public:
                 throughput *= s->weight * sd->weight;
 
                 // Accumulate contribution from emissive interaction
-                //if (scene->isLight(sd->sp)) {
-                //    L += throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
-                //}
+                if (!nee && scene->isLight(sd->sp)) {
+                    L += throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
+                }
 
                 // Russian roulette
                 if (length > 3) {

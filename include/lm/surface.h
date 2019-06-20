@@ -211,7 +211,9 @@ static Float geometryTerm(const PointGeometry& s1, const PointGeometry& s2) {
     Vec3 d = s2.p - s1.p;
     const Float L2 = glm::dot(d, d);
     d = d / std::sqrt(L2);
-    return glm::abs(glm::dot(s1.n, d)) * glm::abs(glm::dot(s2.n, -d)) / L2;
+    const auto cos1 = s1.degenerated ? 1_f : glm::abs(glm::dot(s1.n, d));
+    const auto cos2 = s2.degenerated ? 1_f : glm::abs(glm::dot(s2.n, -d));
+    return cos1 * cos2 / L2;
 }
 
 /*!
