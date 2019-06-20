@@ -301,7 +301,7 @@ public:
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         return sp.medium
             ? primitive.medium->isEmitter()
-            : primitive.light;
+            : primitive.light != nullptr;
     }
 
     virtual bool isSpecular(const SceneInteraction& sp) const override {
