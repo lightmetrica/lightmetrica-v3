@@ -52,10 +52,7 @@ public:
         This function checks if the BSDF of the material contains delta component.
         \endrst
     */
-    virtual bool isSpecular(const PointGeometry& geom, int comp) const {
-        LM_UNUSED(geom, comp);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual bool isSpecular(const PointGeometry& geom, int comp) const = 0;
 
     /*!
         \brief Sample a ray given surface point and incident direction.
@@ -74,10 +71,7 @@ public:
         The selected component type is stored into :cpp:member:`lm::MaterialDirectionSample::comp`.
         \endrst
     */
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const {
-        LM_UNUSED(rng, geom, wi);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate reflectance.
@@ -90,7 +84,7 @@ public:
     */
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const {
         LM_UNUSED(geom, comp);
-        return {};
+        LM_UNREACHABLE_RETURN();
     }
 
     /*!
@@ -104,10 +98,7 @@ public:
         This function evaluates a pdf corresponding to :cpp:func:`lm::Material::sample` function.
         \endrst
     */
-    virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const {
-        LM_UNUSED(geom, comp, wi, wo);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate BSDF.
@@ -120,10 +111,7 @@ public:
         This function evaluates underlying BSDF of the material.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const {
-        LM_UNUSED(geom, comp, wi, wo);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const = 0;
 };
 
 /*!

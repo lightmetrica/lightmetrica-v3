@@ -267,6 +267,17 @@ public:
         \endrst
     */
     virtual Json underlyingValue(const std::string& query = "") const { LM_UNUSED(query); return {}; }
+
+    /*!
+        \brief Get underlying raw pointer.
+        \param query Query string.
+
+        \rst
+        This function gets underlying content as a void pointer.
+        We want to use this function for debugging purposes.
+        \endrst
+    */
+    virtual void* underlyingRawPointer(const std::string& query = "") const { LM_UNUSED(query); return nullptr; }
 };
 
 // ----------------------------------------------------------------------------

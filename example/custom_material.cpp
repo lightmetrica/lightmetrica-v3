@@ -14,8 +14,24 @@ public:
         return true;
     }
 
+    virtual bool isSpecular(const lm::PointGeometry&, int) const override {
+        return false;
+    }
+
+    virtual std::optional<lm::MaterialDirectionSample> sample(lm::Rng&, const lm::PointGeometry&, lm::Vec3) const override {
+        LM_UNREACHABLE_RETURN();
+    }
+
     virtual std::optional<lm::Vec3> reflectance(const lm::PointGeometry& geom, int) const override {
         return glm::abs(geom.n);
+    }
+
+    virtual lm::Float pdf(const lm::PointGeometry&, int, lm::Vec3, lm::Vec3) const override {
+        LM_UNREACHABLE_RETURN();
+    }
+
+    virtual lm::Vec3 eval(const lm::PointGeometry&, int, lm::Vec3, lm::Vec3) const override {
+        LM_UNREACHABLE_RETURN();
     }
 };
 
