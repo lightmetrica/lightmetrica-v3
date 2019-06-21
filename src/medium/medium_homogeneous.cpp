@@ -22,7 +22,7 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(muA_, muS_, muT_);
+        ar(muA_, muS_, muT_, phase_);
     }
 
 public:

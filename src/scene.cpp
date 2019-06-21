@@ -437,7 +437,7 @@ public:
         const auto ds = medium->sampleDistance(rng, sp.geom, wo, dist);
         assert(ds);
         
-        if (ds->medium) {
+        if (ds && ds->medium) {
             // Medium interaction
             return DistanceSample{
                 SceneInteraction{
@@ -454,7 +454,7 @@ public:
             // Surface interaction
             return DistanceSample{
                 *hit,
-                ds->weight
+                ds ? ds->weight : Vec3(1_f)
             };
         }
     }

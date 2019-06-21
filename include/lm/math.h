@@ -114,6 +114,22 @@ struct Bound {
         \endrst
     */
     bool isect(Ray r, Float tmin, Float tmax) const {
+        return isectRange(r, tmin, tmax);
+    }
+
+    /*!
+        \brief Check intersection to the ray and update tmin and tmax.
+        \param r Ray.
+        \param tmin Minimum valid range along with the ray from origin.
+        \param tmax Maximum valid range along with the ray from origin.
+
+        \rst
+        This function checks intersection between ray and bound
+        and assign the intersected range to tmin and tmax
+        if the ray intersects the bound.
+        \endrst
+    */
+    bool isectRange(Ray r, Float& tmin, Float& tmax) const {
         for (int i = 0; i < 3; i++) {
             const Float vd = 1_f / r.d[i];
             auto t1 = (mi[i] - r.o[i]) * vd;
