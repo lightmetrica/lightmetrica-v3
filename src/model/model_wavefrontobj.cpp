@@ -63,7 +63,7 @@ public:
         return assets_[assetsMap_.at(name)].get();
     }
 
-    virtual bool construct(const Json& prop) override {
+	virtual bool construct(const Json& prop) override {
         const std::string path = prop["path"];
         return objloader::load(path, geo_,
             // Process mesh

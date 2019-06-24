@@ -4,9 +4,9 @@ import os
 import numpy as np
 
 if 'LM_DEBUG' in os.environ and os.environ['LM_DEBUG'] == '1':
-    from .pylm_debug import *
+    from pylm_debug import *
 else:
-    from .pylm import *
+    from pylm import *
 
 def pylm_component(name):
     """Decorator for registering a class to lightmetrica"""
