@@ -251,10 +251,12 @@ class Mesh;               // mesh.h
 class Material;           // material.h
 class Light;              // light.h
 class Camera;             // camera.h
+class Medium;             // medium.h
+class Phase;              // phase.h
 struct FilmBuffer;        // film.h
 class Film;
 struct PointGeometry;     // surface.h
-struct SurfacePoint;      // scene.h
+struct SceneInteraction;      // scene.h
 struct RaySample;
 struct LightSample;
 class Scene;

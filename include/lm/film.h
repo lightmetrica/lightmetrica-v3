@@ -120,6 +120,14 @@ public:
     virtual void splat(Vec2 rp, Vec3 v) = 0;
 
     /*!
+        \brief Splat the color to the film by pixel coordinates.
+        \param x x coordinate of the film.
+        \param y y coordinate of the film.
+        \param v Color.
+    */
+    virtual void splatPixel(int x, int y, Vec3 v) = 0;
+
+    /*!
         \brief Clear the film.
     */
     virtual void clear() = 0;

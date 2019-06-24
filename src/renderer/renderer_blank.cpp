@@ -41,8 +41,8 @@ public:
         return false;
     }
 
-    virtual void render(const Scene* scene) const override {
-        LM_UNUSED(scene);
+    virtual void render(const Scene*) const override {
+        film_->clear();
         const auto [w, h] = film_->size();
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {

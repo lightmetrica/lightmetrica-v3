@@ -174,6 +174,10 @@ public:
         data_[y*w_+x].add(v);
     }
 
+    virtual void splatPixel(int x, int y, Vec3 v) override {
+        data_[y*w_+x].add(v);
+    }
+
     virtual void clear() override {
         data_.assign(w_*h_, {});
     }

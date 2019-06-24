@@ -165,10 +165,12 @@ private:
     std::uniform_real_distribution<double> dist;  // Always use double
 
 protected:
-    RngImplBase() = default;
+    RngImplBase() {
+        // Initialize eng with random_device
+        eng.seed(std::random_device{}());
+    }
     RngImplBase(int seed) {
         eng.seed(seed);
-        dist.reset();
     }
     double u() { return dist(eng); }
 };
@@ -472,6 +474,28 @@ static Vec3 sampleCosineWeighted(Rng& rng) {
     const auto x = r * std::cos(t);
     const auto y = r * std::sin(t);
     return { x, y, safeSqrt(1_f - x*x - y*y) };
+}
+
+/*!
+    \brief Uniformly sample a direction from an sphere.
+    \param rng Random number generator.
+    \return Sampled value.
+*/
+static Vec3 sampleUniformSphere(Rng& rng) {
+    const auto z = 1_f - 2_f*rng.u();
+    const auto r = safeSqrt(1_f - z*z);
+    const auto t = 2_f * Pi * rng.u();
+    const auto x = r * std::cos(t);
+    const auto y = r * std::sin(t);
+    return { x, y, z };
+}
+
+/*!
+    \brief Pdf of uniformly sampled directions from an sphere in solid angle measure.
+    \return Evaluated density.
+*/
+static constexpr Float pdfUniformSphere() {
+    return 1_f / (4_f * Pi);
 }
 
 /*!

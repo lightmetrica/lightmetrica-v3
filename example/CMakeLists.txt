@@ -18,14 +18,23 @@ endfunction()
 
 # -----------------------------------------------------------------------------
 
+# Non-GUI examples
 lm_add_example(NAME blank SOURCES "blank.cpp")
 lm_add_example(NAME quad SOURCES "quad.cpp")
 lm_add_example(NAME raycast SOURCES "raycast.cpp")
 lm_add_example(NAME pt SOURCES "pt.cpp")
 lm_add_example(NAME custom_material SOURCES "custom_material.cpp")
 lm_add_example(NAME custom_renderer SOURCES "custom_renderer.cpp")
+
+# GUI examples
 if (LM_BUILD_GUI_EXAMPLES)
-    lm_add_example(NAME interactive SOURCES "lmgl.h" "interactive.cpp" LIBRARIES imgui::imgui glfw GLEW::GLEW OpenGL::GL)
+    # Interface target for lmgl.h
+    add_library(lmgl INTERFACE)
+    target_include_directories(lmgl INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/lmgl")
+    target_link_libraries(lmgl INTERFACE imgui::imgui glfw GLEW::GLEW OpenGL::GL)
+
+    # Add GUI examples
+    lm_add_example(NAME interactive SOURCES "interactive.cpp" LIBRARIES lmgl)
     # lm_add_example(NAME debugio_vis_server SOURCES "lmgl.h" "debugio_vis_server.cpp" LIBRARIES imgui)
     # lm_add_example(NAME debugio_vis SOURCES "debugio_vis.cpp")
 endif()

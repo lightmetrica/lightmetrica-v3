@@ -268,7 +268,7 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(objmat_, materials_,
+        ar(objmat_, materials_, typeToIndexMap_,
            diffuse_, glossy_, glass_, mirror_, mask_,
            maskTex_);
     }

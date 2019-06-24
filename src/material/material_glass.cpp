@@ -107,6 +107,14 @@ public:
             Vec3(eta*eta)
         };
     }
+
+    virtual Float pdf(const PointGeometry&, int, Vec3, Vec3) const override {
+        LM_UNREACHABLE_RETURN();
+    }
+
+    virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {
+        LM_UNREACHABLE_RETURN();
+    }
 };
 
 LM_COMP_REG_IMPL(Material_Glass, "material::glass");

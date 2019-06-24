@@ -16,6 +16,49 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
+    // Special function to attach to a debugger
+    // https://stackoverflow.com/questions/20337870/what-is-the-equivalent-of-system-diagnostics-debugger-launch-in-unmanaged-code
+    m.def("attachToDebugger", []() -> void {
+        #if LM_PLATFORM_WINDOWS
+        // Get Windows system directory
+        std::wstring systemDir(MAX_PATH + 1, '\0');
+        auto nc = GetSystemDirectoryW(&systemDir[0], UINT(systemDir.length()));
+        if (nc == 0) {
+            LM_ERROR("Failed to get system directory");
+            return;
+        }
+        systemDir.resize(nc);
+
+        // Get process ID and create the command line
+        DWORD pid = GetCurrentProcessId();
+        std::wostringstream s;
+        s << systemDir << L"\\vsjitdebugger.exe -p " << pid;
+        std::wstring cmdLine = s.str();
+
+        // Start debugger process
+        STARTUPINFOW si;
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        PROCESS_INFORMATION pi;
+        ZeroMemory(&pi, sizeof(pi));
+        if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+            LM_ERROR("Failed to launch vsjitdebugger.exe");
+            return;
+        }
+
+        // Close debugger process handles to eliminate resource leak
+        CloseHandle(pi.hThread);
+        CloseHandle(pi.hProcess);
+
+        // Wait for the debugger to attach
+        while (!IsDebuggerPresent()) {
+            Sleep(100);
+        }
+        #endif
+    });
+
+    // ------------------------------------------------------------------------
+
     #pragma region common.h
 
     // Debug or Release mode
@@ -381,6 +424,9 @@ static void bind(pybind11::module& m) {
         virtual void splat(Vec2 rp, Vec3 v) override {
             PYBIND11_OVERLOAD_PURE(void, Film, splat, rp, v);
         }
+        virtual void splatPixel(int x, int y, Vec3 v) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, splatPixel, x, y, v);
+        }
         virtual void clear() override {
             PYBIND11_OVERLOAD_PURE(void, Film, clear);
         }
@@ -418,12 +464,12 @@ static void bind(pybind11::module& m) {
         .def("opposite", &PointGeometry::opposite)
         .def("orthonormalBasis", &PointGeometry::orthonormalBasis);
 
-    pybind11::class_<SurfacePoint>(m, "SurfacePoint")
+    pybind11::class_<SceneInteraction>(m, "SceneInteraction")
         .def(pybind11::init<>())
-        .def_readwrite("primitive", &SurfacePoint::primitive)
-        .def_readwrite("comp", &SurfacePoint::comp)
-        .def_readwrite("geom", &SurfacePoint::geom)
-        .def_readwrite("endpoint", &SurfacePoint::endpoint);
+        .def_readwrite("primitive", &SceneInteraction::primitive)
+        .def_readwrite("comp", &SceneInteraction::comp)
+        .def_readwrite("geom", &SceneInteraction::geom)
+        .def_readwrite("endpoint", &SceneInteraction::endpoint);
 
     {
         auto sm = m.def_submodule("surface");
@@ -477,40 +523,46 @@ static void bind(pybind11::module& m) {
         virtual void build(const std::string& name, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
         }
-        virtual std::optional<SurfacePoint> intersect(Ray ray, Float tmin, Float tmax) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<SurfacePoint>, Scene, intersect, ray, tmin, tmax);
+        virtual std::optional<SceneInteraction> intersect(Ray ray, Float tmin, Float tmax) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<SceneInteraction>, Scene, intersect, ray, tmin, tmax);
         }
-        virtual bool isLight(const SurfacePoint& sp) const override {
+        virtual bool isLight(const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, isLight, sp);
         }
-        virtual bool isSpecular(const SurfacePoint& sp) const override {
+        virtual bool isSpecular(const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, isSpecular, sp);
         }
         virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const override {
             PYBIND11_OVERLOAD_PURE(Ray, Scene, primaryRay, rp, aspectRatio);
         }
-        virtual std::optional<RaySample> sampleRay(Rng& rng, const SurfacePoint& sp, Vec3 wi) const override {
+        virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleRay, rng, sp, wi);
         }
         virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, samplePrimaryRay, rng, window, aspectRatio);
         }
-        virtual std::optional<RaySample> sampleLight(Rng& rng, const SurfacePoint& sp) const override {
+        virtual std::optional<RaySample> sampleLight(Rng& rng, const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleLight, rng, sp);
         }
-        virtual Float pdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
+        virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, wi, wo);
         }
-        virtual Float pdfLight(const SurfacePoint& sp, const SurfacePoint& spL, Vec3 wo) const override {
+        virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdfLight, sp, spL, wo);
         }
-        virtual Vec3 evalBsdf(const SurfacePoint& sp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalBsdf, sp, wi, wo);
+        virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Scene, sampleDistance, rng, sp, wo);
         }
-        virtual Vec3 evalContrbEndpoint(const SurfacePoint& sp, Vec3 wo) const override {
+        virtual std::optional<Vec3> evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, evalTransmittance, rng, sp1, sp2);
+        }
+        virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrb, sp, wi, wo);
+        }
+        virtual Vec3 evalContrbEndpoint(const SceneInteraction& sp, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrbEndpoint, sp, wo);
         }
-        virtual std::optional<Vec3> reflectance(const SurfacePoint& sp) const override {
+        virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp);
         }
     };
@@ -593,19 +645,19 @@ static void bind(pybind11::module& m) {
             PYBIND11_OVERLOAD(bool, Material, construct, prop);
         }
         virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
-            PYBIND11_OVERLOAD(bool, Material, isSpecular, geom, comp);
+            PYBIND11_OVERLOAD_PURE(bool, Material, isSpecular, geom, comp);
         }
         virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-            PYBIND11_OVERLOAD(std::optional<MaterialDirectionSample>, Material, sample, rng, geom, wi);
+            PYBIND11_OVERLOAD_PURE(std::optional<MaterialDirectionSample>, Material, sample, rng, geom, wi);
         }
         virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
             PYBIND11_OVERLOAD(std::optional<Vec3>, Material, reflectance, geom, comp);
         }
         virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD(Float, Material, pdf, geom, comp, wi, wo);
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdf, geom, comp, wi, wo);
         }
         virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD(Vec3, Material, eval, geom, comp, wi, wo);
+            PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, comp, wi, wo);
         }
     };
     pybind11::class_<Material, Material_Py, Component::Ptr<Material>>(m, "Material")
@@ -622,12 +674,7 @@ static void bind(pybind11::module& m) {
 
 // ----------------------------------------------------------------------------
 
-#if LM_DEBUG_MODE
-PYBIND11_MODULE(pylm_debug, m)
-#else
-PYBIND11_MODULE(pylm, m)
-#endif
-{
+PYBIND11_MODULE(pylm, m) {
     m.doc() = R"x(
         pylm: Python binding of Lightmetrica.
     )x";

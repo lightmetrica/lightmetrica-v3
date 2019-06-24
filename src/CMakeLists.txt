@@ -38,7 +38,9 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/component.h"
     "${_INCLUDE_DIR}/serial.h"
     "${_INCLUDE_DIR}/surface.h"
-    "${_INCLUDE_DIR}/objloader.h")
+    "${_INCLUDE_DIR}/objloader.h"
+    "${_INCLUDE_DIR}/medium.h"
+    "${_INCLUDE_DIR}/phase.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"
@@ -72,7 +74,12 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
     "${_SOURCE_DIR}/renderer/renderer_raycast.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
-    "${_SOURCE_DIR}/renderer/renderer_ptdirect.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_pt_naive.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_volpt.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_volpt_naive.cpp"
+    "${_SOURCE_DIR}/medium/medium_homogeneous.cpp"
+    "${_SOURCE_DIR}/phase/phase_hg.cpp"
+    "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
 # Add a shared library
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
@@ -159,16 +166,10 @@ add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES})
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
-# Use postfix '_debug' because python's import doesn't support hypens in a module name
-set_target_properties(${_PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "_debug")
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")
 # Export extension modules to the module directory
 set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-#set(_PYTHON_MODULE_DIR "${PROJECT_SOURCE_DIR}/lightmetrica")
-#set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${_PYTHON_MODULE_DIR}")
-#set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG "${_PYTHON_MODULE_DIR}")
-#set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE "${_PYTHON_MODULE_DIR}")
 if (LM_INSTALL)
     install(
         TARGETS ${_PROJECT_NAME}

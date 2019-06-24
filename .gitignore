@@ -35,12 +35,14 @@ doc/_build
 jupyter
 *.serialized
 .lmenv
+.lmenv_debug
 *.ipynb
 functest/output
 functest/executed_functest
 functest/_lm_renderer_ao.py
 functest/_run_worker_process.py
 functest/blank.png
+functest/temp
 
 # https://github.com/github/gitignore/blob/master/Python.gitignore
 # Byte-compiled / optimized / DLL files
