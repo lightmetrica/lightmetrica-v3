@@ -78,6 +78,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_volpt.cpp"
     "${_SOURCE_DIR}/renderer/renderer_volpt_naive.cpp"
     "${_SOURCE_DIR}/medium/medium_homogeneous.cpp"
+    "${_SOURCE_DIR}/medium/medium_heterogeneous.cpp"
     "${_SOURCE_DIR}/phase/phase_hg.cpp"
     "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
