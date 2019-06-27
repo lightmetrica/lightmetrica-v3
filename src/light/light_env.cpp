@@ -71,19 +71,20 @@ public:
         const auto p  = 2 * Pi * u[0] + rot_;
         const auto wo = -Vec3(st * sin(p), cos(t), st * cos(p));
         const auto geomL = PointGeometry::makeInfinite(wo);
-        const auto pL = pdf(geom, geomL, {}, wo);
+        const auto pL = pdf(geom, geomL, 0, {}, wo);
         if (pL == 0_f) {
             return {};
         }
-        const auto Le = eval(geomL, wo);
+        const auto Le = eval(geomL, 0, wo);
         return LightRaySample{
             geomL,
             wo,
+            0,
             Le / pL
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, const Transform&, Vec3) const override {
+    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
         const auto d  = -geomL.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);
@@ -99,7 +100,7 @@ public:
         return dist_.p(u, v) / (2_f*Pi*Pi*st*glm::abs(glm::dot(d, geom.n)));
     }
 
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return false;
     }
 
@@ -107,7 +108,7 @@ public:
         return true;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3) const override {
+    virtual Vec3 eval(const PointGeometry& geom, int, Vec3) const override {
         const auto d = -geom.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);

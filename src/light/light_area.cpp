@@ -81,24 +81,25 @@ public:
             transform.normalM * n);
         const auto ppL = geomL.p - geom.p;
         const auto wo = glm::normalize(ppL);
-        const auto pL = pdf(geom, geomL, transform, -wo);
+        const auto pL = pdf(geom, geomL, 0, transform, -wo);
         if (pL == 0_f) {
             return {};
         }
-        const auto Le = eval(geomL, -wo);
+        const auto Le = eval(geomL, 0, -wo);
         return LightRaySample{
             geomL,
             -wo,
+            0,
             Le / pL
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3) const override {
+    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform& transform, Vec3) const override {
         const auto G = surface::geometryTerm(geom, geomL);
         return G == 0_f ? 0_f : tranformedInvA(transform) / G;
     }
 
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return false;
     }
 
@@ -106,7 +107,7 @@ public:
         return false;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
+    virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wo) const override {
         return glm::dot(wo, geom.n) <= 0_f ? Vec3(0_f) : Ke_;
     }
 };

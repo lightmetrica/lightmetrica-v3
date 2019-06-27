@@ -27,6 +27,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 struct LightRaySample {
     PointGeometry geom;   //!< Sampled geometry information.
     Vec3 wo;              //!< Sampled direction.
+    int comp;             //!< Sampled component.
     Vec3 weight;          //!< Contribution divided by probability.
 };
 
@@ -43,13 +44,14 @@ public:
     /*!
         \brief Check if the light contains delta component.
         \param geom Surface geometry information.
+        \param comp Component index.
 
         \rst
         This function returns true if the luminance function :math:`L_e` of the light source
         contains a component of delta function.
         \endrst
     */
-    virtual bool isSpecular(const PointGeometry& geom) const = 0;
+    virtual bool isSpecular(const PointGeometry& geom, int comp) const = 0;
 
     /*!
         \brief Sample a position on the light.
@@ -78,6 +80,7 @@ public:
         \brief Evaluate pdf for light sampling in projected solid angle measure.
         \param geom Point geometry on the scene surface.
         \param geomL Point geometry on the light source.
+        \param comp Component index.
         \param transform Transformation of the light source.
         \param wo Outgoing direction from the point of the light source.
 
@@ -87,7 +90,7 @@ public:
         If the given direction cannot be sampled, the function returns zero.
         \endrst
     */
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const = 0;
+    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int comp, const Transform& transform, Vec3 wo) const = 0;
 
     /*!
         \brief Check if the light source is inifite distant light.
@@ -108,7 +111,7 @@ public:
         This function evaluates luminance function :math:`L_e` of the light source.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const = 0;
+    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wo) const = 0;
 };
 
 /*!

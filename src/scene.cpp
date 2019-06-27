@@ -311,7 +311,7 @@ public:
         }
         if (sp.endpoint) {
             if (primitive.light) {
-                return primitive.light->isSpecular(sp.geom);
+                return primitive.light->isSpecular(sp.geom, sp.comp);
             }
             else if (primitive.camera) {
                 return primitive.camera->isSpecular(sp.geom);
@@ -398,7 +398,7 @@ public:
         return RaySample{
             SceneInteraction{
                 light.index,
-                0,
+                s->comp,
                 s->geom,
                 true,
                 false
@@ -422,7 +422,7 @@ public:
         const auto& primitive = nodes_.at(spL.primitive).primitive;
         const auto lightTransform = lights_.at(lightIndicesMap_.at(spL.primitive)).globalTransform;
         const auto pL = 1_f / int(lights_.size());
-        return primitive.light->pdf(sp.geom, spL.geom, lightTransform, wo) * pL;
+        return primitive.light->pdf(sp.geom, spL.geom, spL.comp, lightTransform, wo) * pL;
     }
 
     // ------------------------------------------------------------------------
@@ -484,7 +484,7 @@ public:
                     return primitive.camera->eval(sp.geom, wo);
                 }
                 else if (primitive.light) {
-                    return primitive.light->eval(sp.geom, wo);
+                    return primitive.light->eval(sp.geom, sp.comp, wo);
                 }
                 LM_UNREACHABLE();
             }
@@ -497,7 +497,7 @@ public:
         if (!primitive.light) {
             return {};
         }
-        return primitive.light->eval(sp.geom, wo);
+        return primitive.light->eval(sp.geom, sp.comp, wo);
     }
 
     virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const override {

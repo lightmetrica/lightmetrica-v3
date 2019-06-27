@@ -343,9 +343,10 @@ public:
         primitives_.push_back({ "", lm::Mat4(1_f), meshidx, materialidx });
     }
 
-    void addByName(const std::string& name, int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
+    int addByName(const std::string& name, int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
         auto* mesh = new GLMesh(type, vs);
         auto* material = new GLMaterial(color, true, false);
+        const int index = int(primitives_.size());
         if (namedPrimitiveMap_.find(name) != namedPrimitiveMap_.end()) {
             const auto& p = primitives_[namedPrimitiveMap_[name]];
             meshes_[p.mesh].reset(mesh);
@@ -356,9 +357,14 @@ public:
             int materialidx = int(materials_.size());
             meshes_.emplace_back(mesh);
             materials_.emplace_back(material);
-            namedPrimitiveMap_[name] = int(primitives_.size());
+            namedPrimitiveMap_[name] = index;
             primitives_.push_back({ name, lm::Mat4(1_f), meshidx, materialidx });
         }
+        return index;
+    }
+
+    GLPrimitive& primitiveAt(int i) {
+        return primitives_.at(i);
     }
 
     GLPrimitive& primitiveByName(const std::string& name) {
