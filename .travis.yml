@@ -11,6 +11,7 @@ matrix:
     script:
     - docker build -t lm3 .
     # Using travis_wait because docker run might take more than 10 minutes.
+    # https://docs.travis-ci.com/user/common-build-problems/#Build-times-out-because-no-output-was-received
     - travis_wait docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c \
         'cd /lightmetrica-v3/functest &&
         mv .lmenv_docker .lmenv &&
