@@ -22,7 +22,7 @@ WORKDIR /
 RUN curl -OJLs https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 RUN bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda -b
 ENV PATH=${PATH}:/miniconda/bin
-RUN conda update -y conda && conda install -y -c conda-forge -c hi2p-perim \
+RUN conda update -y conda && conda install -y -c hi2p-perim -c conda-forge \
     python=3.7 \
     cmake \
     ninja \
