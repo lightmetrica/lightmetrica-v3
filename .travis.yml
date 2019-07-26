@@ -9,7 +9,7 @@ matrix:
     before_install:
     - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git scenes
     script:
-    - docker build -t lm3 .
+    - docker build -t lm3 . 
     # travis_wait and docker run
     # https://github.com/travis-ci/travis-ci/issues/6934
     - travis_wait 120 sleep infinity & docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c \
