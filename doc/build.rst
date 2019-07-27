@@ -247,8 +247,8 @@ Working with Docker containers
 
 We prepared Dockerfiles to setup linux environments for several use-cases.
 
-``Dockerfile`` in the root directory of the framework setups the dependencies using the strategy described in :ref:`using_preinstalled_packages`,
-and builds the framework, followed by the execution of the unit tests. The Dockerfile is also used in the automatic build with CI service.
+``Dockerfile`` in the root directory of the framework setups the dependencies with conda packages and builds the framework,
+followed by the execution of the unit tests. The Dockerfile is also used in the automatic build with CI service.
 The following commands build a docker image ``lm3``.
 
 .. code-block:: console

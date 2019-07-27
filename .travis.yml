@@ -45,7 +45,7 @@ jobs:
       sudo: required
       services: docker
       before_install:
-        - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git 
+        - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git scenes
       script:
         - travis_wait 120 sleep infinity & docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 $DOCKER_USERNAME/lightmetrica-v3-travis sh -c \
           'cd /lightmetrica-v3/functest &&
