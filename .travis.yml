@@ -3,7 +3,7 @@ language: bash
 jobs:
   include:
     - stage: Build
-      name: Build on Linux environment with Docker"
+      name: Build on Linux environment with Docker
       os: linux
       sudo: required
       services: docker
