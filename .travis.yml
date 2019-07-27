@@ -9,7 +9,7 @@ jobs:
       services: docker
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - docker build -t lm3 .
+        - docker build -t lightmetrica-v3-travis .
         - docker images
         - docker tag lightmetrica-v3-travis $DOCKER_USERNAME/lightmetrica-v3-travis
         - docker push $DOCKER_USERNAME/lightmetrica-v3-travis
