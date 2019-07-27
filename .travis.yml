@@ -2,10 +2,6 @@ language: bash
 
 jobs:
   include:
-    - 
-
-matrix:
-  include:
     - stage: Build
       name: Build on Linux environment with Docker"
       os: linux
