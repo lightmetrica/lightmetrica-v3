@@ -8,12 +8,13 @@ jobs:
       sudo: required
       services: docker
       script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         - docker build -t lm3 .
         - docker images
         - docker tag lightmetrica-v3-travis $DOCKER_USERNAME/lightmetrica-v3-travis
         - docker push $DOCKER_USERNAME/lightmetrica-v3-travis
       
-    - name: "Build on Windows environment"
+    - name: Build on Windows environment
       os: windows
       dist: 1803-containers
       # Workaround for https://travis-ci.community/t/choco-install-hangs-forever/307/20
@@ -38,7 +39,7 @@ jobs:
         cd _build/bin/Release
         ./lm_test.exe
 
-    # We separated a job for tests to meet the limit of maximum run time
+    # We separated a job for tests to meet the limit of maximum running time
     - stage: Functional tests and documentation
       os: linux
       sudo: required
