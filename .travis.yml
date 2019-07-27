@@ -1,59 +1,72 @@
 language: bash
 
+jobs:
+  include:
+    - 
+
 matrix:
   include:
-  - name: "Build on Linux environment with Docker"
-    os: linux
-    sudo: required
-    services: docker
-    before_install:
-    - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git scenes
-    script:
-    - docker build -t lm3 . 
-    # travis_wait and docker run
-    # https://github.com/travis-ci/travis-ci/issues/6934
-    - travis_wait 120 sleep infinity & docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 sh -c \
-        'cd /lightmetrica-v3/functest &&
-        mv .lmenv_docker .lmenv &&
-        python run_all.py &&
-        cp -r executed_functest /lm3/doc/ &&
-        cd /lm3/doc &&
-        mkdir _build &&
-        doxygen &&
-        make html &&
-        touch _build/html/.nojekyll'
-    deploy:
-      provider: pages
-      repo: lightmetrica/lightmetrica-v3-doc
-      local_dir: doc/_build/html
-      skip_cleanup: true
-      github_token: $GITHUB_TOKEN
-      keep_history: false
-      target-branch: master
-      on:
-        branch: master
+    - stage: Build
+      name: Build on Linux environment with Docker"
+      os: linux
+      sudo: required
+      services: docker
+      script:
+        - docker build -t lm3 .
+        - docker images
+        - docker tag lightmetrica-v3-travis $DOCKER_USERNAME/lightmetrica-v3-travis
+        - docker push $DOCKER_USERNAME/lightmetrica-v3-travis
+      
+    - name: "Build on Windows environment"
+      os: windows
+      dist: 1803-containers
+      # Workaround for https://travis-ci.community/t/choco-install-hangs-forever/307/20
+      filter_secrets: false
+      before_install:
+      - |
+        choco install openssl.light
+        choco install miniconda3
+        export PATH="/c/Tools/miniconda3/Scripts:$PATH"
+        # Calling activate command with conda>=4.6.9 in bash on Windows is not working.
+        # For workaround, we stick to 4.6.8.
+        # https://github.com/conda/conda/issues/8506
+        conda install -y -n base conda=4.6.8
+        cd ${TRAVIS_BUILD_DIR}
+        conda env create -f environment_win.yml
+        source activate lm3_dev
+      script:
+      - |
+        cd ${TRAVIS_BUILD_DIR}
+        cmake -G "Visual Studio 15 2017 Win64" -H. -B_build -DCMAKE_BUILD_TYPE=Release
+        cmake --build _build --config Release
+        cd _build/bin/Release
+        ./lm_test.exe
 
-  - name: "Build on Windows environment"
-    os: windows
-    dist: 1803-containers
-    # Workaround for https://travis-ci.community/t/choco-install-hangs-forever/307/20
-    filter_secrets: false
-    before_install:
-    - |
-      choco install openssl.light
-      choco install miniconda3
-      export PATH="/c/Tools/miniconda3/Scripts:$PATH"
-      # Calling activate command with conda>=4.6.9 in bash on Windows is not working.
-      # For workaround, we stick to 4.6.8.
-      # https://github.com/conda/conda/issues/8506
-      conda install -y -n base conda=4.6.8
-      cd ${TRAVIS_BUILD_DIR}
-      conda env create -f environment_win.yml
-      source activate lm3_dev
-    script:
-    - |
-      cd ${TRAVIS_BUILD_DIR}
-      cmake -G "Visual Studio 15 2017 Win64" -H. -B_build -DCMAKE_BUILD_TYPE=Release
-      cmake --build _build --config Release
-      cd _build/bin/Release
-      ./lm_test.exe
+    # We separated a job for tests to meet the limit of maximum run time
+    - stage: Functional tests and documentation
+      os: linux
+      sudo: required
+      services: docker
+      before_install:
+        - git clone https://$GITHUB_TOKEN@github.com/hi2p-perim/lightmetrica-v3-scenes-2.git 
+      script:
+        - travis_wait 120 sleep infinity & docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 $DOCKER_USERNAME/lightmetrica-v3-travis sh -c \
+          'cd /lightmetrica-v3/functest &&
+          mv .lmenv_docker .lmenv &&
+          python run_all.py &&
+          cp -r executed_functest /lm3/doc/ &&
+          cd /lm3/doc &&
+          mkdir _build &&
+          doxygen &&
+          make html &&
+          touch _build/html/.nojekyll'
+      deploy:
+        provider: pages
+        repo: lightmetrica/lightmetrica-v3-doc
+        local_dir: doc/_build/html
+        skip_cleanup: true
+        github_token: $GITHUB_TOKEN
+        keep_history: false
+        target-branch: master
+        on:
+          branch: master
