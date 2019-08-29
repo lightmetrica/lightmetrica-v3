@@ -213,7 +213,10 @@ public:
         The function is called internally. The users do not want to use this directly.
         \endrst
     */
-    virtual void load(InputArchive& ar) { LM_UNUSED(ar); }
+    virtual void load(InputArchive& ar) {
+		throw std::runtime_error("Loading unserializable component");
+		LM_UNUSED(ar);
+	}
 
     /*!
         \brief Serialize a component.
@@ -224,7 +227,10 @@ public:
         The function is called internally. The users do not want to use this directly.
         \endrst
     */
-    virtual void save(OutputArchive& ar) { LM_UNUSED(ar); }
+    virtual void save(OutputArchive& ar) {
+		throw std::runtime_error("Saving unserializable component");
+		LM_UNUSED(ar);
+	}
 
 public:
     /*!

@@ -64,6 +64,21 @@ static void bind(pybind11::module& m) {
     // Debug or Release mode
     m.attr("Debug") = LM_DEBUG_MODE ? true : false;
 
+	// Configuration
+	enum class ConfigType {
+		Debug,
+		Release,
+		RelWithDebInfo
+	};
+	pybind11::enum_<ConfigType>(m, "ConfigType")
+		.value("Debug", ConfigType::Debug)
+		.value("Release", ConfigType::Release)
+		.value("RelWithDebInfo", ConfigType::RelWithDebInfo);
+	m.attr("Config") =
+		LM_CONFIG_DEBUG ? ConfigType::Debug :
+		LM_CONFIG_RELEASE ? ConfigType::Release :
+		ConfigType::RelWithDebInfo;
+
     // Supported floating point type
     enum class FloatPrecisionType {
         Float32,

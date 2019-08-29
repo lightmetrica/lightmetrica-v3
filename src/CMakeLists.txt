@@ -40,7 +40,8 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/surface.h"
     "${_INCLUDE_DIR}/objloader.h"
     "${_INCLUDE_DIR}/medium.h"
-    "${_INCLUDE_DIR}/phase.h")
+    "${_INCLUDE_DIR}/phase.h"
+    "${_INCLUDE_DIR}/volume.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"
@@ -79,6 +80,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_volpt_naive.cpp"
     "${_SOURCE_DIR}/medium/medium_homogeneous.cpp"
     "${_SOURCE_DIR}/medium/medium_heterogeneous.cpp"
+    "${_SOURCE_DIR}/volume/volume_checker.cpp"
     "${_SOURCE_DIR}/phase/phase_hg.cpp"
     "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
@@ -118,6 +120,11 @@ target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_SILENCE_ALL_CXX17_DEPRECAT
 target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_CRT_SECURE_NO_WARNINGS)
 # Use SIMD in glm
 target_compile_definitions(${_PROJECT_NAME} PUBLIC -DGLM_FORCE_INTRINSICS)
+# Configuration flag
+target_compile_definitions(${_PROJECT_NAME} PUBLIC
+    $<$<CONFIG:Debug>:LM_USE_CONFIG_DEBUG>
+    $<$<CONFIG:Release>:LM_USE_CONFIG_RELEASE>
+    $<$<CONFIG:RelWithDebInfo>:LM_USE_CONFIG_RELWITHDEBINFO>)
 # Use C++17
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 # Enable warning level 4, treat warning as errors, enable SEH

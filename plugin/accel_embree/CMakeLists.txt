@@ -24,7 +24,7 @@ if (embree_FOUND)
             "accel_embree.cpp"
             "accel_embree_instanced.cpp")
 
-    # Configure to dynamic library
+    # Custom command to copy dynamic libraries
     if (WIN32)
         include(LmCopyDll)
         add_custom_target(copydll_embree)
