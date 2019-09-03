@@ -42,6 +42,10 @@ private:
         LM_UNREACHABLE_RETURN();
     }
 
+    virtual Float pdfComp(const PointGeometry&, int, Vec3) const override {
+        return 1_f;
+    }
+
     virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {
         LM_UNREACHABLE_RETURN();
     }

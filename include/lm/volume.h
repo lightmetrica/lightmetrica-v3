@@ -25,20 +25,44 @@ public:
 	*/
 	virtual Bound bound() const = 0;
 
+	// ------------------------------------------------------------------------
+
 	/*!
-		\brief Evaluate maximum density.
+		\brief Returns true if the volume has scalar component.
 	*/
-	virtual Float maxDensity() const = 0;
+	virtual bool hasScalar() const = 0;
+
+	/*!
+		\brief Evaluate maximum scalar value.
+	*/
+	virtual Float maxScalar() const {
+		LM_THROW_UNIMPLEMENTED();
+	}
 
 	/*!
 		\brief Evaluate density.
 	*/
-	virtual Float evalDensity(Vec3 p) const = 0;
+	virtual Float evalScalar(Vec3 p) const {
+		LM_UNUSED(p);
+		LM_THROW_UNIMPLEMENTED();
+	}
+
+	// ------------------------------------------------------------------------
 
 	/*!
-		\brief Evaluate albedo.
+		\brief Returns true if the volume has color component.
 	*/
-	virtual Vec3 evalAlbedo(Vec3 p) const = 0;
+	virtual bool hasColor() const = 0;
+
+	/*!
+		\brief Evaluate color.
+	*/
+	virtual Vec3 evalColor(Vec3 p) const {
+		LM_UNUSED(p);
+		LM_THROW_UNIMPLEMENTED();
+	}
+
+	// ------------------------------------------------------------------------
 
 	/*!
 		\brief Callback function called for ray marching.

@@ -42,6 +42,14 @@ LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop 
 LM_PUBLIC_API void shutdown();
 
 /*!
+	\brief Progress reporting mode.
+*/
+enum class ProgressMode {
+	Samples,
+	Time
+};
+
+/*!
     \brief Start progress reporting.
     \param total Total number of iterations.
 
@@ -53,7 +61,7 @@ LM_PUBLIC_API void shutdown();
     the floating point exception inside a scope.
     \endrst
 */
-LM_PUBLIC_API void start(long long total);
+LM_PUBLIC_API void start(ProgressMode mode, long long total, double totalTime);
 
 /*!
     \brief End progress reporting.
@@ -79,13 +87,28 @@ LM_PUBLIC_API void end();
 LM_PUBLIC_API void update(long long processed);
 
 /*!
+    \brief Update time progress.
+*/
+LM_PUBLIC_API void updateTime(Float elapsed);
+
+/*!
     \brief Scoped guard of `start` and `end` functions.
 */
 class ScopedReport {
 public:
-    ScopedReport(long long total) { start(total); }
+    ScopedReport(long long total) { start(ProgressMode::Samples, total, -1); }
     ~ScopedReport() { end(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedReport)
+};
+
+/*!
+	\brief Scoped guard of `startTime` and `end` functions.
+*/
+class ScopedTimeReport {
+public:
+	ScopedTimeReport(double totalTime) { start(ProgressMode::Time, -1, totalTime); }
+	~ScopedTimeReport() { end(); }
+	LM_DISABLE_COPY_AND_MOVE(ScopedTimeReport)
 };
 
 /*!
@@ -112,8 +135,9 @@ LM_NAMESPACE_BEGIN(detail)
 */
 class ProgressContext : public Component {
 public:
-    virtual void start(long long total) = 0;
+    virtual void start(ProgressMode mode, long long total, double totalTime) = 0;
     virtual void update(long long processed) = 0;
+    virtual void updateTime(Float elapsed) = 0;
     virtual void end() = 0;
 };
 

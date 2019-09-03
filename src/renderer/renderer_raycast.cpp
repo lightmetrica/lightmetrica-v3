@@ -46,8 +46,7 @@ public:
     virtual void render(const Scene* scene) const override {
         film_->clear();
         const auto [w, h] = film_->size();
-        const long long samples = w * h;
-        parallel::foreach(samples, [&](long long index, int) {
+        parallel::foreach(film_->numPixels(), [&](long long index, int) {
             const int x = int(index % w);
             const int y = int(index / w);
             const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h}, film_->aspectRatio());

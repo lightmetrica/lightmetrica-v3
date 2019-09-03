@@ -15,17 +15,19 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Medium_Heterogeneous final : public Medium {
 private:
-	const Volume* volume_;	// Volume data.
-    const Phase* phase_;    // Underlying phase function.
+	const Volume* volumeDensity_;	// Density volume.
+	const Volume* volmeAlbedo_;		// Albedo volume.
+    const Phase* phase_;			// Underlying phase function.
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(volume_, phase_);
+        ar(volumeDensity_, volmeAlbedo_, phase_);
     }
 
 public:
     virtual bool construct(const Json& prop) override {
-		volume_ = json::compRef<Volume>(prop, "volume");
+		volumeDensity_ = json::compRef<Volume>(prop, "volume_density");
+		volmeAlbedo_ = json::compRef<Volume>(prop, "volume_albedo");
         phase_ = json::compRef<Phase>(prop, "phase");
         return true;
     }
@@ -34,14 +36,14 @@ public:
         // Compute overlapping range between the ray and the volume
         Float tmin = 0_f;
         Float tmax = distToSurf;
-        if (!volume_->bound().isectRange(Ray{ geom.p, wo }, tmin, tmax)) {
+        if (!volumeDensity_->bound().isectRange(Ray{ geom.p, wo }, tmin, tmax)) {
             // No intersection with the volume, use surface interaction
             return {};
         }
         
         // Sample distance by delta tracking
         Float t = tmin;
-        const auto invMaxDensity = 1_f / volume_->maxDensity();
+        const auto invMaxDensity = 1_f / volumeDensity_->maxScalar();
         while (true) {
             // Sample a distance from the 'homogenized' volume
             t -= glm::log(1_f-rng.u()) * invMaxDensity;
@@ -52,12 +54,12 @@ public:
 
             // Density at the sampled point
             const auto p = geom.p + wo * t;
-            const auto density = volume_->evalDensity(p);
+            const auto density = volumeDensity_->evalScalar(p);
 
             // Determine scattering collision or null collision
             if (density * invMaxDensity > rng.u()) {
                 // Scattering collision
-                const auto albedo = volume_->evalAlbedo(p);
+                const auto albedo = volmeAlbedo_->evalColor(p);
                 return MediumDistanceSample{
                     geom.p + wo*t,
                     albedo * density,
@@ -76,7 +78,7 @@ public:
         // Compute overlapping range
         Float tmin = 0_f;
         Float tmax = glm::distance(geom1.p, geom2.p);
-        if (!volume_->bound().isectRange(Ray{ geom1.p, wo }, tmin, tmax)) {
+        if (!volumeDensity_->bound().isectRange(Ray{ geom1.p, wo }, tmin, tmax)) {
             // No intersection with the volume, no attenuation
             return Vec3(1_f);
         }
@@ -84,14 +86,14 @@ public:
         // Perform ratio tracking [Novak et al. 2014]
         Float Tr = 1_f;
         Float t = tmin;
-        const auto invMaxDensity = 1_f / volume_->maxDensity();
+        const auto invMaxDensity = 1_f / volumeDensity_->maxScalar();
         while (true) {
             t -= glm::log(1_f - rng.u()) * invMaxDensity;
             if (t >= tmax) {
                 break;
             }
             const auto p = geom1.p + wo * t;
-            const auto density = volume_->evalDensity(p);
+            const auto density = volumeDensity_->evalScalar(p);
             Tr *= 1_f - density * invMaxDensity;
         }
 

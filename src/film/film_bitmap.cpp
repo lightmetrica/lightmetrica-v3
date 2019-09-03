@@ -48,6 +48,11 @@ struct AtomicWrapper {
         auto expected = v_.load();
         while (!v_.compare_exchange_weak(expected, expected + v));
     }
+
+    void updateWithFunc(const std::function<T(T curr)>& updateFunc) {
+        auto expected = v_.load();
+        while (!v_.compare_exchange_weak(expected, updateFunc(expected)));
+    }
 };
 
 /*
@@ -87,6 +92,10 @@ public:
 
     virtual FilmSize size() const override {
         return { w_, h_ };
+    }
+
+    virtual long long numPixels() const override {
+        return w_ * h_;
     }
 
     virtual void setPixel(int x, int y, Vec3 v) override {
@@ -176,6 +185,10 @@ public:
 
     virtual void splatPixel(int x, int y, Vec3 v) override {
         data_[y*w_+x].add(v);
+    }
+
+    virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) override {
+        data_[y*w_+x].updateWithFunc(updateFunc);
     }
 
     virtual void clear() override {

@@ -14,10 +14,12 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
 
 class ParallelContext_OpenMP final : public ParallelContext {
 private:
-    int numThreads_;
+    long long progressUpdateInterval_;	// Number of samples per progress update
+    int numThreads_;					// Number of threads
 
 public:
     virtual bool construct(const Json& prop) override {
+        progressUpdateInterval_ = json::value<long long>(prop, "progress_update_interval", 100);
         numThreads_ = json::value(prop, "numThreads", std::thread::hardware_concurrency());
         if (numThreads_ <= 0) {
             numThreads_ = std::thread::hardware_concurrency() + numThreads_;
@@ -34,17 +36,14 @@ public:
         return omp_get_thread_num() == 0;
     }
 
-    virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc) const override {
-        // Processed number of samples
-        std::atomic<long long> processed = 0;
-
+    virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc& progressUpdateFunc) const override {
         // Captured exceptions inside the parallel loop
         std::atomic<bool> done = false;
         std::exception_ptr exp;
         std::mutex explock;
 
         // Execute parallel loop
-        progress::ScopedReport progress_(numSamples);
+        std::atomic<long long> processed = 0;
         #pragma omp parallel for schedule(dynamic, 1)
         for (long long i = 0; i < numSamples; i++) {
             // Spin the loop if cancellation is requested
@@ -61,18 +60,27 @@ public:
             // same thread that threw the exception.
             try {
                 const int threadId = omp_get_thread_num();
+
+                #if LM_PLATFORM_WINDOWS
+                // Set process group
+                GROUP_AFFINITY mask;
+                if (GetNumaNodeProcessorMaskEx(threadId % 2, &mask)) {
+                    SetThreadGroupAffinity(GetCurrentThread(), &mask, nullptr);
+                }
+                #endif
+
+                // Dispatch user-defined process
                 processFunc(i, threadId);
 
                 // Update processed number of samples
-                constexpr long long UpdateInterval = 100;
-                if (thread_local long long count = 0; ++count >= UpdateInterval) {
+                if (thread_local long long count = 0; ++count >= progressUpdateInterval_) {
                     processed += count;
                     count = 0;
                 }
 
                 // Update progress
                 if (threadId == 0) {
-                    progress::update(processed);
+                    progressUpdateFunc(processed);
                 }
             }
             catch (...) {

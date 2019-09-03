@@ -327,6 +327,10 @@ static void bind(pybind11::module& m) {
     {
         auto sm = m.def_submodule("progress");
 
+		pybind11::enum_<progress::ProgressMode>(sm, "ProgressMode")
+			.value("Samples", progress::ProgressMode::Samples)
+			.value("Time", progress::ProgressMode::Time);
+
         sm.def("init", &progress::init, "type"_a = progress::DefaultType, "prop"_a = Json{});
         sm.def("shutdown", &progress::shutdown);
         sm.def("start", &progress::start);
@@ -338,8 +342,8 @@ static void bind(pybind11::module& m) {
             virtual bool construct(const Json& prop) override {
                 PYBIND11_OVERLOAD(bool, ProgressContext, construct, prop);
             }
-            virtual void start(long long total) override {
-                PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, total);
+            virtual void start(progress::ProgressMode mode, long long total, double totalTime) override {
+                PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, mode, total, totalTime);
             }
             virtual void end() override {
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, end);
@@ -347,12 +351,16 @@ static void bind(pybind11::module& m) {
             virtual void update(long long processed) override {
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
             }
+            virtual void updateTime(Float elapsed) override {
+                PYBIND11_OVERLOAD_PURE(void, ProgressContext, updateTime, elapsed);
+            }
         };
         pybind11::class_<ProgressContext, ProgressContext_Py, Component::Ptr<ProgressContext>>(sm, "ProgressContext")
             .def(pybind11::init<>())
             .def("start", &ProgressContext::start)
             .def("end", &ProgressContext::end)
             .def("update", &ProgressContext::update)
+            .def("updateTime", &ProgressContext::updateTime)
             .PYLM_DEF_COMP_BIND(ProgressContext);
     }
     #pragma endregion
@@ -424,6 +432,9 @@ static void bind(pybind11::module& m) {
         virtual FilmSize size() const override {
             PYBIND11_OVERLOAD_PURE(FilmSize, Film, size);
         }
+        virtual long long numPixels() const override {
+            PYBIND11_OVERLOAD_PURE(long long, Film, numPixels);
+        }
         virtual void setPixel(int x, int y, Vec3 v) override {
             PYBIND11_OVERLOAD_PURE(void, Film, setPixel, x, y, v);
         }
@@ -442,6 +453,9 @@ static void bind(pybind11::module& m) {
         virtual void splatPixel(int x, int y, Vec3 v) override {
             PYBIND11_OVERLOAD_PURE(void, Film, splatPixel, x, y, v);
         }
+        virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, updatePixel, x, y, updateFunc);
+        }
         virtual void clear() override {
             PYBIND11_OVERLOAD_PURE(void, Film, clear);
         }
@@ -450,6 +464,7 @@ static void bind(pybind11::module& m) {
         .def(pybind11::init<>())
         .def("loc", &Film::loc)
         .def("size", &Film::size)
+        .def("numPixels", &Film::numPixels)
         .def("setPixel", &Film::setPixel)
         .def("save", &Film::save)
         .def("aspectRatio", &Film::aspectRatio)
@@ -562,6 +577,9 @@ static void bind(pybind11::module& m) {
         virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, wi, wo);
         }
+        virtual Float pdfComp(const SceneInteraction& sp, Vec3 wi) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdfComp, sp, wi);
+        }
         virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdfLight, sp, spL, wo);
         }
@@ -670,6 +688,9 @@ static void bind(pybind11::module& m) {
         }
         virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Material, pdf, geom, comp, wi, wo);
+        }
+        virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdfComp, geom, comp, wi);
         }
         virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, comp, wi, wo);

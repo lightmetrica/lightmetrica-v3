@@ -17,6 +17,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/user.h"
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/progress.h"
+    "${_INCLUDE_DIR}/scheduler.h"
     "${_INCLUDE_DIR}/debugio.h"
     "${_INCLUDE_DIR}/dist.h"
     "${_INCLUDE_DIR}/exception.h"
@@ -51,6 +52,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/exception.cpp"
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/progress.cpp"
+    "${_SOURCE_DIR}/scheduler.cpp"
     "${_SOURCE_DIR}/debugio.cpp"
     "${_SOURCE_DIR}/dist.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
@@ -81,6 +83,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/medium/medium_homogeneous.cpp"
     "${_SOURCE_DIR}/medium/medium_heterogeneous.cpp"
     "${_SOURCE_DIR}/volume/volume_checker.cpp"
+    "${_SOURCE_DIR}/volume/volume_constant.cpp"
     "${_SOURCE_DIR}/phase/phase_hg.cpp"
     "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")

@@ -61,7 +61,7 @@ public:
 			Vec3 Tr(1_f);
 			volume_->march(ray, Eps, Inf, marchStep_, [&](Vec3 p) {
 				// Compute transmittance
-				const auto density = volume_->evalDensity(p);
+				const auto density = volume_->evalScalar(p);
 				const auto muT = muT_ * density;
 				const auto T = glm::exp(-muT * marchStep_);
 
@@ -70,7 +70,7 @@ public:
 				Ray shadowRay{ p, lightDir_ };
 				Vec3 Tr_shadow(1_f);
 				volume_->march(shadowRay, Eps, Inf, marchStepShadow_, [&](Vec3 p_shadow) {
-					const auto density_shadow = volume_->evalDensity(p_shadow);
+					const auto density_shadow = volume_->evalScalar(p_shadow);
 					const auto muT_shadow = muT_ * density_shadow;
 					const auto T_shadow = glm::exp(-muT_shadow * marchStepShadow_);
 					Tr_shadow *= T_shadow;

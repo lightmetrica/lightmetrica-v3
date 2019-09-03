@@ -33,11 +33,15 @@ public:
 		return bound_;
 	}
 
-	virtual Float maxDensity() const override {
+	virtual bool hasScalar() const override {
+		return true;
+	}
+
+	virtual Float maxScalar() const override {
 		return 1_f;
 	}
 
-	virtual Float evalDensity(Vec3 p) const override {
+	virtual Float evalScalar(Vec3 p) const override {
 		const auto Delta = .2_f;
 		const auto t = (p - bound_.mi) / (bound_.ma - bound_.mi);
 		const auto x = int(t.x / Delta);
@@ -46,9 +50,8 @@ public:
 		return (x + y) % 2 == 0 ? 1_f : 0_f;
 	}
 
-	virtual Vec3 evalAlbedo(Vec3) const override {
-		//const auto t = (p - b.mi) / (b.ma - b.mi);
-		return Vec3(.5_f);
+	virtual bool hasColor() const override {
+		return false;
 	}
 };
 

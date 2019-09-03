@@ -63,6 +63,10 @@ public:
         return normalDist(wh,u,v,n)*glm::dot(wh,n)/(4_f*glm::dot(wo, wh)*glm::dot(wo, n));
     }
 
+    virtual Float pdfComp(const PointGeometry&, int, Vec3) const override {
+        return 1_f;
+    }
+
     virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
         if (geom.opposite(wi, wo)) {
             return {};

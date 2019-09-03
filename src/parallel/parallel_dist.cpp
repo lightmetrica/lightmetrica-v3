@@ -27,7 +27,7 @@ public:
         return true;
     }
 
-    virtual void foreach(long long numSamples, const ParallelProcessFunc&) const override {
+    virtual void foreach(long long numSamples, const ParallelProcessFunc&, const ProgressUpdateFunc&) const override {
         std::mutex mut;
         std::condition_variable cond;
         long long totalProcessed = 0;
@@ -83,7 +83,7 @@ public:
         return localContext_->mainThread();
     }
 
-    virtual void foreach(long long, const ParallelProcessFunc& processFunc) const override {
+    virtual void foreach(long long, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc&) const override {
         std::mutex mut;
         std::condition_variable cond;
         bool done = false;
@@ -100,6 +100,8 @@ public:
         dist::worker::foreach([&](long long start, long long end) {
             localContext_->foreach(end - start, [&](long long index, int threadId) {
                 processFunc(start + index, threadId);
+            }, [](long long) {
+                LM_TBA_RUNTIME();
             });
         });
         

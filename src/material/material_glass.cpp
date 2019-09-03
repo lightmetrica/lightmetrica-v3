@@ -85,27 +85,39 @@ public:
         const auto n = in ? geom.n : -geom.n;
         const auto eta = in ? 1_f / Ni_ : Ni_;
         const auto [wt, total] = math::refraction(wi, n, eta);
-        const auto Fr = total ? 1_f : [&]() {
-            // Flesnel term
-            const auto cos = in ? glm::dot(wi, geom.n) : glm::dot(wt, geom.n);
-            const auto r = (1_f-Ni_) / (1_f+Ni_);
-            const auto r2 = r*r;
-            return r2 + (1_f - r2) * std::pow(1_f-cos, 5_f);
-        }();
+        const auto Fr = total ? 1_f : fresnel(wi, wt, geom);
         if (rng.u() < Fr) {
             // Reflection
             return MaterialDirectionSample{
                 math::reflection(wi, geom.n),
-                0,
-                Vec3(1_f)
+                0,  
+                Vec3(1_f)   // Fr / p_sel = Fr
             };
         }
         // Refraction
         return MaterialDirectionSample{
             wt,
             1,
-            Vec3(eta*eta)
+            Vec3(eta*eta)   // eta*eta*(1-Fr) / p_sel = eta*eta
         };
+    }
+
+    virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const override {
+        const bool in = glm::dot(wi, geom.n) > 0_f;
+        const auto n = in ? geom.n : -geom.n;
+        const auto eta = in ? 1_f / Ni_ : Ni_;
+        const auto [wt, total] = math::refraction(wi, n, eta);
+        if (total) {
+            return 1_f;
+        }
+        const auto Fr = fresnel(wi, wt, geom);
+        if (comp == 0) {
+            return Fr;
+        }
+        else if (comp == 1) {
+            return 1_f;
+        }
+        LM_UNREACHABLE_RETURN();
     }
 
     virtual Float pdf(const PointGeometry&, int, Vec3, Vec3) const override {
@@ -114,6 +126,18 @@ public:
 
     virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {
         LM_UNREACHABLE_RETURN();
+    }
+
+private:
+    // Fresnel term
+    Float fresnel(Vec3 wi, Vec3 wt, const PointGeometry& geom) const {
+        const bool in = glm::dot(wi, geom.n) > 0_f;
+        const auto n = in ? geom.n : -geom.n;
+        const auto eta = in ? 1_f / Ni_ : Ni_;
+        const auto cos = in ? glm::dot(wi, geom.n) : glm::dot(wt, geom.n);
+        const auto r = (1_f - Ni_) / (1_f + Ni_);
+        const auto r2 = r * r;
+        return r2 + (1_f - r2) * std::pow(1_f - cos, 5_f);
     }
 };
 

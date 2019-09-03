@@ -8,53 +8,49 @@
 #include <lm/renderer.h>
 #include <lm/scene.h>
 #include <lm/film.h>
-#include <lm/parallel.h>
+#include <lm/scheduler.h>
 #include <lm/serial.h>
+#include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_VolPTNaive final : public Renderer {
 private:
     Film* film_;
-    long long spp_;
     int maxLength_;
+    Component::Ptr<scheduler::SPPScheduler> sched_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, spp_, maxLength_);
+        ar(film_, maxLength_, sched_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
         comp::visit(visit, film_);
+        comp::visit(visit, sched_);
     }
 
 public:
     virtual bool construct(const Json& prop) override {
-        film_ = comp::get<Film>(prop["output"]);
-        if (!film_) {
-            return false;
-        }
-        spp_ = prop["spp"];
-        maxLength_ = prop["maxLength"];
+        film_ = json::compRef<Film>(prop, "output");
+        maxLength_ = json::value<int>(prop, "max_length");
+        const auto schedName = json::value<std::string>(prop, "scheduler");
+        sched_ = comp::create<scheduler::SPPScheduler>(
+            "sppscheduler::" + schedName, makeLoc("sampler"), prop);
         return true;
     }
 
     virtual void render(const Scene* scene) const override {
         film_->clear();
         const auto [w, h] = film_->size();
-        long long numSamples = (long long)(w*h)*spp_;
-        parallel::foreach(numSamples, [&](long long index, int) -> void {
+        const auto processed = sched_->run(film_->numPixels(), [&](long long pixelIndex, long long sampleIndex, int) {
             // Per-thread random number generator
             thread_local Rng rng;
 
             // Pixel positions
-            const auto j = index / spp_;
-            const int x = int(j % w);
-            const int y = int(j / w);
+            const int x = int(pixelIndex % w);
+            const int y = int(pixelIndex / w);
             
-            // Estimate pixel contribution
-            Vec3 L(0_f);
-
             // Path throughput
             Vec3 throughput(1_f);
 
@@ -83,7 +79,8 @@ public:
 
                 // Accumulate contribution from emissive interaction
                 if (scene->isLight(sd->sp)) {
-                    L += throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
+                    const auto C = throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
+                    film_->incAve(x, y, sampleIndex, C);
                 }
 
                 // Russian roulette
@@ -100,9 +97,6 @@ public:
                     return scene->sampleRay(rng, sp, wi);
                 };
             }
-
-            // Set color of the pixel
-            film_->splatPixel(x, y, L / Float(spp_));
         });
     }
 };

@@ -329,6 +329,11 @@ public:
     virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
+        \brief Evaluate pdf for component selection.
+    */
+    virtual Float pdfComp(const SceneInteraction& sp, Vec3 wi) const = 0;
+
+    /*!
         \brief Evaluate pdf for light sampling.
     */
     virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const = 0;

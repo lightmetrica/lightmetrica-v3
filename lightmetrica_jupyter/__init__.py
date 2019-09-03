@@ -89,10 +89,16 @@ def load_ipython_extension(ip):
         """Progress reporter for jupyter notebook"""
         def construct(self, prop):
             return True
-        def start(self, total):
-            self.pbar = tqdm_notebook(total=total)
+        def start(self, mode, total, totalTime):
+            self.mode = mode
+            if mode == lm.progress.ProgressMode.Samples:
+                self.pbar = tqdm_notebook(total=total)
+            elif mode == lm.progress.ProgressMode.Time:
+                self.pbar = tqdm_notebook(total=totalTime)
         def update(self, processed):
             self.pbar.update(max(0, processed - self.pbar.n))
+        def updateTime(self, elapsed):
+            self.pbar.update(max(0, elapsed - self.pbar.n))
         def end(self):
             self.pbar.update(max(0, self.pbar.total - self.pbar.n))
             self.pbar.close()
@@ -104,7 +110,7 @@ def load_ipython_extension(ip):
             self.film = prop['film']
             self.size = prop['size']
             return True
-        def start(self, total):
+        def start(self, mode, total, totalTime):
             self.total = total
             self.fig = plt.figure(figsize=self.size)
             self.ax = self.fig.add_subplot(111)

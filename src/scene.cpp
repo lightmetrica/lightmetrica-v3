@@ -364,6 +364,19 @@ public:
         }
     }
 
+    virtual Float pdfComp(const SceneInteraction& sp, Vec3 wi) const override {
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
+        if (sp.medium) {
+            return 1_f;
+        }
+        else {
+            if (!primitive.material) {
+                return 1_f;
+            }
+            return primitive.material->pdfComp(sp.geom, sp.comp, wi);
+        }
+    }
+
     virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
         const auto s = nodes_.at(*camera_).primitive.camera->samplePrimaryRay(rng, window, aspectRatio);
         if (!s) {

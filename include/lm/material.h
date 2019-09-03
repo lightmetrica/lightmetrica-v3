@@ -26,7 +26,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 struct MaterialDirectionSample {
     Vec3 wo;        //!< Sampled direction.
     int comp;       //!< Sampled component index.
-    Vec3 weight;    //!< Contribution divided by probability.
+    Vec3 weight;    //!< Contribution divided by probability (including probability of component selection).
 };
 
 /*!
@@ -66,9 +66,9 @@ public:
         :math:`p(\omega\mid \mathbf{x}, \omega_i)` in projected solid angle measure,
         where :math:`\mathbf{x}` is a surface point and :math:`\omega_i` is an incident ray direction.
 
-        If the material contains multiple component,
-        this function also samples the component type.
+        If the material contains multiple component, this function also samples the component type.
         The selected component type is stored into :cpp:member:`lm::MaterialDirectionSample::comp`.
+        Note that the evaluated weight doesn't contain the evaluation of the pdf of component selection.
         \endrst
     */
     virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
@@ -96,9 +96,17 @@ public:
 
         \rst
         This function evaluates a pdf corresponding to :cpp:func:`lm::Material::sample` function.
+        Note that the evaluated pdf doesn't contain the probabilty of component selection.
         \endrst
     */
     virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const = 0;
+
+    /*!
+        \brief Evaluate pdf for component selection.
+        \param geom Point geometry.
+        \param comp Component index.
+    */
+    virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate BSDF.

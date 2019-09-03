@@ -46,12 +46,9 @@ Bound toLMBound(const openvdb::BBoxd& b) {
 class Volume_OpenVDB : public Volume {
 private:
 	using GridT = openvdb::FloatGrid;
-	using RootT = typename GridT::TreeType::RootNodeType;
-	using TreeT = openvdb::tree::Tree<typename RootT::template ValueConverter<bool>::Type>;
 	GridT::Ptr grid_;
-	TreeT::Ptr tree_;
-	openvdb::CoordBBox vdbBound_index_;
-	//Bound bound_;	// Bound in the world space
+	openvdb::CoordBBox vdbBound_index_;	// Bound in the volume space
+	Bound bound_;						// Bound in the world space
 	Float scale_;
 
 public:
@@ -87,19 +84,12 @@ public:
 			return false;
 		}
 
-		// Create a tree for interpolation kernel
-		tree_.reset(new TreeT(grid_->tree(), false, openvdb::TopologyCopy()));
-
-		// Dilate voxels
-		const int dilationCount = json::value(prop, "dilation_count", 0);
-		openvdb::tools::dilateVoxels(*tree_, dilationCount);
-
 		// Compute AABB of the grid
 		// evalActiveVoxelBoundingBox() function computes the bound in the index space
 		// so we need to transform it to the world space.
 		vdbBound_index_ = grid_->evalActiveVoxelBoundingBox();
-		//const auto vdbBound_world = grid_->constTransform().indexToWorld(vdbBound_index_);
-		//bound_ = toLMBound(vdbBound_world);
+		const auto vdbBound_world = grid_->constTransform().indexToWorld(vdbBound_index_);
+		bound_ = toLMBound(vdbBound_world);
 
 		// Density scale
 		scale_ = json::value<Float>(prop, "scale", 1_f);
@@ -108,15 +98,20 @@ public:
 	}
 
 	virtual Bound bound() const override {
-		//return bound_;
-		LM_TBA_RUNTIME();
+		return bound_;
 	}
 
-	virtual Float maxDensity() const override {
-		LM_TBA_RUNTIME();
+	virtual Float maxScalar() const override {
+		float min, max;
+		grid_->evalMinMax(min, max);
+		return max;
 	}
 
-	virtual Float evalDensity(Vec3 p) const override {
+	virtual bool hasScalar() const override {
+		return true;
+	}
+
+	virtual Float evalScalar(Vec3 p) const override {
 		using AccessorT = typename GridT::ConstAccessor;
 		using SamplerT = openvdb::tools::GridSampler<AccessorT, openvdb::tools::BoxSampler>;
 		AccessorT accessor(grid_->getConstAccessor());
@@ -125,8 +120,8 @@ public:
 		return d * scale_;
 	}
 
-	virtual Vec3 evalAlbedo(Vec3) const override {
-		LM_TBA_RUNTIME();
+	virtual bool hasColor() const override {
+		return false;
 	}
 
 	virtual void march(Ray ray, Float tmin, Float tmax, Float marchStep, const RayMarchFunc& rayMarchFunc) const override {
@@ -152,11 +147,11 @@ public:
 		// Walk along the ray using DDA
 		using RayT = openvdb::math::Ray<Float>;
 		using TimeSpanT = typename RayT::TimeSpan;
-		//using TreeT = typename GridT::TreeType;
+		using TreeT = typename GridT::TreeType;
 		using AccessorT = typename openvdb::tree::ValueAccessor<const TreeT, false>;
 		constexpr int NodeLevel = TreeT::RootNodeType::ChildNodeType::LEVEL;
 		openvdb::math::VolumeHDDA<TreeT, RayT, NodeLevel> dda;
-		AccessorT accessor(*tree_);
+		AccessorT accessor(grid_->constTree());
 		bool done = false;
 		while (!done) {
 			// Next span of the grid
@@ -185,6 +180,6 @@ public:
 	}
 };
 
-LM_COMP_REG_IMPL(Volume_OpenVDB, "volume::openvdb");
+LM_COMP_REG_IMPL(Volume_OpenVDB, "volume::openvdb_scalar");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

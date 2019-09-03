@@ -6,7 +6,6 @@
 #pragma once
 
 #include "component.h"
-#include <functional>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(parallel)
@@ -57,13 +56,19 @@ LM_PUBLIC_API int numThreads();
 */
 LM_PUBLIC_API bool mainThread();
 
-
 /*!
-    \brief Callback function called for each iteration of the parallel process.
+    \brief Callback function for parallel process.
     \param index Index of iteration.
     \param threadId Thread identifier in `0 ... numThreads()-1`.
 */
-using ParallelProcessFunc = std::function<void(long long index, int threadId)>;
+using ParallelProcessFunc = std::function<void(long long index, int threadid)>;
+
+/*!
+    \brief Callback function for progress updates.
+    \param processed Processed number of samples.
+*/
+using ProgressUpdateFunc = std::function<void(long long processed)>;
+
 /*!
     \brief Parallel for loop.
     \param numSamples Total number of samples.
@@ -73,7 +78,14 @@ using ParallelProcessFunc = std::function<void(long long index, int threadId)>;
     We provide an abstraction for the parallel loop specifialized for rendering purpose.
     \endrst
 */
-LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& processFunc);
+LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc& progressFunc);
+
+/*!
+    \brief Parallel for loop.
+*/
+LM_INLINE void foreach(long long numSamples, const ParallelProcessFunc& processFunc) {
+    foreach(numSamples, processFunc, [](long long) {});
+}
 
 /*!
     \brief Parallel context.
@@ -88,7 +100,7 @@ class ParallelContext : public Component {
 public:
     virtual int numThreads() const = 0;
     virtual bool mainThread() const = 0;
-    virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc) const = 0;
+    virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc& progressFunc) const = 0;
 };
 
 /*!

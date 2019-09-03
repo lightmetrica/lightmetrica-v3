@@ -396,16 +396,7 @@ public:
             }
 
             // Diffuse or glossy or mask
-            const auto* D = materials_.at(diffuse_).get();
-            const auto* G = materials_.at(glossy_).get();
-            const auto wd = [&]() {
-                const auto wd = glm::compMax(*D->reflectance(geom, SurfaceComp::DontCare));
-                const auto ws = glm::compMax(*G->reflectance(geom, SurfaceComp::DontCare));
-                if (wd == 0_f && ws == 0_f) {
-                    return 1_f;
-                }
-                return wd / (wd + ws);
-            }();
+            const auto wd = diffuseSelectionWeight(geom);
             if (rng.u() < wd) {
                 if (maskTex_ && rng.u() > maskTex_->evalAlpha(geom.t)) {
                     return { mask_, 1_f/wd };
@@ -443,8 +434,31 @@ public:
         return materials_.at(comp)->pdf(geom, SurfaceComp::DontCare, wi, wo);
     }
 
+    virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3) const override {
+        if (comp == glass_ || comp == mirror_) {
+            return 1_f;
+        }
+        const auto wd = diffuseSelectionWeight(geom);
+        return comp == glossy_ ? (1_f - wd) : wd;
+    }
+
     virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
         return materials_.at(comp)->eval(geom, SurfaceComp::DontCare, wi, wo);
+    }
+
+private:
+    Float diffuseSelectionWeight(const PointGeometry& geom) const {
+        const auto* D = materials_.at(diffuse_).get();
+        const auto* G = materials_.at(glossy_).get();
+        const auto wd = [&]() {
+            const auto wd = glm::compMax(*D->reflectance(geom, SurfaceComp::DontCare));
+            const auto ws = glm::compMax(*G->reflectance(geom, SurfaceComp::DontCare));
+            if (wd == 0_f && ws == 0_f) {
+                return 1_f;
+            }
+            return wd / (wd + ws);
+        }();
+        return wd;
     }
 };
 
