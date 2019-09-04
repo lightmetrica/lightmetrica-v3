@@ -82,6 +82,7 @@ public:
             };
 
             // Perform random walk
+            Vec3 L(0_f);
             for (int length = 0; length < maxLength_; length++) {
                 // Sample a ray
                 const auto s = sampleRay();
@@ -114,8 +115,9 @@ public:
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
                     const auto fs = scene->evalContrb(s->sp, wi, wo);
-                    const auto C = throughput * *Tr * fs * sL->weight;
-                    film_->incAve(x, y, sampleIndex, C);
+                    const auto pdfSel = scene->pdfComp(s->sp, wi);
+                    const auto C = throughput / pdfSel * *Tr * fs * sL->weight;
+                    L += C;
                 }();
 
                 // Sample next scene interaction
@@ -130,7 +132,7 @@ public:
                 // Accumulate contribution from emissive interaction
                 if (!nee && scene->isLight(sd->sp)) {
                     const auto C = throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
-                    film_->incAve(x, y, sampleIndex, C);
+                    L += C;
                 }
 
                 // Russian roulette
@@ -148,6 +150,9 @@ public:
                     return scene->sampleRay(rng, sp, wi);
                 };
             }
+
+            // Accumulate contribution
+            film_->incAve(x, y, sampleIndex, L);
         });
     }
 };

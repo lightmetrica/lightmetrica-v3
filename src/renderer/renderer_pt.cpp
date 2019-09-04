@@ -45,8 +45,6 @@ public:
         film_->clear();
         const auto [w, h] = film_->size();
         const auto processed = sched_->run(film_->numPixels(), [&](long long pixelIndex, long long sampleIndex, int) {
-            LM_UNUSED(sampleIndex);
-
             // Per-thread random number generator
             thread_local Rng rng;
 
@@ -68,6 +66,7 @@ public:
             };
 
             // Perform random walk
+            Vec3 L(0_f);
             for (int length = 0; length < maxLength_; length++) {
                 // Sample a ray
                 const auto s = sampleRay();
@@ -93,8 +92,7 @@ public:
                     const auto misw = math::balanceHeuristic(
                         scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
                     const auto C = throughput / pdfSel * fs * sL->weight * misw;
-                    //film_->incAve(x, y, sampleIndex, C);
-                    film_->splatPixel(x, y, C);
+                    L += C;
                 }();
 
                 // Intersection to next surface
@@ -113,8 +111,7 @@ public:
                     const auto misw = !nee ? 1_f : math::balanceHeuristic(
                         scene->pdf(s->sp, wi, s->wo), scene->pdfLight(s->sp, *hit, woL));
                     const auto C = throughput * fs * misw;
-                    //film_->incAve(x, y, sampleIndex, C);
-                    film_->splatPixel(x, y, C);
+                    L += C;
                 }
 
                 // Russian roulette
@@ -133,13 +130,10 @@ public:
                     return scene->sampleRay(rng, sp, wi);
                 };
             }
-        });
 
-        for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
-            film_->updatePixel(x, y, [&](Vec3 curr) -> Vec3 {
-                return curr / (Float)processed;
-            });
-        }
+            // Accumulate contribution
+            film_->incAve(x, y, sampleIndex, L);
+        });
     }
 };
 
