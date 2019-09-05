@@ -152,7 +152,7 @@ public:
             LM_INDENT();
         }
         if (renderer_->requiresScene() && !scene_->renderable()) {
-            return;
+            THROW_RUNTIME_ERROR();
         }
         renderer_->render(scene_.get());
     }

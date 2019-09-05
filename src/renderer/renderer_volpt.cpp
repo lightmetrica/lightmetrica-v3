@@ -13,6 +13,7 @@
 #include <lm/json.h>
 
 #define VOLPT_DEBUG_VIS 0
+#define VOLPT_NEE_ONLY 1
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -130,10 +131,12 @@ public:
                 throughput *= s->weight * sd->weight;
 
                 // Accumulate contribution from emissive interaction
+                #if !VOLPT_NEE_ONLY
                 if (!nee && scene->isLight(sd->sp)) {
                     const auto C = throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
                     L += C;
                 }
+                #endif
 
                 // Russian roulette
                 if (length > 3) {

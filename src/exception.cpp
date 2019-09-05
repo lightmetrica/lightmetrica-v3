@@ -59,7 +59,8 @@ public:
             LM_EXCEPTION_ERROR_CODE(m, EXCEPTION_INVALID_HANDLE);
 
             // Print error message
-            LM_ERROR("Structured exception [desc='{}']", m[code]);
+            const std::string desc = m[code];
+            LM_ERROR("Structured exception [desc='{}']", desc);
             exception::stackTrace();
 
             throw std::runtime_error(m[code]);

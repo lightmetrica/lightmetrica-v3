@@ -76,11 +76,11 @@ def load_ipython_extension(ip):
             file_no_ext = os.path.splitext(os.path.basename(filename))[0]
             line_and_file = '{}@{}'.format(line, file_no_ext)[:10]
             header = '[{}|{:.3f}|{:<10}] '.format(name, elapsed, line_and_file)
-            spaces = (' ' * self.n * 2)
+            spaces = ('.' * (self.n * 2)) + (' ' if self.n > 0 else '')
             s = header + spaces + message
             print(s)
         def updateIndentation(self, n):
-            self.n = n
+            self.n += n
         def setSeverity(self, severity):
             self.severity = severity
         
@@ -123,6 +123,8 @@ def load_ipython_extension(ip):
             img = np.flip(lm.buffer(self.film), axis=0)
             self.ax.imshow(np.clip(np.power(img,1/2.2),0,1))
             self.fig.canvas.draw()
+        def updateTime(self, elapsed):
+            self.update(-1)
         def end(self):
             self.update(self.total)
             import time
