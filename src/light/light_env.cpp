@@ -14,11 +14,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \rst
 .. function:: light::env
 
-   Environment light.
+    Environment light.
 
-   :param str envmap_path: Path to environment map.
-   :param float rot: Rotation angle of the environment map around up vector in degrees.
-                     Default value: 0.
+    :param str envmap_path: Path to environment map.
+    :param float rot: Rotation angle of the environment map around up vector in degrees.
+                      Default value: 0.
 \endrst
 */
 class Light_Env final : public Light {
