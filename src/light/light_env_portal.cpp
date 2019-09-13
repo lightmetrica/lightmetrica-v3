@@ -3,8 +3,10 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-
-#include <lm/lm.h>
+#include <pch.h>
+#include <lm/core.h>
+#include <lm/light.h>
+#include <lm/texture.h>
 
 #define LM_LIGHT_ENV_PORTAL_AVOID_FIREFRIES 1
 
@@ -439,7 +441,7 @@ public:
         return p_portal * p_sel * inv_misw;
     }
 
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return false;
     }
 
@@ -447,7 +449,7 @@ public:
         return true;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3) const override {
+    virtual Vec3 eval(const PointGeometry& geom, int, Vec3) const override {
         const auto d = -geom.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);
