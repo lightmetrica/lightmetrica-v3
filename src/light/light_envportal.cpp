@@ -460,6 +460,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Light_EnvPortal, "light::env_portal");
+LM_COMP_REG_IMPL(Light_EnvPortal, "light::envportal");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

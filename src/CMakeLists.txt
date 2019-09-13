@@ -66,7 +66,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/camera/camera_pinhole.cpp"
     "${_SOURCE_DIR}/light/light_area.cpp"
     "${_SOURCE_DIR}/light/light_env.cpp"
-    "${_SOURCE_DIR}/light/light_env_portal.cpp"
+    "${_SOURCE_DIR}/light/light_envportal.cpp"
     "${_SOURCE_DIR}/texture/texture_bitmap.cpp"
     "${_SOURCE_DIR}/material/material_diffuse.cpp"
     "${_SOURCE_DIR}/material/material_glass.cpp"
