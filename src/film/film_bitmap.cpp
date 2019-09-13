@@ -4,10 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/film.h>
-#include <lm/logger.h>
-#include <lm/serial.h>
-#include <lm/json.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
 

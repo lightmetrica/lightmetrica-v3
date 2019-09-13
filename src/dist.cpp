@@ -4,12 +4,11 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/dist.h>
-#include <lm/logger.h>
-#include <lm/json.h>
+// TODO. Remove the dependency to user.h
 #include <lm/user.h>
 #include <lm/parallel.h>
-#include <lm/serial.h>
 #include <lm/film.h>
 #include <lm/progress.h>
 #include <zmq.hpp>

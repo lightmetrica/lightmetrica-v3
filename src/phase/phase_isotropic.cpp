@@ -4,6 +4,7 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/phase.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

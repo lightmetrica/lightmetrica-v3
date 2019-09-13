@@ -4,9 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/exception.h>
-#include <lm/logger.h>
-#include <lm/json.h>
 
 #if LM_PLATFORM_WINDOWS
 #include <Windows.h>

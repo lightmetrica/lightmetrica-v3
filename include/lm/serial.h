@@ -3,6 +3,8 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
+#pragma once
+
 #include "component.h"
 #include "math.h"
 #include "logger.h"

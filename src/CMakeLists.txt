@@ -37,6 +37,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/json.h"
     "${_INCLUDE_DIR}/common.h"
     "${_INCLUDE_DIR}/component.h"
+    "${_INCLUDE_DIR}/core.h"
     "${_INCLUDE_DIR}/serial.h"
     "${_INCLUDE_DIR}/surface.h"
     "${_INCLUDE_DIR}/objloader.h"

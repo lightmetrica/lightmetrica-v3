@@ -4,6 +4,7 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/scene.h>
 #include <lm/assets.h>
 #include <lm/accel.h>
@@ -12,9 +13,6 @@
 #include <lm/material.h>
 #include <lm/light.h>
 #include <lm/model.h>
-#include <lm/logger.h>
-#include <lm/serial.h>
-#include <lm/json.h>
 #include <lm/medium.h>
 #include <lm/phase.h>
 
@@ -442,14 +440,12 @@ public:
 
     virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
         // Intersection to next surface
-        const auto hit = intersect(Ray{ sp.geom.p, wo }, Eps, Inf);
-        const auto dist = hit ? glm::length(hit->geom.p - sp.geom.p) : Inf;
-        
+        const auto hit = intersect({ sp.geom.p, wo }, Eps, Inf);
+        const auto dist = hit && !hit->geom.infinite ? glm::length(hit->geom.p - sp.geom.p) : Inf;
+
         // Sample a distance
         const auto* medium = nodes_.at(*medium_).primitive.medium;
-        const auto ds = medium->sampleDistance(rng, sp.geom, wo, dist);
-        assert(ds);
-        
+        const auto ds = medium->sampleDistance(rng, { sp.geom.p, wo }, 0_f, dist);
         if (ds && ds->medium) {
             // Medium interaction
             return DistanceSample{
@@ -479,7 +475,18 @@ public:
         if (!medium_) {
             return Vec3(1_f);
         }
-        return nodes_.at(*medium_).primitive.medium->evalTransmittance(rng, sp1.geom, sp2.geom);
+        
+        // Extended distance between two points
+        assert(!sp1.geom.infinite);
+        const auto dist = !sp2.geom.infinite
+            ? glm::distance(sp1.geom.p, sp2.geom.p)
+            : Inf;
+        const auto wo = !sp2.geom.infinite
+            ? glm::normalize(sp2.geom.p - sp1.geom.p)
+            : -sp2.geom.wo;
+
+        const auto* medium = nodes_.at(*medium_).primitive.medium;
+        return medium->evalTransmittance(rng, { sp1.geom.p, wo }, 0_f, dist);
     }
 
     // ------------------------------------------------------------------------

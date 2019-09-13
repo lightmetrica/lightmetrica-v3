@@ -4,12 +4,9 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/light.h>
 #include <lm/mesh.h>
-#include <lm/json.h>
-#include <lm/user.h>
-#include <lm/serial.h>
-#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

@@ -4,16 +4,13 @@
 */
 
 #include <pch.h>
-#include <lm/user.h>
+#include <lm/core.h>
 #include <lm/renderer.h>
 #include <lm/scene.h>
 #include <lm/film.h>
 #include <lm/scheduler.h>
-#include <lm/serial.h>
-#include <lm/json.h>
 
 #define VOLPT_DEBUG_VIS 0
-#define VOLPT_NEE_ONLY 1
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -61,25 +58,30 @@ public:
 
     virtual void render(const Scene* scene) const override {
         film_->clear();
-        const auto [w, h] = film_->size();
+        const auto size = film_->size();
         const auto processed = sched_->run(film_->numPixels(), [&](long long pixelIndex, long long sampleIndex, int) {
             // Per-thread random number generator
             thread_local Rng rng;
 
             // Pixel positions
-            const int x = int(pixelIndex % w);
-            const int y = int(pixelIndex / w);
+            const int x = int(pixelIndex % size.w);
+            const int y = int(pixelIndex / size.w);
+            const auto dx = 1_f/size.w;
+            const auto dy = 1_f/size.h;
+            const Vec4 window(dx*x, dy*y, dx, dy);
 
             // Incident ray direction
-            Vec3 wi;
+            Vec3 wi{};
+
+            // Current scene interaction
+            SceneInteraction sp;
 
             // Path throughput
             Vec3 throughput(1_f);
 
             // Initial sampleRay function
             std::function<std::optional<RaySample>()> sampleRay = [&]() {
-                Float dx = 1_f/w, dy = 1_f/h;
-                return scene->samplePrimaryRay(rng, {dx*x, dy*y, dx, dy}, film_->aspectRatio());
+                return scene->samplePrimaryRay(rng, window, film_->aspectRatio());
             };
 
             // Perform random walk
@@ -90,7 +92,7 @@ public:
                 if (!s || math::isZero(s->weight)) {
                     break;
                 }
-
+                
                 // Sample a NEE edge
                 const bool nee = length > 0 && !scene->isSpecular(s->sp);
                 if (nee) [&] {
@@ -131,12 +133,10 @@ public:
                 throughput *= s->weight * sd->weight;
 
                 // Accumulate contribution from emissive interaction
-                #if !VOLPT_NEE_ONLY
                 if (!nee && scene->isLight(sd->sp)) {
                     const auto C = throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
                     L += C;
                 }
-                #endif
 
                 // Russian roulette
                 if (length > 3) {
@@ -149,7 +149,8 @@ public:
 
                 // Update
                 wi = -s->wo;
-                sampleRay = [&, sp = sd->sp]() {
+                sp = sd->sp;
+                sampleRay = [&]() {
                     return scene->sampleRay(rng, sp, wi);
                 };
             }

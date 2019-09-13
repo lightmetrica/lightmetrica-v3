@@ -217,6 +217,20 @@ static Float geometryTerm(const PointGeometry& s1, const PointGeometry& s2) {
 }
 
 /*!
+    \brief Copmute distance between two points.
+    \param s1 First point.
+    \param s2 Second point.
+
+    \rst
+    This function computes the distance between two points.
+    If one of the points is a point at infinity, returns inf.
+    \endrst
+*/
+static Float distance(const PointGeometry& s1, const PointGeometry& s2) {
+    return s1.infinite || s2.infinite ? Inf : glm::distance(s1.p, s2.p);
+}
+
+/*!
     @}
 */
 

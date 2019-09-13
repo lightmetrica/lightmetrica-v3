@@ -4,9 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/medium.h>
-#include <lm/json.h>
-#include <lm/serial.h>
 #include <lm/surface.h>
 #include <lm/phase.h>
 #include <lm/volume.h>
@@ -15,8 +14,8 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Medium_Heterogeneous final : public Medium {
 private:
-	const Volume* volumeDensity_;	// Density volume.
-	const Volume* volmeAlbedo_;		// Albedo volume.
+	const Volume* volumeDensity_;	// Density volume. density := \mu_t = \mu_a + \mu_s
+	const Volume* volmeAlbedo_;		// Albedo volume. albedo := \mu_s / \mu_t
     const Phase* phase_;			// Underlying phase function.
 
 public:
@@ -32,11 +31,9 @@ public:
         return true;
     }
 
-    virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, const PointGeometry& geom, Vec3 wo, Float distToSurf) const override {
+    virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range between the ray and the volume
-        Float tmin = 0_f;
-        Float tmax = distToSurf;
-        if (!volumeDensity_->bound().isectRange(Ray{ geom.p, wo }, tmin, tmax)) {
+        if (!volumeDensity_->bound().isectRange(ray, tmin, tmax)) {
             // No intersection with the volume, use surface interaction
             return {};
         }
@@ -53,15 +50,16 @@ public:
             }
 
             // Density at the sampled point
-            const auto p = geom.p + wo * t;
+            const auto p = ray.o + ray.d*t;
             const auto density = volumeDensity_->evalScalar(p);
 
             // Determine scattering collision or null collision
+            // Continue tracking if null collusion is seleced
             if (density * invMaxDensity > rng.u()) {
                 // Scattering collision
                 const auto albedo = volmeAlbedo_->evalColor(p);
                 return MediumDistanceSample{
-                    geom.p + wo*t,
+                    ray.o + ray.d*t,
                     albedo * density,
                     true
                 };
@@ -71,14 +69,9 @@ public:
         LM_UNREACHABLE_RETURN();
     }
     
-    virtual std::optional<Vec3> evalTransmittance(Rng& rng, const PointGeometry& geom1, const PointGeometry& geom2) const override {
-        // Direction from p1 to p2
-        const auto wo = glm::normalize(geom2.p - geom1.p);
-
+    virtual std::optional<Vec3> evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range
-        Float tmin = 0_f;
-        Float tmax = glm::distance(geom1.p, geom2.p);
-        if (!volumeDensity_->bound().isectRange(Ray{ geom1.p, wo }, tmin, tmax)) {
+        if (!volumeDensity_->bound().isectRange(ray, tmin, tmax)) {
             // No intersection with the volume, no attenuation
             return Vec3(1_f);
         }
@@ -92,7 +85,7 @@ public:
             if (t >= tmax) {
                 break;
             }
-            const auto p = geom1.p + wo * t;
+            const auto p = ray.o + ray.d*t;
             const auto density = volumeDensity_->evalScalar(p);
             Tr *= 1_f - density * invMaxDensity;
         }

@@ -4,13 +4,11 @@
 */
 
 #include <pch.h>
-#include <lm/user.h>
+#include <lm/core.h>
 #include <lm/renderer.h>
 #include <lm/scene.h>
 #include <lm/film.h>
 #include <lm/scheduler.h>
-#include <lm/serial.h>
-#include <lm/json.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -42,22 +40,26 @@ public:
 
     virtual void render(const Scene* scene) const override {
         film_->clear();
-        const auto [w, h] = film_->size();
+        //const auto [w, h] = film_->size();
+        //const auto size = film_->size();
         const auto processed = sched_->run(film_->numPixels(), [&](long long pixelIndex, long long sampleIndex, int) {
             // Per-thread random number generator
             thread_local Rng rng;
 
             // Pixel positions
-            const int x = int(pixelIndex % w);
-            const int y = int(pixelIndex / w);
+            const auto size = film_->size();
+            const int x = int(pixelIndex % size.w);
+            const int y = int(pixelIndex / size.w);
+            const auto dx = 1_f/size.w;
+            const auto dy = 1_f/size.h;
+            const Vec4 window(dx*x, dy*y, dx, dy);
             
             // Path throughput
             Vec3 throughput(1_f);
 
             // Initial sampleRay function
             std::function<std::optional<RaySample>()> sampleRay = [&]() {
-                Float dx = 1_f/w, dy = 1_f/h;
-                return scene->samplePrimaryRay(rng, {dx*x, dy*y, dx, dy}, film_->aspectRatio());
+                return scene->samplePrimaryRay(rng, window, film_->aspectRatio());
             };
 
             // Perform random walk
@@ -94,7 +96,7 @@ public:
                 }
 
                 // Update
-                sampleRay = [&, wi = -s->wo, sp = sd->sp]() {
+                sampleRay = [scene, wi = -s->wo, sp = sd->sp]() {
                     return scene->sampleRay(rng, sp, wi);
                 };
             }

@@ -4,17 +4,14 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/model.h>
 #include <lm/objloader.h>
 #include <lm/mesh.h>
 #include <lm/material.h>
 #include <lm/texture.h>
-#include <lm/logger.h>
 #include <lm/film.h>
 #include <lm/light.h>
-#include <lm/json.h>
-#include <lm/user.h>
-#include <lm/serial.h>
 #include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

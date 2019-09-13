@@ -4,6 +4,7 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/material.h>
 #include <lm/surface.h>
 

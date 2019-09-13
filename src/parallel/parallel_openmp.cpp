@@ -4,9 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/parallel.h>
-#include <lm/logger.h>
-#include <lm/json.h>
 #include <lm/progress.h>
 #include <omp.h>
 

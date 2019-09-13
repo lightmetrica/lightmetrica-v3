@@ -4,36 +4,39 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/medium.h>
 #include <lm/phase.h>
-#include <lm/json.h>
-#include <lm/serial.h>
-#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // Assume the medium is non-emissive
 class Medium_Homogeneous final : public Medium {
 private:
-    Float muA_;             // Absorption coefficient.
-    Float muS_;             // Scattering coefficient.
-    Float muT_;             // Extinction coefficient.
+    Float density_;         // Density of volume := extinction coefficient \mu_t
+    Vec3 albedo_;           // Albedo of volume := \mu_s / \mu_t
+    Vec3 muA_;              // Absorption coefficient.
+    Vec3 muS_;              // Scattering coefficient.
     const Phase* phase_;    // Underlying phase function.
+    Bound bound_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(muA_, muS_, muT_, phase_);
+        ar(density_, muA_, muS_, phase_, bound_);
     }
 
 public:
     virtual bool construct(const Json& prop) override {
-        muA_ = json::value<Float>(prop, "muA");
-        muS_ = json::value<Float>(prop, "muS");
-        muT_ = muA_ + muS_;
+        density_ = json::value<Float>(prop, "density");
+        albedo_ = json::value<Vec3>(prop, "albedo");
+        muS_ = albedo_ * density_;
+        muA_ = density_ - muS_;
         phase_ = comp::get<Phase>(prop["phase"]);
         if (!phase_) {
             return false;
         }
+        bound_.mi = json::value<Vec3>(prop, "bound_min", Vec3(-Inf));
+        bound_.ma = json::value<Vec3>(prop, "bound_max", Vec3(Inf));
         return true;
     }
 
@@ -47,31 +50,41 @@ public:
         - Weight for medium interaction. \mu_s T(t)/p(t) = \mu_s/\mu_t
         - Weight for surface interaction. T(s)/P[t>s] = 1
     */
-    virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, const PointGeometry& geom, Vec3 wo, Float distToSurf) const override {
-        // Sample a distance
-        const auto t = -std::log(1_f-rng.u()) / muT_;
+    virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+        // Compute overlapping range between volume and bound
+        if (!bound_.isectRange(ray, tmin, tmax)) {
+            // No intersection with volume, use surface interaction
+            return {};
+        }
         
-        if (t < distToSurf) {
+        // Sample a distance
+        const auto t = -std::log(1_f-rng.u()) / density_;
+        
+        if (t < tmax - tmin) {
             // Medium interaction
             return MediumDistanceSample{
-                geom.p + wo*t,
-                Vec3(muS_ / muT_),
+                ray.o + ray.d*(tmin+t),
+                albedo_,    // \mu_s / \mu_t
                 true
             };
         }
         else {
             // Surface interaction
             return MediumDistanceSample{
-                geom.p + wo*distToSurf,
+                ray.o + ray.d*tmax,
                 Vec3(1_f),
                 false
             };
         }
     }
 
-    virtual std::optional<Vec3> evalTransmittance(Rng&, const PointGeometry& geom1, const PointGeometry& geom2) const override {
-        const auto dist = glm::length(geom1.p - geom2.p);
-        return Vec3(std::exp(-muT_ * dist));
+    virtual std::optional<Vec3> evalTransmittance(Rng&, Ray ray, Float tmin, Float tmax) const override {
+        // Compute overlapping range;
+        if (!bound_.isectRange(ray, tmin, tmax)) {
+            // No intersection with the volume, no attenuation
+            return Vec3(1_f);
+        }
+        return Vec3(std::exp(-density_ * (tmax - tmin)));
     }
 
     virtual bool isEmitter() const override {

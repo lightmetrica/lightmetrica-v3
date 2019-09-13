@@ -4,13 +4,11 @@
 */
 
 #include <pch.h>
-#include <lm/user.h>
+#include <lm/core.h>
 #include <lm/renderer.h>
 #include <lm/scene.h>
 #include <lm/film.h>
 #include <lm/scheduler.h>
-#include <lm/serial.h>
-#include <lm/json.h>
 #include <lm/debugio.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)

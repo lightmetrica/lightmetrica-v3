@@ -5,9 +5,9 @@
 
 #include <pch.h>
 #include <zmq.hpp>
+#include <lm/core.h>
 #include <lm/debugio.h>
-#include <lm/serial.h>
-#include <lm/logger.h>
+// TODO. Remove the dependency to user.h
 #include <lm/user.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::debugio)

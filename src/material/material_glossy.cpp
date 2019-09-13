@@ -4,9 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/material.h>
-#include <lm/json.h>
-#include <lm/serial.h>
 #include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
