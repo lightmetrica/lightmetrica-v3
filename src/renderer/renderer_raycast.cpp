@@ -5,7 +5,6 @@
 
 #include <pch.h>
 #include <lm/core.h>
-#include <lm/user.h>
 #include <lm/renderer.h>
 #include <lm/scene.h>
 #include <lm/film.h>

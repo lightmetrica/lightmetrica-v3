@@ -12,7 +12,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-class Renderer_PT final : public Renderer {
+class Renderer_PTDirect final : public Renderer {
 private:
     Film* film_;
     int maxLength_;
@@ -86,9 +86,7 @@ public:
                     const auto wo = -sL->wo;
                     const auto fs = scene->evalContrb(s->sp, wi, wo);
                     const auto pdfSel = scene->pdfComp(s->sp, wi);
-                    const auto misw = math::balanceHeuristic(
-                        scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
-                    const auto C = throughput / pdfSel * fs * sL->weight * misw;
+                    const auto C = throughput / pdfSel * fs * sL->weight;
                     L += C;
                 }();
 
@@ -102,12 +100,11 @@ public:
                 throughput *= s->weight;
 
                 // Accumulate contribution from light
-                if (scene->isLight(*hit)) {
+                // Only use naive pt when a NEE edge cannot be sampled
+                if (!nee && scene->isLight(*hit)) {
                     const auto woL = -s->wo;
                     const auto fs = scene->evalContrbEndpoint(*hit, woL);
-                    const auto misw = !nee ? 1_f : math::balanceHeuristic(
-                        scene->pdf(s->sp, wi, s->wo), scene->pdfLight(s->sp, *hit, woL));
-                    const auto C = throughput * fs * misw;
+                    const auto C = throughput * fs;
                     L += C;
                 }
 
@@ -134,6 +131,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Renderer_PT, "renderer::pt");
+LM_COMP_REG_IMPL(Renderer_PTDirect, "renderer::ptdirect");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

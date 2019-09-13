@@ -103,6 +103,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Renderer_PTNaive, "renderer::pt_naive");
+LM_COMP_REG_IMPL(Renderer_PTNaive, "renderer::ptnaive");
 
 LM_NAMESPACE_END(LM_NAMESPACE)
