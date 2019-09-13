@@ -233,11 +233,6 @@ private:
     std::vector<PortalContext> portals_;
 
 public:
-    LM_SERIALIZE_IMPL(ar) {
-        LM_UNUSED(ar);
-        throw std::runtime_error("Not supported");
-    }
-
     virtual void foreachUnderlying(const ComponentVisitor& visitor) override {
         comp::visit(visitor, envmap_);
     }
