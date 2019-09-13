@@ -51,8 +51,9 @@ private:
     float lineWidthScale_ = 1.f;
 
 public:
-    GLMaterial(glm::vec3 color, bool wireframe, bool shade)
+    GLMaterial(glm::vec3 color, float lineWidth, bool wireframe, bool shade)
         : color_(color)
+        , lineWidth_(lineWidth)
         , wireframe_(wireframe)
         , shade_(shade)
     {}
@@ -334,18 +335,19 @@ public:
         primitives_.push_back({ "", transform, meshidx, materialidx });
     }
 
-    void add(int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
+    void add(int type, lm::Vec3 color, float lineWidth, const std::vector<lm::Vec3>& vs) {
         LM_INFO("Creating GL primitive [#{}]", primitives_.size());
         int meshidx = int(meshes_.size());
         int materialidx = int(materials_.size());
         meshes_.emplace_back(new GLMesh(type, vs));
-        materials_.emplace_back(new GLMaterial(color, true, false));
+        materials_.emplace_back(new GLMaterial(color, lineWidth, true, false));
         primitives_.push_back({ "", lm::Mat4(1_f), meshidx, materialidx });
     }
 
-    void addByName(const std::string& name, int type, lm::Vec3 color, const std::vector<lm::Vec3>& vs) {
+    int addByName(const std::string& name, int type, lm::Vec3 color, float lineWidth, const std::vector<lm::Vec3>& vs) {
         auto* mesh = new GLMesh(type, vs);
-        auto* material = new GLMaterial(color, true, false);
+        auto* material = new GLMaterial(color, lineWidth, true, false);
+        const int index = int(primitives_.size());
         if (namedPrimitiveMap_.find(name) != namedPrimitiveMap_.end()) {
             const auto& p = primitives_[namedPrimitiveMap_[name]];
             meshes_[p.mesh].reset(mesh);
@@ -356,9 +358,18 @@ public:
             int materialidx = int(materials_.size());
             meshes_.emplace_back(mesh);
             materials_.emplace_back(material);
-            namedPrimitiveMap_[name] = int(primitives_.size());
+            namedPrimitiveMap_[name] = index;
             primitives_.push_back({ name, lm::Mat4(1_f), meshidx, materialidx });
         }
+        return index;
+    }
+
+    GLPrimitive& primitiveAt(int i) {
+        return primitives_.at(i);
+    }
+
+    GLMaterial& materialAt(int i) {
+        return *materials_.at(i).get();
     }
 
     GLPrimitive& primitiveByName(const std::string& name) {
