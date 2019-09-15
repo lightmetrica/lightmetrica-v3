@@ -79,8 +79,6 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
     "${_SOURCE_DIR}/renderer/renderer_raycast.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
-    "${_SOURCE_DIR}/renderer/renderer_ptnaive.cpp"
-	"${_SOURCE_DIR}/renderer/renderer_ptdirect.cpp"
     "${_SOURCE_DIR}/renderer/renderer_volpt.cpp"
     "${_SOURCE_DIR}/renderer/renderer_volpt_naive.cpp"
     "${_SOURCE_DIR}/medium/medium_homogeneous.cpp"

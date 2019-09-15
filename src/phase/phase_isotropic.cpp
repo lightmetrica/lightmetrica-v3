@@ -6,6 +6,7 @@
 #include <pch.h>
 #include <lm/core.h>
 #include <lm/phase.h>
+#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -15,14 +16,18 @@ public:
         return false;
     }
 
-    virtual std::optional<PhaseDirectionSample> sample(Rng& rng, const PointGeometry&, Vec3) const override {
+    virtual std::optional<PhaseDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3) const override {
+        LM_UNUSED(geom);
+        assert(geom.degenerated);
         return PhaseDirectionSample{
             math::sampleUniformSphere(rng),
             Vec3(1_f)
         };
     }
 
-    virtual Float pdf(const PointGeometry&, Vec3, Vec3) const override {
+    virtual Float pdf(const PointGeometry& geom, Vec3, Vec3) const override {
+        LM_UNUSED(geom);
+        assert(geom.degenerated);
         return math::pdfUniformSphere();
     }
 

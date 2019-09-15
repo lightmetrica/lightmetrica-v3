@@ -12,15 +12,22 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+enum class PTMode {
+    Naive,
+    NEE,
+    MIS,
+};
+
 class Renderer_PT final : public Renderer {
 private:
     Film* film_;
     int maxLength_;
     Component::Ptr<scheduler::SPPScheduler> sched_;
+    PTMode mode_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, maxLength_, sched_);
+        ar(film_, maxLength_, sched_, mode_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
@@ -35,6 +42,19 @@ public:
         const auto schedName = json::value<std::string>(prop, "scheduler");
         sched_ = comp::create<scheduler::SPPScheduler>(
             "sppscheduler::" + schedName, makeLoc("sampler"), prop);
+        mode_ = [&]() -> PTMode {
+            const auto s = json::value<std::string>(prop, "mode", "mis");
+            if (s == "naive") {
+                return PTMode::Naive;
+            }
+            else if (s == "nee") {
+                return PTMode::NEE;
+            }
+            else if (s == "mis") {
+                return PTMode::MIS;
+            }
+            LM_UNREACHABLE_RETURN();
+        }();
         return true;
     }
 
@@ -73,7 +93,7 @@ public:
 
                 // Sample a NEE edge
                 const bool nee = length > 0 && !scene->isSpecular(s->sp);
-                if (nee) [&] {
+                if (mode_ != PTMode::Naive && nee) [&] {
                     // Sample a light
                     const auto sL = scene->sampleLight(rng, s->sp);
                     if (!sL) {
@@ -86,8 +106,10 @@ public:
                     const auto wo = -sL->wo;
                     const auto fs = scene->evalContrb(s->sp, wi, wo);
                     const auto pdfSel = scene->pdfComp(s->sp, wi);
-                    const auto misw = math::balanceHeuristic(
-                        scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
+                    const auto misw = mode_ == PTMode::NEE
+                        ? 1_f
+                        : math::balanceHeuristic(
+                            scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
                     const auto C = throughput / pdfSel * fs * sL->weight * misw;
                     L += C;
                 }();
@@ -102,11 +124,15 @@ public:
                 throughput *= s->weight;
 
                 // Accumulate contribution from light
-                if (scene->isLight(*hit)) {
+                // In NEE mode, only use direct strategy when a NEE edge cannot be sampled
+                const bool direct = (mode_ != PTMode::NEE) || (mode_ == PTMode::NEE && !nee);
+                if (direct && scene->isLight(*hit)) {
                     const auto woL = -s->wo;
                     const auto fs = scene->evalContrbEndpoint(*hit, woL);
-                    const auto misw = !nee ? 1_f : math::balanceHeuristic(
-                        scene->pdf(s->sp, wi, s->wo), scene->pdfLight(s->sp, *hit, woL));
+                    const auto misw = mode_ == PTMode::Naive || !nee
+                        ? 1_f 
+                        : math::balanceHeuristic(
+                            scene->pdf(s->sp, wi, s->wo), scene->pdfLight(s->sp, *hit, woL));
                     const auto C = throughput * fs * misw;
                     L += C;
                 }

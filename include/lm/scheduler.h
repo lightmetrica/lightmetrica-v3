@@ -22,11 +22,6 @@ LM_NAMESPACE_BEGIN(scheduler)
     \rst
     A scheduler for the rendering techniues based on sample-per-pixel (SPP) loop.
     This scheduler guarantees the equal number of samples are processed for each pixel.
-    This scheduler is suitable for the renderer having the following structure:
-
-        for i in pixels:
-            for j in spp:
-                render_pixel(i, j)
     \endrst
 */
 class SPPScheduler : public Component {
@@ -34,7 +29,7 @@ public:
     /*!
         \brief Callback function for parallel loop.
         \param pixelIndex Pixel index.
-        \param sampleIndex Index of pixel sample.
+        \param sampleIndex Pixel sample index.
         \param threadid Thread index.
     */
     using ProcessFunc = std::function<void(long long pixelIndex, long long sampleIndex, int threadid)>;
@@ -46,6 +41,30 @@ public:
         \return Processed samples per pixel.
     */
     virtual long long run(long long numPixels, const ProcessFunc& process) const = 0;
+};
+
+/*!
+    \brief Sample-per-image scheduler.
+
+    \rst
+    A scheduler for the rendering techniues based on sample-per-image (SPI) loop.
+    \endrst
+*/
+class SPIScheduler : public Component {
+public:
+    /*!
+        \brief Callback function for parallel loop.
+        \param sampleIndex Sample index.
+        \param threadid Thread index.
+    */
+    using ProcessFunc = std::function<void(long long sampleIndex, int threadid)>;
+    
+    /*!
+        \brief Dispatch scheduler.
+        \param process Callback function for parallel loop.
+        \return Processed samples.
+    */
+    virtual long long run(const ProcessFunc& process) const = 0;
 };
 
 /*!
