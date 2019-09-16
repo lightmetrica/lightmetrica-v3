@@ -18,7 +18,7 @@ class Renderer_VolPT final : public Renderer {
 private:
     Film* film_;
     int maxLength_;
-    Component::Ptr<scheduler::SPPScheduler> sched_;
+    Component::Ptr<scheduler::Scheduler> sched_;
 
     #if VOLPT_DEBUG_VIS
     mutable std::vector<Ray> sampledRays_;
@@ -51,15 +51,15 @@ public:
         film_ = json::compRef<Film>(prop, "output");
         maxLength_ = json::value<int>(prop, "max_length");
         const auto schedName = json::value<std::string>(prop, "scheduler");
-        sched_ = comp::create<scheduler::SPPScheduler>(
-            "sppscheduler::" + schedName, makeLoc("sampler"), prop);
+        sched_ = comp::create<scheduler::Scheduler>(
+            "scheduler::spp::" + schedName, makeLoc("sampler"), prop);
         return true;
     }
 
     virtual void render(const Scene* scene) const override {
         film_->clear();
         const auto size = film_->size();
-        const auto processed = sched_->run(film_->numPixels(), [&](long long pixelIndex, long long sampleIndex, int) {
+        const auto processed = sched_->run([&](long long pixelIndex, long long sampleIndex, int) {
             // Per-thread random number generator
             thread_local Rng rng;
 

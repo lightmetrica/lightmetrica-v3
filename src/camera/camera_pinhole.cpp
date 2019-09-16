@@ -87,6 +87,27 @@ public:
         return { position_, u_*d.x+v_*d.y+w_*d.z };
     }
 
+    virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const override {
+        // Convert to camera space
+        const auto toEye = glm::transpose(Mat3(u_, v_, w_));
+        const auto woEye = toEye * wo;
+        if (woEye.z >= 0) {
+            // wo is directed to the opposition direction
+            return {};
+        }
+
+        // Calculate raster position
+        const auto rp = Vec2(
+            -woEye.x/woEye.z/tf_/aspectRatio,
+            -woEye.y/woEye.z/tf_)*.5_f + .5_f;
+        if (rp.x < 0_f || rp.x > 1_f || rp.y < 0_f || rp.y > 1_f) {
+            // wo is not in the view frustum
+            return {};
+        }
+        
+        return rp;
+    }
+
     virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
         const auto [x, y, w, h] = window.data.data;
         return CameraRaySample{

@@ -9,26 +9,30 @@
 #include <lm/parallel.h>
 #include <lm/progress.h>
 #include <lm/serial.h>
+#include <lm/film.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::scheduler)
 
 // Sample-based SPPScheduler
-class SPPScheduler_Samples : public SPPScheduler {
+class Scheduler_SPP_Sample : public Scheduler {
 private:
     long long spp_;
+    Film* film_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(spp_);
+        ar(spp_, film_);
     }
 
 public:
     virtual bool construct(const Json& prop) override {
         spp_ = json::value<long long>(prop, "spp");
+        film_ = json::compRef<Film>(prop, "output");
         return true;
     }
 
-    virtual long long run(long long numPixels, const ProcessFunc& process) const override {
+    virtual long long run(const ProcessFunc& process) const override {
+        const auto numPixels = film_->numPixels();
         progress::ScopedReport progress_ctx_(numPixels * spp_);
         
         // Parallel loop for each pixel
@@ -42,27 +46,30 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(SPPScheduler_Samples, "sppscheduler::samples");
+LM_COMP_REG_IMPL(Scheduler_SPP_Sample, "scheduler::spp::sample");
 
 // ----------------------------------------------------------------------------
 
 // Time-based SPPScheduler
-class SPPScheduler_Time : public SPPScheduler {
+class Scheduler_SPP_Time : public Scheduler {
 private:
     double renderTime_;
+    Film* film_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(renderTime_);
+        ar(renderTime_, film_);
     }
 
 public:
     virtual bool construct(const Json& prop) override {
         renderTime_ = json::value<Float>(prop, "render_time");
+        film_ = json::compRef<Film>(prop, "output");
         return true;
     }
     
-    virtual long long run(long long numPixels, const ProcessFunc& process) const override {
+    virtual long long run(const ProcessFunc& process) const override {
+        const auto numPixels = film_->numPixels();
         progress::ScopedTimeReport progress_ctx_(renderTime_);
         
         const auto start = std::chrono::high_resolution_clock::now();
@@ -93,12 +100,12 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(SPPScheduler_Time, "sppscheduler::time");
+LM_COMP_REG_IMPL(Scheduler_SPP_Time, "scheduler::spp::time");
 
 // ----------------------------------------------------------------------------
 
 // Sample-based SPIScheduler
-class SPIScheduler_Samples : public SPIScheduler {
+class Scheduler_SPI_Sample : public Scheduler {
 private:
     long long numSamples_;
 
@@ -116,7 +123,7 @@ public:
     virtual long long run(const ProcessFunc& process) const override {
         progress::ScopedReport progress_ctx_(numSamples_);
         parallel::foreach(numSamples_, [&](long long index, int threadid) {
-            process(index, threadid);
+            process(0, index, threadid);
         }, [&](long long processed) {
             progress::update(processed);
         });
@@ -125,12 +132,12 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(SPIScheduler_Samples, "spischeduler::samples");
+LM_COMP_REG_IMPL(Scheduler_SPI_Sample, "scheduler::spi::sample");
 
 // ----------------------------------------------------------------------------
 
 // Time-based SPIScheduler
-class SPIScheduler_Time : public SPIScheduler {
+class Scheduler_SPI_Time : public Scheduler {
 private:
     double renderTime_;
     long long samplesPerIter_;
@@ -143,7 +150,7 @@ public:
 public:
     virtual bool construct(const Json& prop) override {
         renderTime_ = json::value<Float>(prop, "render_time");
-        samplesPerIter_ = json::value<long long>(prop, "samples_per_iter", 10000000);
+        samplesPerIter_ = json::value<long long>(prop, "samples_per_iter", 1000000);
         return true;
     }
 
@@ -154,7 +161,7 @@ public:
         while (true) {
             // Parallel loop
             parallel::foreach(samplesPerIter_, [&](long long index, int threadid) {
-                process(processed + index, threadid);
+                process(0, processed + index, threadid);
             }, [&](long long) {
                 using namespace std::chrono;
                 const auto now = high_resolution_clock::now();
@@ -176,6 +183,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(SPIScheduler_Time, "spischeduler::time");
+LM_COMP_REG_IMPL(Scheduler_SPI_Time, "scheduler::spi::time");
 
 LM_NAMESPACE_END(LM_NAMESPACE::scheduler)

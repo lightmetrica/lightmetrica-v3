@@ -393,6 +393,11 @@ public:
         };
     }
 
+    virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const override {
+        const auto* camera = nodes_.at(*camera_).primitive.camera;
+        return camera->rasterPosition(wo, aspectRatio);
+    }
+
     virtual std::optional<RaySample> sampleLight(Rng& rng, const SceneInteraction& sp) const override {
         // Sample a light
         const int n  = int(lights_.size());

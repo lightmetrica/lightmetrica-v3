@@ -299,9 +299,20 @@ public:
 
     /*!
         \brief Generate a primary ray.
+        \param rp Raster position in [0,1]^2.
+        \param aspectRatio Aspect ratio of the film.
+        \return Generated primary ray.
     */
     virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const = 0;
 
+    /*!
+        \brief Compute a raser position.
+        \param wo Primary ray direction.
+        \param aspectRatio Aspect ratio of the film.
+        \return Raster position.
+    */
+    virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const = 0;
+    
     /*!
         \brief Sample a ray given surface point and incident direction.
         \rst

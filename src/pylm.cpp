@@ -447,14 +447,14 @@ static void bind(pybind11::module& m) {
         virtual void accum(const Film* film) override {
             PYBIND11_OVERLOAD_PURE(void, Film, accum, film);
         }
-        virtual void splat(Vec2 rp, Vec3 v) override {
-            PYBIND11_OVERLOAD_PURE(void, Film, splat, rp, v);
-        }
         virtual void splatPixel(int x, int y, Vec3 v) override {
             PYBIND11_OVERLOAD_PURE(void, Film, splatPixel, x, y, v);
         }
         virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) override {
             PYBIND11_OVERLOAD_PURE(void, Film, updatePixel, x, y, updateFunc);
+        }
+        virtual void rescale(Float s) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, rescale, s);
         }
         virtual void clear() override {
             PYBIND11_OVERLOAD_PURE(void, Film, clear);
@@ -564,6 +564,9 @@ static void bind(pybind11::module& m) {
         }
         virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const override {
             PYBIND11_OVERLOAD_PURE(Ray, Scene, primaryRay, rp, aspectRatio);
+        }
+        virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, rasterPosition, wo, aspectRatio);
         }
         virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleRay, rng, sp, wi);

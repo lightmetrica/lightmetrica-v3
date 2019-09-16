@@ -299,7 +299,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 
 /*!
-    \brief Implement serialization function.
+    \brief Implement serialization functions.
     \param ar Name of archive.
     
     \rst
@@ -315,6 +315,20 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 #define LM_SERIALIZE_IMPL(ar) \
     virtual void load(lm::InputArchive& ar_) override { serialize_(ar_); } \
     virtual void save(lm::OutputArchive& ar_) override { serialize_(ar_); } \
+    template <typename Archive> void serialize_(Archive& ar)
+
+/*!
+    \brief Implement serialization functions with parent class.
+    \param ar Name of archive.
+    \param Parent Parent component type.
+
+    \rst
+    Use this function when the inherited parent component contains serialization function.
+    \endrst
+*/
+#define LM_SERIALIZE_IMPL_WITH_PARENT(ar, Parent) \
+    virtual void load(lm::InputArchive& ar_) override { Parent::load(ar_); serialize_(ar_); } \
+    virtual void save(lm::OutputArchive& ar_) override { Parent::save(ar_); serialize_(ar_); } \
     template <typename Archive> void serialize_(Archive& ar)
 
 /*!

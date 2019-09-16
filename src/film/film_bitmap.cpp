@@ -8,6 +8,7 @@
 #include <lm/film.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
+#include <lm/parallel.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -175,18 +176,18 @@ public:
         }
     }
 
-    virtual void splat(Vec2 rp, Vec3 v) override {
-        const int x = glm::clamp(int(rp.x * w_), 0, w_-1);
-        const int y = glm::clamp(int(rp.y * h_), 0, h_-1);
-        data_[y*w_+x].add(v);
-    }
-
     virtual void splatPixel(int x, int y, Vec3 v) override {
         data_[y*w_+x].add(v);
     }
 
     virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) override {
         data_[y*w_+x].updateWithFunc(updateFunc);
+    }
+
+    virtual void rescale(Float s) override {
+        parallel::foreach(w_ * h_, [&](long long i, int) {
+            data_[i].v_ = data_[i].v_.load() * s;
+        });
     }
 
     virtual void clear() override {
