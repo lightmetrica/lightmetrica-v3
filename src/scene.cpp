@@ -132,6 +132,11 @@ public:
 
             // Envlight
             if (light && light->isInfinite()) {
+                if (envLight_) {
+                    LM_ERROR("Environment light is already registered. "
+                             "You can register only one environment light in the scene.");
+                    return false;
+                }
                 envLight_ = index;
             }
 
@@ -238,10 +243,6 @@ public:
         // because the global tranformation can only be obtained by traversing the nodes.
         lightIndicesMap_.clear();
         lights_.clear();
-        if (envLight_) {
-            lightIndicesMap_[*envLight_] = 0;
-            lights_.push_back({ Transform(Mat4(1_f)), *envLight_ });
-        }
         traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
             if (node.type == SceneNodeType::Primitive && node.primitive.light) {
                 lightIndicesMap_[node.index] = int(lights_.size());

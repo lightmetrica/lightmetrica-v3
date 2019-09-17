@@ -11,7 +11,7 @@
 #include <lm/scheduler.h>
 
 #define VOLPT_DEBUG_VIS 0
-#define VOLPT_IMAGE_SAMPLNG 1
+#define VOLPT_IMAGE_SAMPLNG 0
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -85,22 +85,16 @@ public:
             Vec3 wi{};
 
             // Current scene interaction
-            SceneInteraction sp;
+            auto sp = SceneInteraction::makeCameraTerminator(window, film_->aspectRatio());
 
             // Path throughput
             Vec3 throughput(1_f);
 
-            // Initial sampleRay function
-            std::function<std::optional<RaySample>()> sampleRay = [&]() {
-                return scene->samplePrimaryRay(rng, window, film_->aspectRatio());
-            };
-
             // Perform random walk
-            Vec3 L(0_f);
             Vec2 rasterPos{};
             for (int length = 0; length < maxLength_; length++) {
                 // Sample a ray
-                const auto s = sampleRay();
+                const auto s = scene->sampleRay(rng, sp, wi);
                 if (!s || math::isZero(s->weight)) {
                     break;
                 }
@@ -111,11 +105,26 @@ public:
                 }
 
                 // Sample a NEE edge
+#if VOLPT_IMAGE_SAMPLNG
+                const bool nee = !scene->isSpecular(s->sp);
+#else
                 const bool nee = length > 0 && !scene->isSpecular(s->sp);
+#endif
                 if (nee) [&] {
                     // Sample a light
                     const auto sL = scene->sampleLight(rng, s->sp);
                     if (!sL) {
+                        return;
+                    }
+
+                    // Recompute raster position for the primary edge
+                    const auto rp = [&]() -> std::optional<Vec2> {
+                        if (length == 0)
+                            return scene->rasterPosition(-sL->wo, film_->aspectRatio());
+                        else
+                            return rasterPos;
+                    }();
+                    if (!rp) {
                         return;
                     }
                     
@@ -137,7 +146,7 @@ public:
                     const auto fs = scene->evalContrb(s->sp, wi, wo);
                     const auto pdfSel = scene->pdfComp(s->sp, wi);
                     const auto C = throughput / pdfSel * *Tr * fs * sL->weight;
-                    L += C;
+                    film_->splat(*rp, C);
                 }();
 
                 // Sample next scene interaction
@@ -152,7 +161,7 @@ public:
                 // Accumulate contribution from emissive interaction
                 if (!nee && scene->isLight(sd->sp)) {
                     const auto C = throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
-                    L += C;
+                    film_->splat(rasterPos, C);
                 }
 
                 // Russian roulette
@@ -167,13 +176,7 @@ public:
                 // Update
                 wi = -s->wo;
                 sp = sd->sp;
-                sampleRay = [&]() {
-                    return scene->sampleRay(rng, sp, wi);
-                };
             }
-
-            // Accumulate contribution
-            film_->splat(rasterPos, L);
         });
 
 #if VOLPT_IMAGE_SAMPLNG

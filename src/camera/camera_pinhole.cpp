@@ -126,6 +126,9 @@ public:
     }
 
     virtual Vec3 eval(Vec3 wo, Float aspectRatio) const override {
+        if (!rasterPosition(wo, aspectRatio)) {
+            return Vec3(0_f);
+        }
         return Vec3(J(wo, aspectRatio));
     }
 

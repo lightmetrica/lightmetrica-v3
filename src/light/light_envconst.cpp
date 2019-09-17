@@ -35,11 +35,12 @@ public:
 
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry&, const Transform&) const override {
         const auto wo = math::sampleUniformSphere(rng);
+        const auto pL = math::pdfUniformSphere();
         return LightRaySample{
             PointGeometry::makeInfinite(wo),
             wo,
             0,
-            Le_ / math::pdfUniformSphere()
+            Le_ / pL
         };
     }
 

@@ -10,7 +10,7 @@
 #include <lm/film.h>
 #include <lm/scheduler.h>
 
-#define VOLPT_IMAGE_SAMPLNG 1
+#define VOLPT_IMAGE_SAMPLNG 0
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
