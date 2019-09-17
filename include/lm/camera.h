@@ -101,15 +101,19 @@ public:
     virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const = 0;
 
     /*!
+        \brief Evaluate pdf for direction sampling.
+    */
+    virtual Float pdf(Vec3 wo, Float aspectRatio) const = 0;
+
+    /*!
         \brief Evaluate sensitivity.
-        \param geom Surface geometry information.
         \param wo Outgoing direction.
 
         \rst
         Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const = 0;
+    virtual Vec3 eval(Vec3 wo, Float aspectRatio) const = 0;
 
     /*!
         \brief Get view matrix if available.

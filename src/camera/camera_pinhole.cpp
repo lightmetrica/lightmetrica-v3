@@ -117,9 +117,16 @@ public:
         };
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
-        LM_UNUSED(geom, wo);
-        LM_TBA_RUNTIME();
+    virtual Float pdf(Vec3 wo, Float aspectRatio) const override {
+        // Given directions is not samplable if raster position is not in [0,1]^2
+        if (!rasterPosition(wo, aspectRatio)) {
+            return 0_f;
+        }
+        return J(wo, aspectRatio);
+    }
+
+    virtual Vec3 eval(Vec3 wo, Float aspectRatio) const override {
+        return Vec3(J(wo, aspectRatio));
     }
 
     virtual Mat4 viewMatrix() const override {
@@ -128,6 +135,18 @@ public:
 
     virtual Mat4 projectionMatrix(Float aspectRatio) const override {
         return glm::perspective(glm::radians(vfov_), aspectRatio, 0.01_f, 10000_f);
+    }
+
+private:
+    // Compute Jacobian
+    // TODO. Add derivation in documentataion
+    Float J(Vec3 wo, Float aspectRatio) const {
+        const auto V = glm::transpose(Mat3(u_, v_, w_));
+        const auto woEye = V * wo;
+        const Float cosTheta = -woEye.z;
+        const Float invCosTheta = 1_f / cosTheta;
+        const Float A = tf_ * tf_ * aspectRatio * 4_f;
+        return invCosTheta * invCosTheta * invCosTheta / A;
     }
 };
 

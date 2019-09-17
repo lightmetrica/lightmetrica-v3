@@ -10,6 +10,8 @@
 #include <lm/film.h>
 #include <lm/scheduler.h>
 
+#define VOLPT_IMAGE_SAMPLNG 1
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_VolPTNaive final : public Renderer {
@@ -33,26 +35,34 @@ public:
         film_ = json::compRef<Film>(prop, "output");
         maxLength_ = json::value<int>(prop, "max_length");
         const auto schedName = json::value<std::string>(prop, "scheduler");
+#if VOLPT_IMAGE_SAMPLNG
         sched_ = comp::create<scheduler::Scheduler>(
-            "scheduler::spp::" + schedName, makeLoc("sampler"), prop);
+            "scheduler::spi::" + schedName, makeLoc("scheduler"), prop);
+#else
+        sched_ = comp::create<scheduler::Scheduler>(
+            "scheduler::spp::" + schedName, makeLoc("scheduler"), prop);
+#endif
         return true;
     }
 
     virtual void render(const Scene* scene) const override {
         film_->clear();
-        //const auto [w, h] = film_->size();
-        //const auto size = film_->size();
-        const auto processed = sched_->run([&](long long pixelIndex, long long sampleIndex, int) {
+        const auto size = film_->size();
+        const auto processed = sched_->run([&](long long pixelIndex, long long, int) {
             // Per-thread random number generator
             thread_local Rng rng;
 
+#if VOLPT_IMAGE_SAMPLNG
+            LM_UNUSED(pixelIndex);
+            const Vec4 window(0_f, 0_f, 1_f, 1_f);
+#else
             // Pixel positions
-            const auto size = film_->size();
             const int x = int(pixelIndex % size.w);
             const int y = int(pixelIndex / size.w);
-            const auto dx = 1_f/size.w;
-            const auto dy = 1_f/size.h;
-            const Vec4 window(dx*x, dy*y, dx, dy);
+            const auto dx = 1_f / size.w;
+            const auto dy = 1_f / size.h;
+            const Vec4 window(dx * x, dy * y, dx, dy);
+#endif
             
             // Path throughput
             Vec3 throughput(1_f);
@@ -64,11 +74,17 @@ public:
 
             // Perform random walk
             Vec3 L(0_f);
+            Vec2 rasterPos{};
             for (int length = 0; length < maxLength_; length++) {
                 // Sample a ray
                 const auto s = sampleRay();
                 if (!s || math::isZero(s->weight)) {
                     break;
+                }
+
+                // Compute raster position for the primary ray
+                if (length == 0) {
+                    rasterPos = *scene->rasterPosition(s->wo, film_->aspectRatio());
                 }
 
                 // Sample next scene interaction
@@ -102,8 +118,14 @@ public:
             }
 
             // Accumulate contribution
-            film_->incAve(x, y, sampleIndex, L);
+            film_->splat(rasterPos, L);
         });
+
+#if VOLPT_IMAGE_SAMPLNG
+        film_->rescale(Float(size.w * size.h) / processed);
+#else
+        film_->rescale(1_f / processed);
+#endif
     }
 };
 

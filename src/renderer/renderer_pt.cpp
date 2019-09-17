@@ -86,9 +86,104 @@ public:
                 }
             }();
 
-            // Estimate pixel intensity
-            const auto [L, rp] = Li(scene, rng, window);
-            film_->splat(rp, L);
+            // Path throughput
+            Vec3 throughput(1_f);
+
+            // Incident direction and current surface point
+            Vec3 wi = {};
+            auto sp = SceneInteraction::makeCameraTerminator(window, film_->aspectRatio());
+
+            // Perform random walk
+            Vec2 rasterPos{};
+            for (int length = 0; length < maxLength_; length++) {
+                // Sample a ray
+                const auto s = scene->sampleRay(rng, sp, wi);
+                if (!s || math::isZero(s->weight)) {
+                    break;
+                }
+
+                // Compute raster position for the primary ray
+                if (length == 0) {
+                    rasterPos = *scene->rasterPosition(s->wo, film_->aspectRatio());
+                }
+
+                // Sample a NEE edge
+                const bool nee = [&]() {
+                    // Primary ray is samplable via NEE in the image space sample mode
+                    if constexpr (sampleMode == SampleMode::Pixel)
+                        return length > 0 && !scene->isSpecular(s->sp);
+                    else
+                        return !scene->isSpecular(s->sp);
+                }();
+                if (ptMode_ != PTMode::Naive && nee) [&] {
+                    // Sample a light
+                    const auto sL = scene->sampleLight(rng, s->sp);
+                    if (!sL) {
+                        return;
+                    }
+                    if (!scene->visible(s->sp, sL->sp)) {
+                        return;
+                    }
+
+                    // Recompute raster position for the primary edge
+                    const auto rp = [&]() -> std::optional<Vec2> {
+                        if (length == 0)
+                            return scene->rasterPosition(-sL->wo, film_->aspectRatio());
+                        else
+                            return rasterPos;
+                    }();
+                    if (!rp) {
+                        return;
+                    }
+
+                    // Evaluate and accumulate contribution
+                    const auto wo = -sL->wo;
+                    const auto fs = scene->evalContrb(s->sp, wi, wo);
+                    const auto pdfSel = scene->pdfComp(s->sp, wi);
+                    const auto misw = ptMode_ == PTMode::NEE
+                        ? 1_f
+                        : math::balanceHeuristic(
+                            scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
+                    const auto C = throughput / pdfSel * fs * sL->weight * misw;
+                    film_->splat(*rp, C);
+                }();
+
+                // Intersection to next surface
+                const auto hit = scene->intersect(s->ray());
+                if (!hit) {
+                    break;
+                }
+
+                // Update throughput
+                throughput *= s->weight;
+
+                // Accumulate contribution from light
+                // In NEE mode, only use direct strategy when a NEE edge cannot be sampled
+                const bool direct = (ptMode_ != PTMode::NEE) || (ptMode_ == PTMode::NEE && !nee);
+                if (direct && scene->isLight(*hit)) {
+                    const auto woL = -s->wo;
+                    const auto fs = scene->evalContrbEndpoint(*hit, woL);
+                    const auto misw = ptMode_ == PTMode::Naive || !nee
+                        ? 1_f 
+                        : math::balanceHeuristic(
+                            scene->pdf(s->sp, wi, s->wo), scene->pdfLight(s->sp, *hit, woL));
+                    const auto C = throughput * fs * misw;
+                    film_->splat(rasterPos, C);
+                }
+
+                // Russian roulette
+                if (length > 3) {
+                    const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));
+                    if (rng.u() < q) {
+                        break;
+                    }
+                    throughput /= 1_f - q;
+                }
+
+                // Update
+                wi = -s->wo;
+                sp = *hit;
+            }
         });
         
         // Rescale film
@@ -96,102 +191,6 @@ public:
             film_->rescale(1_f / processed);
         else
             film_->rescale(Float(size.w * size.h) / processed);
-    }
-
-private:
-    // Estimate pixel intensity
-    std::tuple<Vec3, Vec2> Li(const Scene* scene, Rng& rng, Vec4 window) const {
-        // Path throughput
-        Vec3 throughput(1_f);
-
-        // Incident direction and current surface point
-        Vec3 wi = {};
-        SceneInteraction sp;
-
-        // Initial sampleRay function
-        std::function<std::optional<RaySample>()> sampleRay = [&]() {
-            return scene->samplePrimaryRay(rng, window, film_->aspectRatio());
-        };
-
-        // Perform random walk
-        Vec3 L(0_f);
-        Vec2 rasterPos{};
-        for (int length = 0; length < maxLength_; length++) {
-            // Sample a ray
-            const auto s = sampleRay();
-            if (!s || math::isZero(s->weight)) {
-                break;
-            }
-
-            // Compute raster position for the primary ray
-            if (length == 0) {
-                rasterPos = *scene->rasterPosition(s->wo, film_->aspectRatio());
-            }
-
-            // Sample a NEE edge
-            const bool nee = length > 0 && !scene->isSpecular(s->sp);
-            if (ptMode_ != PTMode::Naive && nee) [&] {
-                // Sample a light
-                const auto sL = scene->sampleLight(rng, s->sp);
-                if (!sL) {
-                    return;
-                }
-                if (!scene->visible(s->sp, sL->sp)) {
-                    return;
-                }
-                // Evaluate and accumulate contribution
-                const auto wo = -sL->wo;
-                const auto fs = scene->evalContrb(s->sp, wi, wo);
-                const auto pdfSel = scene->pdfComp(s->sp, wi);
-                const auto misw = ptMode_ == PTMode::NEE
-                    ? 1_f
-                    : math::balanceHeuristic(
-                        scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
-                const auto C = throughput / pdfSel * fs * sL->weight * misw;
-                L += C;
-            }();
-
-            // Intersection to next surface
-            const auto hit = scene->intersect(s->ray());
-            if (!hit) {
-                break;
-            }
-
-            // Update throughput
-            throughput *= s->weight;
-
-            // Accumulate contribution from light
-            // In NEE mode, only use direct strategy when a NEE edge cannot be sampled
-            const bool direct = (ptMode_ != PTMode::NEE) || (ptMode_ == PTMode::NEE && !nee);
-            if (direct && scene->isLight(*hit)) {
-                const auto woL = -s->wo;
-                const auto fs = scene->evalContrbEndpoint(*hit, woL);
-                const auto misw = ptMode_ == PTMode::Naive || !nee
-                    ? 1_f 
-                    : math::balanceHeuristic(
-                        scene->pdf(s->sp, wi, s->wo), scene->pdfLight(s->sp, *hit, woL));
-                const auto C = throughput * fs * misw;
-                L += C;
-            }
-
-            // Russian roulette
-            if (length > 3) {
-                const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));
-                if (rng.u() < q) {
-                    break;
-                }
-                throughput /= 1_f - q;
-            }
-
-            // Update
-            wi = -s->wo;
-            sp = *hit;
-            sampleRay = [&]() {
-                return scene->sampleRay(rng, sp, wi);
-            };
-        }
-
-        return { L, rasterPos };
     }
 };
 

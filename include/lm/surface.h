@@ -166,6 +166,14 @@ namespace SurfaceComp {
 }
 
 /*!
+    \brief Terminator type.
+*/
+enum class TerminatorType {
+    Camera,
+    Light,
+};
+
+/*!
     \brief Scene interaction.
 
     \rst
@@ -175,14 +183,107 @@ namespace SurfaceComp {
     The point is associated with a geometry information around the point
     and an index of the primitive.
     The structure is used by the functions of :cpp:class:`lm::Scene` class.
+    Also, the structure can represent special terminator
+    representing the sentinels of the light path, which can be used to provide
+    conditions to determine subspace of endpoint.
     \endrst
 */
 struct SceneInteraction {
-    int primitive;              //!< Primitive node index.
-    int comp;                   //!< Component index.
-    PointGeometry geom;         //!< Surface point geometry information.
-    bool endpoint;              //!< True if endpoint of light path.
-    bool medium;                //!< True if it is medium interaction. 
+    int primitive;          //!< Primitive node index.
+    int comp;               //!< Component index.
+    PointGeometry geom;     //!< Surface point geometry information.
+    bool endpoint;          //!< True if endpoint of light path.
+    bool medium;            //!< True if it is medium interaction.
+    std::optional<TerminatorType> terminator;   //!< Terminator type.
+
+    // Information associated to terminator on camera
+    struct {
+        Vec4 window;
+        Float aspectRatio;
+    } cameraCond;
+
+    /*!
+        \brief Make surface interaction.
+        \param primitive Primitive index.
+        \param comp Component index.
+        \param geom Point geometry.
+        \return Created scene interaction.
+    */
+    static SceneInteraction makeSurfaceInteraction(int primitive, int comp, const PointGeometry& geom) {
+        SceneInteraction si;
+        si.primitive = primitive;
+        si.comp = comp;
+        si.geom = geom;
+        si.endpoint = false;
+        si.medium = false;
+        si.terminator = {};
+        return si;
+    }
+
+    /*!
+        \brief Make medium interaction.
+        \param primitive Primitive index.
+        \param comp Component index.
+        \param geom Point geometry.
+        \return Created scene interaction.
+    */
+    static SceneInteraction makeMediumInteraction(int primitive, int comp, const PointGeometry& geom) {
+        SceneInteraction si;
+        si.primitive = primitive;
+        si.comp = comp;
+        si.geom = geom;
+        si.endpoint = false;
+        si.medium = true;
+        si.terminator = {};
+        return si;
+    }
+
+    /*!
+        \brief Make camera endpoint.
+        \param primitive Primitive index.
+        \param comp Component index.
+        \param geom Point geometry.
+        \return Created scene interaction.
+    */
+    static SceneInteraction makeCameraEndpoint(int primitive, int comp, const PointGeometry& geom, Vec4 window, Float aspectRatio) {
+        SceneInteraction si;
+        si.primitive = primitive;
+        si.comp = comp;
+        si.geom = geom;
+        si.endpoint = true;
+        si.medium = false;
+        si.terminator = {};
+        si.cameraCond.window = window;
+        si.cameraCond.aspectRatio = aspectRatio;
+        return si;
+    }
+
+    /*!
+        \brief Make light endpoint.
+    */
+    static SceneInteraction makeLightEndpoint(int primitive, int comp, const PointGeometry& geom) {
+        SceneInteraction si;
+        si.primitive = primitive;
+        si.comp = comp;
+        si.geom = geom;
+        si.endpoint = true;
+        si.medium = false;
+        si.terminator = {};
+        return si;
+    }
+
+    /*!
+        \brief Make camera terminator.
+    */
+    static SceneInteraction makeCameraTerminator(Vec4 window, Float aspectRatio) {
+        SceneInteraction si;
+        si.endpoint = false;
+        si.medium = false;
+        si.terminator = TerminatorType::Camera;
+        si.cameraCond.window = window;
+        si.cameraCond.aspectRatio = aspectRatio;
+        return si;
+    }
 };
 
 /*!

@@ -269,28 +269,23 @@ public:
             if (!envLight_) {
                 return {};
             }
-            return SceneInteraction{
+            return SceneInteraction::makeLightEndpoint(
                 *envLight_,
                 0,
-                PointGeometry::makeInfinite(-ray.d),
-                true,
-                false
-            };
+                PointGeometry::makeInfinite(-ray.d));
         }
         const auto [t, uv, globalTransform, primitiveIndex, faceIndex] = *hit;
         const auto& primitive = nodes_.at(primitiveIndex).primitive;
         const auto p = primitive.mesh->surfacePoint(faceIndex, uv);
-        return SceneInteraction{
+        return SceneInteraction::makeSurfaceInteraction(
             primitiveIndex,
             -1,
             PointGeometry::makeOnSurface(
                 globalTransform.M * Vec4(p.p, 1_f),
                 globalTransform.normalM * p.n,
                 p.t
-            ),
-            false,
-            false
-        };
+            )
+        );
     }
 
     // ------------------------------------------------------------------------
@@ -326,9 +321,9 @@ public:
     }
 
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
         if (sp.medium) {
             // Medium interaction
+            const auto& primitive = nodes_.at(sp.primitive).primitive;
             const auto s = primitive.medium->phase()->sample(rng, sp.geom, wi);
             if (!s) {
                 return {};
@@ -339,8 +334,28 @@ public:
                 s->weight
             };
         }
+        else if (sp.terminator && sp.terminator == TerminatorType::Camera) {
+            // Endpoint
+            const auto* camera = nodes_.at(*camera_).primitive.camera;
+            const auto s = camera->samplePrimaryRay(rng, sp.cameraCond.window, sp.cameraCond.aspectRatio);
+            if (!s) {
+                return {};
+            }
+            return RaySample{
+                SceneInteraction::makeCameraEndpoint(
+                    *camera_,
+                    0,
+                    s->geom,
+                    sp.cameraCond.window,
+                    sp.cameraCond.aspectRatio
+                ),
+                s->wo,
+                s->weight
+            };
+        }
         else {
             // Surface interaction
+            const auto& primitive = nodes_.at(sp.primitive).primitive;
             if (!primitive.material) {
                 return {};
             }
@@ -349,13 +364,11 @@ public:
                 return {};
             }
             return RaySample{
-                SceneInteraction{
+                SceneInteraction::makeSurfaceInteraction(
                     sp.primitive,
                     s->comp,
-                    sp.geom,
-                    false,
-                    false
-                },
+                    sp.geom
+                ),
                 s->wo,
                 s->weight
             };
@@ -381,13 +394,13 @@ public:
             return {};
         }
         return RaySample{
-            SceneInteraction{
+            SceneInteraction::makeCameraEndpoint(
                 *camera_,
                 0,
                 s->geom,
-                true,
-                false
-            },
+                window,
+                aspectRatio
+            ),
             s->wo,
             s->weight
         };
@@ -412,13 +425,11 @@ public:
             return {};
         }
         return RaySample{
-            SceneInteraction{
+            SceneInteraction::makeLightEndpoint(
                 light.index,
                 s->comp,
-                s->geom,
-                true,
-                false
-            },
+                s->geom
+            ),
             s->wo,
             s->weight / pL
         };
@@ -428,6 +439,15 @@ public:
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         if (sp.medium) {
             return primitive.medium->phase()->pdf(sp.geom, wi, wo);
+        }
+        else if (sp.endpoint) {
+            if (primitive.light) {
+                LM_TBA_RUNTIME();
+            }
+            else if (primitive.camera) {
+                return primitive.camera->pdf(wo, sp.cameraCond.aspectRatio);
+            }
+            LM_UNREACHABLE_RETURN();
         }
         else {
             return primitive.material->pdf(sp.geom, sp.comp, wi, wo);
@@ -454,13 +474,11 @@ public:
         if (ds && ds->medium) {
             // Medium interaction
             return DistanceSample{
-                SceneInteraction{
+                SceneInteraction::makeMediumInteraction(
                     *medium_,
                     0,
-                    PointGeometry::makeDegenerated(ds->p),
-                    false,
-                    true
-                },
+                    PointGeometry::makeDegenerated(ds->p)
+                ),
                 ds->weight
             };
         }
@@ -506,7 +524,7 @@ public:
             // Surface interaction
             if (sp.endpoint) {
                 if (primitive.camera) {
-                    return primitive.camera->eval(sp.geom, wo);
+                    return primitive.camera->eval(wo, sp.cameraCond.aspectRatio);
                 }
                 else if (primitive.light) {
                     return primitive.light->eval(sp.geom, sp.comp, wo);
