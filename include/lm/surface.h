@@ -332,6 +332,19 @@ static Float distance(const PointGeometry& s1, const PointGeometry& s2) {
 }
 
 /*!
+    \brief Convert pdf in solid angle measure to projected solid angle measure.
+
+    \rst
+    If the point geometry is not degenerated, this function converts the given pdf to
+    the projected solid angle measure. If the point geometry is degenerated,
+    this function keeps the solid angle measure.
+    \endrst
+*/
+static Float convertSAToProjSA(Float pdfSA, const PointGeometry& geom, Vec3 d) {
+    return geom.degenerated ? pdfSA : pdfSA / glm::abs(glm::dot(geom.n, d));
+}
+
+/*!
     @}
 */
 

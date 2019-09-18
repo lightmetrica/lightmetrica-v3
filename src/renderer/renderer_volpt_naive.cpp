@@ -18,11 +18,12 @@ class Renderer_VolPTNaive final : public Renderer {
 private:
     Film* film_;
     int maxLength_;
+    Float rrProb_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, maxLength_, sched_);
+        ar(film_, maxLength_, rrProb_, sched_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
@@ -34,6 +35,7 @@ public:
     virtual bool construct(const Json& prop) override {
         film_ = json::compRef<Film>(prop, "output");
         maxLength_ = json::value<int>(prop, "max_length");
+        rrProb_ = json::value<Float>(prop, "rr_prob", .2_f);
         const auto schedName = json::value<std::string>(prop, "scheduler");
 #if VOLPT_IMAGE_SAMPLNG
         sched_ = comp::create<scheduler::Scheduler>(
@@ -104,7 +106,7 @@ public:
 
                 // Russian roulette
                 if (length > 3) {
-                    const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));
+                    const auto q = glm::max(rrProb_, 1_f - glm::compMax(throughput));
                     if (rng.u() < q) {
                         break;
                     }

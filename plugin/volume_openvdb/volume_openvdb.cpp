@@ -127,11 +127,16 @@ public:
     }
 
     virtual Float evalScalar(Vec3 p) const override {
+#if 1
+        using SamplerT = openvdb::tools::GridSampler<GridT, openvdb::tools::BoxSampler>;
+        SamplerT sampler(*grid_);
+#else
         using AccessorT = typename GridT::ConstAccessor;
         using SamplerT = openvdb::tools::GridSampler<AccessorT, openvdb::tools::BoxSampler>;
         // Assign accessors for each thread for caching
         thread_local AccessorT accessor(grid_->getConstAccessor());
         SamplerT sampler(accessor, grid_->transform());
+#endif
         const auto d = sampler.wsSample(toVDBVec3(p));
         return d * scale_;
     }

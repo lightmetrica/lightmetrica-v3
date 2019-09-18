@@ -95,7 +95,8 @@ public:
         if (st == 0_f) {
             return 0_f;
         }
-        return dist_.p(u, v) / (2_f*Pi*Pi*st*glm::abs(glm::dot(d, geom.n)));
+        const auto pdfSA = dist_.p(u, v) / (2_f*Pi*Pi*st);
+        return surface::convertSAToProjSA(pdfSA, geom, d);
     }
 
     virtual bool isSpecular(const PointGeometry&, int) const override {

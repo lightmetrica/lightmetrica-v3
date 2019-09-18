@@ -33,19 +33,21 @@ public:
         return true;
     }
 
-    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry&, const Transform&) const override {
+    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {
         const auto wo = math::sampleUniformSphere(rng);
-        const auto pL = math::pdfUniformSphere();
+        const auto geomL = PointGeometry::makeInfinite(wo);
+        const auto pL = pdf(geom, geomL, 0, {}, wo);
         return LightRaySample{
-            PointGeometry::makeInfinite(wo),
+            geomL,
             wo,
             0,
             Le_ / pL
         };
     }
 
-    virtual Float pdf(const PointGeometry&, const PointGeometry&, int, const Transform&, Vec3) const override {
-        return math::pdfUniformSphere();
+    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
+        const auto d = -geomL.wo;
+        return surface::convertSAToProjSA(math::pdfUniformSphere(), geom, d);
     }
 
     virtual bool isSpecular(const PointGeometry&, int) const override {
