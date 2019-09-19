@@ -54,6 +54,59 @@ struct AtomicWrapper {
     }
 };
 
+// ----------------------------------------------------------------------------
+
+// Helper functions on image manipulaion
+namespace image {
+    // Write image as .pfm file
+    bool writePfm(const std::string& outpath, int w, int h, const std::vector<float>& d) {
+        FILE *f;
+        int err;
+        #if LM_COMPILER_MSVC
+        if ((err = fopen_s(&f, outpath.c_str(), "wb")) != 0) {
+            LM_ERROR("Failed to open [file='{}',errorno='{}']", outpath, err);
+            return false;
+        }
+        #else
+        if ((f = fopen(outpath.c_str(), "wb")) == nullptr) {
+            LM_ERROR("Failed to open [file='{}']", outpath);
+            return false;
+        }
+        #endif
+        fprintf(f, "PF\n%d %d\n-1\n", w, h);
+        fwrite(d.data(), 4, d.size(), f);
+        fclose(f);
+        return true;
+    }
+
+    // Sanity check of an image. If the image contains invalid values like INF or NAN,
+    // this function returns false.
+    bool sanityCheck(int w, int h, const std::vector<float>& d) {
+        constexpr int MaxInvalidPixels = 10;
+        int invalidPixels = 0;
+        for (int i = 0; i < w * h; i++) {
+            const int x = i % w;
+            const int y = i / w;
+            const auto v = d[i];
+            if (std::isnan(v)) {
+                LM_WARN("Found an invalid pixel [type='NaN', x={}, y={}]", x, y);
+                invalidPixels++;
+            }
+            else if (std::isinf(v)) {
+                LM_WARN("Found an invalid pixel [type='Inf', x={}, y={}]", x, y);
+                invalidPixels++;
+            }
+            if (invalidPixels >= MaxInvalidPixels) {
+                LM_WARN("Outputs more than >{} entries are omitted.", MaxInvalidPixels);
+                break;
+            }
+        }
+        return invalidPixels > 0;
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 /*
 \rst
 .. function:: film::bitmap
@@ -134,13 +187,15 @@ public:
         #endif
         else if (ext == ".hdr") {
             const auto data = copy<float>(true);
+            image::sanityCheck(w_, h_, data);
             if (!stbi_write_hdr(outpath.c_str(), w_, h_, 3, data.data())) {
                 return false;
             }
         }
         else if (ext == ".pfm") {
             const auto data = copy<float>(false);
-            if (!writePfm(outpath, w_, h_, data)) {
+            image::sanityCheck(w_, h_, data);
+            if (!image::writePfm(outpath, w_, h_, data)) {
                 return false;
             }
         }
@@ -195,26 +250,6 @@ public:
     }
 
 private:
-    bool writePfm(const std::string& outpath, int w, int h, const std::vector<float>& d) const {
-        FILE *f;
-        int err;
-        #if LM_COMPILER_MSVC
-        if ((err = fopen_s(&f, outpath.c_str(), "wb")) != 0) {
-            LM_ERROR("Failed to open [file='{}',errorno='{}']", outpath, err);
-            return false;
-        }
-        #else
-        if ((f = fopen(outpath.c_str(), "wb")) == nullptr) {
-            LM_ERROR("Failed to open [file='{}']", outpath);
-            return false;
-        }
-        #endif
-        fprintf(f, "PF\n%d %d\n-1\n", w, h);
-        fwrite(d.data(), 4, d.size(), f);
-        fclose(f);
-        return true;
-    }
-
     template <typename T>
     std::vector<T> copy(bool flip) const {
         std::vector<T> v(w_*h_*3, {});
