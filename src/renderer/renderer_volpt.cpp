@@ -20,6 +20,7 @@ private:
     Film* film_;
     int maxLength_;
     Float rrProb_;
+    std::optional<unsigned int> seed_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
     #if VOLPT_DEBUG_VIS
@@ -67,9 +68,9 @@ public:
     virtual void render(const Scene* scene) const override {
         film_->clear();
         const auto size = film_->size();
-        const auto processed = sched_->run([&](long long pixelIndex, long long, int) {
+        const auto processed = sched_->run([&](long long pixelIndex, long long, int threadid) {
             // Per-thread random number generator
-            thread_local Rng rng;
+            thread_local Rng rng(seed_ ? *seed_ + threadid : math::rngSeed());
 
 #if VOLPT_IMAGE_SAMPLNG
             LM_UNUSED(pixelIndex);

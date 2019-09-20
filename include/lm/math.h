@@ -386,6 +386,14 @@ LM_NAMESPACE_BEGIN(math)
 */
 
 /*!
+    \brief Generate random number for seed.
+    \return Random seed.
+*/
+static unsigned int rngSeed() {
+    return std::random_device{}();
+}
+
+/*!
     \brief Compute orthogonal basis.
     \param n Normal vector.
     

@@ -155,6 +155,9 @@ public:
     }
 
     virtual bool save(const std::string& outpath) const override {
+        // Disable floating-point exception for stb_image
+        exception::ScopedDisableFPEx disableFp_;
+
         LM_INFO("Saving image [file='{}']", outpath);
         LM_INDENT();
 
@@ -186,7 +189,7 @@ public:
         }
         #endif
         else if (ext == ".hdr") {
-            const auto data = copy<float>(true);
+            auto data = copy<float>(true);
             image::sanityCheck(w_, h_, data);
             if (!stbi_write_hdr(outpath.c_str(), w_, h_, 3, data.data())) {
                 return false;

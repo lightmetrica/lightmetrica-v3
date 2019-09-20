@@ -14,6 +14,7 @@
 #include "logger.h"
 #include "progress.h"
 #include "exception.h"
+#include "debug.h"
 #include "debugio.h"
 #include "dist.h"
 #include "parallel.h"

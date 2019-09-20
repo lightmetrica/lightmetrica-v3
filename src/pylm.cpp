@@ -340,18 +340,23 @@ static void bind(pybind11::module& m) {
         using ProgressContext = progress::detail::ProgressContext;
         class ProgressContext_Py final : public ProgressContext {
             virtual bool construct(const Json& prop) override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD(bool, ProgressContext, construct, prop);
             }
             virtual void start(progress::ProgressMode mode, long long total, double totalTime) override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, mode, total, totalTime);
             }
             virtual void end() override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, end);
             }
             virtual void update(long long processed) override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
             }
             virtual void updateTime(Float elapsed) override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, updateTime, elapsed);
             }
         };
@@ -375,6 +380,24 @@ static void bind(pybind11::module& m) {
         sm.def("handleMessage", &debugio::handleMessage);
         sm.def("syncUserContext", &debugio::syncUserContext);
         sm.def("draw", &debugio::draw);
+    }
+    #pragma endregion
+
+    // ------------------------------------------------------------------------
+
+    #pragma region debug.h
+    {
+        auto sm = m.def_submodule("debug");
+        sm.def("pollFloat", &debug::pollFloat);
+        sm.def("regOnPollFloat", [](const debug::OnPollFloatFunc& onPollFloat) {
+            debug::regOnPollFloat([&](const std::string& name, Float val) {
+                pybind11::gil_scoped_acquire acquire;
+                LM_INFO("{}, {}", name, val);
+                if (onPollFloat) {
+                    onPollFloat(name, val);
+                }
+            });
+        });
     }
     #pragma endregion
 

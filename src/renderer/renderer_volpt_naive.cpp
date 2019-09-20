@@ -9,6 +9,7 @@
 #include <lm/scene.h>
 #include <lm/film.h>
 #include <lm/scheduler.h>
+#include <lm/debug.h>
 
 #define VOLPT_IMAGE_SAMPLNG 0
 
@@ -19,6 +20,7 @@ private:
     Film* film_;
     int maxLength_;
     Float rrProb_;
+    std::optional<unsigned int> seed_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
@@ -37,6 +39,7 @@ public:
         maxLength_ = json::value<int>(prop, "max_length");
         rrProb_ = json::value<Float>(prop, "rr_prob", .2_f);
         const auto schedName = json::value<std::string>(prop, "scheduler");
+        seed_ = json::valueOrNone<unsigned int>(prop, "seed");
 #if VOLPT_IMAGE_SAMPLNG
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spi::" + schedName, makeLoc("scheduler"), prop);
@@ -50,9 +53,9 @@ public:
     virtual void render(const Scene* scene) const override {
         film_->clear();
         const auto size = film_->size();
-        const auto processed = sched_->run([&](long long pixelIndex, long long, int) {
+        const auto processed = sched_->run([&](long long pixelIndex, long long, int threadid) {
             // Per-thread random number generator
-            thread_local Rng rng;
+            thread_local Rng rng(seed_ ? *seed_ + threadid : math::rngSeed());
 
 #if VOLPT_IMAGE_SAMPLNG
             LM_UNUSED(pixelIndex);
@@ -65,7 +68,11 @@ public:
             const auto dy = 1_f / size.h;
             const Vec4 window(dx * x, dy * y, dx, dy);
 #endif
-            
+
+            //if (x == 70 && y == 16) {
+            //    __debugbreak();
+            //}
+            //
             // Path throughput
             Vec3 throughput(1_f);
 
@@ -98,6 +105,10 @@ public:
                 // Update throughput
                 throughput *= s->weight * sd->weight;
 
+                if (x == 70 && y == 16) {
+                    debug::pollFloat("throughput", glm::compMax(throughput));
+                }
+
                 // Accumulate contribution from emissive interaction
                 if (scene->isLight(sd->sp)) {
                     const auto C = throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
@@ -118,6 +129,11 @@ public:
                     return scene->sampleRay(rng, sp, wi);
                 };
             }
+
+            //if (glm::compMax(L) > 1e+20) {
+            //    LM_INFO("{} {}", x, y);
+            //    __debugbreak();
+            //}
 
             // Accumulate contribution
             film_->splat(rasterPos, L);
