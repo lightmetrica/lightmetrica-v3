@@ -62,14 +62,17 @@ def load_ipython_extension(ip):
         def log(self, level, severity, filename, line, message):
             if self.severity > severity:
                 return
+            out = sys.stdout
             if level == lm.log.LogLevel.Debug:
                 name = 'D'
             elif level == lm.log.LogLevel.Info:
                 name = 'I'
             elif level == lm.log.LogLevel.Warn:
                 name = 'W'
+                out = sys.stderr
             elif level == lm.log.LogLevel.Err:
                 name = 'E'
+                out = sys.stderr
             else:
                 name = 'I'
             elapsed = time.time() - self.start
@@ -78,7 +81,7 @@ def load_ipython_extension(ip):
             header = '[{}|{:.3f}|{:<10}] '.format(name, elapsed, line_and_file)
             spaces = ('.' * (self.n * 2)) + (' ' if self.n > 0 else '')
             s = header + spaces + message
-            print(s)
+            print(s, file=out)
         def updateIndentation(self, n):
             self.n += n
         def setSeverity(self, severity):

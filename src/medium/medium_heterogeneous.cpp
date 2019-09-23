@@ -60,7 +60,8 @@ public:
                 const auto albedo = volmeAlbedo_->evalColor(p);
                 return MediumDistanceSample{
                     ray.o + ray.d*t,
-                    albedo * density,
+                    albedo,     // T_{\bar{\mu}}(t) / p_{\bar{\mu}}(t) * \mu_s(t)
+                                // = 1/\mu_t(t) * \mu_s(t) = albedo(t)
                     true
                 };
             }

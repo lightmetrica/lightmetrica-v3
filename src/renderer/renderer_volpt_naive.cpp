@@ -85,6 +85,12 @@ public:
             Vec3 L(0_f);
             Vec2 rasterPos{};
             for (int length = 0; length < maxLength_; length++) {
+                #if LM_DEBUG_MODE
+                if (x == 70 && y == 16) {
+                    __debugbreak();
+                }
+                #endif
+
                 // Sample a ray
                 const auto s = sampleRay();
                 if (!s || math::isZero(s->weight)) {

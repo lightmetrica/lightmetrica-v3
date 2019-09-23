@@ -390,9 +390,10 @@ static void bind(pybind11::module& m) {
         auto sm = m.def_submodule("debug");
         sm.def("pollFloat", &debug::pollFloat);
         sm.def("regOnPollFloat", [](const debug::OnPollFloatFunc& onPollFloat) {
-            debug::regOnPollFloat([&](const std::string& name, Float val) {
+            // We must capture the callback function by value.
+            // Otherwise the function would be dereferenced.
+            debug::regOnPollFloat([onPollFloat](const std::string& name, Float val) {
                 pybind11::gil_scoped_acquire acquire;
-                LM_INFO("{}, {}", name, val);
                 if (onPollFloat) {
                     onPollFloat(name, val);
                 }

@@ -21,10 +21,11 @@ set(ILMBASE_ROOT "${_CONDA_LIB_PREFIX}")
 set(OPENEXR_ROOT "${_CONDA_LIB_PREFIX}")
 set(BLOSC_ROOT "${_CONDA_LIB_PREFIX}")
 
-# Find OpenVDB
-find_package(OpenVDB)
-if (OpenVDB_FOUND)
-    # Find dependencies
+# Find vdbloader library
+find_package(vdbloader)
+if (vdbloader_FOUND)
+    # Dependencies
+    find_package(OpenVDB REQUIRED)
     find_package(IlmBase REQUIRED)
     find_package(OpenEXR REQUIRED)
 
@@ -32,11 +33,9 @@ if (OpenVDB_FOUND)
     lm_add_plugin(
         NAME volume_openvdb
         LIBRARIES
-            OpenVDB::openvdb
-            OpenEXR::IlmImf
-            IlmBase::IlmThread
-            IlmBase::Iex
+            vdbloader::vdbloader
         SOURCES
             "volume_openvdb.cpp"
+            "volume_openvdb_.cpp"
             "renderer_volraycast.cpp")
 endif()
