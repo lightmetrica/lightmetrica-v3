@@ -341,7 +341,18 @@ static Float distance(const PointGeometry& s1, const PointGeometry& s2) {
     \endrst
 */
 static Float convertSAToProjSA(Float pdfSA, const PointGeometry& geom, Vec3 d) {
-    return geom.degenerated ? pdfSA : pdfSA / glm::abs(glm::dot(geom.n, d));
+    if (geom.degenerated) {
+        // When geom is degenerated, use pdf with solid angle measure.
+        return pdfSA;
+    }
+    const auto J = glm::abs(glm::dot(geom.n, d));
+    if (J == 0_f) {
+        // When normal and outgoing direction are perpecdicular,
+        // we can consider pdf is always zero because
+        // in this case the contriubtion function becomes always zero.
+        return 0_f;
+    }
+    return pdfSA / J;
 }
 
 /*!

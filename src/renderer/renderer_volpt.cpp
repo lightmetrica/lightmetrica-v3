@@ -53,6 +53,7 @@ public:
     virtual bool construct(const Json& prop) override {
         film_ = json::compRef<Film>(prop, "output");
         maxLength_ = json::value<int>(prop, "max_length");
+        seed_ = json::valueOrNone<unsigned int>(prop, "seed");
         rrProb_ = json::value<Float>(prop, "rr_prob", .2_f);
         const auto schedName = json::value<std::string>(prop, "scheduler");
 #if VOLPT_IMAGE_SAMPLNG

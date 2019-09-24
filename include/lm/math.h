@@ -527,6 +527,9 @@ static constexpr Float pdfUniformSphere() {
     \brief Balance heuristics.
 */
 static Float balanceHeuristic(Float p1, Float p2) {
+    if (p1 == 0_f && p2 == 0_f) {
+        return 0_f;
+    }
     return p1 / (p1 + p2);
 }
 

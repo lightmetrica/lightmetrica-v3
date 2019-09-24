@@ -46,11 +46,8 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        Ke_ = prop["Ke"];
-        mesh_ = comp::get<Mesh>(prop["mesh"]);
-        if (!mesh_) {
-            return false;
-        }
+        Ke_ = json::value<Vec3>(prop, "Ke");
+        mesh_ = json::compRef<Mesh>(prop, "mesh");
         
         // Construct CDF for surface sampling
         // Note we construct the CDF before transformation
