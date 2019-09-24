@@ -18,18 +18,20 @@ enum class PTMode {
     MIS,
 };
 
-enum class SampleMode {
+enum class ImageSampleMode {
     Pixel,
     Image,
 };
 
-template <typename SampleMode, SampleMode sampleMode>
+// ------------------------------------------------------------------------------------------------
+
 class Renderer_PT : public Renderer {
 private:
     Film* film_;
     int maxLength_;
     std::optional<unsigned int> seed_;
     PTMode ptMode_;
+    ImageSampleMode imageSampleMode_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
@@ -47,27 +49,31 @@ public:
         film_ = json::compRef<Film>(prop, "output");
         maxLength_ = json::value<int>(prop, "max_length");
         seed_ = json::valueOrNone<unsigned int>(prop, "seed");
-        ptMode_ = [&]() -> PTMode {
+        {
             const auto s = json::value<std::string>(prop, "mode", "mis");
             if (s == "naive") {
-                return PTMode::Naive;
+                ptMode_ = PTMode::Naive;
             }
             else if (s == "nee") {
-                return PTMode::NEE;
+                ptMode_ = PTMode::NEE;
             }
             else if (s == "mis") {
-                return PTMode::MIS;
+                ptMode_ = PTMode::MIS;
             }
-            LM_UNREACHABLE_RETURN();
-        }();
-        const auto schedName = json::value<std::string>(prop, "scheduler");
-        if constexpr (sampleMode == SampleMode::Pixel) {
-            sched_ = comp::create<scheduler::Scheduler>(
-                "scheduler::spp::" + schedName, makeLoc("scheduler"), prop);
         }
-        else {
-            sched_ = comp::create<scheduler::Scheduler>(
-                "scheduler::spi::" + schedName, makeLoc("scheduler"), prop);
+        {
+            const auto schedName = json::value<std::string>(prop, "scheduler");
+            const auto s = json::value<std::string>(prop, "image_sample_mode", "pixel");
+            if (s == "pixel") {
+                imageSampleMode_ = ImageSampleMode::Pixel;
+                sched_ = comp::create<scheduler::Scheduler>(
+                    "scheduler::spp::" + schedName, makeLoc("scheduler"), prop);
+            }
+            else if (s == "image") {
+                imageSampleMode_ = ImageSampleMode::Image;
+                sched_ = comp::create<scheduler::Scheduler>(
+                    "scheduler::spi::" + schedName, makeLoc("scheduler"), prop);
+            }
         }
         return true;
     }
@@ -77,8 +83,6 @@ public:
         film_->clear();
         const auto size = film_->size();
 
-        // ----------------------------------------------------------------------------------------
-
         // Dispatch rendering
         const auto processed = sched_->run([&](long long pixelIndex, long long, int threadid) {
             // Per-thread random number generator
@@ -87,8 +91,8 @@ public:
             // ------------------------------------------------------------------------------------
 
             // Sample window
-            const auto window = [&]() constexpr -> Vec4 {
-                if constexpr (sampleMode == SampleMode::Pixel) {
+            const auto window = [&]() -> Vec4 {
+                if (imageSampleMode_ == ImageSampleMode::Pixel) {
                     const int x = int(pixelIndex % size.w);
                     const int y = int(pixelIndex / size.w);
                     const auto dx = 1_f / size.w;
@@ -127,14 +131,14 @@ public:
                 // --------------------------------------------------------------------------------
 
                 // Sample a NEE edge
-                const bool nee = [&]() constexpr {
+                const bool nee = [&]() {
                     // Ignore NEE edge with naive direct sampling mode
                     if (ptMode_ == PTMode::Naive) {
                         return false;
                     }
                     // NEE edge can be samplable if current direction sampler
                     // (according to BSDF / phase) doesn't contain delta component.
-                    if constexpr (sampleMode == SampleMode::Pixel) {
+                    if (imageSampleMode_ == ImageSampleMode::Pixel) {
                         // Primary ray is not samplable via NEE in the pixel space sample mode
                         return length > 0 && !scene->isSpecular(s->sp);
                     }
@@ -253,7 +257,7 @@ public:
         // ----------------------------------------------------------------------------------------
         
         // Rescale film
-        if constexpr (sampleMode == SampleMode::Pixel) {
+        if (imageSampleMode_ == ImageSampleMode::Pixel) {
             film_->rescale(1_f / processed);
         }
         else {
@@ -262,9 +266,6 @@ public:
     }
 };
 
-using Renderer_PT_Pixel = Renderer_PT<SampleMode, SampleMode::Pixel>;
-LM_COMP_REG_IMPL(Renderer_PT_Pixel, "renderer::pt");
-using Renderer_PT_Image = Renderer_PT<SampleMode, SampleMode::Image>;
-LM_COMP_REG_IMPL(Renderer_PT_Image, "renderer::pt::image");
+LM_COMP_REG_IMPL(Renderer_PT, "renderer::pt");
 
 LM_NAMESPACE_END(LM_NAMESPACE)
