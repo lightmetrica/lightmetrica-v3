@@ -14,10 +14,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \rst
 .. function:: light::area
 
-   Area light.
+    Area light.
 
-   :param color Ke: Luminance.
-   :param str mesh: Underlying mesh specified by asset name or locator.
+    :param color Ke: Luminance.
+    :param str mesh: Underlying mesh specified by asset name or locator.
 \endrst
 */
 class Light_Area final : public Light {

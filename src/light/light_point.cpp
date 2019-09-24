@@ -4,4 +4,71 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
+#include <lm/light.h>
 
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+/*!
+\rst
+.. function:: light::point
+
+    Point light.
+
+    :param color Le: Luminance.
+    :param vec3 position: Position of the light.
+\endrst
+*/
+class Light_Point final : public Light {
+private:
+    Vec3 Le_;           // Luminance
+    Vec3 position_;     // Position of the light
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(Le_, position_);
+    }
+
+public:
+    virtual bool construct(const Json& prop) override {
+        Le_ = json::value<Vec3>(prop, "Le");
+        position_ = json::value<Vec3>(prop, "position");
+        return true;
+    }
+
+    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {
+        const auto wo = math::sampleUniformSphere(rng);
+        const auto geomL = PointGeometry::makeDegenerated(position_);
+        const auto pL = pdf(geom, geomL, 0, {}, wo);
+        if (pL == 0_f) {
+            return {};
+        }
+        return LightRaySample{
+            geomL,
+            wo,
+            0,
+            Le_ / (4_f*Pi) / pL
+        };
+    }
+
+    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
+        const auto G = surface::geometryTerm(geom, geomL);
+        return G == 0_f ? 0_f : math::pdfUniformSphere() / G;
+    }
+
+    virtual bool isSpecular(const PointGeometry&, int) const override {
+        return false;
+    }
+
+    virtual bool isInfinite() const override {
+        return false;
+    }
+
+    virtual Vec3 eval(const PointGeometry&, int, Vec3) const override {
+        return Le_ / (4_f*Pi);
+    }
+};
+
+LM_COMP_REG_IMPL(Light_Point, "light::point");
+
+LM_NAMESPACE_END(LM_NAMESPACE)

@@ -13,10 +13,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \rst
 .. function:: light::directional
 
-   Directional light.
+    Directional light.
 
-   :param color Ke: Luminance.
-   :param vec3 direction: Direction of the light.
+    :param color Le: Luminance.
+    :param vec3 direction: Direction of the light.
 \endrst
 */
 class Light_Directional final : public Light {

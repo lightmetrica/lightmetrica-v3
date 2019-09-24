@@ -37,6 +37,9 @@ public:
         const auto wo = math::sampleUniformSphere(rng);
         const auto geomL = PointGeometry::makeInfinite(wo);
         const auto pL = pdf(geom, geomL, 0, {}, wo);
+        if (pL == 0_f) {
+            return {};
+        }
         return LightRaySample{
             geomL,
             wo,

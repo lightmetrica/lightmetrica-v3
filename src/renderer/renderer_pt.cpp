@@ -168,9 +168,9 @@ public:
                         return;
                     }
 
-                    // This light is samplable by direct strategy
-                    // if the light doesn't contain delta component.
-                    const bool directL = !scene->isSpecular(sL->sp);
+                    // This light is not samplable by direct strategy
+                    // if the light contain delta component or degenerated.
+                    const bool directL = !scene->isSpecular(sL->sp) && !sL->sp.geom.degenerated;
 
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
