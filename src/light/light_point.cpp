@@ -36,8 +36,8 @@ public:
         return true;
     }
 
-    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {
-        const auto wo = math::sampleUniformSphere(rng);
+    virtual std::optional<LightRaySample> sample(Rng&, const PointGeometry& geom, const Transform&) const override {
+        const auto wo = glm::normalize(geom.p - position_);
         const auto geomL = PointGeometry::makeDegenerated(position_);
         const auto pL = pdf(geom, geomL, 0, {}, wo);
         if (pL == 0_f) {
@@ -47,13 +47,13 @@ public:
             geomL,
             wo,
             0,
-            Le_ / (4_f*Pi) / pL
+            Le_ / pL
         };
     }
 
     virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
         const auto G = surface::geometryTerm(geom, geomL);
-        return G == 0_f ? 0_f : math::pdfUniformSphere() / G;
+        return G == 0_f ? 0_f : 1_f / G;
     }
 
     virtual bool isSpecular(const PointGeometry&, int) const override {
@@ -65,7 +65,7 @@ public:
     }
 
     virtual Vec3 eval(const PointGeometry&, int, Vec3) const override {
-        return Le_ / (4_f*Pi);
+        return Le_;
     }
 };
 
