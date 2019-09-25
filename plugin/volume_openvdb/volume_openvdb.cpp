@@ -73,7 +73,7 @@ public:
     }
 
     virtual Float evalScalar(Vec3 p) const override {
-        const auto d = vbdloaderEvalScalar(context_, VDBLoaderFloat3{ float(p.x), float(p.y), float(p.z) });
+        const auto d = vbdloaderEvalScalar(context_, VDBLoaderFloat3{ p.x, p.y, p.z });
         return d * scale_;
     }
 
@@ -81,9 +81,19 @@ public:
         return false;
     }
 
-    virtual void march(Ray ray, Float tmin, Float tmax, Float marchStep, const RayMarchFunc& rayMarchFunc) const override {
-        LM_UNUSED(ray, tmin, tmax, marchStep, rayMarchFunc);
-        LM_THROW_UNIMPLEMENTED();
+    virtual void march(Ray ray, Float tmin, Float tmax, Float marchStep, const RaymarchFunc& raymarchFunc) const override {
+        exception::ScopedDisableFPEx guard_;
+        const void* f = reinterpret_cast<const void*>(&raymarchFunc);
+        vdbloaderMarchVolume(
+            context_,
+            VDBLoaderFloat3{ ray.o.x, ray.o.y, ray.o.z },
+            VDBLoaderFloat3{ ray.d.x, ray.d.y, ray.d.z },
+            tmin, tmax, marchStep, const_cast<void*>(f),
+            [](void* user, double t) -> bool {
+                const void* f = const_cast<const void*>(user);
+                const RaymarchFunc& raymarchFunc = *reinterpret_cast<const RaymarchFunc*>(f);
+                return raymarchFunc(t);
+            });
     }
 };
 

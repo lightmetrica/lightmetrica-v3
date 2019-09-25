@@ -69,10 +69,6 @@ public:
             const Vec4 window(dx * x, dy * y, dx, dy);
 #endif
 
-            //if (x == 70 && y == 16) {
-            //    __debugbreak();
-            //}
-            //
             // Path throughput
             Vec3 throughput(1_f);
 
@@ -135,11 +131,6 @@ public:
                     return scene->sampleRay(rng, sp, wi);
                 };
             }
-
-            //if (glm::compMax(L) > 1e+20) {
-            //    LM_INFO("{} {}", x, y);
-            //    __debugbreak();
-            //}
 
             // Accumulate contribution
             film_->splat(rasterPos, L);
