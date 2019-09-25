@@ -125,16 +125,8 @@ public:
     }
 
     virtual Float evalScalar(Vec3 p) const override {
-#if 1
         using SamplerT = openvdb::tools::GridSampler<GridT, openvdb::tools::BoxSampler>;
         SamplerT sampler(*grid_);
-#else
-        using AccessorT = typename GridT::ConstAccessor;
-        using SamplerT = openvdb::tools::GridSampler<AccessorT, openvdb::tools::BoxSampler>;
-        // Assign accessors for each thread for caching
-        thread_local AccessorT accessor(grid_->getConstAccessor());
-        SamplerT sampler(accessor, grid_->transform());
-#endif
         const auto d = sampler.wsSample(toVDBVec3(p));
         return d * scale_;
     }
@@ -200,87 +192,5 @@ public:
 };
 
 LM_COMP_REG_IMPL(Volume_OpenVDBScalar_, "volume::openvdb_scalar_");
-
-// ----------------------------------------------------------------------------
-
-class Volume_OpenVDBColor_ : public Volume {
-private:
-    using GridT = openvdb::Vec3fGrid;
-    GridT::Ptr grid_;
-    openvdb::CoordBBox vdbBound_index_;	// Bound in the volume space
-    Bound bound_;						// Bound in the world space
-
-public:
-    virtual bool construct(const Json& prop) override {
-        // Initialize OpenVDB if not initialized
-        openvdb::initialize();
-
-        // Path to the volume
-        const auto path = json::value<std::string>(prop, "path");
-        LM_INFO("Opening OpenVDB file [path='{}']", path);
-        LM_INDENT();
-        openvdb::io::File file(path);
-        file.open(false);
-
-        // Name of the grid
-        const auto name = json::value<std::string>(prop, "name");
-        auto grids = file.readAllGridMetadata();
-        for (size_t i = 0; i < grids->size(); i++) {
-            auto grid = openvdb::gridPtrCast<openvdb::Vec3fGrid>(grids->at(i));
-            if (!grid) {
-                continue;
-            }
-            const auto gridName = grid->getName();
-            if (gridName != name) {
-                continue;
-            }
-            LM_INFO("Found a grid [name='{}']", grid->getName());
-            file.close();
-            file.open();
-            grid_ = openvdb::gridPtrCast<openvdb::Vec3fGrid>(file.readGrid(gridName));
-            break;
-        }
-
-        // Some volume data is z-up
-        const bool zup = json::value<bool>(prop, "zup", false);
-        if (zup) {
-            grid_->transform().postRotate(glm::radians(-90.0), openvdb::math::X_AXIS);
-        }
-
-        // Compute AABB of the grid
-        // evalActiveVoxelBoundingBox() function computes the bound in the index space
-        // so we need to transform it to the world space.
-        vdbBound_index_ = grid_->evalActiveVoxelBoundingBox();
-        const auto vdbBound_world = grid_->constTransform().indexToWorld(vdbBound_index_);
-        bound_ = toLMBound(vdbBound_world);
-
-        return true;
-    }
-
-
-    virtual Bound bound() const override {
-        return bound_;
-    }
-
-    virtual bool hasScalar() const override {
-        return false;
-    }
-
-    virtual bool hasColor() const override {
-        return true;
-    }
-
-    virtual Vec3 evalColor(Vec3 p) const override {
-        using AccessorT = typename GridT::ConstAccessor;
-        using SamplerT = openvdb::tools::GridSampler<AccessorT, openvdb::tools::BoxSampler>;
-        // Assign accessors for each thread for caching
-        thread_local AccessorT accessor(grid_->getConstAccessor());
-        SamplerT sampler(accessor, grid_->transform());
-        const auto d = sampler.wsSample(toVDBVec3(p));
-        return toLMVec3(d);
-    }
-};
-
-LM_COMP_REG_IMPL(Volume_OpenVDBColor_, "volume::openvdb_color_");
 
 LM_NAMESPACE_END(LM_NAMESPACE)
