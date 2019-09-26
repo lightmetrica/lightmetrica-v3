@@ -227,9 +227,10 @@ T* compRef(const Json& j, const std::string& name) {
 	if (!it->is_string()) {
 		throw std::runtime_error(fmt::format("Property must be string [name='{}']", name));
 	}
-	auto* p = comp::get<T>(*it);
+    const std::string ref = *it;
+	auto* p = comp::get<T>(ref);
 	if (!p) {
-		throw std::runtime_error(fmt::format("Invalid componen reference [name='{}', ref='{}']", name, *it));
+		throw std::runtime_error(fmt::format("Invalid componen reference [name='{}', ref='{}']", name, ref));
 	}
 	return p;
 }

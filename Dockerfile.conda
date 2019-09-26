@@ -1,0 +1,32 @@
+FROM ubuntu:latest
+MAINTAINER Hisanari Otsu <hi2p.perim@gmail.com>
+
+# System packages
+RUN apt update && apt install -y \
+    tmux \
+    vim \
+    curl \
+    git \
+    git-lfs \
+    software-properties-common \
+    build-essential \
+    doxygen \
+    graphviz
+
+# Install miniconda
+WORKDIR /
+RUN curl -OJLs https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+RUN bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda -b
+ENV PATH /miniconda/bin:$PATH
+
+# Setup lm3_dev environment
+COPY environment_linux.yml environment_linux.yml
+RUN conda env create -f environment_linux.yml
+RUN echo "source activate lm3_dev" > ~/.bashrc
+ENV PATH /opt/conda/envs/lm3_dev/bin:$PATH
+
+# Expose port for Jupyter notebook
+EXPOSE 8888
+
+# Default command
+CMD ["/bin/bash"]
