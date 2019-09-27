@@ -214,7 +214,6 @@ public:
         \endrst
     */
     virtual void load(InputArchive& ar) {
-		throw std::runtime_error("Loading unserializable component");
 		LM_UNUSED(ar);
 	}
 
@@ -228,7 +227,6 @@ public:
         \endrst
     */
     virtual void save(OutputArchive& ar) {
-		throw std::runtime_error("Saving unserializable component");
 		LM_UNUSED(ar);
 	}
 

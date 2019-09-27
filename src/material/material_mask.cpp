@@ -26,7 +26,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \endrst
 */
 class Material_Mask final : public Material {
-private:
+public:
     virtual bool isSpecular(const PointGeometry&, int) const override {
         return true;
     }

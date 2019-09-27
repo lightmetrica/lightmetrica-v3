@@ -1,6 +1,9 @@
 FROM ubuntu:latest
 MAINTAINER Hisanari Otsu <hi2p.perim@gmail.com>
 
+# Change default shell to bash
+SHELL ["/bin/bash", "-c"]
+
 # System packages
 RUN apt update && apt install -y \
     tmux \
@@ -24,6 +27,9 @@ COPY environment_linux.yml environment_linux.yml
 RUN conda env create -f environment_linux.yml
 RUN echo "source activate lm3_dev" > ~/.bashrc
 ENV PATH /opt/conda/envs/lm3_dev/bin:$PATH
+
+# Install binary dependencies of imageio
+RUN source ~/.bashrc && imageio_download_bin freeimage
 
 # Expose port for Jupyter notebook
 EXPOSE 8888
