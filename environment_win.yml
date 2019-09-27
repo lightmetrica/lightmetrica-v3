@@ -27,7 +27,7 @@ dependencies:
   - stb
   - imgui-glfw
   - cereal
-  - openvdb
+  - vdbloader
   - tbb-devel
   - pip:
     - sphinx-autobuild

@@ -24,7 +24,7 @@ dependencies:
   - fmt
   - stb
   - cereal
-  - openvdb
+  - vdbloader
   - tbb-devel
   - pip:
     - sphinx-autobuild
