@@ -34,3 +34,4 @@ dependencies:
     - breathe
     - sphinx_tabs
     - nbsphinx
+    - nbmerge

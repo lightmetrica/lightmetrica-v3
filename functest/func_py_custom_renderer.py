@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.2.4
+#       jupytext_version: 1.2.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -51,8 +51,8 @@ class Renderer_AO(lm.Renderer):
         w = self.film.size().w
         h = self.film.size().h
         rng = lm.Rng(42)
-        lm.progress.start(w*h)
-        def process(index, threadid):
+        lm.progress.start(lm.progress.ProgressMode.Samples, w*h, 0)
+        def process(index):
             x = index % w
             y = int(index / w)
             rp = np.array([(x+.5)/w, (y+.5)/h])
@@ -70,7 +70,8 @@ class Renderer_AO(lm.Renderer):
             V /= self.spp
             self.film.setPixel(x, y, np.full(3, V))
             lm.progress.update(y*w+x)
-        lm.parallel.foreach(w*h, process)
+        for i in range(w*h):
+            process(i)
         lm.progress.end()
 
 
