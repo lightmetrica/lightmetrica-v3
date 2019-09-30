@@ -51,7 +51,8 @@ enum class ProgressMode {
 
 /*!
     \brief Start progress reporting.
-    \param total Total number of iterations.
+    \param total Total number of iterations (used in Samples mode).
+    \param totalTime Total time (used in Time mode).
 
     \rst
     This function specifies the start of the progress reporting.
@@ -88,6 +89,7 @@ LM_PUBLIC_API void update(long long processed);
 
 /*!
     \brief Update time progress.
+    \param elapsed Elapsed time from the start.
 */
 LM_PUBLIC_API void updateTime(Float elapsed);
 

@@ -73,6 +73,7 @@ using ProgressUpdateFunc = std::function<void(long long processed)>;
     \brief Parallel for loop.
     \param numSamples Total number of samples.
     \param processFunc Callback function called for each iteration.
+    \param progressFunc Callback function called for each progress update.
 
     \rst
     We provide an abstraction for the parallel loop specifialized for rendering purpose.
@@ -82,6 +83,8 @@ LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& proc
 
 /*!
     \brief Parallel for loop.
+    \param numSamples Total number of samples.
+    \param processFunc Callback function called for each iteration.
 */
 LM_INLINE void foreach(long long numSamples, const ParallelProcessFunc& processFunc) {
     foreach(numSamples, processFunc, [](long long) {});
