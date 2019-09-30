@@ -17,6 +17,8 @@ jobs:
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
+  - checkout: self
+    submodules: recursive
   - task: Docker@2
     inputs:
       containerRegistry: 'perim_dockerhub'
