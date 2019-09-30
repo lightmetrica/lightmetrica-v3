@@ -1,5 +1,7 @@
 name: lm3_dev
 channels:
+  # hi2p-perim channel must have higher priority
+  # because some packages might have the same names.
   - hi2p-perim
   - conda-forge
 dependencies:
