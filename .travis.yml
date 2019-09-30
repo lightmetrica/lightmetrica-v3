@@ -11,7 +11,8 @@ matrix:
     script:
     - docker build -t lm3 .
     - docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 lm3 bash -c \
-        'cd /lightmetrica-v3/functest &&
+        'source ~/.bashrc &&
+        cd /lightmetrica-v3/functest &&
         python run_all.py --lmenv .lmenv_docker &&
         cp -r executed_functest /lm3/doc/ &&
         cd /lm3/doc &&
