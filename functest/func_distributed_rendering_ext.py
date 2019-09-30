@@ -41,6 +41,7 @@ os.getpid()
 # To create an process on Jupyter notebook in Windows, we need to separate the function to be processed in a different file and add the invocation of the process must be enclosed by `if __name__ == '__main__'` clause.
 
 # + {"magic_args": "_lm_renderer_ao.py"}
+# %%writefile _lm_renderer_ao.py
 import lightmetrica as lm
 import pickle
 import numpy as np
@@ -88,6 +89,7 @@ class Renderer_AO(lm.Renderer):
 
 
 # + {"magic_args": "_run_worker_process.py"}
+# %%writefile _run_worker_process.py
 import os
 import uuid
 import traceback

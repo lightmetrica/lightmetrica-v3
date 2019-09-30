@@ -41,6 +41,7 @@ os.getpid()
 # ### Worker process
 
 # + {"magic_args": "_run_worker_process.py"}
+# %%writefile _run_worker_process.py
 import os
 import uuid
 import traceback
