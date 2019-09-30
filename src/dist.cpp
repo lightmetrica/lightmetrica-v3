@@ -4,12 +4,11 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/dist.h>
-#include <lm/logger.h>
-#include <lm/json.h>
+// TODO. Remove the dependency to user.h
 #include <lm/user.h>
 #include <lm/parallel.h>
-#include <lm/serial.h>
 #include <lm/film.h>
 #include <lm/progress.h>
 #include <zmq.hpp>
@@ -117,7 +116,7 @@ void sendFunc(zmq::socket_t& socket, CommandType command, const SerializeFunc& s
     lm::serial::save(ss, command);
     serialize(ss);
     const auto str = ss.str();
-    socket.send(zmq::message_t(str.data(), str.size()));
+    socket.send(zmq::message_t(str.data(), str.size()), zmq::send_flags::none);
 }
 
 // Send command with arbitrary parameters
@@ -218,7 +217,7 @@ public:
                 if (items[0].revents & ZMQ_POLLIN) {
                     // Receive message
                     zmq::message_t mes;
-                    pullSocket_->recv(&mes);
+                    pullSocket_->recv(mes);
                     std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
                     // Extract command
@@ -253,7 +252,7 @@ public:
                 // REP socket
                 if ((items[1].revents & ZMQ_POLLIN) && allowWorkerConnection_) {
                     zmq::message_t mes;
-                    repSocket_->recv(&mes);
+                    repSocket_->recv(mes);
                     std::istringstream is(std::string(mes.data<char>(), mes.size()));
                     ReqToMasterCommand command;
                     lm::serial::load(is, command);
@@ -262,7 +261,7 @@ public:
                         lm::serial::load(is, info);
                         LM_INFO("Connected worker [name='{}']", info.name);
                         zmq::message_t ok;
-                        repSocket_->send(ok);
+                        repSocket_->send(ok, zmq::send_flags::none);
                     }
                 }
             }
@@ -416,7 +415,7 @@ public:
             // Send worker information
             send(*reqSocket_, ReqToMasterCommand::notifyConnection, WorkerInfo{ name_ });
             zmq::message_t mes;
-            if (reqSocket_->recv(&mes)) {
+            if (reqSocket_->recv(mes)) {
                 break;
             }
         }
@@ -471,7 +470,7 @@ public:
 
                 // Receive message
                 zmq::message_t mes;
-                pullSocket_->recv(&mes);
+                pullSocket_->recv(mes);
                 std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
                 // Extract command
@@ -498,7 +497,7 @@ public:
             if (items[1].revents & ZMQ_POLLIN) {
                 // Receive message
                 zmq::message_t mes;
-                subSocket_->recv(&mes);
+                subSocket_->recv(mes);
                 std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
                 // Extract command

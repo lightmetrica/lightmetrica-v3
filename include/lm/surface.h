@@ -166,6 +166,14 @@ namespace SurfaceComp {
 }
 
 /*!
+    \brief Terminator type.
+*/
+enum class TerminatorType {
+    Camera,
+    Light,
+};
+
+/*!
     \brief Scene interaction.
 
     \rst
@@ -175,14 +183,107 @@ namespace SurfaceComp {
     The point is associated with a geometry information around the point
     and an index of the primitive.
     The structure is used by the functions of :cpp:class:`lm::Scene` class.
+    Also, the structure can represent special terminator
+    representing the sentinels of the light path, which can be used to provide
+    conditions to determine subspace of endpoint.
     \endrst
 */
 struct SceneInteraction {
-    int primitive;              //!< Primitive node index.
-    int comp;                   //!< Component index.
-    PointGeometry geom;         //!< Surface point geometry information.
-    bool endpoint;              //!< True if endpoint of light path.
-    bool medium;                //!< True if it is medium interaction. 
+    int primitive;          //!< Primitive node index.
+    int comp;               //!< Component index.
+    PointGeometry geom;     //!< Surface point geometry information.
+    bool endpoint;          //!< True if endpoint of light path.
+    bool medium;            //!< True if it is medium interaction.
+    std::optional<TerminatorType> terminator;   //!< Terminator type.
+
+    // Information associated to terminator on camera
+    struct {
+        Vec4 window;
+        Float aspectRatio;
+    } cameraCond;
+
+    /*!
+        \brief Make surface interaction.
+        \param primitive Primitive index.
+        \param comp Component index.
+        \param geom Point geometry.
+        \return Created scene interaction.
+    */
+    static SceneInteraction makeSurfaceInteraction(int primitive, int comp, const PointGeometry& geom) {
+        SceneInteraction si;
+        si.primitive = primitive;
+        si.comp = comp;
+        si.geom = geom;
+        si.endpoint = false;
+        si.medium = false;
+        si.terminator = {};
+        return si;
+    }
+
+    /*!
+        \brief Make medium interaction.
+        \param primitive Primitive index.
+        \param comp Component index.
+        \param geom Point geometry.
+        \return Created scene interaction.
+    */
+    static SceneInteraction makeMediumInteraction(int primitive, int comp, const PointGeometry& geom) {
+        SceneInteraction si;
+        si.primitive = primitive;
+        si.comp = comp;
+        si.geom = geom;
+        si.endpoint = false;
+        si.medium = true;
+        si.terminator = {};
+        return si;
+    }
+
+    /*!
+        \brief Make camera endpoint.
+        \param primitive Primitive index.
+        \param comp Component index.
+        \param geom Point geometry.
+        \return Created scene interaction.
+    */
+    static SceneInteraction makeCameraEndpoint(int primitive, int comp, const PointGeometry& geom, Vec4 window, Float aspectRatio) {
+        SceneInteraction si;
+        si.primitive = primitive;
+        si.comp = comp;
+        si.geom = geom;
+        si.endpoint = true;
+        si.medium = false;
+        si.terminator = {};
+        si.cameraCond.window = window;
+        si.cameraCond.aspectRatio = aspectRatio;
+        return si;
+    }
+
+    /*!
+        \brief Make light endpoint.
+    */
+    static SceneInteraction makeLightEndpoint(int primitive, int comp, const PointGeometry& geom) {
+        SceneInteraction si;
+        si.primitive = primitive;
+        si.comp = comp;
+        si.geom = geom;
+        si.endpoint = true;
+        si.medium = false;
+        si.terminator = {};
+        return si;
+    }
+
+    /*!
+        \brief Make camera terminator.
+    */
+    static SceneInteraction makeCameraTerminator(Vec4 window, Float aspectRatio) {
+        SceneInteraction si;
+        si.endpoint = false;
+        si.medium = false;
+        si.terminator = TerminatorType::Camera;
+        si.cameraCond.window = window;
+        si.cameraCond.aspectRatio = aspectRatio;
+        return si;
+    }
 };
 
 /*!
@@ -214,6 +315,44 @@ static Float geometryTerm(const PointGeometry& s1, const PointGeometry& s2) {
     const auto cos1 = s1.degenerated ? 1_f : glm::abs(glm::dot(s1.n, d));
     const auto cos2 = s2.degenerated ? 1_f : glm::abs(glm::dot(s2.n, -d));
     return cos1 * cos2 / L2;
+}
+
+/*!
+    \brief Copmute distance between two points.
+    \param s1 First point.
+    \param s2 Second point.
+
+    \rst
+    This function computes the distance between two points.
+    If one of the points is a point at infinity, returns inf.
+    \endrst
+*/
+static Float distance(const PointGeometry& s1, const PointGeometry& s2) {
+    return s1.infinite || s2.infinite ? Inf : glm::distance(s1.p, s2.p);
+}
+
+/*!
+    \brief Convert pdf in solid angle measure to projected solid angle measure.
+
+    \rst
+    If the point geometry is not degenerated, this function converts the given pdf to
+    the projected solid angle measure. If the point geometry is degenerated,
+    this function keeps the solid angle measure.
+    \endrst
+*/
+static Float convertSAToProjSA(Float pdfSA, const PointGeometry& geom, Vec3 d) {
+    if (geom.degenerated) {
+        // When geom is degenerated, use pdf with solid angle measure.
+        return pdfSA;
+    }
+    const auto J = glm::abs(glm::dot(geom.n, d));
+    if (J == 0_f) {
+        // When normal and outgoing direction are perpecdicular,
+        // we can consider pdf is always zero because
+        // in this case the contriubtion function becomes always zero.
+        return 0_f;
+    }
+    return pdfSA / J;
 }
 
 /*!

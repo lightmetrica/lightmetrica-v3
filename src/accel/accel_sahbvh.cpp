@@ -4,12 +4,10 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/accel.h>
 #include <lm/scene.h>
 #include <lm/mesh.h>
-#include <lm/logger.h>
-#include <lm/exception.h>
-#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

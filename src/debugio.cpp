@@ -5,9 +5,9 @@
 
 #include <pch.h>
 #include <zmq.hpp>
+#include <lm/core.h>
 #include <lm/debugio.h>
-#include <lm/serial.h>
-#include <lm/logger.h>
+// TODO. Remove the dependency to user.h
 #include <lm/user.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::debugio)
@@ -66,13 +66,13 @@ private:
 
         // Send command
         zmq::message_t req_command(&command, sizeof(Command));
-        socket_.send(req_command);
-        socket_.recv(&ok);
+        socket_.send(req_command, zmq::send_flags::none);
+        socket_.recv(ok);
 
         // Send argument
         zmq::message_t req_args(serialized.data(), serialized.size());
-        socket_.send(req_args);
-        socket_.recv(&ok);
+        socket_.send(req_args, zmq::send_flags::none);
+        socket_.recv(ok);
     }
 
 public:
@@ -155,13 +155,13 @@ private:
 
         // Receive command
         zmq::message_t req_command;
-        socket_.recv(&req_command);
+        socket_.recv(req_command);
         const auto command = *req_command.data<Command>();
-        socket_.send(ok);
+        socket_.send(ok, zmq::send_flags::none);
 
         // Receive arguments and execute the function
         zmq::message_t req_args;
-        socket_.recv(&req_args);
+        socket_.recv(req_args);
 #if 0
         std::stringstream is(std::string(req_args.data<char>(), req_args.size()));
 #else
@@ -188,7 +188,7 @@ private:
                 break;
             }
         }
-        socket_.send(ok);
+        socket_.send(ok, zmq::send_flags::none);
     }
 };
 

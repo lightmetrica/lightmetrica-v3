@@ -11,8 +11,6 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// ----------------------------------------------------------------------------
-
 /*!
     \addtogroup scene
     @{
@@ -53,7 +51,7 @@ struct DistanceSample {
     Vec3 weight;            //!< Contribution divided by probability.
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 enum class SceneNodeType {
     Primitive,
@@ -95,7 +93,7 @@ struct SceneNode {
     SceneNodeType type;                     //!< Scene node type.
     int index;                              //!< Node index.
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
     
     struct {
         Mesh* mesh = nullptr;               //!< Underlying mesh.
@@ -110,7 +108,7 @@ struct SceneNode {
         }
     } primitive;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     struct {
         std::vector<int> children;          //!< Child primitives.
@@ -123,14 +121,14 @@ struct SceneNode {
         }
     } group;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     template <typename Archive>
     void serialize(Archive& ar) {
         ar(type, index, primitive, group);
     }
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Make primitive node.
@@ -160,7 +158,7 @@ struct SceneNode {
     }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Scene.
@@ -186,7 +184,7 @@ public:
     */
     virtual bool renderable() const = 0;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
     */
@@ -225,7 +223,7 @@ public:
     */
     virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Iterate primitives in the scene.
@@ -242,7 +240,7 @@ public:
     */
     virtual const SceneNode& nodeAt(int nodeIndex) const = 0;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Build acceleration structure.
@@ -283,7 +281,7 @@ public:
         }
     }
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Check if given surface point is light.
@@ -295,13 +293,24 @@ public:
     */
     virtual bool isSpecular(const SceneInteraction& sp) const = 0;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Generate a primary ray.
+        \param rp Raster position in [0,1]^2.
+        \param aspectRatio Aspect ratio of the film.
+        \return Generated primary ray.
     */
     virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const = 0;
 
+    /*!
+        \brief Compute a raser position.
+        \param wo Primary ray direction.
+        \param aspectRatio Aspect ratio of the film.
+        \return Raster position.
+    */
+    virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const = 0;
+    
     /*!
         \brief Sample a ray given surface point and incident direction.
         \rst
@@ -329,11 +338,16 @@ public:
     virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
+        \brief Evaluate pdf for component selection.
+    */
+    virtual Float pdfComp(const SceneInteraction& sp, Vec3 wi) const = 0;
+
+    /*!
         \brief Evaluate pdf for light sampling.
     */
     virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const = 0;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Sample a distance in a ray direction.
@@ -345,7 +359,7 @@ public:
     */
     virtual std::optional<Vec3> evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const = 0;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Evaluate contribution.
@@ -376,7 +390,5 @@ public:
 /*!
     @}
 */
-
-// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(LM_NAMESPACE)

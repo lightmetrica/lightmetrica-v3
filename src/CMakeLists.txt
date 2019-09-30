@@ -17,7 +17,9 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/user.h"
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/progress.h"
+    "${_INCLUDE_DIR}/scheduler.h"
     "${_INCLUDE_DIR}/debugio.h"
+    "${_INCLUDE_DIR}/debug.h"
     "${_INCLUDE_DIR}/dist.h"
     "${_INCLUDE_DIR}/exception.h"
     "${_INCLUDE_DIR}/parallel.h"
@@ -36,11 +38,13 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/json.h"
     "${_INCLUDE_DIR}/common.h"
     "${_INCLUDE_DIR}/component.h"
+    "${_INCLUDE_DIR}/core.h"
     "${_INCLUDE_DIR}/serial.h"
     "${_INCLUDE_DIR}/surface.h"
     "${_INCLUDE_DIR}/objloader.h"
     "${_INCLUDE_DIR}/medium.h"
-    "${_INCLUDE_DIR}/phase.h")
+    "${_INCLUDE_DIR}/phase.h"
+    "${_INCLUDE_DIR}/volume.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"
@@ -50,7 +54,9 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/exception.cpp"
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/progress.cpp"
+    "${_SOURCE_DIR}/scheduler.cpp"
     "${_SOURCE_DIR}/debugio.cpp"
+    "${_SOURCE_DIR}/debug.cpp"
     "${_SOURCE_DIR}/dist.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
@@ -61,7 +67,11 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/mesh/mesh_raw.cpp"
     "${_SOURCE_DIR}/camera/camera_pinhole.cpp"
     "${_SOURCE_DIR}/light/light_area.cpp"
+    "${_SOURCE_DIR}/light/light_directional.cpp"
+    "${_SOURCE_DIR}/light/light_point.cpp"
     "${_SOURCE_DIR}/light/light_env.cpp"
+    "${_SOURCE_DIR}/light/light_envconst.cpp"
+    "${_SOURCE_DIR}/light/light_envportal.cpp"
     "${_SOURCE_DIR}/texture/texture_bitmap.cpp"
     "${_SOURCE_DIR}/material/material_diffuse.cpp"
     "${_SOURCE_DIR}/material/material_glass.cpp"
@@ -74,10 +84,12 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
     "${_SOURCE_DIR}/renderer/renderer_raycast.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
-    "${_SOURCE_DIR}/renderer/renderer_pt_naive.cpp"
     "${_SOURCE_DIR}/renderer/renderer_volpt.cpp"
     "${_SOURCE_DIR}/renderer/renderer_volpt_naive.cpp"
     "${_SOURCE_DIR}/medium/medium_homogeneous.cpp"
+    "${_SOURCE_DIR}/medium/medium_heterogeneous.cpp"
+    "${_SOURCE_DIR}/volume/volume_checker.cpp"
+    "${_SOURCE_DIR}/volume/volume_constant.cpp"
     "${_SOURCE_DIR}/phase/phase_hg.cpp"
     "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
@@ -117,6 +129,11 @@ target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_SILENCE_ALL_CXX17_DEPRECAT
 target_compile_definitions(${_PROJECT_NAME} PUBLIC -D_CRT_SECURE_NO_WARNINGS)
 # Use SIMD in glm
 target_compile_definitions(${_PROJECT_NAME} PUBLIC -DGLM_FORCE_INTRINSICS)
+# Configuration flag
+target_compile_definitions(${_PROJECT_NAME} PUBLIC
+    $<$<CONFIG:Debug>:LM_USE_CONFIG_DEBUG>
+    $<$<CONFIG:Release>:LM_USE_CONFIG_RELEASE>
+    $<$<CONFIG:RelWithDebInfo>:LM_USE_CONFIG_RELWITHDEBINFO>)
 # Use C++17
 target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
 # Enable warning level 4, treat warning as errors, enable SEH

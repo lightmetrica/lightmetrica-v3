@@ -4,6 +4,7 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/material.h>
 #include <lm/surface.h>
 
@@ -25,7 +26,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \endrst
 */
 class Material_Mask final : public Material {
-private:
+public:
     virtual bool isSpecular(const PointGeometry&, int) const override {
         return true;
     }
@@ -40,6 +41,10 @@ private:
 
     virtual Float pdf(const PointGeometry&, int, Vec3, Vec3) const override {
         LM_UNREACHABLE_RETURN();
+    }
+
+    virtual Float pdfComp(const PointGeometry&, int, Vec3) const override {
+        return 1_f;
     }
 
     virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {

@@ -4,10 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/texture.h>
-#include <lm/logger.h>
-#include <lm/serial.h>
-#include <lm/json.h>
 #pragma warning(push)
 #pragma warning(disable:4244) // possible loss of data
 #define STB_IMAGE_IMPLEMENTATION

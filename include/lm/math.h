@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtx/norm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #pragma warning(pop)
@@ -114,6 +115,22 @@ struct Bound {
         \endrst
     */
     bool isect(Ray r, Float tmin, Float tmax) const {
+        return isectRange(r, tmin, tmax);
+    }
+
+    /*!
+        \brief Check intersection to the ray and update tmin and tmax.
+        \param r Ray.
+        \param tmin Minimum valid range along with the ray from origin.
+        \param tmax Maximum valid range along with the ray from origin.
+
+        \rst
+        This function checks intersection between ray and bound
+        and assign the intersected range to tmin and tmax
+        if the ray intersects the bound.
+        \endrst
+    */
+    bool isectRange(Ray r, Float& tmin, Float& tmax) const {
         for (int i = 0; i < 3; i++) {
             const Float vd = 1_f / r.d[i];
             auto t1 = (mi[i] - r.o[i]) * vd;
@@ -369,6 +386,14 @@ LM_NAMESPACE_BEGIN(math)
 */
 
 /*!
+    \brief Generate random number for seed.
+    \return Random seed.
+*/
+static unsigned int rngSeed() {
+    return std::random_device{}();
+}
+
+/*!
     \brief Compute orthogonal basis.
     \param n Normal vector.
     
@@ -502,6 +527,9 @@ static constexpr Float pdfUniformSphere() {
     \brief Balance heuristics.
 */
 static Float balanceHeuristic(Float p1, Float p2) {
+    if (p1 == 0_f && p2 == 0_f) {
+        return 0_f;
+    }
     return p1 / (p1 + p2);
 }
 

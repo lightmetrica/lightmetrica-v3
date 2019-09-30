@@ -32,6 +32,7 @@ external
 dist*/
 .idea/
 doc/_build
+doc/executed_functest
 jupyter
 *.serialized
 .lmenv

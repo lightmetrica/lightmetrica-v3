@@ -14,6 +14,7 @@ dependencies:
   - sphinx_rtd_theme
   - jupytext
   - tqdm
+  - colorama
   - imageio
   - pytest
   - zeromq
@@ -26,8 +27,11 @@ dependencies:
   - fmt
   - stb
   - cereal
+  - vdbloader
+  - tbb-devel
   - pip:
     - sphinx-autobuild
     - breathe
     - sphinx_tabs
     - nbsphinx
+    - nbmerge

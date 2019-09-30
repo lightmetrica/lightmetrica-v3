@@ -4,12 +4,9 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/camera.h>
 #include <lm/film.h>
-#include <lm/json.h>
-#include <lm/user.h>
-#include <lm/serial.h>
-#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -90,6 +87,27 @@ public:
         return { position_, u_*d.x+v_*d.y+w_*d.z };
     }
 
+    virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const override {
+        // Convert to camera space
+        const auto toEye = glm::transpose(Mat3(u_, v_, w_));
+        const auto woEye = toEye * wo;
+        if (woEye.z >= 0) {
+            // wo is directed to the opposition direction
+            return {};
+        }
+
+        // Calculate raster position
+        const auto rp = Vec2(
+            -woEye.x/woEye.z/tf_/aspectRatio,
+            -woEye.y/woEye.z/tf_)*.5_f + .5_f;
+        if (rp.x < 0_f || rp.x > 1_f || rp.y < 0_f || rp.y > 1_f) {
+            // wo is not in the view frustum
+            return {};
+        }
+        
+        return rp;
+    }
+
     virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
         const auto [x, y, w, h] = window.data.data;
         return CameraRaySample{
@@ -99,9 +117,19 @@ public:
         };
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
-        LM_UNUSED(geom, wo);
-        LM_TBA_RUNTIME();
+    virtual Float pdf(Vec3 wo, Float aspectRatio) const override {
+        // Given directions is not samplable if raster position is not in [0,1]^2
+        if (!rasterPosition(wo, aspectRatio)) {
+            return 0_f;
+        }
+        return J(wo, aspectRatio);
+    }
+
+    virtual Vec3 eval(Vec3 wo, Float aspectRatio) const override {
+        if (!rasterPosition(wo, aspectRatio)) {
+            return Vec3(0_f);
+        }
+        return Vec3(J(wo, aspectRatio));
     }
 
     virtual Mat4 viewMatrix() const override {
@@ -110,6 +138,18 @@ public:
 
     virtual Mat4 projectionMatrix(Float aspectRatio) const override {
         return glm::perspective(glm::radians(vfov_), aspectRatio, 0.01_f, 10000_f);
+    }
+
+private:
+    // Compute Jacobian
+    // TODO. Add derivation in documentataion
+    Float J(Vec3 wo, Float aspectRatio) const {
+        const auto V = glm::transpose(Mat3(u_, v_, w_));
+        const auto woEye = V * wo;
+        const Float cosTheta = -woEye.z;
+        const Float invCosTheta = 1_f / cosTheta;
+        const Float A = tf_ * tf_ * aspectRatio * 4_f;
+        return invCosTheta * invCosTheta * invCosTheta / A;
     }
 };
 

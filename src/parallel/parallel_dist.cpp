@@ -4,11 +4,10 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/parallel.h>
 #include <lm/dist.h>
 #include <lm/json.h>
-#include <lm/logger.h>
-#include <lm/progress.h>
 #include <zmq.hpp>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
@@ -27,7 +26,7 @@ public:
         return true;
     }
 
-    virtual void foreach(long long numSamples, const ParallelProcessFunc&) const override {
+    virtual void foreach(long long numSamples, const ParallelProcessFunc&, const ProgressUpdateFunc& progressUpdateFunc) const override {
         std::mutex mut;
         std::condition_variable cond;
         long long totalProcessed = 0;
@@ -49,10 +48,9 @@ public:
         }
 
         // Wait for completion
-        progress::ScopedReport progress_(numSamples);
         std::unique_lock<std::mutex> lock(mut);
         cond.wait(lock, [&] {
-            progress::update(totalProcessed);
+            progressUpdateFunc(totalProcessed);
             return totalProcessed == numSamples;
         });
 
@@ -83,7 +81,7 @@ public:
         return localContext_->mainThread();
     }
 
-    virtual void foreach(long long, const ParallelProcessFunc& processFunc) const override {
+    virtual void foreach(long long, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc&) const override {
         std::mutex mut;
         std::condition_variable cond;
         bool done = false;
@@ -100,6 +98,8 @@ public:
         dist::worker::foreach([&](long long start, long long end) {
             localContext_->foreach(end - start, [&](long long index, int threadId) {
                 processFunc(start + index, threadId);
+            }, [](long long) {
+                // Ignore
             });
         });
         

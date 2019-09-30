@@ -4,12 +4,9 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/light.h>
 #include <lm/mesh.h>
-#include <lm/json.h>
-#include <lm/user.h>
-#include <lm/serial.h>
-#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -17,10 +14,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \rst
 .. function:: light::area
 
-   Area light.
+    Area light.
 
-   :param color Ke: Luminance.
-   :param str mesh: Underlying mesh specified by asset name or locator.
+    :param color Ke: Luminance.
+    :param str mesh: Underlying mesh specified by asset name or locator.
 \endrst
 */
 class Light_Area final : public Light {
@@ -49,11 +46,8 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        Ke_ = prop["Ke"];
-        mesh_ = comp::get<Mesh>(prop["mesh"]);
-        if (!mesh_) {
-            return false;
-        }
+        Ke_ = json::value<Vec3>(prop, "Ke");
+        mesh_ = json::compRef<Mesh>(prop, "mesh");
         
         // Construct CDF for surface sampling
         // Note we construct the CDF before transformation
@@ -81,24 +75,25 @@ public:
             transform.normalM * n);
         const auto ppL = geomL.p - geom.p;
         const auto wo = glm::normalize(ppL);
-        const auto pL = pdf(geom, geomL, transform, -wo);
+        const auto pL = pdf(geom, geomL, 0, transform, -wo);
         if (pL == 0_f) {
             return {};
         }
-        const auto Le = eval(geomL, -wo);
+        const auto Le = eval(geomL, 0, -wo);
         return LightRaySample{
             geomL,
             -wo,
+            0,
             Le / pL
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3) const override {
+    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform& transform, Vec3) const override {
         const auto G = surface::geometryTerm(geom, geomL);
         return G == 0_f ? 0_f : tranformedInvA(transform) / G;
     }
 
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return false;
     }
 
@@ -106,7 +101,7 @@ public:
         return false;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
+    virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wo) const override {
         return glm::dot(wo, geom.n) <= 0_f ? Vec3(0_f) : Ke_;
     }
 };

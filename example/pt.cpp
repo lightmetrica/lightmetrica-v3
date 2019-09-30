@@ -92,8 +92,9 @@ int main(int argc, char** argv) {
         // _begin_render
         lm::render("renderer::pt", {
             {"output", lm::asset("film1")},
+            {"scheduler", "sample"},
             {"spp", opt["spp"]},
-            {"maxLength", opt["len"]}
+            {"max_length", opt["len"]}
         });
         // _end_render
 

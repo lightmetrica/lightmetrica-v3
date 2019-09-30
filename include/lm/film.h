@@ -60,6 +60,11 @@ public:
     virtual FilmSize size() const = 0;
 
     /*!
+        \brief Get the number of pixels.
+    */
+    virtual long long numPixels() const = 0;
+
+    /*!
         \brief Set pixel value.
         \param x x coordinate of the film.
         \param y y coordinate of the film.
@@ -86,15 +91,6 @@ public:
     virtual bool save(const std::string& outpath) const = 0;
 
     /*!
-        \brief Get aspect ratio.
-        \return Aspect ratio.
-    */
-    Float aspectRatio() const {
-        const auto [w, h] = size();
-        return Float(w) / h;
-    }
-
-    /*!
         \brief Get buffer of the film
         \return Film buffer.
 
@@ -113,13 +109,6 @@ public:
     virtual void accum(const Film* film) = 0;
 
     /*!
-        \brief Splat the color to the film.
-        \param rp Raster position.
-        \param v Color.
-    */
-    virtual void splat(Vec2 rp, Vec3 v) = 0;
-
-    /*!
         \brief Splat the color to the film by pixel coordinates.
         \param x x coordinate of the film.
         \param y y coordinate of the film.
@@ -128,9 +117,92 @@ public:
     virtual void splatPixel(int x, int y, Vec3 v) = 0;
 
     /*!
+        \brief Callback function for updating a pixel value.
+    */
+    using PixelUpdateFunc = std::function<Vec3(Vec3 curr)>;
+
+    /*!
+        \brief Atomically update a pixel value based on the current value.
+
+        \rst
+        This function is useful to implement user-defined atomic operation
+        to update a pixel value. The given function might be called more than once.
+        \endrst
+    */
+    virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) = 0;
+
+    /*!
+        \brief Rescale the film.
+        \param s Scale.
+    */
+    virtual void rescale(Float s) = 0;
+
+    /*!
         \brief Clear the film.
     */
     virtual void clear() = 0;
+
+public:
+    /*!
+        \brief Get aspect ratio.
+        \return Aspect ratio.
+    */
+    Float aspectRatio() const {
+        const auto [w, h] = size();
+        return Float(w) / h;
+    }
+
+    /*!
+        \brief Convert raster position to pixel coordinates.
+        \param rp Raster position in [0,1]^2.
+        \return Pixel coordinates.
+
+        \rst
+        This function converts the raster position to the pixel coordinates.
+        If the raster position is outside of the range [0,1]^2,
+        the pixel coodinates are clamped to [0,w-1]\times [0,h-1].
+        \endrst
+    */
+    glm::ivec2 rasterToPixel(Vec2 rp) const {
+        const auto [w, h] = size();
+        const int x = glm::clamp((int)(rp.x * Float(w)), 0, w-1);
+        const int y = glm::clamp((int)(rp.y * Float(h)), 0, h-1);
+        return {x, y};
+    }
+
+    /*!
+        \brief Incrementally accumulate average of a pixel value.
+        \param x x coordinate of the film.
+        \param y y coordinate of the film.
+        \param index Current sample index.
+        \param v Color.
+    */
+    void incAve(int x, int y, long long index, Vec3 v) {
+        updatePixel(x, y, [&](Vec3 curr) -> Vec3 {
+            return curr + (v - curr) / (Float)(index + 1);
+        });
+    }
+
+    /*!
+        \brief Incrementally accumulate average of a pixel value.
+        \param rp Raster position.
+        \param index Current sample index.
+        \param v Color.
+    */
+    void incAve(Vec2 rp, long long index, Vec3 v) {
+        const auto p = rasterToPixel(rp);
+        incAve(p.x, p.y, index, v);
+    }
+
+    /*!
+        \brief Splat the color to the film.
+        \param rp Raster position.
+        \param v Color.
+    */
+    virtual void splat(Vec2 rp, Vec3 v) {
+        const auto p = rasterToPixel(rp);
+        splatPixel(p.x, p.y, v);
+    }
 };
 
 /*!
