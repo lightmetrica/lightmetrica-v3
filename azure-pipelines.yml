@@ -21,7 +21,11 @@ jobs:
     submodules: recursive
   - task: Docker@2
     inputs:
+      command: login
+      containerRegistry: 'perim_dockerhub'
+  - task: Docker@2
+    inputs:
+      command: 'buildAndPush'
       containerRegistry: 'perim_dockerhub'
       repository: 'lightmetrica-v3-azure'
-      command: 'buildAndPush'
       Dockerfile: 'Dockerfile'
