@@ -24,6 +24,10 @@ public:
         ar(spp_, film_);
     }
 
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, film_);
+    }
+
 public:
     virtual bool construct(const Json& prop) override {
         spp_ = json::value<long long>(prop, "spp");
@@ -59,6 +63,10 @@ private:
 public:
     LM_SERIALIZE_IMPL(ar) {
         ar(renderTime_, film_);
+    }
+
+    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, film_);
     }
 
 public:
@@ -113,7 +121,7 @@ public:
     LM_SERIALIZE_IMPL(ar) {
         ar(numSamples_);
     }
-
+  
 public:
     virtual bool construct(const Json& prop) override {
         numSamples_ = json::value<long long>(prop, "num_samples");

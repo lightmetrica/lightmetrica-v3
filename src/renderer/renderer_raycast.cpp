@@ -9,6 +9,7 @@
 #include <lm/scene.h>
 #include <lm/film.h>
 #include <lm/parallel.h>
+#include <lm/scheduler.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -18,14 +19,23 @@ private:
     bool useConstantColor_;
     bool visualizeNormal_;
     Film* film_;
+    Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(bgColor_, useConstantColor_, visualizeNormal_, film_);
+        ar(bgColor_, useConstantColor_, visualizeNormal_, film_, sched_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
         comp::visit(visit, film_);
+        comp::visit(visit, sched_);
+    }
+
+    virtual Component* underlying(const std::string& name) const override {
+        if (name == "scheduler") {
+            return sched_.get();
+        }
+        return nullptr;
     }
 
 public:
@@ -33,20 +43,22 @@ public:
         bgColor_ = json::value(prop, "bg_color", Vec3(0_f));
         useConstantColor_ = json::value(prop, "use_constant_color", false);
         visualizeNormal_ = json::value(prop, "visualize_normal", false);
-        film_ = comp::get<Film>(json::value<std::string>(prop, "output"));
-        if (!film_) {
-            return false;
-        }
+        film_ = json::compRef<Film>(prop, "output");
+        sched_ = comp::create<scheduler::Scheduler>(
+            "scheduler::spp::sample", makeLoc("scheduler"), {
+                {"spp", 1},
+                {"output", prop["output"]}
+            });
         return true;
     }
 
     virtual void render(const Scene* scene) const override {
         film_->clear();
-        const auto [w, h] = film_->size();
-        parallel::foreach(film_->numPixels(), [&](long long index, int) {
-            const int x = int(index % w);
-            const int y = int(index / w);
-            const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h}, film_->aspectRatio());
+        const auto size = film_->size();
+        sched_->run([&](long long index, long long, int) {
+            const int x = int(index % size.w);
+            const int y = int(index / size.w);
+            const auto ray = scene->primaryRay({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspectRatio());
             const auto sp = scene->intersect(ray);
             if (!sp) {
                 film_->setPixel(x, y, bgColor_);

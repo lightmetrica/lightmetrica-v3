@@ -28,30 +28,28 @@ if __name__ == '__main__':
 
     # Tests
     tests = [
-        # 'example_blank',
-        # 'example_quad',
-        # 'example_raycast',
-        # 'example_pt',
-        # 'example_custom_material',
-        # 'example_custom_renderer',
-        # 'example_cpp',
-        # 'func_render_all',
-        # 'func_render_instancing',
-        # 'func_accel_consistency',
-        #'func_py_custom_material',
-        #'func_py_custom_renderer',
-
+        'example_blank',
+        'example_quad',
+        'example_raycast',
+        'example_pt',
+        'example_custom_material',
+        'example_custom_renderer',
+        'example_cpp',
+        'func_render_all',
+        'func_render_instancing',
+        'func_accel_consistency',
+        'func_py_custom_material',
+        'func_py_custom_renderer',
         'func_distributed_rendering',
         'func_distributed_rendering_ext',
-
-        # 'func_error_handling',
-        # 'func_obj_loader_consistency',
-        # 'func_render_instancing',
-        # 'func_serial_consistency',
-        # 'func_update_asset',
-        # 'perf_accel',
-        # 'perf_obj_loader',
-        # 'perf_serial'
+        'func_error_handling',
+        'func_obj_loader_consistency',
+        'func_render_instancing',
+        'func_serial_consistency',
+        'func_update_asset',
+        'perf_accel',
+        'perf_obj_loader',
+        'perf_serial'
     ]
 
     # Execute tests
