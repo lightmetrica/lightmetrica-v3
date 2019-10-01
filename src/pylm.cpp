@@ -224,6 +224,7 @@ static void bind(pybind11::module& m) {
     m.def("instanceGroupNode", &instanceGroupNode);
     m.def("transformNode", &transformNode);
     m.def("addChild", &addChild);
+	m.def("createGroupFromModel", &createGroupFromModel);
     m.def("primitive", &primitive);
     #pragma endregion
 
@@ -511,6 +512,9 @@ static void bind(pybind11::module& m) {
         virtual void addChildFromModel(int parent, const std::string& modelLoc) override {
             PYBIND11_OVERLOAD_PURE(void, Scene, addChildFromModel, parent, modelLoc);
         }
+		virtual int createGroupFromModel(const std::string& modelLoc) override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, createGroupFromModel, modelLoc);
+		}
         virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, traverseNodes, traverseFunc);
         }

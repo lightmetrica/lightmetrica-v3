@@ -253,6 +253,7 @@ LM_PUBLIC_API int instanceGroupNode();
 LM_PUBLIC_API int transformNode(Mat4 transform);
 LM_PUBLIC_API void addChild(int parent, int child);
 LM_PUBLIC_API void addChildFromModel(int parent, const std::string& modelLoc);
+LM_PUBLIC_API int createGroupFromModel(const std::string& modelLoc);
 
 /*!
     \brief Create primitive(s) and add to the scene.
@@ -319,6 +320,7 @@ public:
     virtual int transformNode(Mat4 transform) = 0;
     virtual void addChild(int parent, int child) = 0;
     virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
+	virtual int createGroupFromModel(const std::string& modelLoc) = 0;
 };
 
 /*!

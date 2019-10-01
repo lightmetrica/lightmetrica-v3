@@ -172,6 +172,10 @@ public:
                 light < 0 ? nullptr : assets_.at(light).get());
         }
     }
+
+	virtual void foreachNode(const VisitNodeFuncType&) const override {
+		throw std::runtime_error("Unsupported");
+	}
 };
 
 LM_COMP_REG_IMPL(Model_WavefrontObj, "model::wavefrontobj");
