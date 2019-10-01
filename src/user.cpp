@@ -4,18 +4,15 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/version.h>
 #include <lm/user.h>
 #include <lm/assets.h>
 #include <lm/scene.h>
 #include <lm/renderer.h>
-#include <lm/logger.h>
 #include <lm/film.h>
 #include <lm/parallel.h>
-#include <lm/exception.h>
-#include <lm/json.h>
 #include <lm/progress.h>
-#include <lm/serial.h>
 #include <lm/debugio.h>
 #include <lm/objloader.h>
 
@@ -152,7 +149,7 @@ public:
             LM_INDENT();
         }
         if (renderer_->requiresScene() && !scene_->renderable()) {
-            return;
+            THROW_RUNTIME_ERROR();
         }
         renderer_->render(scene_.get());
     }

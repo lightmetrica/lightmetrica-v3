@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.1.3
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -39,7 +39,7 @@ lm.info()
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # Following is the definition of assets. To load an OBJ model, we can use ``model::wavefrontobj`` asset. This asset internally creates meshes and materials by reading the associated MTL file.
 #
-# .. node::
+# .. note::
 #     A model asset can be considered as a special asset containing (a part of) the scene graph and assets reference by the structure. 
 
 # +

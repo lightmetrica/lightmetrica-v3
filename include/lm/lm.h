@@ -5,6 +5,7 @@
 
 #pragma once
 
+// Includes all headers of Lightmetrica
 #include "component.h"
 #include "version.h"
 #include "json.h"
@@ -13,6 +14,7 @@
 #include "logger.h"
 #include "progress.h"
 #include "exception.h"
+#include "debug.h"
 #include "debugio.h"
 #include "dist.h"
 #include "parallel.h"

@@ -64,6 +64,21 @@ static void bind(pybind11::module& m) {
     // Debug or Release mode
     m.attr("Debug") = LM_DEBUG_MODE ? true : false;
 
+	// Configuration
+	enum class ConfigType {
+		Debug,
+		Release,
+		RelWithDebInfo
+	};
+	pybind11::enum_<ConfigType>(m, "ConfigType")
+		.value("Debug", ConfigType::Debug)
+		.value("Release", ConfigType::Release)
+		.value("RelWithDebInfo", ConfigType::RelWithDebInfo);
+	m.attr("Config") =
+		LM_CONFIG_DEBUG ? ConfigType::Debug :
+		LM_CONFIG_RELEASE ? ConfigType::Release :
+		ConfigType::RelWithDebInfo;
+
     // Supported floating point type
     enum class FloatPrecisionType {
         Float32,
@@ -313,6 +328,10 @@ static void bind(pybind11::module& m) {
     {
         auto sm = m.def_submodule("progress");
 
+		pybind11::enum_<progress::ProgressMode>(sm, "ProgressMode")
+			.value("Samples", progress::ProgressMode::Samples)
+			.value("Time", progress::ProgressMode::Time);
+
         sm.def("init", &progress::init, "type"_a = progress::DefaultType, "prop"_a = Json{});
         sm.def("shutdown", &progress::shutdown);
         sm.def("start", &progress::start);
@@ -322,16 +341,24 @@ static void bind(pybind11::module& m) {
         using ProgressContext = progress::detail::ProgressContext;
         class ProgressContext_Py final : public ProgressContext {
             virtual bool construct(const Json& prop) override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD(bool, ProgressContext, construct, prop);
             }
-            virtual void start(long long total) override {
-                PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, total);
+            virtual void start(progress::ProgressMode mode, long long total, double totalTime) override {
+                pybind11::gil_scoped_acquire acquire;
+                PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, mode, total, totalTime);
             }
             virtual void end() override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, end);
             }
             virtual void update(long long processed) override {
+                pybind11::gil_scoped_acquire acquire;
                 PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
+            }
+            virtual void updateTime(Float elapsed) override {
+                pybind11::gil_scoped_acquire acquire;
+                PYBIND11_OVERLOAD_PURE(void, ProgressContext, updateTime, elapsed);
             }
         };
         pybind11::class_<ProgressContext, ProgressContext_Py, Component::Ptr<ProgressContext>>(sm, "ProgressContext")
@@ -339,6 +366,7 @@ static void bind(pybind11::module& m) {
             .def("start", &ProgressContext::start)
             .def("end", &ProgressContext::end)
             .def("update", &ProgressContext::update)
+            .def("updateTime", &ProgressContext::updateTime)
             .PYLM_DEF_COMP_BIND(ProgressContext);
     }
     #pragma endregion
@@ -353,6 +381,25 @@ static void bind(pybind11::module& m) {
         sm.def("handleMessage", &debugio::handleMessage);
         sm.def("syncUserContext", &debugio::syncUserContext);
         sm.def("draw", &debugio::draw);
+    }
+    #pragma endregion
+
+    // ------------------------------------------------------------------------
+
+    #pragma region debug.h
+    {
+        auto sm = m.def_submodule("debug");
+        sm.def("pollFloat", &debug::pollFloat);
+        sm.def("regOnPollFloat", [](const debug::OnPollFloatFunc& onPollFloat) {
+            // We must capture the callback function by value.
+            // Otherwise the function would be dereferenced.
+            debug::regOnPollFloat([onPollFloat](const std::string& name, Float val) {
+                pybind11::gil_scoped_acquire acquire;
+                if (onPollFloat) {
+                    onPollFloat(name, val);
+                }
+            });
+        });
     }
     #pragma endregion
 
@@ -410,6 +457,9 @@ static void bind(pybind11::module& m) {
         virtual FilmSize size() const override {
             PYBIND11_OVERLOAD_PURE(FilmSize, Film, size);
         }
+        virtual long long numPixels() const override {
+            PYBIND11_OVERLOAD_PURE(long long, Film, numPixels);
+        }
         virtual void setPixel(int x, int y, Vec3 v) override {
             PYBIND11_OVERLOAD_PURE(void, Film, setPixel, x, y, v);
         }
@@ -422,11 +472,14 @@ static void bind(pybind11::module& m) {
         virtual void accum(const Film* film) override {
             PYBIND11_OVERLOAD_PURE(void, Film, accum, film);
         }
-        virtual void splat(Vec2 rp, Vec3 v) override {
-            PYBIND11_OVERLOAD_PURE(void, Film, splat, rp, v);
-        }
         virtual void splatPixel(int x, int y, Vec3 v) override {
             PYBIND11_OVERLOAD_PURE(void, Film, splatPixel, x, y, v);
+        }
+        virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, updatePixel, x, y, updateFunc);
+        }
+        virtual void rescale(Float s) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, rescale, s);
         }
         virtual void clear() override {
             PYBIND11_OVERLOAD_PURE(void, Film, clear);
@@ -436,6 +489,7 @@ static void bind(pybind11::module& m) {
         .def(pybind11::init<>())
         .def("loc", &Film::loc)
         .def("size", &Film::size)
+        .def("numPixels", &Film::numPixels)
         .def("setPixel", &Film::setPixel)
         .def("save", &Film::save)
         .def("aspectRatio", &Film::aspectRatio)
@@ -539,6 +593,9 @@ static void bind(pybind11::module& m) {
         virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const override {
             PYBIND11_OVERLOAD_PURE(Ray, Scene, primaryRay, rp, aspectRatio);
         }
+        virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, rasterPosition, wo, aspectRatio);
+        }
         virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleRay, rng, sp, wi);
         }
@@ -550,6 +607,9 @@ static void bind(pybind11::module& m) {
         }
         virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, wi, wo);
+        }
+        virtual Float pdfComp(const SceneInteraction& sp, Vec3 wi) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdfComp, sp, wi);
         }
         virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdfLight, sp, spL, wo);
@@ -659,6 +719,9 @@ static void bind(pybind11::module& m) {
         }
         virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Material, pdf, geom, comp, wi, wo);
+        }
+        virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdfComp, geom, comp, wi);
         }
         virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, comp, wi, wo);

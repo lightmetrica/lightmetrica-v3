@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.1.3
+#       jupytext_version: 1.2.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -73,8 +73,9 @@ lm.primitive(lm.identity(), {
 lm.build('accel::sahbvh', {})
 lm.render('renderer::pt', {
     'output': lm.asset('film1'),
+    'scheduler': 'sample',
     'spp': 10,
-    'maxLength': 20
+    'max_length': 20
 })
 
 img = np.copy(lm.buffer(lm.asset('film1')))

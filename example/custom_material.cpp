@@ -30,6 +30,10 @@ public:
         LM_UNREACHABLE_RETURN();
     }
 
+    virtual lm::Float pdfComp(const lm::PointGeometry&, int, lm::Vec3) const {
+        LM_UNREACHABLE_RETURN();
+    }
+
     virtual lm::Vec3 eval(const lm::PointGeometry&, int, lm::Vec3, lm::Vec3) const override {
         LM_UNREACHABLE_RETURN();
     }

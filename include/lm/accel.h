@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include "component.h"
-#include "math.h"
+#include "core.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

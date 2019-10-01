@@ -32,12 +32,16 @@ public:
         return true;
     }
 
-    virtual void start(long long total) override {
-        for (auto& ctx : ctx_) { ctx->start(total); }
+    virtual void start(ProgressMode mode, long long total, double totalTime) override {
+        for (auto& ctx : ctx_) { ctx->start(mode, total, totalTime); }
     }
 
     virtual void update(long long processed) override {
         for (auto& ctx : ctx_) { ctx->update(processed); }
+    }
+
+    virtual void updateTime(Float elapsed) override {
+        for (auto& ctx : ctx_) { ctx->updateTime(elapsed); }
     }
 
     virtual void end() override {
@@ -65,10 +69,10 @@ public:
         return true;
     }
 
-    virtual void start(long long total) override {
+    virtual void start(ProgressMode mode, long long total, double totalTime) override {
         start_ = high_resolution_clock::now();
         lastUpdated_ = start_;
-        ctx_->start(total);
+        ctx_->start(mode, total, totalTime);
     }
 
     virtual void update(long long processed) override {
@@ -76,6 +80,15 @@ public:
         const auto elapsed = duration_cast<milliseconds>(now - lastUpdated_);
         if (elapsed > delay_) {
             ctx_->update(processed);
+            lastUpdated_ = now;
+        }
+    }
+
+    virtual void updateTime(Float elapsed_) override {
+        const auto now = high_resolution_clock::now();
+        const auto elapsed = duration_cast<milliseconds>(now - lastUpdated_);
+        if (elapsed > delay_) {
+            ctx_->updateTime(elapsed_);
             lastUpdated_ = now;
         }
     }
@@ -92,38 +105,60 @@ LM_COMP_REG_IMPL(ProgressContext_Delay, "progress::delay");
 // Default progress reporter
 class ProgressContext_Default : public ProgressContext {
 private:
-    long long total_;                                // Total number of progress updates
+	ProgressMode mode_;								 // Progress reporting mode
+    long long total_;                                // Total number of progress updates (used in Samples mode)
+	double totalTime_;								 // Total duration (used in Time mode)
     time_point<high_resolution_clock> start_;        // Time starting progress report
     time_point<high_resolution_clock> lastUpdated_;  // Last updated time
     
 public:
-    virtual void start(long long total) override {
+    virtual void start(ProgressMode mode, long long total, double totalTime) override {
+		mode_ = mode;
         total_ = total;
+		totalTime_ = totalTime;
         start_ = high_resolution_clock::now();
         lastUpdated_ = start_;
     }
 
     virtual void update(long long processed) override {
+        if (mode_ != ProgressMode::Samples) {
+            return;
+        }
         const auto now = high_resolution_clock::now();
-        const auto elapsed = duration_cast<milliseconds>(now - lastUpdated_);
-        if (elapsed > .5s) {
-            // Compute ETA
+        const auto elapsedFromLastUpdate = duration_cast<milliseconds>(now - lastUpdated_);
+        if (elapsedFromLastUpdate > .5s) {
+            // Estimate ETA
             const auto etaStr = [&]() -> std::string {
                 if (processed == 0) {
                     return "";
                 }
-                const auto eta = duration_cast<milliseconds>(now - start_)
-                    * (total_ - processed) / processed;
+                const auto eta = duration_cast<milliseconds>(now - start_) * (total_ - processed) / processed;
                 return fmt::format(", ETA={:.1f}s", eta.count() / 1000.0);
+
             }();
+			LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
+				processed,
+				total_,
+				double(processed) / total_ * 100,
+				etaStr);
+            lastUpdated_ = now;
+        }
+    }
 
-            // Print progress
-            LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
-                processed,
-                total_,
-                double(processed) / total_ * 100,
-                etaStr);
-
+    virtual void updateTime(Float elapsed) override {
+        if (mode_ != ProgressMode::Time) {
+            return;
+        }
+        const auto now = high_resolution_clock::now();
+        const auto elapsedFromLastUpdate = duration_cast<milliseconds>(now - lastUpdated_);
+        if (elapsedFromLastUpdate > .5s) {
+			const auto eta = totalTime_ - elapsed;
+			const auto etaStr = fmt::format(", ETA={:.1f}s", eta);
+			LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
+				elapsed,
+				totalTime_,
+                elapsed / totalTime_ * 100,
+				etaStr);
             lastUpdated_ = now;
         }
     }
@@ -131,6 +166,15 @@ public:
     virtual void end() override {
         LM_PROGRESS_END("Processing [completed]");
     }
+
+private:
+	// Helper function to compute ETA
+	template <typename T>
+	double estimateETA(time_point<high_resolution_clock> now, T total, T processed) const {
+		const auto eta = duration_cast<milliseconds>(now - start_)
+			* (total - processed) / processed;
+		return eta.count() / 1000.0;
+	}
 };
 
 LM_COMP_REG_IMPL(ProgressContext_Default, "progress::default");
@@ -151,12 +195,16 @@ LM_PUBLIC_API void shutdown() {
     Instance::shutdown();
 }
 
-LM_PUBLIC_API void start(long long total) {
-    Instance::get().start(total);
+LM_PUBLIC_API void start(ProgressMode mode, long long total, double totalTime) {
+    Instance::get().start(mode, total, totalTime);
 }
 
 LM_PUBLIC_API void update(long long processed) {
     Instance::get().update(processed);
+}
+
+LM_PUBLIC_API void updateTime(Float elapsed) {
+    Instance::get().updateTime(elapsed);
 }
 
 LM_PUBLIC_API void end() {

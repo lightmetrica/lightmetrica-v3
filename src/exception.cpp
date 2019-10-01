@@ -4,9 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/exception.h>
-#include <lm/logger.h>
-#include <lm/json.h>
 
 #if LM_PLATFORM_WINDOWS
 #include <Windows.h>
@@ -59,7 +58,8 @@ public:
             LM_EXCEPTION_ERROR_CODE(m, EXCEPTION_INVALID_HANDLE);
 
             // Print error message
-            LM_ERROR("Structured exception [desc='{}']", m[code]);
+            const std::string desc = m[code];
+            LM_ERROR("Structured exception [desc='{}']", desc);
             exception::stackTrace();
 
             throw std::runtime_error(m[code]);

@@ -6,7 +6,10 @@
 #pragma once
 
 #include <lm/logger.h>
+#pragma warning(push)
+#pragma warning(disable:4324)   // structure was padded due to alignment specifier
 #include <embree3/rtcore.h>
+#pragma warning(pop)
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

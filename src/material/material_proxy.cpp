@@ -4,9 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/material.h>
-#include <lm/user.h>
-#include <lm/serial.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -56,6 +55,10 @@ public:
 
     Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
         return ref_->pdf(geom, comp, wi, wo);
+    }
+
+    virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const override {
+        return ref_->pdfComp(geom, comp, wi);
     }
 
     virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {

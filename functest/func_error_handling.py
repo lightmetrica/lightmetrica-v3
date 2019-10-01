@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.1.1
+#       jupytext_version: 1.2.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -144,21 +144,27 @@ lm.primitive(lm.identity(), {
 
 # ### Rendering with invalid scene
 
-# Without camera
-lm.render('renderer::raycast', {
-    'output': lm.asset('film1'),
-    'color': [0,0,0]
-})
+try:
+    # Without camera
+    lm.render('renderer::raycast', {
+        'output': lm.asset('film1'),
+        'color': [0,0,0]
+    })
+except Exception:
+    traceback.print_exc()
 
 lm.primitive(lm.identity(), {
     'camera': lm.asset('camera1')
 })
 
-# Without acceleration structure
-lm.render('renderer::raycast', {
-    'output': lm.asset('film1'),
-    'color': [0,0,0]
-})
+try:
+    # Without acceleration structure
+    lm.render('renderer::raycast', {
+        'output': lm.asset('film1'),
+        'color': [0,0,0]
+    })
+except Exception:
+    traceback.print_exc()
 
 lm.build('accel::sahbvh', {})
 

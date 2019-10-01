@@ -4,12 +4,11 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/film.h>
-#include <lm/logger.h>
-#include <lm/serial.h>
-#include <lm/json.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
+#include <lm/parallel.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -48,7 +47,65 @@ struct AtomicWrapper {
         auto expected = v_.load();
         while (!v_.compare_exchange_weak(expected, expected + v));
     }
+
+    void updateWithFunc(const std::function<T(T curr)>& updateFunc) {
+        auto expected = v_.load();
+        while (!v_.compare_exchange_weak(expected, updateFunc(expected)));
+    }
 };
+
+// ----------------------------------------------------------------------------
+
+// Helper functions on image manipulaion
+namespace image {
+    // Write image as .pfm file
+    bool writePfm(const std::string& outpath, int w, int h, const std::vector<float>& d) {
+        FILE *f;
+        int err;
+        #if LM_COMPILER_MSVC
+        if ((err = fopen_s(&f, outpath.c_str(), "wb")) != 0) {
+            LM_ERROR("Failed to open [file='{}',errorno='{}']", outpath, err);
+            return false;
+        }
+        #else
+        if ((f = fopen(outpath.c_str(), "wb")) == nullptr) {
+            LM_ERROR("Failed to open [file='{}']", outpath);
+            return false;
+        }
+        #endif
+        fprintf(f, "PF\n%d %d\n-1\n", w, h);
+        fwrite(d.data(), 4, d.size(), f);
+        fclose(f);
+        return true;
+    }
+
+    // Sanity check of an image. If the image contains invalid values like INF or NAN,
+    // this function returns false.
+    bool sanityCheck(int w, int h, const std::vector<float>& d) {
+        constexpr int MaxInvalidPixels = 10;
+        int invalidPixels = 0;
+        for (int i = 0; i < w * h; i++) {
+            const int x = i % w;
+            const int y = i / w;
+            const auto v = d[i];
+            if (std::isnan(v)) {
+                LM_WARN("Found an invalid pixel [type='NaN', x={}, y={}]", x, y);
+                invalidPixels++;
+            }
+            else if (std::isinf(v)) {
+                LM_WARN("Found an invalid pixel [type='Inf', x={}, y={}]", x, y);
+                invalidPixels++;
+            }
+            if (invalidPixels >= MaxInvalidPixels) {
+                LM_WARN("Outputs more than >{} entries are omitted.", MaxInvalidPixels);
+                break;
+            }
+        }
+        return invalidPixels > 0;
+    }
+}
+
+// ----------------------------------------------------------------------------
 
 /*
 \rst
@@ -89,11 +146,18 @@ public:
         return { w_, h_ };
     }
 
+    virtual long long numPixels() const override {
+        return w_ * h_;
+    }
+
     virtual void setPixel(int x, int y, Vec3 v) override {
         data_[y*w_ + x].update(v);
     }
 
     virtual bool save(const std::string& outpath) const override {
+        // Disable floating-point exception for stb_image
+        exception::ScopedDisableFPEx disableFp_;
+
         LM_INFO("Saving image [file='{}']", outpath);
         LM_INDENT();
 
@@ -125,14 +189,16 @@ public:
         }
         #endif
         else if (ext == ".hdr") {
-            const auto data = copy<float>(true);
+            auto data = copy<float>(true);
+            image::sanityCheck(w_, h_, data);
             if (!stbi_write_hdr(outpath.c_str(), w_, h_, 3, data.data())) {
                 return false;
             }
         }
         else if (ext == ".pfm") {
             const auto data = copy<float>(false);
-            if (!writePfm(outpath, w_, h_, data)) {
+            image::sanityCheck(w_, h_, data);
+            if (!image::writePfm(outpath, w_, h_, data)) {
                 return false;
             }
         }
@@ -168,14 +234,18 @@ public:
         }
     }
 
-    virtual void splat(Vec2 rp, Vec3 v) override {
-        const int x = glm::clamp(int(rp.x * w_), 0, w_-1);
-        const int y = glm::clamp(int(rp.y * h_), 0, h_-1);
+    virtual void splatPixel(int x, int y, Vec3 v) override {
         data_[y*w_+x].add(v);
     }
 
-    virtual void splatPixel(int x, int y, Vec3 v) override {
-        data_[y*w_+x].add(v);
+    virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) override {
+        data_[y*w_+x].updateWithFunc(updateFunc);
+    }
+
+    virtual void rescale(Float s) override {
+        parallel::foreach(w_ * h_, [&](long long i, int) {
+            data_[i].v_ = data_[i].v_.load() * s;
+        });
     }
 
     virtual void clear() override {
@@ -183,26 +253,6 @@ public:
     }
 
 private:
-    bool writePfm(const std::string& outpath, int w, int h, const std::vector<float>& d) const {
-        FILE *f;
-        int err;
-        #if LM_COMPILER_MSVC
-        if ((err = fopen_s(&f, outpath.c_str(), "wb")) != 0) {
-            LM_ERROR("Failed to open [file='{}',errorno='{}']", outpath, err);
-            return false;
-        }
-        #else
-        if ((f = fopen(outpath.c_str(), "wb")) == nullptr) {
-            LM_ERROR("Failed to open [file='{}']", outpath);
-            return false;
-        }
-        #endif
-        fprintf(f, "PF\n%d %d\n-1\n", w, h);
-        fwrite(d.data(), 4, d.size(), f);
-        fclose(f);
-        return true;
-    }
-
     template <typename T>
     std::vector<T> copy(bool flip) const {
         std::vector<T> v(w_*h_*3, {});

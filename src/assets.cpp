@@ -4,10 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/assets.h>
-#include <lm/logger.h>
-#include <lm/serial.h>
-#include <lm/user.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

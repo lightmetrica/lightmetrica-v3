@@ -131,10 +131,10 @@ private:
 
 // ----------------------------------------------------------------------------
 
-class Impl {
+class ComponentContext {
 public:
-    static Impl& instance() {
-        static Impl instance;
+    static ComponentContext& instance() {
+        static ComponentContext instance;
         return instance;
     }
 
@@ -306,42 +306,42 @@ private:
 // ----------------------------------------------------------------------------
 
 LM_PUBLIC_API Component* createComp(const std::string& key) {
-    return Impl::instance().createComp(key);
+    return ComponentContext::instance().createComp(key);
 }
 
 LM_PUBLIC_API void reg(
     const std::string& key,
     const Component::CreateFunction& createFunc,
     const Component::ReleaseFunction& releaseFunc) {
-    Impl::instance().reg(key, createFunc, releaseFunc);
+    ComponentContext::instance().reg(key, createFunc, releaseFunc);
 }
 
 LM_PUBLIC_API void unreg(const std::string& key) {
-    Impl::instance().unreg(key);
+    ComponentContext::instance().unreg(key);
 }
 
 LM_PUBLIC_API bool loadPlugin(const std::string& path) {
-    return Impl::instance().loadPlugin(path);
+    return ComponentContext::instance().loadPlugin(path);
 }
 
 LM_PUBLIC_API void loadPluginDirectory(const std::string& directory) {
-    Impl::instance().loadPluginDirectory(directory);
+    ComponentContext::instance().loadPluginDirectory(directory);
 }
 
 LM_PUBLIC_API void unloadPlugins() {
-    Impl::instance().unloadPlugins();
+    ComponentContext::instance().unloadPlugins();
 }
 
 LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func) {
-    Impl::instance().foreachRegistered(func);
+    ComponentContext::instance().foreachRegistered(func);
 }
 
 LM_PUBLIC_API void registerRootComp(Component* p) {
-    Impl::instance().registerRootComp(p);
+    ComponentContext::instance().registerRootComp(p);
 }
 
 LM_PUBLIC_API Component* get(const std::string& locator) {
-    return Impl::instance().get(locator);
+    return ComponentContext::instance().get(locator);
 }
 
 // ----------------------------------------------------------------------------

@@ -4,8 +4,8 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/objloader.h>
-#include <lm/logger.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::objloader)
 

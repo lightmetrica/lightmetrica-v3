@@ -4,11 +4,9 @@
 */
 
 #include <pch.h>
+#include <lm/core.h>
 #include <lm/light.h>
 #include <lm/texture.h>
-#include <lm/serial.h>
-#include <lm/json.h>
-#include <lm/surface.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -16,11 +14,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \rst
 .. function:: light::env
 
-   Environment light.
+    Environment light.
 
-   :param str envmap_path: Path to environment map.
-   :param float rot: Rotation angle of the environment map around up vector in degrees.
-                     Default value: 0.
+    :param str envmap_path: Path to environment map.
+    :param float rot: Rotation angle of the environment map around up vector in degrees.
+                      Default value: 0.
 \endrst
 */
 class Light_Env final : public Light {
@@ -71,19 +69,20 @@ public:
         const auto p  = 2 * Pi * u[0] + rot_;
         const auto wo = -Vec3(st * sin(p), cos(t), st * cos(p));
         const auto geomL = PointGeometry::makeInfinite(wo);
-        const auto pL = pdf(geom, geomL, {}, wo);
+        const auto pL = pdf(geom, geomL, 0, {}, wo);
         if (pL == 0_f) {
             return {};
         }
-        const auto Le = eval(geomL, wo);
+        const auto Le = eval(geomL, 0, wo);
         return LightRaySample{
             geomL,
             wo,
+            0,
             Le / pL
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, const Transform&, Vec3) const override {
+    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
         const auto d  = -geomL.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);
@@ -96,10 +95,11 @@ public:
         if (st == 0_f) {
             return 0_f;
         }
-        return dist_.p(u, v) / (2_f*Pi*Pi*st*glm::abs(glm::dot(d, geom.n)));
+        const auto pdfSA = dist_.p(u, v) / (2_f*Pi*Pi*st);
+        return surface::convertSAToProjSA(pdfSA, geom, d);
     }
 
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool isSpecular(const PointGeometry&, int) const override {
         return false;
     }
 
@@ -107,7 +107,7 @@ public:
         return true;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3) const override {
+    virtual Vec3 eval(const PointGeometry& geom, int, Vec3) const override {
         const auto d = -geom.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);

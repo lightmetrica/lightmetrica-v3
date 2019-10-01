@@ -49,10 +49,7 @@ public:
         contains a component of delta function.
         \endrst
     */
-    virtual bool isSpecular(const PointGeometry& geom) const {
-        LM_UNUSED(geom);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual bool isSpecular(const PointGeometry& geom) const = 0;
 
     /*!
         \brief Generate a primary ray with the corresponding raster position.
@@ -66,10 +63,15 @@ public:
         Use :cpp:func:`samplePrimaryRay` when the primary ray is generated randomly.
         \endrst
     */
-    virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const {
-        LM_UNUSED(rp, aspectRatio);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const = 0;
+
+    /*!
+        \brief Compute a raser position.
+        \param wo Primary ray direction.
+        \param aspectRatio Aspect ratio of the film.
+        \return Raster position.
+    */
+    virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const = 0;
 
     /*!
         \brief Sample a primary ray within the given raster window.
@@ -96,42 +98,35 @@ public:
         Looking by the solid angle measure, for instance, the set of rays are not uniform.
         \endrst
     */
-    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const {
-        LM_UNUSED(rng, window, aspectRatio);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const = 0;
+
+    /*!
+        \brief Evaluate pdf for direction sampling.
+    */
+    virtual Float pdf(Vec3 wo, Float aspectRatio) const = 0;
 
     /*!
         \brief Evaluate sensitivity.
-        \param geom Surface geometry information.
         \param wo Outgoing direction.
 
         \rst
         Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const {
-        LM_UNUSED(geom, wo);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual Vec3 eval(Vec3 wo, Float aspectRatio) const = 0;
 
     /*!
         \brief Get view matrix if available.
         \return View matrix.
     */
-    virtual Mat4 viewMatrix() const {
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual Mat4 viewMatrix() const = 0;
 
     /*!
         \brief Get projection matrix if available.
         \param aspectRatio Aspect ratio of the film.
         \return Projection matrix.
     */
-    virtual Mat4 projectionMatrix(Float aspectRatio) const {
-        LM_UNUSED(aspectRatio);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual Mat4 projectionMatrix(Float aspectRatio) const = 0;
 };
 
 /*!

@@ -32,12 +32,12 @@ public:
     /*!
         \brief Sample a distance in a ray direction.
     */
-    virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, const PointGeometry& geom, Vec3 wo, Float distToSurf) const = 0;
+    virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
 
     /*!
         \brief Evaluate transmittance.
     */
-    virtual std::optional<Vec3> evalTransmittance(Rng& rng, const PointGeometry& geom1, const PointGeometry& geom2) const = 0;
+    virtual std::optional<Vec3> evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
 
     /*!
         \brief Check if the medium has emissive component.

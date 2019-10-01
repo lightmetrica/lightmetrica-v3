@@ -1,7 +1,9 @@
 name: lm3_dev
 channels:
-  - conda-forge
+  # hi2p-perim channel must have higher priority
+  # because some packages might have the same names.
   - hi2p-perim
+  - conda-forge
 dependencies:
   - python=3.7
   - cmake
@@ -12,6 +14,7 @@ dependencies:
   - sphinx_rtd_theme
   - jupytext
   - tqdm
+  - colorama
   - imageio
   - pytest
   - zeromq
@@ -27,8 +30,11 @@ dependencies:
   - stb
   - imgui-glfw
   - cereal
+  - vdbloader
+  - tbb-devel
   - pip:
     - sphinx-autobuild
     - breathe
     - sphinx_tabs
     - nbsphinx
+    - nbmerge

@@ -34,7 +34,7 @@ def test_construction():
         assert p.f1() == 42
         assert p.f2(1, 2) == 3
 
-        # ---------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------------
 
         # Use component inside native plugin
         with lm_plugin_scope('lm_test_plugin'):
@@ -44,7 +44,7 @@ def test_construction():
             del p
             gc.collect()
 
-        # ---------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------------
 
         # Extend component from python
         class A2(m.A):
@@ -61,7 +61,7 @@ def test_construction():
         # Instantiate inside python script and use it in C++
         assert m.useA(p) == 86
 
-        # ---------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------------
 
         # Native embeded plugin
         # w/o property
@@ -72,7 +72,7 @@ def test_construction():
         p = m.D.create('test::comp::d1', '', {'v1':42, 'v2':43})
         assert p.f() == 85
 
-        # ---------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------------
 
         # Native external plugin
         with lm_plugin_scope('lm_test_plugin'):
@@ -85,7 +85,7 @@ def test_construction():
             del p
             gc.collect()
 
-        # ---------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------------
 
         # Define and register component implementation
         # Implement component A
@@ -151,7 +151,7 @@ def test_serialization():
         # Same test with lm.serial.save / load functions in C++
         assert m.roundTripSerializedA_UseSerial() == 23
 
-        # ---------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------------
 
         # Using pickle for serializing member variables
         class A_SerializableWithPickle(m.A):
