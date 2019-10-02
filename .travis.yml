@@ -49,8 +49,8 @@ jobs:
       script:
         - travis_wait 120 sleep infinity & docker run --rm -it -v $TRAVIS_BUILD_DIR:/lm3 $DOCKER_USERNAME/lightmetrica-v3-travis bash -c \
           'source ~/.bashrc &&
-          cd /lightmetrica-v3/functest &&
-          python run_all.py --lmenv .lmenv_docker &&
+          cd /lightmetrica-v3 &&
+          python run_tests.py --lmenv .lmenv_docker --functest &&
           cp -r executed_functest /lm3/doc/ &&
           cd /lm3/doc &&
           mkdir _build &&
