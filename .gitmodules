@@ -4,6 +4,3 @@
 [submodule "plugin/accel_nanort/nanort"]
 	path = plugin/accel_nanort/nanort
 	url = https://github.com/lighttransport/nanort.git
-[submodule "plugin/model_pbrt/pbrt-parser"]
-	path = plugin/model_pbrt/pbrt-parser
-	url = https://github.com/ingowald/pbrt-parser.git
