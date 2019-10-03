@@ -26,17 +26,25 @@ if __name__ == '__main__':
     add_bool_arg(parser, 'functest', False)
     args = parser.parse_args()
 
+    # Read .lmeenv file
+    with open(args.lmenv) as f:
+        config = json.load(f)
+        
+    # Set LD_LIBRARY_PATH for Linux environment
+    if sys.platform == 'linux':
+        env = os.environ.copy()
+        env['LD_LIBRARY_PATH'] = config['bin_path']
+
     # Execute C++ tests
     if args.cpp_unit:
-        # Read .lmeenv file
-        with open(args.lmenv) as f:
-            config = json.load(f)
         print(Fore.GREEN + "------------------------" + Style.RESET_ALL)
         print(Fore.GREEN + "Executing C++ unit tests" + Style.RESET_ALL)
         print(Fore.GREEN + "------------------------" + Style.RESET_ALL, flush=True)
-        sp.call([
-            os.path.join(config['bin_path'], 'lm_test')
-        ])
+        command = [os.path.join(config['bin_path'], 'lm_test')]
+        if sys.platform == 'linux':
+            sp.check_call(command, env=env) 
+        else:
+            sp.check_call(command)
 
     # Execute python tests
     if args.python_unit:
