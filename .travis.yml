@@ -2,18 +2,33 @@ language: bash
 
 jobs:
   include:
-    - stage: Build
-      name: Build on Linux environment with Docker
+    # Stages for all branches and pull requests
+    
+    - stage: Build and run unit tests
+      name: Build on Linux environment
       os: linux
-      sudo: required
-      services: docker
+      before_install:
+      - |
+        sudo apt-get update
+        curl -OJLs https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+        bash Miniconda3-latest-Linux-x86_64.sh -p $HOME/miniconda -b
+        source "$HOME/miniconda/etc/profile.d/conda.sh"
+        cd ${TRAVIS_BUILD_DIR}
+        conda env create -f environment_linux.yml
+        conda activate lm3_dev
       script:
-        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        - docker build -t lightmetrica-v3-travis .
-        - docker images
-        - docker tag lightmetrica-v3-travis $DOCKER_USERNAME/lightmetrica-v3-travis
-        - docker push $DOCKER_USERNAME/lightmetrica-v3-travis
-      
+      - |
+        cd ${TRAVIS_BUILD_DIR}
+        cmake -H. -B_build -D CMAKE_BUILD_TYPE=Release
+        cmake --build _build -- -j2
+        cat > .lmenv << EOF
+        {
+          "path": "${TRAVIS_BUILD_DIR}",
+          "bin_path": "${TRAVIS_BUILD_DIR}/_build/bin",
+        }
+        EOF
+        python run_tests.py --lmenv .lmenv
+        
     - name: Build on Windows environment
       os: windows
       dist: 1803-containers
@@ -22,6 +37,7 @@ jobs:
       before_install:
       - |
         choco install openssl.light
+        refreshenv
         choco install miniconda3
         export PATH="/c/Tools/miniconda3/Scripts:$PATH"
         # Calling activate command with conda>=4.6.9 in bash on Windows is not working.
@@ -34,13 +50,37 @@ jobs:
       script:
       - |
         cd ${TRAVIS_BUILD_DIR}
-        cmake -G "Visual Studio 15 2017 Win64" -H. -B_build -DCMAKE_BUILD_TYPE=Release
+        cmake -H. -B_build -G "Visual Studio 15 2017 Win64"
         cmake --build _build --config Release
-        cd _build/bin/Release
-        ./lm_test.exe
+        cat > .lmenv << EOF
+        {
+          "path": "${TRAVIS_BUILD_DIR}",
+          "bin_path": "${TRAVIS_BUILD_DIR}/_build/bin/Release",
+        }
+        EOF
+        python run_tests.py --lmenv .lmenv
+
+    # ---------------------------------------------------------------------------------------------
+
+    # Stages only for push to master branche
+
+    # Build docker container 
+    - stage: Docker build
+      if: (branch = master) AND (type = push)
+      os: linux
+      sudo: required
+      services: docker
+      script:
+        - |
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker build -t lightmetrica-v3-travis .
+          docker images
+          docker tag lightmetrica-v3-travis $DOCKER_USERNAME/lightmetrica-v3-travis
+          docker push $DOCKER_USERNAME/lightmetrica-v3-travis
 
     # We separated a job for tests to meet the limit of maximum running time
     - stage: Functional tests and documentation
+      if: (branch = master) AND (type = push)
       os: linux
       sudo: required
       services: docker
