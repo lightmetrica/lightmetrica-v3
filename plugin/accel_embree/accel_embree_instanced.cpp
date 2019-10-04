@@ -46,7 +46,10 @@ public:
     }
 
     ~Accel_Embree_Instanced() {
-        if (!device_) {
+        if (scene_) {
+            rtcReleaseScene(scene_);
+        }
+        if (device_) {
             rtcReleaseDevice(device_);
         }
     }
