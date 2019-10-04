@@ -20,7 +20,7 @@ def lm_logger_scope():
 def lm_plugin_scope(name):
     """Enables plugin in the context"""
     try:
-        lm.comp.loadPlugin(name)
+        lm.comp.loadPlugin(os.path.join(pytest.lmenv.bin_path, name))
         yield
     finally:
         lm.comp.unloadPlugins()

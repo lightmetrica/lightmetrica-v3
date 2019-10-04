@@ -39,12 +39,9 @@ RUN source ~/.bashrc && \
     cmake --build _build --target install -- -j4
 
 # Run tests
-WORKDIR /lightmetrica-v3/_build/bin
-RUN source ~/.bashrc && \
-    LD_LIBRARY_PATH=. ./lm_test
 WORKDIR /lightmetrica-v3
 RUN source ~/.bashrc && \
-    LD_LIBRARY_PATH=./_build/bin PYTHONPATH=./_build/bin python -m pytest ./pytest
+    python run_tests.py --lmenv .lmenv_docker
 
 # Default command
 CMD ["/bin/bash"]

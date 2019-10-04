@@ -208,6 +208,40 @@ public:
         });
     }
 
+	virtual int createGroupFromModel(const std::string& modelLoc) override {
+		auto* model = comp::get<Model>(modelLoc);
+		if (!model) {
+			LM_ERROR("Invalid model [loc={}]", modelLoc);
+			return -1;
+		}
+		
+		// Iterate underlyng scene nodes in the model
+		// To copy the underlying scene graph as a child of scene graph of the scene,
+		// we first want to copy the nodes and modify the references to the other nodes.
+		// Actually, we merely want to offset the indices by nodes_.size().
+		const int offset = int(nodes_.size());
+		model->foreachNode([&](const SceneNode& modelNode) {
+			// Copy the node
+			nodes_.push_back(modelNode);
+			auto& node = nodes_.back();
+			
+			// Update the references to other nodes
+			node.index += offset;
+			if (node.type == SceneNodeType::Group) {
+				for (int& child : node.group.children) {
+					child += offset;
+				}
+			}
+			else if (node.type == SceneNodeType::Primitive) {
+				if (node.primitive.camera) {
+					camera_ = node.index;
+				}
+			}
+		});
+
+		return offset;
+	}
+
     // ------------------------------------------------------------------------
 
     virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const override {

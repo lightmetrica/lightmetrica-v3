@@ -60,7 +60,7 @@ public:
         return assets_[assetsMap_.at(name)].get();
     }
 
-    virtual bool construct(const Json& prop) override {
+	virtual bool construct(const Json& prop) override {
         const std::string path = prop["path"];
         return objloader::load(path, geo_,
             // Process mesh
@@ -169,6 +169,10 @@ public:
                 light < 0 ? nullptr : assets_.at(light).get());
         }
     }
+
+	virtual void foreachNode(const VisitNodeFuncType&) const override {
+		throw std::runtime_error("Unsupported");
+	}
 };
 
 LM_COMP_REG_IMPL(Model_WavefrontObj, "model::wavefrontobj");

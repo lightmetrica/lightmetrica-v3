@@ -10,7 +10,7 @@ try:
 except:
     # Otherwise try to import from current directory
     from .pylm import *
-
+    
 def pylm_component(name):
     """Decorator for registering a class to lightmetrica"""
     def pylm_component_(object):

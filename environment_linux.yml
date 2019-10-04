@@ -29,6 +29,7 @@ dependencies:
   - cereal
   - vdbloader
   - tbb-devel
+  - pbrt-parser
   - pip:
     - sphinx-autobuild
     - breathe

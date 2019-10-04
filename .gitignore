@@ -31,15 +31,14 @@ external/
 external
 dist*/
 .idea/
+executed_functest/
 doc/_build
-doc/executed_functest
 jupyter
 *.serialized
 .lmenv
 .lmenv_debug
 *.ipynb
 functest/output
-functest/executed_functest
 functest/_lm_renderer_ao.py
 functest/_run_worker_process.py
 functest/blank.png
