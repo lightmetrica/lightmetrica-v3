@@ -5,24 +5,18 @@
 
 #pragma once
 
-#include "component.h"
+#include "common.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(exception)
-
-// ----------------------------------------------------------------------------
 
 /*!
     \addtogroup exception
     @{
 */
 
-//! Default exception type
-constexpr const char* DefaultType = "exception::default";
-
 /*!
     \brief Initialize exception context.
-    \param type Type of exception subsystem.
     \param prop Properties for configuration.
 
     \rst
@@ -31,7 +25,7 @@ constexpr const char* DefaultType = "exception::default";
     so the user do not want to explicitly call this function.
     \endrst
 */
-LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop = {});
+LM_PUBLIC_API void init(const Json& prop = {});
 
 /*!
     \brief Shutdown exception context.
@@ -79,16 +73,6 @@ LM_PUBLIC_API void disableFPEx();
 LM_PUBLIC_API void stackTrace();
 
 /*!
-    \brief Scoped guard of `init` and `shutdown` functions.
-*/
-class ScopedInit {
-public:
-    ScopedInit(const std::string& type = DefaultType, const Json& prop = {}) { init(type, prop); }
-    ~ScopedInit() { shutdown(); }
-    LM_DISABLE_COPY_AND_MOVE(ScopedInit)
-};
-
-/*!
     \brief Scoped disable of floating point exception.
 
     \rst
@@ -119,41 +103,18 @@ public:
 };
 
 /*!
-    @}
+    \brief Scoped guard of `init` and `shutdown` functions.
 */
-
-// ----------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(detail)
-
-/*!
-    \addtogroup exception
-    @{
-*/
-
-/*!
-    \brief Exception context.
-    
-    \rst
-    You may implement this interface to implement user-specific exception subsystem.
-    Each virtual function corresponds to API call with a free function
-    inside ``exception`` namespace.
-    \endrst
-*/
-class ExceptionContext : public Component {
+class ScopedInit {
 public:
-    virtual void enableFPEx() = 0;
-    virtual void disableFPEx() = 0;
-    virtual void stackTrace() = 0;
+    ScopedInit(const Json& prop = {}) { init(prop); }
+    ~ScopedInit() { shutdown(); }
+    LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
 
 /*!
     @}
 */
-
-LM_NAMESPACE_END(detail)
-
-// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(exception)
 LM_NAMESPACE_END(LM_NAMESPACE)

@@ -131,7 +131,7 @@ private:
 
 // ----------------------------------------------------------------------------
 
-class ComponentContext {
+class ComponentContext final {
 public:
     static ComponentContext& instance() {
         static ComponentContext instance;
