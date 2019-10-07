@@ -32,7 +32,7 @@ public:
         long long totalProcessed = 0;
 
         // Called when a task is finished
-        dist::onWorkerTaskFinished([&](long long processed) {
+        distributed::master::onWorkerTaskFinished([&](long long processed) {
             std::unique_lock<std::mutex> lock(mut);
             totalProcessed += processed;
             cond.notify_one();
@@ -44,7 +44,7 @@ public:
         for (long long i = 0; i < Iter; i++) {
             const long long start = i * WorkSize;
             const long long end = std::min((i + 1) * WorkSize, numSamples);
-            dist::processWorkerTask(start, end);
+            distributed::master::processWorkerTask(start, end);
         }
 
         // Wait for completion
@@ -55,11 +55,11 @@ public:
         });
 
         // Notify process has completed
-        dist::notifyProcessCompleted();
+        distributed::master::notifyProcessCompleted();
     }
 };
 
-LM_COMP_REG_IMPL(ParallelContext_DistMaster, "parallel::distmaster");
+LM_COMP_REG_IMPL(ParallelContext_DistMaster, "parallel::distributed_master");
 
 // ----------------------------------------------------------------------------
 
@@ -87,7 +87,7 @@ public:
         bool done = false;
 
         // Called when the process is completed.
-        dist::worker::onProcessCompleted([&] {
+        distributed::worker::onProcessCompleted([&] {
             std::unique_lock<std::mutex> lock(mut);
             done = true;
             cond.notify_one();
@@ -95,7 +95,7 @@ public:
 
         // Register a function to process a task
         // Note that this function is asynchronious, and called in the different thread.
-        dist::worker::foreach([&](long long start, long long end) {
+        distributed::worker::foreach([&](long long start, long long end) {
             localContext_->foreach(end - start, [&](long long index, int threadId) {
                 processFunc(start + index, threadId);
             }, [](long long) {
@@ -109,6 +109,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(ParallelContext_DistWorker, "parallel::distworker");
+LM_COMP_REG_IMPL(ParallelContext_DistWorker, "parallel::distributed_worker");
 
 LM_NAMESPACE_END(LM_NAMESPACE::parallel)

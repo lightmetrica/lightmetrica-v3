@@ -309,10 +309,7 @@ LM_PUBLIC_API Component* createComp(const std::string& key) {
     return ComponentContext::instance().createComp(key);
 }
 
-LM_PUBLIC_API void reg(
-    const std::string& key,
-    const Component::CreateFunction& createFunc,
-    const Component::ReleaseFunction& releaseFunc) {
+LM_PUBLIC_API void reg(const std::string& key, const Component::CreateFunction& createFunc, const Component::ReleaseFunction& releaseFunc) {
     ComponentContext::instance().reg(key, createFunc, releaseFunc);
 }
 

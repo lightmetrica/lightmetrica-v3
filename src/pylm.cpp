@@ -405,20 +405,23 @@ static void bind(pybind11::module& m) {
 
     // ------------------------------------------------------------------------
 
-    #pragma region dist.h
+    #pragma region distributed.h
     {
-        auto sm = m.def_submodule("dist");
-        sm.def("init", &dist::init);
-        sm.def("shutdown", &dist::shutdown);
-        sm.def("printWorkerInfo", &dist::printWorkerInfo);
-        sm.def("allowWorkerConnection", &dist::allowWorkerConnection);
-        sm.def("sync", &dist::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
-        sm.def("gatherFilm", &dist::gatherFilm, pybind11::call_guard<pybind11::gil_scoped_release>());
+        auto sm = m.def_submodule("distributed");
+        {
+            auto sm2 = sm.def_submodule("master");
+            sm2.def("init", &distributed::master::init);
+            sm2.def("shutdown", &distributed::master::shutdown);
+            sm2.def("printWorkerInfo", &distributed::master::printWorkerInfo);
+            sm2.def("allowWorkerConnection", &distributed::master::allowWorkerConnection);
+            sm2.def("sync", &distributed::master::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
+            sm2.def("gatherFilm", &distributed::master::gatherFilm, pybind11::call_guard<pybind11::gil_scoped_release>());
+        }
         {
             auto sm2 = sm.def_submodule("worker");
-            sm2.def("init", &dist::worker::init);
-            sm2.def("shutdown", &dist::worker::shutdown);
-            sm2.def("run", &dist::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
+            sm2.def("init", &distributed::worker::init);
+            sm2.def("shutdown", &distributed::worker::shutdown);
+            sm2.def("run", &distributed::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
         }
     }
     #pragma endregion

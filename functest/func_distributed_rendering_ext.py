@@ -101,14 +101,14 @@ def run_worker_process():
         lm.info()
         lm.log.setSeverity(1000)
         lm.log.log(lm.log.LogLevel.Err, lm.log.LogLevel.Info, '', 0, 'pid={}'.format(os.getpid()))
-        lm.dist.worker.init('dist::worker::default', {
+        lm.distributed.worker.init({
             'name': uuid.uuid4().hex,
             'address': 'localhost',
             'port': 5000,
             'numThreads': 1
         })
-        lm.dist.worker.run()
-        lm.dist.shutdown()
+        lm.distributed.worker.run()
+        lm.distributed.shutdown()
         lm.shutdown()
     except Exception:
         tr = traceback.print_exc()
@@ -128,10 +128,10 @@ import _lm_renderer_ao
 lm.init()
 lm.log.init('logger::jupyter', {})
 lm.progress.init('progress::jupyter', {})
-lm.dist.init('dist::master::default', {
+lm.distributed.master.init({
     'port': 5000
 })
-lm.dist.printWorkerInfo()
+lm.distributed.master.printWorkerInfo()
 
 lmscene.load(ft.env.scene_path, 'fireplace_room')
 lm.build('accel::sahbvh', {})
@@ -141,11 +141,11 @@ lm.renderer('renderer::ao', {
     'spp': 3
 })
 
-lm.dist.allowWorkerConnection(False)
-lm.dist.sync()
+lm.distributed.master.allowWorkerConnection(False)
+lm.distributed.master.sync()
 lm.render()
-lm.dist.gatherFilm(lm.asset('film_output'))
-lm.dist.allowWorkerConnection(True)
+lm.distributed.master.gatherFilm(lm.asset('film_output'))
+lm.distributed.master.allowWorkerConnection(True)
 
 img = np.copy(lm.buffer(lm.asset('film_output')))
 f = plt.figure(figsize=(15,15))

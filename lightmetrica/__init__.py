@@ -24,3 +24,11 @@ def array(*args, **kwargs):
     """Numpy array with default floating point type of lightmetrica"""
     kwargs.setdefault('dtype', np.float32)
     return np.array(*args, **kwargs)
+
+def registered_components():
+    """Get a list of registered components"""
+    comps = []
+    def print_name(name):
+        comps.append(name)
+    comp.foreachRegistered(print_name)
+    return comps
