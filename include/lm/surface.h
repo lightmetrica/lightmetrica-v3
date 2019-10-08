@@ -34,7 +34,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
         - Tangent vectors ``u`` and ``v``
 
     (2) *A point in a media*.
-        The sturcture describes a point in a media if ``degenerated=true``,
+        The structure describes a point in a media if ``degenerated=true``,
         for instance used to represent a position of point light or pinhole camera.
         The associated information is the position ``p``.
 

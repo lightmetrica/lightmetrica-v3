@@ -30,6 +30,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/material.h"
     "${_INCLUDE_DIR}/light.h"
     "${_INCLUDE_DIR}/scene.h"
+	"${_INCLUDE_DIR}/scenenode.h"
     "${_INCLUDE_DIR}/accel.h"
     "${_INCLUDE_DIR}/film.h"
     "${_INCLUDE_DIR}/model.h"
