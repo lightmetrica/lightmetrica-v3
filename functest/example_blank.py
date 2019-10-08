@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.2.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -31,9 +31,13 @@
 #     ``lmfunctest`` is a simple module to configure Lightmetrica envrionment from a file named ``.lmenv``. You want to create your own ``.lmenv`` file if you want to execute examples or tests by yourself. For detail, see todo.
 # -
 
-import lmfunctest as ft
+import lmenv
+lmenv.load('.lmenv')
 
 import lightmetrica as lm
+
+if lm.BuildConfig != lm.ConfigType.Release:
+    lm.debug.attachToDebugger()
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # Lightmetrica offers an extension for the Jupyter notebook to support logging or interactive progress reporting inside the notebook. The extension can be loaded by a line magic command as below.

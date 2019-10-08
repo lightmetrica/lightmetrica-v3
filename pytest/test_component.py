@@ -65,7 +65,7 @@ def test_construction():
 
         # Native embeded plugin
         # w/o property
-        p = m.A.create('test::comp::a1', '')
+        p = m.A.createWithoutConstruct('test::comp::a1', '')
         assert p.f1() == 42
         assert p.f2(2, 3) == 5
         # w/ property
@@ -77,7 +77,7 @@ def test_construction():
         # Native external plugin
         with lm_plugin_scope('lm_test_plugin'):
             # w/o property
-            p = m.TestPlugin.create('testplugin::default', '')
+            p = m.TestPlugin.createWithoutConstruct('testplugin::default', '')
             assert p.f() == 42
             # w/ property
             p = m.TestPlugin.create('testplugin::construct', '', {'v1':42, 'v2':43})
@@ -109,7 +109,7 @@ def test_construction():
         m.A.reg(A5, 'test::comp::a5')
 
         # Python plugin
-        p = m.A.create('test::comp::a4', '')
+        p = m.A.createWithoutConstruct('test::comp::a4', '')
         assert p.f1() == 44
         assert p.f2(2, 3) == -1
 
@@ -141,7 +141,7 @@ def test_serialization():
         serialized = p.save()
         
         # Create another instance, deserialize it
-        p2 = m.A.create('test::comp::serializable', '')
+        p2 = m.A.createWithoutConstruct('test::comp::serializable', '')
         p2.load(serialized)
         assert p2.f1() == 22
 
@@ -175,7 +175,7 @@ def test_serialization():
         serialized = p.save()
         
         # Create another instance, deserialize it
-        p2 = m.A.create('test::comp::serializable_with_pickle', '')
+        p2 = m.A.createWithoutConstruct('test::comp::serializable_with_pickle', '')
         p2.load(serialized)
         assert p2.f1() == 17
 

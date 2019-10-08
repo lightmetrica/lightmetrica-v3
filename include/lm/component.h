@@ -94,7 +94,7 @@ private:
     std::string loc_;
 
     //! Factory function of the component instance.
-    CreateFunction  createFunc_ = nullptr;
+    CreateFunction createFunc_ = nullptr;
 
     //! Release function of the component instance.
     ReleaseFunction releaseFunc_ = nullptr;
@@ -128,7 +128,9 @@ public:
         the function returns an empty string.
         \endrst
     */
-    const std::string& loc() const { return loc_; }
+    const std::string& loc() const {
+        return loc_;
+    }
 
     /*!
         \brief Get parent locator.
@@ -141,11 +143,11 @@ public:
         \endrst
     */
     const std::string parentLoc() const {
-        const auto i = loc_.find_last_of('.');
+        const auto i = loc().find_last_of('.');
         if (i == std::string::npos) {
             return "";
         }
-        return loc_.substr(0, i);
+        return loc().substr(0, i);
     }
 
     /*!
@@ -173,8 +175,9 @@ public:
         \endrst
     */
     const std::string makeLoc(const std::string& base, const std::string& child) const {
+        assert(!base.empty());
         assert(!child.empty());
-        return base.empty() ? child : (base + "." + child);
+        return base + "." + child;
     }
 
     /*!
@@ -543,13 +546,13 @@ visit(const Component::ComponentVisitor& visitor, Component::Ptr<T>& p) {
 }
 
 /*!
-    \brief Create component with specific interface type.
+    \brief Create component with specific interface type without calling construct function.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
     \param loc Component locator of the instance.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc) {
+Component::Ptr<InterfaceT> createWithoutConstruct(const std::string& key, const std::string& loc) {
     auto* inst = detail::createComp(
         detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str());
     if (!inst) {
@@ -567,8 +570,8 @@ Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc
     \param prop Properties.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc, const Json& prop) {
-    auto inst = create<InterfaceT>(key, loc);
+Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc, const Json& prop = {}) {
+    auto inst = createWithoutConstruct<InterfaceT>(key, loc);
     if (!inst || !inst->construct(prop)) {
         return {};
     }

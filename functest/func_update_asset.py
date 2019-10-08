@@ -17,6 +17,9 @@
 #
 # This test shows an example of updating already-loaded material.
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -25,7 +28,6 @@ import timeit
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
@@ -46,7 +48,7 @@ lm.asset('obj_base_mat', 'material::diffuse', {
     'Kd': [.8,.2,.2]
 })
 lm.asset('model_obj', 'model::wavefrontobj', {
-    'path': os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
+    'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     'base_material': lm.asset('obj_base_mat')
 })
 lm.primitive(lm.identity(), {

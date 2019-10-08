@@ -158,7 +158,8 @@ void load(Archive& ar, lm::Component::Ptr<T>& p) {
         ar(CEREAL_NVP_("loc", loc));
 
         // Create component instance
-        p = lm::comp::create<T>(key, loc);
+        // Be careful not to call construct() function here
+        p = lm::comp::createWithoutConstruct<T>(key, loc);
         if (!p) {
             return;
         }

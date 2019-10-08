@@ -31,7 +31,7 @@ external/
 external
 dist*/
 .idea/
-executed_functest/
+executed_functest*/
 doc/_build
 jupyter
 *.serialized

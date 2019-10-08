@@ -12,7 +12,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(user)
 
@@ -30,7 +30,7 @@ constexpr const char* DefaultType = "user::default";
 
 LM_NAMESPACE_END(user)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \addtogroup user
@@ -79,7 +79,7 @@ LM_PUBLIC_API void reset();
 */
 LM_PUBLIC_API void info();
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Create an asset.
@@ -109,7 +109,7 @@ LM_PUBLIC_API std::string asset(const std::string& name, const std::string& impl
 */
 LM_PUBLIC_API std::string asset(const std::string& name);
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Build acceleration structure.
@@ -156,7 +156,7 @@ static void render(const std::string& rendererName, const Json& prop = {}) {
     render();
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Save an image.
@@ -182,7 +182,7 @@ LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath)
 */
 LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Serialize the internal state of the framework to a stream.
@@ -214,7 +214,7 @@ LM_INLINE void deserialize(const std::string& path) {
     deserialize(is);
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Validate consistency of the component instances.
@@ -244,7 +244,7 @@ public:
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_PUBLIC_API int rootNode();
 LM_PUBLIC_API int primitiveNode(const Json& prop);
@@ -282,7 +282,7 @@ LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
     @}
 */
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(user)
 LM_NAMESPACE_BEGIN(detail)

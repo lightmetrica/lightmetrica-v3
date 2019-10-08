@@ -16,7 +16,7 @@ function(lm_add_example)
     source_group("Source Files" FILES ${_ARG_SOURCES})
 endfunction()
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # Non-GUI examples
 lm_add_example(NAME blank SOURCES "blank.cpp")

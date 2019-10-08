@@ -19,7 +19,6 @@
 #include "dist.h"
 #include "parallel.h"
 #include "math.h"
-#include "assets.h"
 #include "mesh.h"
 #include "camera.h"
 #include "texture.h"

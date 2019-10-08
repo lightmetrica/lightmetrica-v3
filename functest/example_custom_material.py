@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.2.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -36,12 +36,14 @@
 #     :lines: 8-11
 # -
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import numpy as np
 import imageio
 # %matplotlib inline
 import matplotlib.pyplot as plt
-import lmfunctest as ft
 import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
@@ -55,7 +57,7 @@ lm.info()
 # -
 
 # Load plugin
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'functest_material_visualize_normal'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'functest_material_visualize_normal'))
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # We can use the loaded extension in the same way as build-in assets using :cpp:func:`lm::asset` function. We feed the material to the obj model to apply the loaded material to the mesh.
@@ -66,7 +68,7 @@ lm.asset('visualize_normal_mat', 'material::visualize_normal', {});
 
 # OBJ model
 lm.asset('obj1', 'model::wavefrontobj', {
-    'path': os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
+    'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     'base_material': lm.asset('visualize_normal_mat')
 })
 

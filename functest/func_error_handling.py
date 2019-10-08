@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.2.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -20,6 +20,9 @@
 # %load_ext autoreload
 # %autoreload 2
 
+import lmenv
+lmenv.load('.lmenv')
+
 import os
 import traceback
 import imageio
@@ -28,7 +31,6 @@ import numpy as np
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter

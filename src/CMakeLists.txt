@@ -7,7 +7,7 @@
 set(_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/lm")
 set(_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # Main library
 set(_PROJECT_NAME liblm)
@@ -24,7 +24,6 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/exception.h"
     "${_INCLUDE_DIR}/parallel.h"
     "${_INCLUDE_DIR}/math.h"
-    "${_INCLUDE_DIR}/assets.h"
     "${_INCLUDE_DIR}/mesh.h"
     "${_INCLUDE_DIR}/camera.h"
     "${_INCLUDE_DIR}/texture.h"
@@ -49,7 +48,6 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"
     "${_SOURCE_DIR}/user.cpp"
-    "${_SOURCE_DIR}/assets.cpp"
     "${_SOURCE_DIR}/scene.cpp"
     "${_SOURCE_DIR}/exception.cpp"
     "${_SOURCE_DIR}/logger.cpp"
@@ -171,7 +169,7 @@ if (LM_INSTALL)
     )
 endif()
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # Python binding
 set(_PROJECT_NAME pylm)

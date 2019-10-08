@@ -120,7 +120,7 @@ public:
             const auto serialized = os.str();
             
             // Create another instance and deserialize it
-            auto p2 = lm::comp::create<A>("test::comp::serializable", "");
+            auto p2 = lm::comp::createWithoutConstruct<A>("test::comp::serializable", "");
             {
                 std::istringstream is(serialized);
                 lm::InputArchive ar(is);

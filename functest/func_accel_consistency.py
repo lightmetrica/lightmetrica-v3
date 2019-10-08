@@ -17,6 +17,9 @@
 #
 # This test checks consistencies between different acceleration structures. We render the images with `renderer::raycast` with different accelleration structures for various scenes, and compute differences among them. If the implementations are correct, all difference images should be blank because ray-triangle intersection is a deterministic process.
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -24,7 +27,6 @@ import numpy as np
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
@@ -38,8 +40,8 @@ lm.parallel.init('parallel::openmp', {
     'numThreads': -1
 })
 lm.info()
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_embree'))
 
 
 # -
@@ -63,6 +65,16 @@ def build_and_render(accel):
 # Accels and scenes
 accels = ['accel::nanort', 'accel::embree', 'accel::embreeinstanced']
 scenes = lmscene.scenes_small()
+
+
+# +
+def rmse(img1, img2):
+    return np.sqrt(np.mean((img1 - img2) ** 2))
+
+def rmse_pixelwised(img1, img2):
+    return np.sqrt(np.sum((img1 - img2) ** 2, axis=2) / 3)
+
+
 # -
 
 # Execute rendering for each scene and accel
@@ -72,7 +84,7 @@ for scene in scenes:
     
     # Load scene
     lm.reset()
-    lmscene.load(ft.env.scene_path, scene)
+    lmscene.load(env.scene_path, scene)
     
     # Use the image for 'accel::sahbvh' as reference
     ref = build_and_render('accel::sahbvh')
@@ -81,11 +93,11 @@ for scene in scenes:
     for accel in accels:
         # Render and compute a different image
         img = build_and_render(accel)
-        diff = ft.rmse_pixelwised(ref, img)
+        diff = rmse_pixelwised(ref, img)
         
         # Record rmse
-        rmse = ft.rmse(ref, img)
-        rmse_df[accel][scene] = rmse
+        e = rmse(ref, img)
+        rmse_df[accel][scene] = e
     
         # Visualize the difference image
         f = plt.figure(figsize=(10,10))

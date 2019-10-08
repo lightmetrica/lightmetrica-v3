@@ -236,6 +236,14 @@ T* compRef(const Json& j, const std::string& name) {
 }
 
 /*!
+    \brief Get value inside JSON element with std::optional.
+    \param j Json object.
+    \param name Name of the element.
+
+    \rst
+    This variant of value function returns std::nullopt
+    if the json object doesn't contain the element with given name.
+    \endrst
 */
 template <typename T>
 std::optional<T> valueOrNone(const Json& j, const std::string& name) {

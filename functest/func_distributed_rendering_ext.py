@@ -20,6 +20,9 @@
 # %load_ext autoreload
 # %autoreload 2
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -28,7 +31,6 @@ import multiprocessing as mp
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
@@ -133,7 +135,7 @@ lm.distributed.master.init({
 })
 lm.distributed.master.printWorkerInfo()
 
-lmscene.load(ft.env.scene_path, 'fireplace_room')
+lmscene.load(env.scene_path, 'fireplace_room')
 lm.build('accel::sahbvh', {})
 lm.asset('film_output', 'film::bitmap', {'w': 320, 'h': 180})
 lm.renderer('renderer::ao', {

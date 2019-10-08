@@ -7,7 +7,6 @@
 #include <lm/core.h>
 #include <lm/version.h>
 #include <lm/user.h>
-#include <lm/assets.h>
 #include <lm/scene.h>
 #include <lm/renderer.h>
 #include <lm/film.h>
@@ -84,10 +83,7 @@ public:
 
 public:
     virtual Component* underlying(const std::string& name) const override {
-        if (name == "assets") {
-            return assets_.get();
-        }
-        else if (name == "scene") {
+        if (name == "scene") {
             return scene_.get();
         }
         else if (name == "renderer") {
@@ -97,7 +93,6 @@ public:
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
-        lm::comp::visit(visit, assets_);
         lm::comp::visit(visit, scene_);
         lm::comp::visit(visit, renderer_);
     }
@@ -112,15 +107,13 @@ public:
     }
 
     virtual void reset() override {
-        assets_ = comp::create<Assets>("assets::default", makeLoc("assets"));
-        assert(assets_);
         scene_ = comp::create<Scene>("scene::default", makeLoc("scene"));
         assert(scene_);
         renderer_.reset();
     }
 
     virtual std::string asset(const std::string& name, const std::string& implKey, const Json& prop) override {
-        const auto loc = assets_->loadAsset(name, implKey, prop);
+        const auto loc = scene_->loadAsset(name, implKey, prop);
         if (!loc) {
             THROW_RUNTIME_ERROR();
         }
@@ -128,7 +121,7 @@ public:
     }
 
     virtual std::string asset(const std::string& name) override {
-        return assets_->makeLoc(name);
+        return "$.scene.assets." + name;
     }
 
     void build(const std::string& accelName, const Json& prop) {
@@ -174,14 +167,12 @@ public:
 
     virtual void serialize(std::ostream& os) override {
         LM_INFO("Saving state to stream");
-        serial::save(os, assets_);
         serial::save(os, scene_);
         serial::save(os, renderer_);
     }
 
     virtual void deserialize(std::istream& is) override {
         LM_INFO("Loading state from stream");
-        serial::load(is, assets_);
         serial::load(is, scene_);
         serial::load(is, renderer_);
     }
@@ -223,7 +214,6 @@ public:
 	}
 
 private:
-    Component::Ptr<Assets> assets_;
     Component::Ptr<Scene> scene_;
     Component::Ptr<Renderer> renderer_;
 };

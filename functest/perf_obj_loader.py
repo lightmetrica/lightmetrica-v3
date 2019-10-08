@@ -18,12 +18,14 @@
 # %load_ext autoreload
 # %autoreload 2
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
 import numpy as np
 import timeit
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
@@ -36,7 +38,7 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
 
 objloaders = ['objloader::simple', 'objloader::tinyobjloader']
 scenes = lmscene.scenes_small()
@@ -49,7 +51,7 @@ for scene in scenes:
         lm.objloader.init(objloader, {})
         lm.reset()
         def load_scene():
-            lmscene.load(ft.env.scene_path, scene)
+            lmscene.load(env.scene_path, scene)
         loading_time = timeit.timeit(stmt=load_scene, number=1)
         loading_time_df[objloader][scene] = loading_time
 

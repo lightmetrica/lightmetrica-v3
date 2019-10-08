@@ -14,50 +14,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 static void bind(pybind11::module& m) {
     using namespace pybind11::literals;
 
-    // ------------------------------------------------------------------------
-
-    // Special function to attach to a debugger
-    // https://stackoverflow.com/questions/20337870/what-is-the-equivalent-of-system-diagnostics-debugger-launch-in-unmanaged-code
-    m.def("attachToDebugger", []() -> void {
-        #if LM_PLATFORM_WINDOWS
-        // Get Windows system directory
-        std::wstring systemDir(MAX_PATH + 1, '\0');
-        auto nc = GetSystemDirectoryW(&systemDir[0], UINT(systemDir.length()));
-        if (nc == 0) {
-            LM_ERROR("Failed to get system directory");
-            return;
-        }
-        systemDir.resize(nc);
-
-        // Get process ID and create the command line
-        DWORD pid = GetCurrentProcessId();
-        std::wostringstream s;
-        s << systemDir << L"\\vsjitdebugger.exe -p " << pid;
-        std::wstring cmdLine = s.str();
-
-        // Start debugger process
-        STARTUPINFOW si;
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-        PROCESS_INFORMATION pi;
-        ZeroMemory(&pi, sizeof(pi));
-        if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-            LM_ERROR("Failed to launch vsjitdebugger.exe");
-            return;
-        }
-
-        // Close debugger process handles to eliminate resource leak
-        CloseHandle(pi.hThread);
-        CloseHandle(pi.hProcess);
-
-        // Wait for the debugger to attach
-        while (!IsDebuggerPresent()) {
-            Sleep(100);
-        }
-        #endif
-    });
-
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region common.h
 
@@ -74,7 +31,7 @@ static void bind(pybind11::module& m) {
 		.value("Debug", ConfigType::Debug)
 		.value("Release", ConfigType::Release)
 		.value("RelWithDebInfo", ConfigType::RelWithDebInfo);
-	m.attr("Config") =
+	m.attr("BuildConfig") =
 		LM_CONFIG_DEBUG ? ConfigType::Debug :
 		LM_CONFIG_RELEASE ? ConfigType::Release :
 		ConfigType::RelWithDebInfo;
@@ -94,7 +51,7 @@ static void bind(pybind11::module& m) {
 
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
     
     #pragma region version.h
     {
@@ -110,7 +67,7 @@ static void bind(pybind11::module& m) {
     }
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region math.h
 
@@ -169,7 +126,7 @@ static void bind(pybind11::module& m) {
 
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region component.h
 
@@ -216,7 +173,7 @@ static void bind(pybind11::module& m) {
 
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region user.h
     m.def("init", &init, "type"_a = user::DefaultType, "prop"_a = Json{});
@@ -243,7 +200,7 @@ static void bind(pybind11::module& m) {
     m.def("primitive", &primitive);
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region logger.h
     {
@@ -292,7 +249,7 @@ static void bind(pybind11::module& m) {
     }
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region parallel.h
     {
@@ -312,7 +269,7 @@ static void bind(pybind11::module& m) {
     }
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region objloader.h
     {
@@ -322,7 +279,7 @@ static void bind(pybind11::module& m) {
     }
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region progress.h
     {
@@ -371,7 +328,7 @@ static void bind(pybind11::module& m) {
     }
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region debugio.h
     {
@@ -384,7 +341,7 @@ static void bind(pybind11::module& m) {
     }
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region debug.h
     {
@@ -400,10 +357,11 @@ static void bind(pybind11::module& m) {
                 }
             });
         });
+        sm.def("attachToDebugger", &debug::attachToDebugger);
     }
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region distributed.h
     {
@@ -426,7 +384,7 @@ static void bind(pybind11::module& m) {
     }
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region film.h
 
@@ -501,7 +459,7 @@ static void bind(pybind11::module& m) {
 
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region surface.h
     
@@ -536,7 +494,7 @@ static void bind(pybind11::module& m) {
 
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region scene.h
 
@@ -556,6 +514,9 @@ static void bind(pybind11::module& m) {
         }
         virtual bool renderable() const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, renderable);
+        }
+        virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
+            PYBIND11_OVERLOAD_PURE(std::optional<std::string>, Scene, loadAsset, name, implKey, prop);
         }
         virtual int rootNode() override {
             PYBIND11_OVERLOAD_PURE(int, Scene, rootNode);
@@ -654,7 +615,7 @@ static void bind(pybind11::module& m) {
 
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region renderer.h
     class Renderer_Py final : public Renderer {
@@ -672,7 +633,7 @@ static void bind(pybind11::module& m) {
         .PYLM_DEF_COMP_BIND(Renderer);
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region texture.h
     pybind11::class_<TextureSize>(m, "TextureSize")
@@ -697,7 +658,7 @@ static void bind(pybind11::module& m) {
         .PYLM_DEF_COMP_BIND(Texture);
     #pragma endregion
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     #pragma region material.h
 
@@ -742,7 +703,7 @@ static void bind(pybind11::module& m) {
     #pragma endregion
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 PYBIND11_MODULE(pylm, m) {
     m.doc() = R"x(

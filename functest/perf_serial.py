@@ -17,6 +17,9 @@
 #
 # This test checks the performance improvement of scene setup with serialization feature.
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -25,7 +28,6 @@ import timeit
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
@@ -53,7 +55,7 @@ for scene in scenes:
     
     # Load the scene without serialization
     def load_scene():
-        lmscene.load(ft.env.scene_path, scene)
+        lmscene.load(env.scene_path, scene)
         lm.build('accel::sahbvh', {})
     loading_time_without_serialization = timeit.timeit(stmt=load_scene, number=1)
     scene_setup_time_df['scene loading'][scene] = loading_time_without_serialization

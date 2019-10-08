@@ -6,7 +6,6 @@
 #include <pch.h>
 #include <lm/core.h>
 #include <lm/scene.h>
-#include <lm/assets.h>
 #include <lm/accel.h>
 #include <lm/mesh.h>
 #include <lm/camera.h>
@@ -17,6 +16,126 @@
 #include <lm/phase.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+// ------------------------------------------------------------------------------------------------
+
+class Assets final : public Component {
+private:
+    std::vector<Component::Ptr<Component>> assets_;
+    std::unordered_map<std::string, int> assetIndexMap_;
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(assetIndexMap_, assets_);
+    }
+
+    virtual void foreachUnderlying(const ComponentVisitor& visitor) override {
+        for (auto& asset : assets_) {
+            comp::visit(visitor, asset);
+        }
+    }
+
+    virtual Component* underlying(const std::string& name) const override {
+        auto it = assetIndexMap_.find(name);
+        if (it == assetIndexMap_.end()) {
+            LM_ERROR("Invalid asset name [name='{}']", name);
+            return nullptr;
+        }
+        return assets_.at(it->second).get();
+    }
+
+private:
+    bool validAssetName(const std::string& name) const {
+        std::regex regex(R"x([:\w_-]+)x");
+        std::smatch match;
+        return std::regex_match(name, match, regex);
+    }
+
+public:
+    std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) {
+        LM_INFO("Loading asset [name='{}']", name);
+        LM_INDENT();
+
+        // Check if asset name is valid
+        if (!validAssetName(name)) {
+            LM_ERROR("Invalid asset name [name='{}']", name);
+            return {};
+        }
+
+        // Check if the asset with given name has been already loaded
+        const auto it = assetIndexMap_.find(name);
+        const bool found = it != assetIndexMap_.end();
+        if (found) {
+            LM_INFO("Asset [name='{}'] has been already loaded. Replacing..", name);
+        }
+
+        // Create an instance of the asset
+        auto p = comp::createWithoutConstruct<Component>(implKey, makeLoc(loc(), name));
+        if (!p) {
+            LM_ERROR("Failed to create an asset [name='{}', key='{}']", name, implKey);
+            return {};
+        }
+
+        // Register created asset
+        // Note that the registration must happen before construct() because
+        // the instance could be accessed by underlying() while initialization.
+        Component* asset;
+        if (found) {
+            // Move existing instance
+            // This must not be released until the end of this scope
+            // because weak references needs to find locator in the existing instance.
+            auto old = std::move(assets_[it->second]);
+
+            // Replace the existing instance
+            assets_[it->second] = std::move(p);
+            asset = assets_[it->second].get();
+
+            // Initialize the asset
+            if (!asset->construct(prop)) {
+                LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
+                assets_.pop_back();
+                return {};
+            }
+
+            // Notify to update the weak references in the object tree
+            const lm::Component::ComponentVisitor visitor = [&](lm::Component*& comp, bool weak) {
+                if (!comp) {
+                    return;
+                }
+                if (asset == comp) {
+                    // Ignore myself
+                    return;
+                }
+                if (!weak) {
+                    comp->foreachUnderlying(visitor);
+                }
+                else {
+                    comp::updateWeakRef(comp);
+                }
+            };
+            comp::get<lm::Component>("$")->foreachUnderlying(visitor);
+        }
+        else {
+            // Register as a new asset
+            assetIndexMap_[name] = int(assets_.size());
+            assets_.push_back(std::move(p));
+            asset = assets_.back().get();
+
+            // Initialize the asset
+            if (!asset->construct(prop)) {
+                LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
+                assets_.pop_back();
+                return {};
+            }
+        }
+
+        return asset->loc();
+    }
+};
+
+LM_COMP_REG_IMPL(Assets, "assets::default");
+
+// ------------------------------------------------------------------------------------------------
 
 struct LightPrimitiveIndex {
     Transform globalTransform; // Global transform matrix
@@ -30,6 +149,7 @@ struct LightPrimitiveIndex {
 
 class Scene_ final : public Scene {
 private:
+    Ptr<Assets> assets_;                            // Underlying assets
     std::vector<SceneNode> nodes_;                  // Scene nodes
     Ptr<Accel> accel_;                              // Acceleration structure
     std::optional<int> camera_;                     // Camera index
@@ -39,17 +159,12 @@ private:
     std::optional<int> medium_;                     // Medium index
 
 public:
-    Scene_() {
-        // Index 0 is fixed to the scene group
-        nodes_.push_back(SceneNode::makeGroup(0, false, {}));
-    }
-
-public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(nodes_, accel_, camera_, lights_, lightIndicesMap_, envLight_);
+        ar(assets_, nodes_, accel_, camera_, lights_, lightIndicesMap_, envLight_);
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, assets_);
         comp::visit(visit, accel_);
         for (auto& node : nodes_) {
             if (node.type == SceneNodeType::Primitive) {
@@ -62,13 +177,25 @@ public:
     }
 
     virtual Component* underlying(const std::string& name) const override {
-        if (name == "accel") {
+        if (name == "assets") {
+            return assets_.get();
+        }
+        else if (name == "accel") {
             return accel_.get();
         }
-        if (name == "camera") {
+        else if (name == "camera") {
             return nodes_.at(*camera_).primitive.camera;
         }
         return nullptr;
+    }
+
+public:
+    virtual bool construct(const Json&) override {
+        // Assets
+        assets_ = comp::create<Assets>("assets::default", makeLoc("assets"));
+        // Index 0 is fixed to the scene group
+        nodes_.push_back(SceneNode::makeGroup(0, false, {}));
+        return true;
     }
 
 public:
@@ -88,7 +215,13 @@ public:
         return true;
     }
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
+
+    virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
+        return assets_->loadAsset(name, implKey, prop);
+    }
+
+    // --------------------------------------------------------------------------------------------
 
     virtual int rootNode() override {
         return 0;
@@ -152,7 +285,7 @@ public:
             return index;
         }
             
-        // ----------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
         
         if (type == SceneNodeType::Group) {
             const int index = int(nodes_.size());
@@ -164,7 +297,7 @@ public:
             return index;
         }
 
-        // ----------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         LM_UNREACHABLE_RETURN();
     }
@@ -242,7 +375,7 @@ public:
 		return offset;
 	}
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const override {
         std::function<void(int, Mat4)> visit = [&](int index, Mat4 globalTransform) {
@@ -268,7 +401,7 @@ public:
         return nodes_.at(nodeIndex);
     }
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     virtual void build(const std::string& name, const Json& prop) override {
         // Update light indices
@@ -323,7 +456,7 @@ public:
         );
     }
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     virtual bool isLight(const SceneInteraction& sp) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
@@ -349,7 +482,7 @@ public:
         return primitive.material->isSpecular(sp.geom, sp.comp);
     }
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const {
         return nodes_.at(*camera_).primitive.camera->primaryRay(rp, aspectRatio);
@@ -496,7 +629,7 @@ public:
         return primitive.light->pdf(sp.geom, spL.geom, spL.comp, lightTransform, wo) * pL;
     }
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
         // Intersection to next surface
@@ -547,7 +680,7 @@ public:
         return medium->evalTransmittance(rng, { sp1.geom.p, wo }, 0_f, dist);
     }
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
