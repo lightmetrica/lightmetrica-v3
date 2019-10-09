@@ -18,19 +18,19 @@
 
 // Configuration flag
 #ifdef LM_USE_CONFIG_DEBUG
-	#define LM_CONFIG_DEBUG 1
+    #define LM_CONFIG_DEBUG 1
 #else
-	#define LM_CONFIG_DEBUG 0
+    #define LM_CONFIG_DEBUG 0
 #endif
 #ifdef LM_USE_CONFIG_RELEASE
-	#define LM_CONFIG_RELEASE 1
+    #define LM_CONFIG_RELEASE 1
 #else
-	#define LM_CONFIG_RELEASE 0
+    #define LM_CONFIG_RELEASE 0
 #endif
 #ifdef LM_USE_CONFIG_RELWITHDEBINFO
-	#define LM_CONFIG_RELWITHDEBINFO 1
+    #define LM_CONFIG_RELWITHDEBINFO 1
 #else
-	#define LM_CONFIG_RELWITHDEBINFO 0
+    #define LM_CONFIG_RELWITHDEBINFO 0
 #endif
 
 // ------------------------------------------------------------------------------------------------

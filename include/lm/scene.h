@@ -146,9 +146,9 @@ public:
     */
     virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
 
-	/*!
-	*/
-	virtual int createGroupFromModel(const std::string& modelLoc) = 0;
+    /*!
+    */
+    virtual int createGroupFromModel(const std::string& modelLoc) = 0;
 
     // --------------------------------------------------------------------------------------------
 

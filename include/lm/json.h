@@ -208,31 +208,31 @@ T value(const Json& j, const std::string& name, T&& def) {
 }
 
 /*!
-	\brief Get value inside JSON element as component.
-	\param j Json object.
-	\param name Name of the element.
-	
-	\rst
-	This function returns a component pointer
-	referenced by a component locator specified by a JSON element.
-	If not found, the function returns nullptr.
-	\endrst
+    \brief Get value inside JSON element as component.
+    \param j Json object.
+    \param name Name of the element.
+    
+    \rst
+    This function returns a component pointer
+    referenced by a component locator specified by a JSON element.
+    If not found, the function returns nullptr.
+    \endrst
 */
 template <typename T>
 T* compRef(const Json& j, const std::string& name) {
-	const auto it = j.find(name);
-	if (it == j.end()) {
-		throw std::runtime_error(fmt::format("Missing property [name='{}']", name));
-	}
-	if (!it->is_string()) {
-		throw std::runtime_error(fmt::format("Property must be string [name='{}']", name));
-	}
+    const auto it = j.find(name);
+    if (it == j.end()) {
+        throw std::runtime_error(fmt::format("Missing property [name='{}']", name));
+    }
+    if (!it->is_string()) {
+        throw std::runtime_error(fmt::format("Property must be string [name='{}']", name));
+    }
     const std::string ref = *it;
-	auto* p = comp::get<T>(ref);
-	if (!p) {
-		throw std::runtime_error(fmt::format("Invalid componen reference [name='{}', ref='{}']", name, ref));
-	}
-	return p;
+    auto* p = comp::get<T>(ref);
+    if (!p) {
+        throw std::runtime_error(fmt::format("Invalid componen reference [name='{}', ref='{}']", name, ref));
+    }
+    return p;
 }
 
 /*!

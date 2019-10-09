@@ -105,17 +105,17 @@ LM_COMP_REG_IMPL(ProgressContext_Delay, "progress::delay");
 // Default progress reporter
 class ProgressContext_Default : public ProgressContext {
 private:
-	ProgressMode mode_;								 // Progress reporting mode
+    ProgressMode mode_;								 // Progress reporting mode
     long long total_;                                // Total number of progress updates (used in Samples mode)
-	double totalTime_;								 // Total duration (used in Time mode)
+    double totalTime_;								 // Total duration (used in Time mode)
     time_point<high_resolution_clock> start_;        // Time starting progress report
     time_point<high_resolution_clock> lastUpdated_;  // Last updated time
     
 public:
     virtual void start(ProgressMode mode, long long total, double totalTime) override {
-		mode_ = mode;
+        mode_ = mode;
         total_ = total;
-		totalTime_ = totalTime;
+        totalTime_ = totalTime;
         start_ = high_resolution_clock::now();
         lastUpdated_ = start_;
     }
@@ -136,11 +136,11 @@ public:
                 return fmt::format(", ETA={:.1f}s", eta.count() / 1000.0);
 
             }();
-			LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
-				processed,
-				total_,
-				double(processed) / total_ * 100,
-				etaStr);
+            LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
+                processed,
+                total_,
+                double(processed) / total_ * 100,
+                etaStr);
             lastUpdated_ = now;
         }
     }
@@ -152,13 +152,13 @@ public:
         const auto now = high_resolution_clock::now();
         const auto elapsedFromLastUpdate = duration_cast<milliseconds>(now - lastUpdated_);
         if (elapsedFromLastUpdate > .5s) {
-			const auto eta = totalTime_ - elapsed;
-			const auto etaStr = fmt::format(", ETA={:.1f}s", eta);
-			LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
-				elapsed,
-				totalTime_,
+            const auto eta = totalTime_ - elapsed;
+            const auto etaStr = fmt::format(", ETA={:.1f}s", eta);
+            LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
+                elapsed,
+                totalTime_,
                 elapsed / totalTime_ * 100,
-				etaStr);
+                etaStr);
             lastUpdated_ = now;
         }
     }
@@ -168,13 +168,13 @@ public:
     }
 
 private:
-	// Helper function to compute ETA
-	template <typename T>
-	double estimateETA(time_point<high_resolution_clock> now, T total, T processed) const {
-		const auto eta = duration_cast<milliseconds>(now - start_)
-			* (total - processed) / processed;
-		return eta.count() / 1000.0;
-	}
+    // Helper function to compute ETA
+    template <typename T>
+    double estimateETA(time_point<high_resolution_clock> now, T total, T processed) const {
+        const auto eta = duration_cast<milliseconds>(now - start_)
+            * (total - processed) / processed;
+        return eta.count() / 1000.0;
+    }
 };
 
 LM_COMP_REG_IMPL(ProgressContext_Default, "progress::default");

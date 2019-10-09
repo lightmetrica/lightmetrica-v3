@@ -209,9 +209,9 @@ public:
         scene_->addChildFromModel(parent, modelLoc);
     }
 
-	virtual int createGroupFromModel(const std::string& modelLoc) override {
-		return scene_->createGroupFromModel(modelLoc);
-	}
+    virtual int createGroupFromModel(const std::string& modelLoc) override {
+        return scene_->createGroupFromModel(modelLoc);
+    }
 
 private:
     Component::Ptr<Scene> scene_;
@@ -305,7 +305,7 @@ LM_PUBLIC_API void addChildFromModel(int parent, const std::string& modelLoc) {
 }
 
 LM_PUBLIC_API int createGroupFromModel(const std::string& modelLoc) {
-	return Instance::get().createGroupFromModel(modelLoc);
+    return Instance::get().createGroupFromModel(modelLoc);
 }
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {

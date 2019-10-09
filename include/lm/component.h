@@ -217,8 +217,8 @@ public:
         \endrst
     */
     virtual void load(InputArchive& ar) {
-		LM_UNUSED(ar);
-	}
+        LM_UNUSED(ar);
+    }
 
     /*!
         \brief Serialize a component.
@@ -230,8 +230,8 @@ public:
         \endrst
     */
     virtual void save(OutputArchive& ar) {
-		LM_UNUSED(ar);
-	}
+        LM_UNUSED(ar);
+    }
 
 public:
     /*!

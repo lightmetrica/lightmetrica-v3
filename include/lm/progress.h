@@ -42,11 +42,11 @@ LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop 
 LM_PUBLIC_API void shutdown();
 
 /*!
-	\brief Progress reporting mode.
+    \brief Progress reporting mode.
 */
 enum class ProgressMode {
-	Samples,
-	Time
+    Samples,
+    Time
 };
 
 /*!
@@ -104,13 +104,13 @@ public:
 };
 
 /*!
-	\brief Scoped guard of `startTime` and `end` functions.
+    \brief Scoped guard of `startTime` and `end` functions.
 */
 class ScopedTimeReport {
 public:
-	ScopedTimeReport(double totalTime) { start(ProgressMode::Time, -1, totalTime); }
-	~ScopedTimeReport() { end(); }
-	LM_DISABLE_COPY_AND_MOVE(ScopedTimeReport)
+    ScopedTimeReport(double totalTime) { start(ProgressMode::Time, -1, totalTime); }
+    ~ScopedTimeReport() { end(); }
+    LM_DISABLE_COPY_AND_MOVE(ScopedTimeReport)
 };
 
 /*!

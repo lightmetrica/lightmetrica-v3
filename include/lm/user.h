@@ -320,7 +320,7 @@ public:
     virtual int transformNode(Mat4 transform) = 0;
     virtual void addChild(int parent, int child) = 0;
     virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
-	virtual int createGroupFromModel(const std::string& modelLoc) = 0;
+    virtual int createGroupFromModel(const std::string& modelLoc) = 0;
 };
 
 /*!
