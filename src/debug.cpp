@@ -7,6 +7,9 @@
 #include <lm/core.h>
 #include <lm/debug.h>
 #include <lm/parallel.h>
+#if LM_PLATFORM_WINDOWS
+#include <Windows.h>
+#endif
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::debug)
 

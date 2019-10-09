@@ -47,4 +47,9 @@ LM_PUBLIC_API std::string architecture() {
     #endif
 }
 
+LM_PUBLIC_API std::string formatted() {
+    return fmt::format("{}.{}.{} (rev. {})",
+        majorVersion(), minorVersion(), patchVersion(), revision());
+}
+
 LM_NAMESPACE_END(LM_NAMESPACE::version)

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "common.h"
+#include "jsontype.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(exception)
@@ -118,3 +119,8 @@ public:
 
 LM_NAMESPACE_END(exception)
 LM_NAMESPACE_END(LM_NAMESPACE)
+
+// ------------------------------------------------------------------------------------------------
+
+// Exceptions
+#define LM_THROW_UNIMPLEMENTED() throw std::runtime_error("Calling unimplemented function")

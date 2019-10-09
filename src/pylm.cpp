@@ -222,7 +222,7 @@ static void bind(pybind11::module& m) {
         using setSeverityFuncPtr = void(*)(int);
         sm.def("setSeverity", (setSeverityFuncPtr)&log::setSeverity);
 
-        using LoggerContext = log::detail::LoggerContext;
+        using LoggerContext = log::LoggerContext;
         class LoggerContext_Py final : public LoggerContext {
             virtual bool construct(const Json& prop) override {
                 pybind11::gil_scoped_acquire acquire;

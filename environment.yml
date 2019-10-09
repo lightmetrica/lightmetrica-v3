@@ -9,6 +9,7 @@ dependencies:
   - cmake
   - jupyter
   - matplotlib
+  - scipy
   - pandas
   - sphinx
   - sphinx_rtd_theme

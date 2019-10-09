@@ -5,10 +5,12 @@
 
 #pragma once
 
-#include "common.h"
-#include "math.h"
 #include "component.h"
+#include "jsontype.h"
+#include "math.h"
+#include <sstream>
 #include <array>
+#include <fmt/format.h>
 
 // ------------------------------------------------------------------------------------------------
 

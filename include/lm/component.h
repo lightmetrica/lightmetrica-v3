@@ -6,6 +6,9 @@
 #pragma once
 
 #include "common.h"
+#include "exception.h"
+#include "jsontype.h"
+#include "serialtype.h"
 #include <any>
 #include <memory>
 #include <string>

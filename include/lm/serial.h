@@ -8,6 +8,9 @@
 #include "component.h"
 #include "math.h"
 #include "logger.h"
+#include "serialtype.h"
+#include <cereal/cereal.hpp>
+#include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
@@ -231,8 +234,6 @@ LM_NAMESPACE_END(cereal)
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(serial)
 
-// ------------------------------------------------------------------------------------------------
-
 /*!
     \addtogroup serial
     @{
@@ -285,8 +286,6 @@ void load(const std::string& path, T& v) {
 /*!
     @}
 */
-
-// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_END(serial)
 LM_NAMESPACE_END(LM_NAMESPACE)

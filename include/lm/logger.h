@@ -5,12 +5,12 @@
 
 #pragma once
 
-#include "component.h"
+#include "common.h"
+#include "json.h"
+#include <fmt/format.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(log)
-
-// ------------------------------------------------------------------------------------------------
 
 /*!
     \addtogroup log
@@ -205,38 +205,6 @@ public:
 /*!
     @}
 */
-
-// ------------------------------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(detail)
-
-/*!
-    \addtogroup log
-    @{
-*/
-
-/*!
-    \brief Logger context.
-    
-    \rst
-    You may implement this interface to implement user-specific log subsystem.
-    Each virtual function corresponds to API call with functions inside ``log`` namespace.
-    \endrst
-*/
-class LoggerContext : public Component {
-public:
-    virtual void log(LogLevel level, int severity, const char* filename, int line, const char* message) = 0;
-    virtual void updateIndentation(int n) = 0;
-    virtual void setSeverity(int severity) = 0;
-};
-
-/*!
-    @}
-*/
-
-LM_NAMESPACE_END(detail)
-
-// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_END(log)
 LM_NAMESPACE_END(LM_NAMESPACE)

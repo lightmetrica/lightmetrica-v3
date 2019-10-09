@@ -5,7 +5,7 @@
 
 #include <pch.h>
 #include "test_common.h"
-#include <lm/logger.h>
+#include <lm/loggercontext.h>
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
@@ -143,7 +143,7 @@ TEST_CASE("Logger") {
     }
 }
 
-class LoggerContext_User final : public lm::log::detail::LoggerContext {
+class LoggerContext_User final : public lm::log::LoggerContext {
     void log(lm::log::LogLevel, int, const char*, int, const char* message) override {
         std::cout << "[user] " << message << std::endl;
     }

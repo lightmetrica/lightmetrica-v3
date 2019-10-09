@@ -12,6 +12,7 @@
 #include "serial.h"
 #include "user.h"
 #include "logger.h"
+#include "loggercontext.h"
 #include "progress.h"
 #include "exception.h"
 #include "debug.h"

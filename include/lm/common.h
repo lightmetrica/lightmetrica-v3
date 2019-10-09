@@ -241,26 +241,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 // ------------------------------------------------------------------------------------------------
 
-#pragma warning(push)
-#pragma warning(disable:4127)  // conditional expression is constant
-#include <nlohmann/json.hpp>
-#pragma warning(pop)
-
-// cereal library
-#include <cereal/cereal.hpp>
-#define LM_USE_JSON_ARCHIVE 0
-#if LM_USE_JSON_ARCHIVE
-#include <cereal/archives/json.hpp>
-#else
-#include <cereal/archives/portable_binary.hpp>
-#endif
-
-// fmt library
-#include <fmt/format.h>
-
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
-
-// ------------------------------------------------------------------------------------------------
 
 // Forward declarations
 struct ComponentDeleter;  // component.h
@@ -275,7 +256,7 @@ class Phase;              // phase.h
 struct FilmBuffer;        // film.h
 class Film;
 struct PointGeometry;     // surface.h
-struct SceneInteraction;      // scene.h
+struct SceneInteraction;  // scene.h
 struct RaySample;
 struct LightSample;
 class Scene;
@@ -294,37 +275,5 @@ using Float = double;
 #else
 #error "Invalid precision mode"
 #endif
-
-// ------------------------------------------------------------------------------------------------
-
-// JSON type
-using Json = nlohmann::basic_json<
-    std::map,           // Object type
-    std::vector,        // Arrray type
-    std::string,        // String type
-    bool,               // Boolean type
-    std::int64_t,       // Signed integer type
-    std::uint64_t,      // Unsigned integer type
-    Float,              // Floating point type
-    std::allocator,
-    nlohmann::adl_serializer>;
-
-// ------------------------------------------------------------------------------------------------
-
-// Default input/output archives deligated to cereal library.
-#if LM_USE_JSON_ARCHIVE
-using InputArchive = cereal::JSONInputArchive;
-using OutputArchive = cereal::JSONOutputArchive;
-#else
-using InputArchive = cereal::PortableBinaryInputArchive;
-using OutputArchive = cereal::PortableBinaryOutputArchive;
-#endif
-
-// ------------------------------------------------------------------------------------------------
-
-// Exceptions
-#define LM_THROW_UNIMPLEMENTED() throw std::runtime_error("Calling unimplemented function")
-
-// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_END(LM_NAMESPACE)

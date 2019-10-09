@@ -8,6 +8,9 @@
 #include <lm/parallel.h>
 #include <lm/progress.h>
 #include <omp.h>
+#if LM_PLATFORM_WINDOWS
+#include <Windows.h>
+#endif
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
 

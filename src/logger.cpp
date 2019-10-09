@@ -5,12 +5,12 @@
 
 #include <pch.h>
 #include <lm/logger.h>
-#include <lm/json.h>
+#include <lm/loggercontext.h>
 #include "ext/rang.hpp"
 
 // ------------------------------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::log::detail)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::log)
 
 class LoggerContext_Default : public LoggerContext {
 private:
@@ -168,13 +168,9 @@ public:
 
 LM_COMP_REG_IMPL(LoggerContext_Default, "logger::default");
 
-LM_NAMESPACE_END(LM_NAMESPACE::log::detail)
-
 // ------------------------------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::log)
-
-using Instance = comp::detail::ContextInstance<detail::LoggerContext>;
+using Instance = comp::detail::ContextInstance<LoggerContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
     Instance::init(type, prop);
