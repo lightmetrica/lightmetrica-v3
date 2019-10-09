@@ -15,7 +15,7 @@ jobs:
       - source $HOME/miniconda/etc/profile.d/conda.sh
       - conda config --set always_yes yes
       - cd ${TRAVIS_BUILD_DIR}
-      - conda env create -f environment_linux.yml
+      - conda env create -f environment.yml
       - conda activate lm3_dev
       script:
       - cd ${TRAVIS_BUILD_DIR}
@@ -40,7 +40,7 @@ jobs:
       - choco install miniconda3
       - export PATH="/c/Tools/miniconda3:/c/Tools/miniconda3/Library/bin:/c/Tools/miniconda3/Scripts:$PATH"
       - cd ${TRAVIS_BUILD_DIR}
-      - conda env create -f environment_win.yml
+      - conda env create -f environment.yml
       - source activate lm3_dev
       script:
       - cd ${TRAVIS_BUILD_DIR}
