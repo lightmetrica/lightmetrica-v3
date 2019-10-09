@@ -72,7 +72,7 @@ public:
 
 public:
     virtual bool construct(const Json& prop) override {
-        Ni_ = prop["Ni"];
+        Ni_ = json::value<Float>(prop, "Ni");
         return true;
     }
 

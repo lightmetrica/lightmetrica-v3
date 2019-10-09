@@ -5,9 +5,7 @@
 
 #pragma once
 
-#include <lm/component.h>
-#include <lm/json.h>
-#include <lm/math.h>
+#include <lm/core.h>
 #include <iostream>
 #include <cereal/cereal.hpp>
 #include <cereal/archives/portable_binary.hpp>
@@ -77,8 +75,8 @@ struct D1 final : public D {
     int v1;
     int v2;
     virtual bool construct(const lm::Json& prop) override {
-        v1 = prop["v1"].get<int>();
-        v2 = prop["v2"].get<int>();
+        v1 = lm::json::value<int>(prop, "v1");
+        v2 = lm::json::value<int>(prop, "v2");
         return true;
     }
     virtual int f() override {

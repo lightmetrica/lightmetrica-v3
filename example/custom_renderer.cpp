@@ -17,11 +17,8 @@ private:
 
 public:
     virtual bool construct(const lm::Json& prop) override {
-        film_ = lm::comp::get<lm::Film>(prop["output"]);
-        if (!film_) {
-            return false;
-        }
-        spp_ = prop["spp"];
+        film_ = lm::json::compRef<lm::Film>(prop, "output");
+        spp_ = lm::json::value<long long>(prop, "spp");
         return true;
     }
 

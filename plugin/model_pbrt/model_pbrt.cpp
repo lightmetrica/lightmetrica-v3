@@ -124,7 +124,7 @@ public:
 public:
 	virtual bool construct(const Json& prop) override {
 		// Load PBRT scene
-		const std::string path = prop["path"];
+		const std::string path = json::value<std::string>(prop, "path");
 		pbrtScene_ = pbrt::importPBRT(path);
 		if (!pbrtScene_) {
 			return false;

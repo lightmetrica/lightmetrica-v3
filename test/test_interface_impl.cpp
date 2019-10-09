@@ -23,8 +23,8 @@ struct TestPlugin_WithConstruct : public TestPlugin {
     int v1;
     int v2;
     virtual bool construct(const lm::Json& prop) override {
-        v1 = prop["v1"].get<int>();
-        v2 = prop["v2"].get<int>();
+        v1 = lm::json::value<int>(prop, "v1");
+        v2 = lm::json::value<int>(prop, "v2");
         return true;
     }
     virtual int f() override {

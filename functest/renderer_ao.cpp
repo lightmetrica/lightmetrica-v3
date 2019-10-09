@@ -15,11 +15,8 @@ private:
 
 public:
     virtual bool construct(const Json& prop) override {
-        film_ = comp::get<Film>(prop["output"]);
-        if (!film_) {
-            return false;
-        }
-        spp_ = prop["spp"];
+        film_ = json::compRef<Film>(prop, "output");
+        spp_ = json::value<long long>(prop, "spp");
         return true;
     }
 

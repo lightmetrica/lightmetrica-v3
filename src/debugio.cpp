@@ -51,7 +51,7 @@ public:
 public:
     virtual bool construct(const Json& prop) override {
         try {
-            socket_.connect(prop["address"]);
+            socket_.connect(json::value<std::string>(prop, "address"));
         }
         catch (const zmq::error_t& e) {
             LM_ERROR("ZMQ Error: {}", e.what());
@@ -125,7 +125,7 @@ public:
     virtual bool construct(const Json& prop) override {
         // Waiting for the connection of the client
         try {
-            socket_.bind(prop["address"]);
+            socket_.bind(json::value<std::string>(prop, "address"));
         }
         catch (const zmq::error_t& e) {
             LM_ERROR("ZMQ Error: {}", e.what());

@@ -61,7 +61,7 @@ public:
     }
 
 	virtual bool construct(const Json& prop) override {
-        const std::string path = prop["path"];
+        const std::string path = json::value<std::string>(prop, "path");
         return objloader::load(path, geo_,
             // Process mesh
             [&](const OBJMeshFace& fs, const MTLMatParams& m) -> bool {
