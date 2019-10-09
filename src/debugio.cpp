@@ -26,7 +26,7 @@ struct imemstream : virtual membuf, std::istream {
     }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Shared command between server and client
 enum class Command {
@@ -35,7 +35,7 @@ enum class Command {
     draw
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class DebugioContext_Client final : public DebugioContext {
 private:
@@ -98,7 +98,7 @@ public:
 
 LM_COMP_REG_IMPL(DebugioContext_Client, "debugio::client");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(server)
 
@@ -196,7 +196,7 @@ LM_COMP_REG_IMPL(DebugioContext_Server, "debugio::server");
 
 LM_NAMESPACE_END(server)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 using ClientInstance = comp::detail::ContextInstance<DebugioContext>;
 

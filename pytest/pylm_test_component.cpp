@@ -38,7 +38,7 @@ public:
             .def("f2", &A::f2)
             .PYLM_DEF_COMP_BIND(A);
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         struct TestPlugin_Py final : public TestPlugin {
             virtual bool construct(const lm::Json& prop) override {
@@ -53,7 +53,7 @@ public:
             .def("f", &TestPlugin::f)
             .PYLM_DEF_COMP_BIND(TestPlugin);
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         struct D_Py final : public D {
             virtual bool construct(const lm::Json& prop) override {
@@ -68,7 +68,7 @@ public:
             .def("f", &D::f)
             .PYLM_DEF_COMP_BIND(D);
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         m.def("createA1", []() {
             return dynamic_cast<A*>(
@@ -105,7 +105,7 @@ public:
             return { v1, v2 };
         });
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         m.def("roundTripSerializedA", []() -> int {
             // Create instance registered in Python side

@@ -10,8 +10,6 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(parallel)
 
-// ----------------------------------------------------------------------------
-
 /*!
     \addtogroup parallel
     @{
@@ -109,8 +107,6 @@ public:
 /*!
     @}
 */
-
-// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(parallel)
 LM_NAMESPACE_END(LM_NAMESPACE)

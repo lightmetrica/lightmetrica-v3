@@ -150,7 +150,7 @@ public:
 	*/
 	virtual int createGroupFromModel(const std::string& modelLoc) = 0;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Iterate primitives in the scene.

@@ -177,7 +177,7 @@ public:
 
 LM_COMP_REG_IMPL(Model_WavefrontObj, "model::wavefrontobj");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class Mesh_WavefrontObj final  : public Mesh {
 private:
@@ -246,7 +246,7 @@ public:
 
 LM_COMP_REG_IMPL(Mesh_WavefrontObj, "mesh::wavefrontobj");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class Material_WavefrontObj final : public Material {
 private:

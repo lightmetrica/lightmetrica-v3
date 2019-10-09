@@ -61,7 +61,7 @@ public:
 
 LM_COMP_REG_IMPL(ParallelContext_DistMaster, "parallel::distributed_master");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class ParallelContext_DistWorker final : public ParallelContext {
 public:

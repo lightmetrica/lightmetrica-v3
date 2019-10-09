@@ -14,7 +14,7 @@ TEST_CASE("Logger") {
         {"color", false}
     });
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     const auto extractMessage = [](const std::string& out) -> std::string {
         std::regex re(R"x(^\[.*\] +(.*)\n?)x");
@@ -32,7 +32,7 @@ TEST_CASE("Logger") {
         return extractMessage(line);
     };
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     SUBCASE("Log messages different severity levels") {
         // Log messages has its own severity level.

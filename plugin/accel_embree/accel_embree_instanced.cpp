@@ -30,7 +30,7 @@ using FlattenedScene = std::vector<FlattenedSceneNode>;
 
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class Accel_Embree_Instanced final : public Accel {
 private:
@@ -69,7 +69,7 @@ public:
         exception::ScopedDisableFPEx guard_;
         reset();
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Flatten the scene with single-level instance group
         LM_INFO("Flattening scene");
@@ -91,7 +91,7 @@ public:
                 return;
             }
 
-            // ----------------------------------------------------------------
+            // ------------------------------------------------------------------------------------
 
             // Group node type
             if (node.type == SceneNodeType::Group) {
@@ -139,14 +139,14 @@ public:
                 return;
             }
 
-            // ----------------------------------------------------------------
+            // ------------------------------------------------------------------------------------
 
             LM_UNREACHABLE();
         };
         flattenedScenes_.emplace_back();
         scene.visitNode(0, std::bind(visitSceneNode, _1, Mat4(1_f), 0, false));
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Traverse the flattened scene and create embree scene
         // Process from backward because the instanced scene must be created prior to the scene.
@@ -221,7 +221,7 @@ public:
         RTCIntersectContext context;
         rtcInitIntersectContext(&context);
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Setup ray
         RTCRayHit rayhit;
@@ -238,7 +238,7 @@ public:
         rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
         rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Intersection query
         rtcIntersect1(scene_, &context, &rayhit);
@@ -247,7 +247,7 @@ public:
             return {};
         }
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Get global transform and (unflattened) node index
         // corresponding to the intersected (instanced) geometry
@@ -264,7 +264,7 @@ public:
             }
         }();
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Store hit information
         return Hit{

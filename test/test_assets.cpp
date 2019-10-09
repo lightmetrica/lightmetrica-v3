@@ -9,7 +9,7 @@
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 struct TestAsset : public lm::Component {
     virtual int f() const = 0;
@@ -53,7 +53,7 @@ struct TestAsset_Dependent final : public TestAsset {
 LM_COMP_REG_IMPL(TestAsset_Simple, "testasset::simple");
 LM_COMP_REG_IMPL(TestAsset_Dependent, "testasset::dependent");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 TEST_CASE("Assets") {
     lm::log::ScopedInit init;

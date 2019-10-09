@@ -10,7 +10,7 @@
 using namespace std::chrono;
 using namespace std::literals::chrono_literals;
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::progress::detail)
 
@@ -51,7 +51,7 @@ public:
 
 LM_COMP_REG_IMPL(ProgressContext_Mux, "progress::mux");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Delay the update for the specified seconds
 class ProgressContext_Delay : public ProgressContext {
@@ -100,7 +100,7 @@ public:
 
 LM_COMP_REG_IMPL(ProgressContext_Delay, "progress::delay");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Default progress reporter
 class ProgressContext_Default : public ProgressContext {
@@ -181,7 +181,7 @@ LM_COMP_REG_IMPL(ProgressContext_Default, "progress::default");
 
 LM_NAMESPACE_END(LM_NAMESPACE::progress::detail)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::progress)
 

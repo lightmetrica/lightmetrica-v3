@@ -20,7 +20,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 #define THROW_RUNTIME_ERROR() \
     throw std::runtime_error("Consult log outputs for detailed error messages")
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*
     \brief User API context.
@@ -220,7 +220,7 @@ private:
 
 LM_COMP_REG_IMPL(UserContext_Default, "user::default");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 using Instance = comp::detail::ContextInstance<user::detail::UserContext>;
 

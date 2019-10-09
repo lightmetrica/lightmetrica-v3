@@ -15,7 +15,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::comp::detail)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Platform-independent abstruction of shared library.
 class SharedLibrary {
@@ -129,7 +129,7 @@ private:
 
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class ComponentContext final {
 public:
@@ -303,7 +303,7 @@ private:
     Component* root_ = nullptr;
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_PUBLIC_API Component* createComp(const std::string& key) {
     return ComponentContext::instance().createComp(key);
@@ -341,6 +341,6 @@ LM_PUBLIC_API Component* get(const std::string& locator) {
     return ComponentContext::instance().get(locator);
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_END(LM_NAMESPACE::comp::detail)

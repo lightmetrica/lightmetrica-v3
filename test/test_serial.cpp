@@ -79,7 +79,7 @@ void checkSaveAndLoadRoundTrip(T&& orig) {
     checkSaveAndLoadRoundTripCompareLoaded(std::forward<T>(orig));
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 struct TestSerial_SimpleStruct {
     int v1;
@@ -202,7 +202,7 @@ struct TestSerial_Root final : public lm::Component {
     }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 TEST_CASE("Serialization") {
     lm::log::ScopedInit init;

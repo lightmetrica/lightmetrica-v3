@@ -7,7 +7,7 @@
 
 LM_NAMESPACE_BEGIN(lmtest)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 struct TestPlugin_ final : public TestPlugin {
     virtual int f() override {
@@ -17,7 +17,7 @@ struct TestPlugin_ final : public TestPlugin {
 
 LM_COMP_REG_IMPL(TestPlugin_, "testplugin::default");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 struct TestPlugin_WithConstruct : public TestPlugin {
     int v1;
@@ -34,7 +34,7 @@ struct TestPlugin_WithConstruct : public TestPlugin {
 
 LM_COMP_REG_IMPL(TestPlugin_WithConstruct, "testplugin::construct");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 struct TestPluginWithCtorAndDtor_ final : public TestPluginWithCtorAndDtor {
     TestPluginWithCtorAndDtor_()  { std::cout << "B"; }
@@ -43,7 +43,7 @@ struct TestPluginWithCtorAndDtor_ final : public TestPluginWithCtorAndDtor {
 
 LM_COMP_REG_IMPL(TestPluginWithCtorAndDtor_, "testpluginxtor::default");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 template <typename T>
 struct TestPluginWithTemplate_ final : public TestPluginWithTemplate<T> {
@@ -60,6 +60,6 @@ struct TestPluginWithTemplate_ final : public TestPluginWithTemplate<T> {
 LM_COMP_REG_IMPL(TestPluginWithTemplate_<int>, "testplugin::template");
 LM_COMP_REG_IMPL(TestPluginWithTemplate_<double>, "testplugin::template");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_END(lmtest)
