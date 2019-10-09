@@ -41,6 +41,7 @@ def run_functests(output_dir, lmenv_path):
         'func_obj_loader_consistency',
         'func_serial_consistency',
         'func_update_asset',
+        'func_scheduler',
         'perf_accel',
         'perf_obj_loader',
         'perf_serial'

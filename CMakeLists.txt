@@ -61,7 +61,6 @@ if (LM_BUILD_EXAMPLES AND LM_BUILD_GUI_EXAMPLES)
     if (OpenGL_FOUND)
         find_package(GLEW REQUIRED)
         find_package(glfw3 REQUIRED)
-        find_package(imgui REQUIRED)
     else()
         # Disable GUI example if there's no OpenGL support
         message(WARNING "OpenGL is not supported. Disabled GUI examples. \

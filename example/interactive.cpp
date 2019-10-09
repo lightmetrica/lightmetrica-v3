@@ -52,14 +52,14 @@ int main(int argc, char** argv) {
         lm::serialize("lm.serialized");
         #endif
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         InteractiveApp app;
         if (!app.setup("interactive", opt)) {
             THROW_RUNTIME_ERROR();
         }
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Reset camera
         app.glcamera.reset(opt["eye"], opt["lookat"], lm::Vec3(0, 1, 0), opt["vfov"]);
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
             app.glscene.add(globalTransform, node.primitive.mesh, node.primitive.material);
         });
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         app.run([&](int display_w, int display_h) {
             // Renderer configuration
@@ -98,7 +98,6 @@ int main(int argc, char** argv) {
 
                 // Camera
                 lm::asset("camera_render", "camera::pinhole", {
-                    {"film", lm::asset("film_render")},
                     {"position", app.glcamera.eye()},
                     {"center", app.glcamera.center()},
                     {"up", {0,1,0}},
@@ -108,8 +107,9 @@ int main(int argc, char** argv) {
                 // Renderer
                 lm::renderer("renderer::pt", {
                     {"output", lm::asset("film_render")},
+                    {"scheduler", "sample"},
                     {"spp", spp},
-                    {"maxLength", maxLength}
+                    {"max_length", maxLength}
                 });
 
                 // Create a new thread and dispatch rendering
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
 
             ImGui::End();
 
-            // ------------------------------------------------------------
+            // ------------------------------------------------------------------------------------
                 
             // Checking rendered image
             static std::optional<GLuint> texture;
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
                 glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
                 glBindTexture(GL_TEXTURE_2D, 0);
 
-                ImGui::SetNextWindowSize(ImVec2(float(w/2), float(h/2+40)), ImGuiSetCond_Once);
+                ImGui::SetNextWindowSize(ImVec2(float(w/2), float(h/2+40)), ImGuiCond_Once);
                 ImGui::Begin("Rendered");
 
                 // Display texture

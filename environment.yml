@@ -28,7 +28,6 @@ dependencies:
   - doctest-cpp
   - fmt
   - stb
-  - imgui-glfw
   - cereal
   - vdbloader
   - tbb-devel

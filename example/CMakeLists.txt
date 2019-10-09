@@ -28,13 +28,32 @@ lm_add_example(NAME custom_renderer SOURCES "custom_renderer.cpp")
 
 # GUI examples
 if (LM_BUILD_GUI_EXAMPLES)
-    # Interface target for lmgl.h
-    add_library(lmgl INTERFACE)
-    target_include_directories(lmgl INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/lmgl")
-    target_link_libraries(lmgl INTERFACE imgui::imgui glfw GLEW::GLEW OpenGL::GL)
+    # Create a target for imgui
+    set(_IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
+    if (EXISTS ${_IMGUI_DIR})
+        add_library(imgui STATIC
+            "${_IMGUI_DIR}/imgui.cpp"
+            "${_IMGUI_DIR}/imgui_draw.cpp"
+            "${_IMGUI_DIR}/imgui_widgets.cpp"
+            "${_IMGUI_DIR}/imgui_demo.cpp"
+            "${_IMGUI_DIR}/examples/imgui_impl_glfw.cpp"
+            "${_IMGUI_DIR}/examples/imgui_impl_opengl3.cpp")
+        target_link_libraries(imgui PUBLIC glm glfw GLEW::GLEW OpenGL::GL)
+        target_include_directories(imgui PUBLIC
+            "${_IMGUI_DIR}"
+            "${_IMGUI_DIR}/examples")
+        target_compile_definitions(imgui PUBLIC -DIMGUI_IMPL_OPENGL_LOADER_GLEW)    
 
-    # Add GUI examples
-    lm_add_example(NAME interactive SOURCES "interactive.cpp" LIBRARIES lmgl)
-    # lm_add_example(NAME debugio_vis_server SOURCES "lmgl.h" "debugio_vis_server.cpp" LIBRARIES imgui)
-    # lm_add_example(NAME debugio_vis SOURCES "debugio_vis.cpp")
+        # Interface target for lmgl.h
+        add_library(lmgl INTERFACE)
+        target_include_directories(lmgl INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/lmgl")
+        target_link_libraries(lmgl INTERFACE imgui)
+
+        # Add GUI examples
+        lm_add_example(NAME interactive SOURCES "interactive.cpp" LIBRARIES lmgl)
+        # lm_add_example(NAME debugio_vis_server SOURCES "lmgl.h" "debugio_vis_server.cpp" LIBRARIES imgui)
+        # lm_add_example(NAME debugio_vis SOURCES "debugio_vis.cpp")
+    else()
+        message(FATAL_ERROR "Missing imgui directory. Didn't you forget to update submodule?")
+    endif()
 endif()

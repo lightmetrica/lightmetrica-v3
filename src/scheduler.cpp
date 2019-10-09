@@ -52,7 +52,7 @@ public:
 
 LM_COMP_REG_IMPL(Scheduler_SPP_Sample, "scheduler::spp::sample");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Time-based SPPScheduler
 class Scheduler_SPP_Time : public Scheduler {
@@ -110,7 +110,7 @@ public:
 
 LM_COMP_REG_IMPL(Scheduler_SPP_Time, "scheduler::spp::time");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Sample-based SPIScheduler
 class Scheduler_SPI_Sample : public Scheduler {
@@ -142,7 +142,7 @@ public:
 
 LM_COMP_REG_IMPL(Scheduler_SPI_Sample, "scheduler::spi::sample");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Time-based SPIScheduler
 class Scheduler_SPI_Time : public Scheduler {

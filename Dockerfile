@@ -23,8 +23,8 @@ RUN bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda -b
 ENV PATH /miniconda/bin:$PATH
 
 # Setup lm3_dev environment
-COPY environment_linux.yml environment_linux.yml
-RUN conda env create -f environment_linux.yml
+COPY environment.yml environment.yml
+RUN conda env create -f environment.yml
 RUN echo "source activate lm3_dev" > ~/.bashrc
 ENV PATH /opt/conda/envs/lm3_dev/bin:$PATH
 
