@@ -7,6 +7,8 @@
 
 #include "common.h"
 #include "jsontype.h"
+#include <exception>
+#include <fmt/format.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(exception)
@@ -122,5 +124,146 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 // ------------------------------------------------------------------------------------------------
 
-// Exceptions
-#define LM_THROW_UNIMPLEMENTED() throw std::runtime_error("Calling unimplemented function")
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+/*!
+    \addtogroup exception
+    @{
+*/
+
+/*!
+    \brief Error code.
+
+    \rst
+    Represents the types of errors used in the framework.
+    This error code is associated with :class:`Exception`.
+    \endrst
+*/
+enum class Error {
+    None,               //!< Used for other errors.
+    InvalidArgument,    //!< Argument is invalid.
+    Unimplemented,      //!< Feature is unimplemented.
+};
+
+
+/*!
+    \brief Exception.
+
+    \rst
+    Represents the exception used in the framework.
+    The user want to use convenience macro :cpp:func:`LM_THROW`
+    instead of throwing this exception directly.
+    \endrst
+*/
+class Exception : public std::exception {
+private:
+    Error error_;
+    std::string file_;
+    int line_;
+    std::string message_;
+
+public:
+    /*!
+        \brief Constructor.
+        \param error Error code.
+        \param file File name.
+        \param line Line of code.
+        \param message Error message.
+        \param ... Arguments to format the message.
+
+        \rst
+        Constructs the exception with error type and error message.
+        \endrst
+    */
+    template <typename... Args>
+    Exception(Error error, const std::string& file, int line, const std::string& message)
+        : error_(error)
+        , file_(file)
+        , line_(line)
+        , message_(message)
+    {}
+
+    /*!
+        \brief Constructor with arguments.
+        \param error Error code.
+        \param file File name.
+        \param line Line of code.
+        \param message Error message.
+        \param ... Arguments to format the message.
+        
+        \rst
+        Constructs the exception with error type and error message.
+        The constructor also takes additional arguments to format the message.
+        \endrst
+    */
+    template <typename... Args>
+    Exception(Error error, const std::string& file, int line, const std::string& message, const Args& ... args) 
+        : error_(error)
+        , file_(file)
+        , line_(line)
+        , message_(fmt::format(message, args...))
+    {}
+
+    const char* what() const noexcept {
+        // Compose error message with error code
+        const auto errorCodeStr = [this]() -> std::string {
+            if (error_ == Error::None) {
+                return "None";
+            }
+            if (error_ == Error::InvalidArgument) {
+                return "InvalidArgumnt";
+            }
+            if (error_ == Error::Unimplemented) {
+                return "Unimplemented";
+            }
+            LM_UNREACHABLE_RETURN();
+        }();
+        return fmt::format("{} [type='{}', file='{}', line='{}']", message_, errorCodeStr).c_str();
+    }
+};
+
+/*!
+    @}
+*/
+
+LM_NAMESPACE_END(LM_NAMESPACE)
+
+// ------------------------------------------------------------------------------------------------
+
+/*!
+    \addtogroup exception
+    @{
+*/
+
+/*!
+    \brief Throw exception.
+    \param error Error code.
+    \param message Error message.
+    \param ... Arguments to format the message.
+
+    \rst
+    Convenience macro to throw :class:`Exception`. 
+    This macro reports the file and line of the code where the exception being raised.
+    \endrst
+*/
+#define LM_THROW_EXCEPTION(error, message, ...) \
+    throw LM_NAMESPACE::Exception(error, __FILE__, __LINE__, message, __VA_ARGS__)
+
+/*!
+    \brief Throw exception without message.
+    \param error Error code.
+    \param message Error message.
+    \param ... Arguments to format the message.
+
+    \rst
+    Convenience macro to throw :class:`Exception`.
+    This macro reports the file and line of the code where the exception being raised.
+    \endrst
+*/
+#define LM_THROW_EXCEPTION_WITHOUT_MESSSAGE(error) \
+    throw LM_NAMESPACE::Exception(error, __FILE__, __LINE__, \
+        "You may find a detailed introspection of this error in the log output.")
+
+/*!
+    @}
+*/

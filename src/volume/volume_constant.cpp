@@ -56,7 +56,6 @@ public:
 	virtual Vec3 evalColor(Vec3) const override {
 		return *color_;
 	}
-
 };
 
 LM_COMP_REG_IMPL(Volume_Constant, "volume::constant");
