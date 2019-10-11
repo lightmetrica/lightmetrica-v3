@@ -185,7 +185,7 @@ static void bind(pybind11::module& m) {
     // --------------------------------------------------------------------------------------------
 
     #pragma region user.h
-    m.def("init", &init, "type"_a = user::DefaultType, "prop"_a = Json{});
+    m.def("init", &init, "prop"_a = Json{});
     m.def("shutdown", &shutdown);
     m.def("info", &info);
     m.def("reset", &reset);

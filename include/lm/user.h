@@ -39,7 +39,6 @@ LM_NAMESPACE_END(user)
 
 /*!
     \brief Initialize the renderer.
-    \param type Type of user context.
     \param prop Properties for configuration.
     \see `example/blank.cpp`
 
@@ -51,7 +50,7 @@ LM_NAMESPACE_END(user)
     If you want to configure the subsystem, you want to call each ``init()`` function afterwards.
     \endrst
 */
-LM_PUBLIC_API void init(const std::string& type = user::DefaultType, const Json& prop = {});
+LM_PUBLIC_API void init(const Json& prop = {});
 
 /*!
     \brief Shutdown the renderer.
@@ -239,7 +238,7 @@ LM_PUBLIC_API void validate();
 */
 class ScopedInit {
 public:
-    ScopedInit(const std::string& type = user::DefaultType, const Json& prop = {}) { init(type, prop); }
+    ScopedInit(const Json& prop = {}) { init(prop); }
     ~ScopedInit() { shutdown(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
@@ -281,54 +280,6 @@ LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
 /*!
     @}
 */
-
-// ------------------------------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(user)
-LM_NAMESPACE_BEGIN(detail)
-
-/*!
-    \addtogroup user
-    @{
-*/
-
-/*!
-    \brief User context.
-
-    \rst
-    You may implement this interface to replace user APIs.
-    Each virtual function corresponds to API call with functions above.
-    \endrst
-*/
-class UserContext : public Component {
-public:
-    virtual void reset() = 0;
-    virtual void info() = 0;
-    virtual std::string asset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
-    virtual std::string asset(const std::string& name) = 0;
-    virtual void build(const std::string& accelName, const Json& prop) = 0;
-    virtual void renderer(const std::string& rendererName, const Json& prop) = 0;
-    virtual void render(bool verbose) = 0;
-    virtual void save(const std::string& filmName, const std::string& outpath) = 0;
-    virtual FilmBuffer buffer(const std::string& filmName) = 0;
-    virtual void serialize(std::ostream& os) = 0;
-    virtual void deserialize(std::istream& is) = 0;
-    virtual int rootNode() = 0;
-    virtual int primitiveNode(const Json& prop) = 0;
-    virtual int groupNode() = 0;
-    virtual int instanceGroupNode() = 0;
-    virtual int transformNode(Mat4 transform) = 0;
-    virtual void addChild(int parent, int child) = 0;
-    virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
-    virtual int createGroupFromModel(const std::string& modelLoc) = 0;
-};
-
-/*!
-    @}
-*/
-
-LM_NAMESPACE_END(detail)
-LM_NAMESPACE_END(user)
 
 // ------------------------------------------------------------------------------------------------
 
