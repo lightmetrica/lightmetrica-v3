@@ -5,7 +5,7 @@
 
 #include <pch.h>
 #include <lm/core.h>
-#include <lm/parallel.h>
+#include <lm/parallelcontext.h>
 #include <lm/progress.h>
 #include <omp.h>
 #if LM_PLATFORM_WINDOWS

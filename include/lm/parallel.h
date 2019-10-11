@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include "component.h"
+#include "common.h"
+#include "jsontype.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(parallel)
@@ -87,22 +88,6 @@ LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& proc
 LM_INLINE void foreach(long long numSamples, const ParallelProcessFunc& processFunc) {
     foreach(numSamples, processFunc, [](long long) {});
 }
-
-/*!
-    \brief Parallel context.
-    
-    \rst
-    You may implement this interface to implement user-specific parallel subsystem.
-    Each virtual function corresponds to API call with a free function
-    inside ``parallel`` namespace.
-    \endrst
-*/
-class ParallelContext : public Component {
-public:
-    virtual int numThreads() const = 0;
-    virtual bool mainThread() const = 0;
-    virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc& progressFunc) const = 0;
-};
 
 /*!
     @}

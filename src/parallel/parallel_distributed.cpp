@@ -5,7 +5,7 @@
 
 #include <pch.h>
 #include <lm/core.h>
-#include <lm/parallel.h>
+#include <lm/parallelcontext.h>
 #include <lm/dist.h>
 #include <lm/json.h>
 #include <zmq.hpp>

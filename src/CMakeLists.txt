@@ -25,6 +25,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/distributed.h"
     "${_INCLUDE_DIR}/exception.h"
     "${_INCLUDE_DIR}/parallel.h"
+    "${_INCLUDE_DIR}/parallelcontext.h"
     "${_INCLUDE_DIR}/math.h"
     "${_INCLUDE_DIR}/mesh.h"
     "${_INCLUDE_DIR}/camera.h"
