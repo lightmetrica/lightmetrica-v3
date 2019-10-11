@@ -12,26 +12,6 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// ------------------------------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(user)
-
-/*!
-    \addtogroup user
-    @{
-*/
-
-//! Default user type
-constexpr const char* DefaultType = "user::default";
-
-/*!
-    @}
-*/
-
-LM_NAMESPACE_END(user)
-
-// ------------------------------------------------------------------------------------------------
-
 /*!
     \addtogroup user
     @{
