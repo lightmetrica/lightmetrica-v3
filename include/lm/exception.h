@@ -270,11 +270,21 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     \endrst
 */
 #if LM_DEBUG_MODE
+#if LM_COMPILER_MSVC
 #define LM_THROW_EXCEPTION(error, message, ...) \
     throw LM_NAMESPACE::Exception(error, __FILE__, __LINE__, message, __VA_ARGS__)
 #else
 #define LM_THROW_EXCEPTION(error, message, ...) \
+    throw LM_NAMESPACE::Exception(error, __FILE__, __LINE__, message, ## __VA_ARGS__)
+#endif
+#else
+#if LM_COMPILER_MSVC
+#define LM_THROW_EXCEPTION(error, message, ...) \
     throw LM_NAMESPACE::Exception(error, "", 0, message, __VA_ARGS__)
+#else
+#define LM_THROW_EXCEPTION(error, message, ...) \
+    throw LM_NAMESPACE::Exception(error, "", 0, message, ## __VA_ARGS__)
+#endif
 #endif
 
 /*!
@@ -288,15 +298,8 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     This macro reports the file and line of the code where the exception being raised.
     \endrst
 */
-#if LM_DEBUG_MODE
 #define LM_THROW_EXCEPTION_DEFAULT(error) \
-    throw LM_NAMESPACE::Exception(error, __FILE__, __LINE__, \
-        "Consult log outputs for detailed error messages.")
-#else
-#define LM_THROW_EXCEPTION_DEFAULT(error) \
-    throw LM_NAMESPACE::Exception(error, "", 0, \
-        "Consult log outputs for detailed error messages.")
-#endif
+    LM_THROW_EXCEPTION(error, "Consult log outputs for detailed error messages.")
 
 /*!
     @}

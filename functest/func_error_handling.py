@@ -21,7 +21,7 @@
 # %autoreload 2
 
 import lmenv
-lmenv.load('.lmenv')
+lmenv.load('../../.lmenv_linux')
 
 import os
 import traceback
