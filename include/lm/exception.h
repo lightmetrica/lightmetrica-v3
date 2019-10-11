@@ -141,6 +141,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 enum class Error {
     None,               //!< Used for other errors.
+    Uninitialized,      //!< Feature is uninitialized.
     InvalidArgument,    //!< Argument is invalid.
     Unimplemented,      //!< Feature is unimplemented.
 };
@@ -210,6 +211,9 @@ public:
             if (error_ == Error::None) {
                 return "None";
             }
+            if (error_ == Error::Uninitialized) {
+                return "Uninitialized";
+            }
             if (error_ == Error::InvalidArgument) {
                 return "InvalidArgumnt";
             }
@@ -218,7 +222,7 @@ public:
             }
             LM_UNREACHABLE_RETURN();
         }();
-        return fmt::format("{} [type='{}', file='{}', line='{}']", message_, errorCodeStr).c_str();
+        return fmt::format("{} [type='{}', file='{}', line='{}']", message_, errorCodeStr, file_, line_).c_str();
     }
 };
 

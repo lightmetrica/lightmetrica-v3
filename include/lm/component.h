@@ -633,8 +633,8 @@ public:
     */
     static ContextComponentT& get() {
         if (!initialized()) {
-            throw std::runtime_error(
-                "Uninitialized subsystem. Possible failure to call *::init() function.");
+            LM_THROW_EXCEPTION(Error::Uninitialized,
+                "Uninitialized global component. Possible failure to call *::init() function.");
         }
         return *instance().context.get();
     }

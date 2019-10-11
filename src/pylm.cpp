@@ -52,6 +52,15 @@ static void bind(pybind11::module& m) {
     #pragma endregion
 
     // --------------------------------------------------------------------------------------------
+
+    #pragma region exception.h
+
+    // Register exception
+    pybind11::register_exception<lm::Exception>(m, "Exception");
+
+    #pragma endregion
+
+    // --------------------------------------------------------------------------------------------
     
     #pragma region version.h
     {
