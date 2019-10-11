@@ -171,7 +171,7 @@ public:
     }
 
 	virtual void foreachNode(const VisitNodeFuncType&) const override {
-		throw std::runtime_error("Unsupported");
+        LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
 	}
 };
 

@@ -8,9 +8,9 @@
 #include "component.h"
 #include "jsontype.h"
 #include "math.h"
+#include "exception.h"
 #include <sstream>
 #include <array>
-#include <fmt/format.h>
 
 // ------------------------------------------------------------------------------------------------
 
@@ -46,12 +46,12 @@ struct adl_serializer<glm::vec<N, T, Q>> {
     }
     static void from_json(const lm::Json& j, VecT& v) {
         if (!j.is_array()) {
-            throw std::runtime_error(
-                fmt::format("Invalid JSON type [expected='array', actual='{}']", j.type_name()));
+            LM_THROW_EXCEPTION(lm::Error::InvalidArgument,
+                "Invalid JSON type [expected='array', actual='{}']", j.type_name());
         }
         if (j.size() != N) {
-            throw std::runtime_error(
-                fmt::format("Invalid number of elements [expected={}, actual={}]", N, j.size()));
+            LM_THROW_EXCEPTION(lm::Error::InvalidArgument,
+                "Invalid number of elements [expected={}, actual={}]", N, j.size());
         }
         for (int i = 0; i < N; i++) {
             v[i] = static_cast<T>(j[i]);
@@ -73,12 +73,12 @@ struct adl_serializer<glm::mat<C, R, T, Q>> {
     }
     static void from_json(const lm::Json& json, MatT& v) {
         if (!json.is_array()) {
-            throw std::runtime_error(
-                fmt::format("Invalid JSON type [expected='array', actual='{}']", json.type_name()));
+            LM_THROW_EXCEPTION(lm::Error::InvalidArgument,
+                "Invalid JSON type [expected='array', actual='{}']", json.type_name());
         }
         if (json.size() != C*R) {
-            throw std::runtime_error(
-                fmt::format("Invalid number of elements [expected={}, actual={}]", C*R, json.size()));
+            LM_THROW_EXCEPTION(lm::Error::InvalidArgument,
+                "Invalid number of elements [expected={}, actual={}]", C*R, json.size());
         }
         for (int i = 0; i < C; i++) {
             for (int j = 0; j < R; j++) {
@@ -192,7 +192,7 @@ T value(const Json& j, const std::string& name) {
     if (const auto it = j.find(name); it != j.end()) {
         return *it;
     }
-    throw std::runtime_error(fmt::format("Missing property [name='{}']", name));
+    LM_THROW_EXCEPTION(Error::InvalidArgument, "Missing property [name='{}']", name);
 }
 
 /*!
@@ -224,15 +224,15 @@ template <typename T>
 T* compRef(const Json& j, const std::string& name) {
     const auto it = j.find(name);
     if (it == j.end()) {
-        throw std::runtime_error(fmt::format("Missing property [name='{}']", name));
+        LM_THROW_EXCEPTION(Error::InvalidArgument, "Missing property [name='{}']", name);
     }
     if (!it->is_string()) {
-        throw std::runtime_error(fmt::format("Property must be string [name='{}']", name));
+        LM_THROW_EXCEPTION(Error::InvalidArgument, "Property must be string [name='{}']", name);
     }
     const std::string ref = *it;
     auto* p = comp::get<T>(ref);
     if (!p) {
-        throw std::runtime_error(fmt::format("Invalid componen reference [name='{}', ref='{}']", name, ref));
+        LM_THROW_EXCEPTION(Error::InvalidArgument, "Invalid componen reference [name='{}', ref='{}']", name, ref);
     }
     return p;
 }

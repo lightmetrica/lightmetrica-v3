@@ -610,7 +610,7 @@ public:
         }
         else if (sp.endpoint) {
             if (primitive.light) {
-                LM_TBA_RUNTIME();
+                LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
             }
             else if (primitive.camera) {
                 return primitive.camera->pdf(wo, sp.cameraCond.aspectRatio);

@@ -141,9 +141,12 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 enum class Error {
     None,               //!< Used for other errors.
+    Unsupported,        //!< Feature is unsupported in the platform.
     Uninitialized,      //!< Feature is uninitialized.
     InvalidArgument,    //!< Argument is invalid.
     Unimplemented,      //!< Feature is unimplemented.
+    IOError,            //!< Failed to load or save something.
+    FailedToRender,     //!< Failed to render an image.
 };
 
 
@@ -211,6 +214,9 @@ public:
             if (error_ == Error::None) {
                 return "None";
             }
+            if (error_ == Error::Unsupported) {
+                return "Unsupported";
+            }
             if (error_ == Error::Uninitialized) {
                 return "Uninitialized";
             }
@@ -220,9 +226,22 @@ public:
             if (error_ == Error::Unimplemented) {
                 return "Unimplemented";
             }
+            if (error_ == Error::IOError) {
+                return "IOError";
+            }
+            if (error_ == Error::FailedToRender) {
+                return "FailedToRender";
+            }
             LM_UNREACHABLE_RETURN();
         }();
-        return fmt::format("{} [type='{}', file='{}', line='{}']", message_, errorCodeStr, file_, line_).c_str();
+        if (file_.empty()) {
+            return fmt::format("{} [type='{}']",
+                message_, errorCodeStr).c_str();
+        }
+        else {
+            return fmt::format("{} [type='{}', file='{}', line='{}']",
+                message_, errorCodeStr, file_, line_).c_str();
+        }
     }
 };
 
@@ -250,11 +269,16 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     This macro reports the file and line of the code where the exception being raised.
     \endrst
 */
+#if LM_DEBUG_MODE
 #define LM_THROW_EXCEPTION(error, message, ...) \
     throw LM_NAMESPACE::Exception(error, __FILE__, __LINE__, message, __VA_ARGS__)
+#else
+#define LM_THROW_EXCEPTION(error, message, ...) \
+    throw LM_NAMESPACE::Exception(error, "", 0, message, __VA_ARGS__)
+#endif
 
 /*!
-    \brief Throw exception without message.
+    \brief Throw exception with default message.
     \param error Error code.
     \param message Error message.
     \param ... Arguments to format the message.
@@ -264,9 +288,15 @@ LM_NAMESPACE_END(LM_NAMESPACE)
     This macro reports the file and line of the code where the exception being raised.
     \endrst
 */
-#define LM_THROW_EXCEPTION_WITHOUT_MESSSAGE(error) \
+#if LM_DEBUG_MODE
+#define LM_THROW_EXCEPTION_DEFAULT(error) \
     throw LM_NAMESPACE::Exception(error, __FILE__, __LINE__, \
-        "You may find a detailed introspection of this error in the log output.")
+        "Consult log outputs for detailed error messages.")
+#else
+#define LM_THROW_EXCEPTION_DEFAULT(error) \
+    throw LM_NAMESPACE::Exception(error, "", 0, \
+        "Consult log outputs for detailed error messages.")
+#endif
 
 /*!
     @}

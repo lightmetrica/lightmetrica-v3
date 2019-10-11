@@ -130,7 +130,7 @@ public:
                 return l.release();
             }
             case value_t::discarded: {
-                LM_TBA_RUNTIME();
+                LM_UNREACHABLE();
                 break;
             }
         }

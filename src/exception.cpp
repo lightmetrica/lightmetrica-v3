@@ -85,7 +85,7 @@ public:
             LM_ERROR("Structured exception [desc='{}']", desc);
             exception::stackTrace();
 
-            throw std::runtime_error(m[code]);
+            LM_THROW_EXCEPTION(Error::None, "Structured exception has detected [type='{}']", m[code]);
         });
 
         // Handle denormals as zero

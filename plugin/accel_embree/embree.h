@@ -35,7 +35,7 @@ static void handleEmbreeError(void*, RTCError code, const char* str = nullptr) {
         LM_ERROR(str);
     }
 
-    throw std::runtime_error(codestr);
+    LM_THROW_EXCEPTION(Error::None, codestr);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

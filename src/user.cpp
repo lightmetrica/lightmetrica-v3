@@ -17,9 +17,6 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-#define THROW_RUNTIME_ERROR() \
-    throw std::runtime_error("Consult log outputs for detailed error messages")
-
 // ------------------------------------------------------------------------------------------------
 
 /*
@@ -115,7 +112,7 @@ public:
     virtual std::string asset(const std::string& name, const std::string& implKey, const Json& prop) override {
         const auto loc = scene_->loadAsset(name, implKey, prop);
         if (!loc) {
-            THROW_RUNTIME_ERROR();
+            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
         return *loc;
     }
@@ -129,10 +126,10 @@ public:
     }
 
     virtual void renderer(const std::string& rendererName, const Json& prop) override {
+        LM_INFO("Creating renderer [renderer='{}']", rendererName);
         renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc("renderer"), prop);
         if (!renderer_) {
-            LM_ERROR("Failed to render [renderer='{}']", rendererName);
-            THROW_RUNTIME_ERROR();
+            LM_THROW_EXCEPTION_DEFAULT(Error::FailedToRender);
         }
     }
 
@@ -142,7 +139,7 @@ public:
             LM_INDENT();
         }
         if (renderer_->requiresScene() && !scene_->renderable()) {
-            THROW_RUNTIME_ERROR();
+            LM_THROW_EXCEPTION_DEFAULT(Error::FailedToRender);
         }
         renderer_->render(scene_.get());
     }
@@ -150,17 +147,17 @@ public:
     virtual void save(const std::string& filmName, const std::string& outpath) override {
         const auto* film = comp::get<Film>(filmName);
         if (!film) {
-            THROW_RUNTIME_ERROR();
+            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
         if (!film->save(outpath)) {
-            THROW_RUNTIME_ERROR();
+            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
     }
 
     virtual FilmBuffer buffer(const std::string& filmName) override {
         auto* film = comp::get<Film>(filmName);
         if (!film) {
-            THROW_RUNTIME_ERROR();
+            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
         return film->buffer();
     }

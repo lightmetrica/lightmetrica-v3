@@ -20,7 +20,7 @@ TEST_CASE("Exception") {
 
     const auto Check = [](const std::function<void()>& func) -> std::string {
         try { func(); }
-        catch (const std::runtime_error& e) { return e.what(); }
+        catch (const std::exception& e) { return e.what(); }
         return {};
     };
 

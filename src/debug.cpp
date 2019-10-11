@@ -29,7 +29,7 @@ public:
             return;
         }
         if (!onPollFloat_) {
-            throw std::runtime_error("onPollFloat function is not registered.");
+            LM_THROW_EXCEPTION(Error::None, "onPollFloat function is not registered.");
         }
         onPollFloat_(name, val);
     }
@@ -88,7 +88,7 @@ LM_PUBLIC_API void attachToDebugger() {
         Sleep(100);
     }
     #else
-    throw std::runtime_error("attachToDebugger() is not supported in this platform.");
+    LM_THROW_EXCEPTION(Error::Unsupported, "attachToDebugger() is not supported in this platform.");
     #endif
 }
 

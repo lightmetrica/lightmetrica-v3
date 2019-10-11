@@ -47,7 +47,7 @@ public:
     */
     virtual Float evalScalar(Vec3 p) const {
         LM_UNUSED(p);
-        LM_THROW_EXCEPTION_WITHOUT_MESSSAGE(Error::Unimplemented);
+        LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
     }
 
     // --------------------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ public:
     */
     virtual Vec3 evalColor(Vec3 p) const {
         LM_UNUSED(p);
-        LM_THROW_EXCEPTION_WITHOUT_MESSSAGE(Error::Unimplemented);
+        LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
     }
 
     // --------------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ public:
     */
     virtual void march(Ray ray, Float tmin, Float tmax, Float marchStep, const RaymarchFunc& raymarchFunc) const {
         LM_UNUSED(ray, tmin, tmax, marchStep, raymarchFunc);
-        LM_THROW_EXCEPTION_WITHOUT_MESSSAGE(Error::Unimplemented);
+        LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
     }
 };
 
