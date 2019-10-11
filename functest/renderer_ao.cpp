@@ -14,10 +14,9 @@ private:
     int rngSeed_ = 42;
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         film_ = json::compRef<Film>(prop, "output");
         spp_ = json::value<long long>(prop, "spp");
-        return true;
     }
 
     virtual void render(const Scene* scene) const override {

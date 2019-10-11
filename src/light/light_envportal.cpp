@@ -263,11 +263,11 @@ private:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         // Load environment map
-        envmap_ = comp::create<Texture>("texture::bitmap", "", prop);
+        envmap_ = comp::create<Texture>("texture::bitmap", makeLoc("envmap"), prop);
         if (!envmap_) {
-            return false;
+            LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
         }
         rot_ = glm::radians(json::value(prop, "rot", 0_f));
 
@@ -310,8 +310,6 @@ public:
                 portal.dist[face].init(ls, DistSize, DistSize);
             }
         }
-        
-        return true;
     }
 
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {

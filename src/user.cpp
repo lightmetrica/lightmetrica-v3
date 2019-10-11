@@ -41,7 +41,7 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         // Exception subsystem
         exception::init();
 
@@ -74,8 +74,6 @@ public:
 
         // Create assets and scene
         reset();
-
-        return true;
     }
 
 public:

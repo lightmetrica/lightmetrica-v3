@@ -142,8 +142,8 @@ static void bind(pybind11::module& m) {
     class Component_Py final : public Component {
     public:
         PYLM_SERIALIZE_IMPL(Component)
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Component, construct, prop);
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Component, construct, prop);
         }
     };
     pybind11::class_<Component, Component_Py, Component::Ptr<Component>>(m, "Component")
@@ -233,9 +233,9 @@ static void bind(pybind11::module& m) {
 
         using LoggerContext = log::LoggerContext;
         class LoggerContext_Py final : public LoggerContext {
-            virtual bool construct(const Json& prop) override {
+            virtual void construct(const Json& prop) override {
                 pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD(bool, LoggerContext, construct, prop);
+                PYBIND11_OVERLOAD(void, LoggerContext, construct, prop);
             }
             virtual void log(log::LogLevel level, int severity, const char* filename, int line, const char* message) override {
                 pybind11::gil_scoped_acquire acquire;
@@ -306,9 +306,9 @@ static void bind(pybind11::module& m) {
 
         using ProgressContext = progress::ProgressContext;
         class ProgressContext_Py final : public ProgressContext {
-            virtual bool construct(const Json& prop) override {
+            virtual void construct(const Json& prop) override {
                 pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD(bool, ProgressContext, construct, prop);
+                PYBIND11_OVERLOAD(void, ProgressContext, construct, prop);
             }
             virtual void start(progress::ProgressMode mode, long long total, double totalTime) override {
                 pybind11::gil_scoped_acquire acquire;
@@ -421,8 +421,8 @@ static void bind(pybind11::module& m) {
     // Film
     class Film_Py final : public Film {
     public:
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Film, construct, prop);
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Film, construct, prop);
         }
         virtual FilmSize size() const override {
             PYBIND11_OVERLOAD_PURE(FilmSize, Film, size);
@@ -518,8 +518,8 @@ static void bind(pybind11::module& m) {
         .value("Group", SceneNodeType::Group);
 
     class Scene_Py final : public Scene {
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Scene, construct, prop);
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Scene, construct, prop);
         }
         virtual bool renderable() const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, renderable);
@@ -629,8 +629,8 @@ static void bind(pybind11::module& m) {
     #pragma region renderer.h
     class Renderer_Py final : public Renderer {
         PYLM_SERIALIZE_IMPL(Renderer)
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Renderer, construct, prop);
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Renderer, construct, prop);
         }
         virtual void render(const Scene* scene) const override {
             PYBIND11_OVERLOAD_PURE(void, Renderer, render, scene);
@@ -678,8 +678,8 @@ static void bind(pybind11::module& m) {
         .def_readwrite("weight", &MaterialDirectionSample::weight);
 
     class Material_Py final : public Material {
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Material, construct, prop);
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Material, construct, prop);
         }
         virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
             PYBIND11_OVERLOAD_PURE(bool, Material, isSpecular, geom, comp);

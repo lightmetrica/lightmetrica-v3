@@ -20,14 +20,13 @@ private:
     int numThreads_;					// Number of threads
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         progressUpdateInterval_ = json::value<long long>(prop, "progress_update_interval", 100);
         numThreads_ = json::value(prop, "numThreads", std::thread::hardware_concurrency());
         if (numThreads_ <= 0) {
             numThreads_ = std::thread::hardware_concurrency() + numThreads_;
         }
         omp_set_num_threads(numThreads_);
-        return true;
     }
 
     virtual int numThreads() const override {

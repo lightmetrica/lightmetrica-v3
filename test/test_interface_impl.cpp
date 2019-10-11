@@ -22,10 +22,9 @@ LM_COMP_REG_IMPL(TestPlugin_, "testplugin::default");
 struct TestPlugin_WithConstruct : public TestPlugin {
     int v1;
     int v2;
-    virtual bool construct(const lm::Json& prop) override {
+    virtual void construct(const lm::Json& prop) override {
         v1 = lm::json::value<int>(prop, "v1");
         v2 = lm::json::value<int>(prop, "v2");
-        return true;
     }
     virtual int f() override {
         return v1 - v2;

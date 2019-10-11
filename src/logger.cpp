@@ -40,9 +40,8 @@ private:
     };
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         color_ = json::value(prop, "color", true);
-        return true;
     }
 
 public:

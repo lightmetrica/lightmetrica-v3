@@ -71,9 +71,8 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         Ni_ = json::value<Float>(prop, "Ni");
-        return true;
     }
 
     virtual bool isSpecular(const PointGeometry&, int) const override {

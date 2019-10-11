@@ -18,11 +18,10 @@ struct TestAsset : public lm::Component {
 struct TestAsset_Simple final : public TestAsset {
     int v = -1;
 
-    virtual bool construct(const lm::Json& prop) override {
+    virtual void construct(const lm::Json& prop) override {
         if (prop.count("v")) {
             v = prop["v"];
         }
-        return true;
     }
 
     virtual int f() const override {
@@ -33,12 +32,11 @@ struct TestAsset_Simple final : public TestAsset {
 struct TestAsset_Dependent final : public TestAsset {
     TestAsset* other;
 
-    virtual bool construct(const lm::Json& prop) override {
+    virtual void construct(const lm::Json& prop) override {
         // In this test an instance of Assets are registered as root component
         // thus we can access the underlying component via lm::comp::get function.
         LM_UNUSED(prop);
         other = lm::comp::get<TestAsset>("$.assets.asset1");
-        return true;
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {

@@ -14,10 +14,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
 
 class ParallelContext_DistMaster final : public ParallelContext {
 public:
-    virtual bool construct(const Json&) override {
-        return true;
-    }
-
     virtual int numThreads() const {
         return 0;
     }
@@ -68,9 +64,8 @@ public:
     Ptr<ParallelContext> localContext_;
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         localContext_ = comp::create<ParallelContext>("parallel::openmp", "", prop);
-        return true;
     }
     
     virtual int numThreads() const {

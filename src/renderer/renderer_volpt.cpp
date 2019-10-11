@@ -50,7 +50,7 @@ public:
     #endif
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         film_ = json::compRef<Film>(prop, "output");
         maxLength_ = json::value<int>(prop, "max_length");
         seed_ = json::valueOrNone<unsigned int>(prop, "seed");
@@ -63,7 +63,6 @@ public:
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spp::" + schedName, makeLoc("scheduler"), prop);
 #endif
-        return true;
     }
 
     virtual void render(const Scene* scene) const override {

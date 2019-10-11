@@ -91,11 +91,8 @@ public:
             asset = assets_[it->second].get();
 
             // Initialize the asset
-            if (!asset->construct(prop)) {
-                LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
-                assets_.pop_back();
-                return {};
-            }
+            // This might cause an exception
+            asset->construct(prop);
 
             // Notify to update the weak references in the object tree
             const lm::Component::ComponentVisitor visitor = [&](lm::Component*& comp, bool weak) {
@@ -122,11 +119,7 @@ public:
             asset = assets_.back().get();
 
             // Initialize the asset
-            if (!asset->construct(prop)) {
-                LM_ERROR("Failed to initialize component [name='{}', key='{}']", name, implKey);
-                assets_.pop_back();
-                return {};
-            }
+            asset->construct(prop);
         }
 
         return asset->loc();
@@ -190,12 +183,11 @@ public:
     }
 
 public:
-    virtual bool construct(const Json&) override {
+    virtual void construct(const Json&) override {
         // Assets
         assets_ = comp::create<Assets>("assets::default", makeLoc("assets"));
         // Index 0 is fixed to the scene group
         nodes_.push_back(SceneNode::makeGroup(0, false, {}));
-        return true;
     }
 
 public:

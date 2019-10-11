@@ -20,8 +20,8 @@ public:
         // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
         struct A_Py final : public A {
             PYLM_SERIALIZE_IMPL(A)
-            virtual bool construct(const lm::Json& prop) override {
-                PYBIND11_OVERLOAD(bool, A, construct, prop);
+            virtual void construct(const lm::Json& prop) override {
+                PYBIND11_OVERLOAD(void, A, construct, prop);
             }
             virtual int f1() override {
                 PYBIND11_OVERLOAD_PURE(int, A, f1);
@@ -41,8 +41,8 @@ public:
         // ----------------------------------------------------------------------------------------
 
         struct TestPlugin_Py final : public TestPlugin {
-            virtual bool construct(const lm::Json& prop) override {
-                PYBIND11_OVERLOAD(bool, TestPlugin, construct, prop);
+            virtual void construct(const lm::Json& prop) override {
+                PYBIND11_OVERLOAD(void, TestPlugin, construct, prop);
             }
             virtual int f() override {
                 PYBIND11_OVERLOAD_PURE(int, TestPlugin, f);
@@ -56,8 +56,8 @@ public:
         // ----------------------------------------------------------------------------------------
 
         struct D_Py final : public D {
-            virtual bool construct(const lm::Json& prop) override {
-                PYBIND11_OVERLOAD(bool, D, construct, prop);
+            virtual void construct(const lm::Json& prop) override {
+                PYBIND11_OVERLOAD(void, D, construct, prop);
             }
             virtual int f() override {
                 PYBIND11_OVERLOAD_PURE(int, D, f);

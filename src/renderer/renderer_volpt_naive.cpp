@@ -34,7 +34,7 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         film_ = json::compRef<Film>(prop, "output");
         maxLength_ = json::value<int>(prop, "max_length");
         rrProb_ = json::value<Float>(prop, "rr_prob", .2_f);
@@ -47,7 +47,6 @@ public:
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spp::" + schedName, makeLoc("scheduler"), prop);
 #endif
-        return true;
     }
 
     virtual void render(const Scene* scene) const override {

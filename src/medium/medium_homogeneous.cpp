@@ -26,7 +26,7 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         density_ = json::value<Float>(prop, "density");
         albedo_ = json::value<Vec3>(prop, "albedo");
         muS_ = albedo_ * density_;
@@ -34,7 +34,6 @@ public:
         phase_ = json::compRef<Phase>(prop, "phase");
         bound_.mi = json::value<Vec3>(prop, "bound_min", Vec3(-Inf));
         bound_.ma = json::value<Vec3>(prop, "bound_max", Vec3(Inf));
-        return true;
     }
 
     /*

@@ -101,10 +101,9 @@ struct TestSerial_SimpleNestedStruct {
 struct TestSerial_Simple final : public lm::Component {
     int v1;
     int v2;
-    virtual bool construct(const lm::Json& prop) override {
+    virtual void construct(const lm::Json& prop) override {
         v1 = prop["v1"];
         v2 = prop["v2"];
-        return true;
     }
     LM_SERIALIZE_IMPL(ar) {
         ar(v1, v2);
@@ -130,9 +129,8 @@ LM_COMP_REG_IMPL(TestSerial_Nested, "testserial_nested");
 
 struct TestSerial_Ref final : public lm::Component {
     Component* p;
-    virtual bool construct(const lm::Json& prop) {
+    virtual void construct(const lm::Json& prop) {
         p = lm::comp::get<Component>(prop["ref"]);
-        return true;
     }
     LM_SERIALIZE_IMPL(ar) {
         ar(p);

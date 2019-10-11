@@ -60,9 +60,9 @@ public:
         return assets_[assetsMap_.at(name)].get();
     }
 
-	virtual bool construct(const Json& prop) override {
+	virtual void construct(const Json& prop) override {
         const std::string path = json::value<std::string>(prop, "path");
-        return objloader::load(path, geo_,
+        bool result = objloader::load(path, geo_,
             // Process mesh
             [&](const OBJMeshFace& fs, const MTLMatParams& m) -> bool {
                 // Create mesh
@@ -157,6 +157,9 @@ public:
 
                 return true;
             });
+        if (!result) {
+            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
+        }
     }
     
     virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const override {
@@ -194,10 +197,9 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         model_ = prop["model_"].get<Model_WavefrontObj*>();
         fs_ = *prop["fs_"].get<const OBJMeshFace*>();
-        return true;
     }
 
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
@@ -316,7 +318,7 @@ private:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         objmat_ = *prop["matparams_"].get<const MTLMatParams*>();
         objmat_.mapKd = prop["mapKd_"];
 
@@ -328,7 +330,7 @@ public:
                 {"Ni", objmat_.Ni}
             });
             if (glass_ < 0) {
-                return false;
+                LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
             }
         }
         else if (objmat_.illum == 5) {
@@ -336,7 +338,7 @@ public:
             const auto mirrorMaterialName = json::value<std::string>(prop, "mirror", "material::mirror");
             mirror_ = addMaterial(mirrorMaterialName, "mirror", {});
             if (mirror_ < 0) {
-                return false;
+                LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
             }
         }
         else {
@@ -348,7 +350,7 @@ public:
             }
             diffuse_ = addMaterial(diffuseMaterialName, "diffuse", matprop);
             if (diffuse_ < 0) {
-                return false;
+                LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
             }
 
             // Glossy material
@@ -361,7 +363,7 @@ public:
                 {"ay", std::max(1e-3_f, r * as)}
             });
             if (glossy_ < 0) {
-                return false;
+                LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
             }
 
             // Mask texture
@@ -371,12 +373,11 @@ public:
                     maskTex_ = texture;
                     mask_ = addMaterial("material::mask", "mask", {});
                     if (mask_ < 0) {
-                        return false;
+                        LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
                     }
                 }
             }
         }
-        return true;
     }
 
     virtual bool isSpecular(const PointGeometry& geom, int comp) const override {

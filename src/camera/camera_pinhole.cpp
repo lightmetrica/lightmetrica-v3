@@ -65,7 +65,7 @@ public:
         };
     }
 
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         const auto it = prop.find("matrix");
         if (it != prop.end()) {
             Mat4 viewM = *it;
@@ -85,7 +85,6 @@ public:
         }
         vfov_ = json::value<Float>(prop, "vfov");        // Vertical FoV
         tf_ = tan(vfov_ * Pi / 180_f * .5_f);            // Precompute half of screen height
-        return true;
     }
 
     virtual bool isSpecular(const PointGeometry&) const override {

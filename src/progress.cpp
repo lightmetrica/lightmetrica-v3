@@ -20,16 +20,15 @@ private:
     std::vector<Ptr<ProgressContext>> ctx_;
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         for (const auto& entry : prop) {
             auto it = entry.begin();
             auto ctx = comp::create<ProgressContext>(it.key(), "", it.value());
             if (!ctx) {
-                return false;
+                LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
             }
             ctx_.push_back(std::move(ctx));
         }
-        return true;
     }
 
     virtual void start(ProgressMode mode, long long total, double totalTime) override {
@@ -62,11 +61,10 @@ private:
     time_point<high_resolution_clock> lastUpdated_;  // Last updated time
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         delay_ = milliseconds(json::value<int>(prop, "delay"));
         auto it = prop["progress"].begin();
         ctx_ = comp::create<ProgressContext>(it.key(), "", it.value());
-        return true;
     }
 
     virtual void start(ProgressMode mode, long long total, double totalTime) override {

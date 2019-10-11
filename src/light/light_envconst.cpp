@@ -28,9 +28,8 @@ public:
     }
     
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         Le_ = json::value<Vec3>(prop, "Le");
-        return true;
     }
 
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {

@@ -9,10 +9,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Material_VisualizeNormal final : public Material {
 public:
-    virtual bool construct(const Json&) override {
-        return true;
-    }
-
     virtual bool isSpecular(const PointGeometry&, int) const override {
         return false;
     }

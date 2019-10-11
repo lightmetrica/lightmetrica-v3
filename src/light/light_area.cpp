@@ -45,7 +45,7 @@ private:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         Ke_ = json::value<Vec3>(prop, "Ke");
         mesh_ = json::compRef<Mesh>(prop, "mesh");
         
@@ -57,8 +57,6 @@ public:
         });
         invA_ = 1_f / dist_.c.back();
         dist_.norm();
-
-        return true;
     }
 
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {

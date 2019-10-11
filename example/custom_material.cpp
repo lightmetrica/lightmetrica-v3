@@ -10,10 +10,6 @@
 
 class Material_VisualizeNormal final : public lm::Material {
 public:
-    virtual bool construct(const lm::Json&) override {
-        return true;
-    }
-
     virtual bool isSpecular(const lm::PointGeometry&, int) const override {
         return false;
     }

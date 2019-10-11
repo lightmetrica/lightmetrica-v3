@@ -52,14 +52,13 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         if (auto it = prop.find("mapKd"); it != prop.end()) {
             mapKd_ = comp::get<Texture>(*it);
         }
         else {
             Kd_ = json::value(prop, "Kd", Vec3(1_f));
         }
-        return true;
     }
 
     virtual bool isSpecular(const PointGeometry&, int) const override {

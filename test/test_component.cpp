@@ -138,9 +138,8 @@ struct H_Root_ : public H {
         return "root";
     }
 
-    virtual bool construct(const lm::Json&) override {
+    virtual void construct(const lm::Json&) override {
         p1 = lm::comp::create<H>("test::comp::h_p1_", makeLoc("p1"), {});
-        return true;
     }
 
     virtual Component* underlying(const std::string& name) const {
@@ -158,9 +157,8 @@ struct H_P1_ : public H {
         return "p1";
     }
 
-    virtual bool construct(const lm::Json&) override {
+    virtual void construct(const lm::Json&) override {
         p2 = lm::comp::create<H>("test::comp::h_p2_", makeLoc("p2"), {});
-        return true;
     }
 
     virtual Component* underlying(const std::string& name) const {

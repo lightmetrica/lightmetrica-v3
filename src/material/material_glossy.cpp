@@ -21,11 +21,10 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         Ks_ = json::value<Vec3>(prop, "Ks");
         ax_ = json::value<Float>(prop, "ax");
         ay_ = json::value<Float>(prop, "ay");
-        return true;
     }
 
 public:

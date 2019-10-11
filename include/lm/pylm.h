@@ -367,9 +367,7 @@ static pybind11::object createCompWrap(const char* name, const char* loc, const 
         return pybind11::object();
     }
     lm::comp::detail::Access::loc(inst) = loc;
-    if (!inst->construct(prop)) {
-        return pybind11::object();
-    }
+    inst->construct(prop);
     return castToPythonObject<InterfaceT>(inst);
 }
 

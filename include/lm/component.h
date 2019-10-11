@@ -205,10 +205,9 @@ public:
         The function is called just after the component instance is created.
         Mostly, the function is called internally by :cpp:func:`lm::comp::create` function.
         The configuration properties are passed by JSON type.
-        The return values indicates if the construction suceeded or not.
         \endrst
     */
-    virtual bool construct(const Json& prop) { LM_UNUSED(prop); return true; }
+    virtual void construct(const Json& prop) { LM_UNUSED(prop); }
     
     /*!
         \brief Deserialize a component.
@@ -575,9 +574,10 @@ Component::Ptr<InterfaceT> createWithoutConstruct(const std::string& key, const 
 template <typename InterfaceT>
 Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc, const Json& prop = {}) {
     auto inst = createWithoutConstruct<InterfaceT>(key, loc);
-    if (!inst || !inst->construct(prop)) {
+    if (!inst) {
         return {};
     }
+    inst->construct(prop);
     return inst;
 }
 
