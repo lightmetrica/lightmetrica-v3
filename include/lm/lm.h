@@ -14,6 +14,7 @@
 #include "logger.h"
 #include "loggercontext.h"
 #include "progress.h"
+#include "progresscontext.h"
 #include "exception.h"
 #include "debug.h"
 #include "debugio.h"

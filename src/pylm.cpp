@@ -304,7 +304,7 @@ static void bind(pybind11::module& m) {
         sm.def("end", &progress::end);
         sm.def("update", &progress::update);
 
-        using ProgressContext = progress::detail::ProgressContext;
+        using ProgressContext = progress::ProgressContext;
         class ProgressContext_Py final : public ProgressContext {
             virtual bool construct(const Json& prop) override {
                 pybind11::gil_scoped_acquire acquire;

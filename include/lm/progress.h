@@ -117,39 +117,5 @@ public:
     @}
 */
 
-// ------------------------------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(detail)
-
-/*!
-    \addtogroup progress
-    @{
-*/
-
-/*!
-    \brief Progress context.
-    
-    \rst
-    You may implement this interface to implement user-specific progress reporting subsystem.
-    Each virtual function corresponds to API call with a free function
-    inside ``progress`` namespace.
-    \endrst
-*/
-class ProgressContext : public Component {
-public:
-    virtual void start(ProgressMode mode, long long total, double totalTime) = 0;
-    virtual void update(long long processed) = 0;
-    virtual void updateTime(Float elapsed) = 0;
-    virtual void end() = 0;
-};
-
-/*!
-    @}
-*/
-
-LM_NAMESPACE_END(detail)
-
-// ------------------------------------------------------------------------------------------------
-
 LM_NAMESPACE_END(progress)
 LM_NAMESPACE_END(LM_NAMESPACE)

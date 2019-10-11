@@ -4,7 +4,7 @@
 */
 
 #include <pch.h>
-#include <lm/progress.h>
+#include <lm/progresscontext.h>
 #include <lm/logger.h>
 
 using namespace std::chrono;
@@ -12,7 +12,7 @@ using namespace std::literals::chrono_literals;
 
 // ------------------------------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::progress::detail)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::progress)
 
 // Multiplexed progress reporter
 class ProgressContext_Mux : public ProgressContext {
@@ -179,13 +179,9 @@ private:
 
 LM_COMP_REG_IMPL(ProgressContext_Default, "progress::default");
 
-LM_NAMESPACE_END(LM_NAMESPACE::progress::detail)
-
 // ------------------------------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::progress)
-
-using Instance = comp::detail::ContextInstance<detail::ProgressContext>;
+using Instance = comp::detail::ContextInstance<ProgressContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
     Instance::init(type, prop);

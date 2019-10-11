@@ -18,10 +18,13 @@ LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 TEST_CASE("Exception") {
     lm::log::ScopedInit log_;
 
-    const auto Check = [](const std::function<void()>& func) -> std::string {
+    const auto Check = [](const std::function<void()>& func, const std::string& expected = "") -> bool {
         try { func(); }
-        catch (const std::exception& e) { return e.what(); }
-        return {};
+        catch (const std::exception& e) {
+            const std::string message = e.what();
+            return message.find(expected) != std::string::npos;
+        }
+        return false;
     };
 
     // --------------------------------------------------------------------------------------------
@@ -36,10 +39,10 @@ TEST_CASE("Exception") {
             };
             SUBCASE("Enabled") {
                 lm::exception::ScopedInit ex_;
-                CHECK(Check(f) == "EXCEPTION_FLT_INVALID_OPERATION");
+                CHECK(Check(f, "EXCEPTION_FLT_INVALID_OPERATION"));
             }
             SUBCASE("Disabled") {
-                CHECK(Check(f).empty());
+                CHECK(!Check(f, ""));
             }
         }
 
@@ -51,10 +54,10 @@ TEST_CASE("Exception") {
             };
             SUBCASE("Enabled") {
                 lm::exception::ScopedInit ex_;
-                CHECK(Check(f) == "EXCEPTION_FLT_INVALID_OPERATION");
+                CHECK(Check(f, "EXCEPTION_FLT_INVALID_OPERATION"));
             }
             SUBCASE("Disabled") {
-                CHECK(Check(f).empty());
+                CHECK(!Check(f));
             }
         }
 
@@ -66,10 +69,10 @@ TEST_CASE("Exception") {
             };
             SUBCASE("Enabled") {
                 lm::exception::ScopedInit ex_;
-                CHECK(Check(f) == "EXCEPTION_FLT_DIVIDE_BY_ZERO");
+                CHECK(Check(f, "EXCEPTION_FLT_DIVIDE_BY_ZERO"));
             }
             SUBCASE("Disabled") {
-                CHECK(Check(f).empty());
+                CHECK(!Check(f));
             }
         }
 
@@ -80,10 +83,10 @@ TEST_CASE("Exception") {
             };
             SUBCASE("Enabled") {
                 lm::exception::ScopedInit ex_;
-                CHECK(Check(f) == "EXCEPTION_FLT_INVALID_OPERATION");
+                CHECK(Check(f, "EXCEPTION_FLT_INVALID_OPERATION"));
             }
             SUBCASE("Disabled") {
-                CHECK(Check(f).empty());
+                CHECK(!Check(f));
             }
         }
 
@@ -130,7 +133,7 @@ TEST_CASE("Exception") {
                 const volatile double t = 2.0 / 3.0;
                 LM_UNUSED(t);
             });
-            CHECK(code.empty());
+            CHECK(!code);
         }
 
         SUBCASE("Inexact 2") {
@@ -138,7 +141,7 @@ TEST_CASE("Exception") {
                 const volatile double t = std::log(1.1);
                 LM_UNUSED(t);
             });
-            CHECK(code.empty());
+            CHECK(!code);
         }
     }
 
@@ -151,12 +154,12 @@ TEST_CASE("Exception") {
             LM_UNUSED(t);
         };
         lm::exception::ScopedInit ex_;
-        CHECK(Check(f) == "EXCEPTION_FLT_INVALID_OPERATION");
+        CHECK(Check(f, "EXCEPTION_FLT_INVALID_OPERATION"));
         {
             lm::exception::ScopedDisableFPEx disabled_;
-            CHECK(Check(f).empty());
+            CHECK(!Check(f));
         }
-        CHECK(Check(f) == "EXCEPTION_FLT_INVALID_OPERATION");
+        CHECK(Check(f, "EXCEPTION_FLT_INVALID_OPERATION"));
     }
 }
 

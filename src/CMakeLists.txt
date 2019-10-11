@@ -18,6 +18,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/logger.h"
     "${_INCLUDE_DIR}/loggercontext.h"
     "${_INCLUDE_DIR}/progress.h"
+    "${_INCLUDE_DIR}/progresscontext.h"
     "${_INCLUDE_DIR}/scheduler.h"
     "${_INCLUDE_DIR}/debugio.h"
     "${_INCLUDE_DIR}/debug.h"
