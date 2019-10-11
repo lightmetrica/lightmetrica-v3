@@ -20,6 +20,7 @@
 #include "debugio.h"
 #include "dist.h"
 #include "parallel.h"
+#include "parallelcontext.h"
 #include "math.h"
 #include "mesh.h"
 #include "camera.h"
