@@ -20,6 +20,9 @@
 # %load_ext autoreload
 # %autoreload 2
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -27,7 +30,6 @@ import numpy as np
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
@@ -52,7 +54,7 @@ class Material_VisualizeNormal(lm.Material):
         return np.zeros(3)
 
 
-lm.init('user::default', {})
+lm.init()
 lm.parallel.init('parallel::openmp', {
     'numThreads': 1
 })
@@ -72,7 +74,7 @@ lm.asset('camera_main', 'camera::pinhole', {
     'vfov': 43.001194
 })
 lm.asset('model_obj', 'model::wavefrontobj', {
-    'path': os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
+    'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     'base_material': lm.asset('mat_vis_normal')
 })
 lm.primitive(lm.identity(), {

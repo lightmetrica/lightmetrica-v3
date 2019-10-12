@@ -17,6 +17,9 @@
 #
 # This test checks performance of acceleration structure implemented in the framework for various scenes.
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -25,21 +28,20 @@ import timeit
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {})
+lm.init()
 lm.parallel.init('parallel::openmp', {
     'numThreads': -1
 })
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_embree'))
 
 accels = [
     'accel::sahbvh',
@@ -53,7 +55,7 @@ build_time_df = pd.DataFrame(columns=accels, index=scenes)
 render_time_df = pd.DataFrame(columns=accels, index=scenes)
 for scene in scenes:
     lm.reset()
-    lmscene.load(ft.env.scene_path, scene)
+    lmscene.load(env.scene_path, scene)
     for accel in accels:
         lm.asset('film_output', 'film::bitmap', {
             'w': 1920,

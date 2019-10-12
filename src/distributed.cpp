@@ -15,9 +15,9 @@
 
 #define LM_DIST_MONITOR_SOCKET 1
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::dist)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::distributed)
 
 using namespace std::chrono_literals;
 
@@ -48,7 +48,7 @@ enum class PushToMasterCommand {
     gatherFilm,
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Worker information
 struct WorkerInfo {
@@ -104,7 +104,7 @@ public:
 };
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // User-define serialization funciton
 using SerializeFunc = std::function<void(std::ostream& os)>;
@@ -131,9 +131,13 @@ void send(zmq::socket_t& socket, CommandType command, Ts&&... args) {
     });
 }
 
-// ----------------------------------------------------------------------------
+LM_NAMESPACE_END(LM_NAMESPACE::distributed)
 
-class DistMasterContext_ final : public DistMasterContext {
+// ------------------------------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::distributed::master)
+
+class MasterContext final {
 private:
     int port_;
     zmq::context_t context_;
@@ -154,29 +158,26 @@ private:
     bool allowWorkerConnection_ = true; // True if master allows new connections by workers
 
 public:
-    DistMasterContext_()
+    static MasterContext& instance() {
+        static MasterContext instance;
+        return instance;
+    }
+
+public:
+    MasterContext()
         : context_(1)
         #if LM_DIST_MONITOR_SOCKET
         , monitor_repSocket_("rep")
         #endif
     {}
 
-    ~DistMasterContext_() {
-        done_ = true;
-        eventLoopThread_.join();
-    }
-
 public:
-    virtual bool construct(const Json& prop) override {
+    void init(const Json& prop) {
         port_ = json::value<int>(prop, "port");
         LM_INFO("Listening [port='{}']", port_);
-        
-        // --------------------------------------------------------------------
 
         // Initialize parallel subsystem
-        parallel::init("parallel::distmaster", prop);
-
-        // --------------------------------------------------------------------
+        parallel::init("parallel::distributed_master", prop);
 
         // PUSH and PUB sockets in main thread
         pushSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUSH);
@@ -184,8 +185,7 @@ public:
         pushSocket_->bind(fmt::format("tcp://*:{}", port_));
         pubSocket_->bind(fmt::format("tcp://*:{}", port_ + 2));
         
-        // --------------------------------------------------------------------
-
+        
         // Thread for event loop
         eventLoopThread_ = std::thread([this]() {
             // PULL and REP sockets in event loop thread
@@ -196,8 +196,6 @@ public:
             #if LM_DIST_MONITOR_SOCKET
             monitor_repSocket_.init(*repSocket_, "inproc://monitor_rep", ZMQ_EVENT_ALL);
             #endif
-
-            // ----------------------------------------------------------------
 
             // Event loop
             zmq::pollitem_t items[] = {
@@ -266,31 +264,34 @@ public:
                 }
             }
         });
-        
-        return true;
+    }
+
+    void shutdown() {
+        done_ = true;
+        eventLoopThread_.join();
     }
 
 public:
-    virtual void printWorkerInfo() override {
+    void printWorkerInfo() {
         send(*pubSocket_, PubToWorkerCommand::workerinfo);
     }
 
-    virtual void allowWorkerConnection(bool allow) override {
+    void allowWorkerConnection(bool allow) {
         allowWorkerConnection_ = allow;
     }
 
-    virtual void sync() override {
+    void sync() {
         // Synchronize internal state and dispatch rendering in worker process
         sendFunc(*pubSocket_, PubToWorkerCommand::sync, [&](std::ostream& os) {
             lm::serialize(os);
         });
     }
 
-    virtual void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) override {
+    void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) {
         onWorkerTaskFinished_ = func;
     }
 
-    virtual void processWorkerTask(long long start, long long end) override {
+    void processWorkerTask(long long start, long long end) {
         if (start == 0) {
             // Reset the issued task
             numIssuedTasks_ = 0;
@@ -299,11 +300,11 @@ public:
         numIssuedTasks_++;
     }
 
-    virtual void notifyProcessCompleted() override  {
+    void notifyProcessCompleted()  {
         send(*pubSocket_, PubToWorkerCommand::processCompleted);
     }
 
-    virtual void gatherFilm(const std::string& filmloc) override {
+    void gatherFilm(const std::string& filmloc) {
         // Initialize film
         gatherFilmSync_ = 0;
         lm::comp::get<Film>(filmloc)->clear();
@@ -321,55 +322,49 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(DistMasterContext_, "dist::master::default");
-
-// ----------------------------------------------------------------------------
-
-using Instance = comp::detail::ContextInstance<DistMasterContext>;
-
-LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
-    Instance::init(type, prop);
+LM_PUBLIC_API void init(const Json& prop) {
+    MasterContext::instance().init(prop);
 }
 
 LM_PUBLIC_API void shutdown() {
-    Instance::shutdown();
+    MasterContext::instance().shutdown();
 }
 
 LM_PUBLIC_API void printWorkerInfo() {
-    Instance::get().printWorkerInfo();
+    MasterContext::instance().printWorkerInfo();
 }
 
 LM_PUBLIC_API void allowWorkerConnection(bool allow) {
-    Instance::get().allowWorkerConnection(allow);
+    MasterContext::instance().allowWorkerConnection(allow);
 }
 
 LM_PUBLIC_API void sync() {
-    Instance::get().sync();
+    MasterContext::instance().sync();
 }
 
 LM_PUBLIC_API void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) {
-    Instance::get().onWorkerTaskFinished(func);
+    MasterContext::instance().onWorkerTaskFinished(func);
 }
 
 LM_PUBLIC_API void processWorkerTask(long long start, long long end) {
-    Instance::get().processWorkerTask(start, end);
+    MasterContext::instance().processWorkerTask(start, end);
 }
 
 LM_PUBLIC_API void notifyProcessCompleted() {
-    Instance::get().notifyProcessCompleted();
+    MasterContext::instance().notifyProcessCompleted();
 }
 
 LM_PUBLIC_API void gatherFilm(const std::string& filmloc) {
-    Instance::get().gatherFilm(filmloc);
+    MasterContext::instance().gatherFilm(filmloc);
 }
 
-LM_NAMESPACE_END(LM_NAMESPACE::dist)
+LM_NAMESPACE_END(LM_NAMESPACE::distributed::master)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::dist::worker)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::distributed::worker)
 
-class DistWorkerContext_ final : public DistWorkerContext {
+class WorkerContext final {
 private:
     zmq::context_t context_;
     std::unique_ptr<zmq::socket_t> pullSocket_;
@@ -380,13 +375,19 @@ private:
     #if LM_DIST_MONITOR_SOCKET
     SocketMonitor monitor_reqSocket_;
     #endif
-    NetWorkerProcessFunc processFunc_;
+    WorkerProcessFunc processFunc_;
     ProcessCompletedFunc processCompletedFunc_;
     std::thread renderThread_;
     long long numProcessedTasks_;  // Number of procesed tasks
 
 public:
-    DistWorkerContext_()
+    static WorkerContext& instance() {
+        static WorkerContext instance;
+        return instance;
+    }
+
+public:
+    WorkerContext()
         : context_(1)
         #if LM_DIST_MONITOR_SOCKET
         , monitor_reqSocket_("req")
@@ -394,7 +395,7 @@ public:
     {}
 
 public:
-    virtual bool construct(const Json& prop) override {
+    void init(const Json& prop) {
         name_ = json::value<std::string>(prop, "name");
         const auto address = json::value<std::string>(prop, "address");
         const auto port = json::value<int>(prop, "port");
@@ -433,21 +434,21 @@ public:
         subSocket_->setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
         // Initialize parallel subsystem
-        parallel::init("parallel::distworker", prop);
-
-        return true;
+        parallel::init("parallel::distributed_worker", prop);
     }
 
-    virtual void foreach(const NetWorkerProcessFunc& process) override {
+    void shutdown() {}
+
+    void foreach(const WorkerProcessFunc& process) {
         processFunc_ = process;
         numProcessedTasks_ = 0;
     }
 
-    virtual void onProcessCompleted(const ProcessCompletedFunc& func) override {
+    void onProcessCompleted(const ProcessCompletedFunc& func) {
         processCompletedFunc_ = func;
     }
 
-    virtual void run() override {
+    void run() {
         zmq::pollitem_t items[] = {
             { (void*)*pullSocket_, 0, ZMQ_POLLIN, 0 },
             { (void*)*subSocket_, 0, ZMQ_POLLIN, 0 },
@@ -536,30 +537,24 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(DistWorkerContext_, "dist::worker::default");
-
-// ----------------------------------------------------------------------------
-
-using Instance = comp::detail::ContextInstance<DistWorkerContext>;
-
-LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
-    Instance::init(type, prop);
+LM_PUBLIC_API void init(const Json& prop) {
+    WorkerContext::instance().init(prop);
 }
 
 LM_PUBLIC_API void shutdown() {
-    Instance::shutdown();
+    WorkerContext::instance().shutdown();
 }
 
 LM_PUBLIC_API void run() {
-    Instance::get().run();
+    WorkerContext::instance().run();
 }
 
 LM_PUBLIC_API void onProcessCompleted(const ProcessCompletedFunc& func) {
-    Instance::get().onProcessCompleted(func);
+    WorkerContext::instance().onProcessCompleted(func);
 }
 
-LM_PUBLIC_API void foreach(const NetWorkerProcessFunc& process) {
-    Instance::get().foreach(process);
+LM_PUBLIC_API void foreach(const WorkerProcessFunc& process) {
+    WorkerContext::instance().foreach(process);
 }
 
-LM_NAMESPACE_END(LM_NAMESPACE::dist::worker)
+LM_NAMESPACE_END(LM_NAMESPACE::distributed::worker)

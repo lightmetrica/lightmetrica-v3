@@ -36,9 +36,8 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
-        ref_ = comp::get<Material>(prop["ref"]);
-        return ref_;
+    virtual void construct(const Json& prop) override {
+        ref_ = json::compRef<Material>(prop, "ref");
     }
 
     virtual bool isSpecular(const PointGeometry& geom, int comp) const override {

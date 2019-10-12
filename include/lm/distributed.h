@@ -5,14 +5,12 @@
 
 #pragma once
 
-#include "common.h"
+#include "component.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(distributed)
 
 // ------------------------------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(master)
 
 /*!
     \addtogroup dist
@@ -50,8 +48,6 @@ LM_PUBLIC_API void gatherFilm(const std::string& filmloc);
 /*!
     @}
 */
-
-LM_NAMESPACE_END(master)
 
 // ------------------------------------------------------------------------------------------------
 

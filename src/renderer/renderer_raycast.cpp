@@ -39,7 +39,7 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         bgColor_ = json::value(prop, "bg_color", Vec3(0_f));
         useConstantColor_ = json::value(prop, "use_constant_color", false);
         visualizeNormal_ = json::value(prop, "visualize_normal", false);
@@ -49,7 +49,6 @@ public:
                 {"spp", 1},
                 {"output", prop["output"]}
             });
-        return true;
     }
 
     virtual void render(const Scene* scene) const override {

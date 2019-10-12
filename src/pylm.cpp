@@ -3,81 +3,35 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
+#include <pch_pylm.h>
 #include <lm/lm.h>
 #include <lm/pylm.h>
 
+using namespace pybind11::literals;
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-/*!
-    \brief Binds Lightmetrica to a Python module.
-*/
-static void bind(pybind11::module& m) {
-    using namespace pybind11::literals;
+// ------------------------------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-
-    // Special function to attach to a debugger
-    // https://stackoverflow.com/questions/20337870/what-is-the-equivalent-of-system-diagnostics-debugger-launch-in-unmanaged-code
-    m.def("attachToDebugger", []() -> void {
-        #if LM_PLATFORM_WINDOWS
-        // Get Windows system directory
-        std::wstring systemDir(MAX_PATH + 1, '\0');
-        auto nc = GetSystemDirectoryW(&systemDir[0], UINT(systemDir.length()));
-        if (nc == 0) {
-            LM_ERROR("Failed to get system directory");
-            return;
-        }
-        systemDir.resize(nc);
-
-        // Get process ID and create the command line
-        DWORD pid = GetCurrentProcessId();
-        std::wostringstream s;
-        s << systemDir << L"\\vsjitdebugger.exe -p " << pid;
-        std::wstring cmdLine = s.str();
-
-        // Start debugger process
-        STARTUPINFOW si;
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-        PROCESS_INFORMATION pi;
-        ZeroMemory(&pi, sizeof(pi));
-        if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-            LM_ERROR("Failed to launch vsjitdebugger.exe");
-            return;
-        }
-
-        // Close debugger process handles to eliminate resource leak
-        CloseHandle(pi.hThread);
-        CloseHandle(pi.hProcess);
-
-        // Wait for the debugger to attach
-        while (!IsDebuggerPresent()) {
-            Sleep(100);
-        }
-        #endif
-    });
-
-    // ------------------------------------------------------------------------
-
-    #pragma region common.h
-
+// Bind common.h
+static void bind_common(pybind11::module& m) {
     // Debug or Release mode
     m.attr("Debug") = LM_DEBUG_MODE ? true : false;
 
-	// Configuration
-	enum class ConfigType {
-		Debug,
-		Release,
-		RelWithDebInfo
-	};
-	pybind11::enum_<ConfigType>(m, "ConfigType")
-		.value("Debug", ConfigType::Debug)
-		.value("Release", ConfigType::Release)
-		.value("RelWithDebInfo", ConfigType::RelWithDebInfo);
-	m.attr("Config") =
-		LM_CONFIG_DEBUG ? ConfigType::Debug :
-		LM_CONFIG_RELEASE ? ConfigType::Release :
-		ConfigType::RelWithDebInfo;
+    // Configuration
+    enum class ConfigType {
+        Debug,
+        Release,
+        RelWithDebInfo
+    };
+    pybind11::enum_<ConfigType>(m, "ConfigType")
+        .value("Debug", ConfigType::Debug)
+        .value("Release", ConfigType::Release)
+        .value("RelWithDebInfo", ConfigType::RelWithDebInfo);
+    m.attr("BuildConfig") =
+        LM_CONFIG_DEBUG ? ConfigType::Debug :
+        LM_CONFIG_RELEASE ? ConfigType::Release :
+        ConfigType::RelWithDebInfo;
 
     // Supported floating point type
     enum class FloatPrecisionType {
@@ -91,29 +45,34 @@ static void bind(pybind11::module& m) {
     m.attr("FloatPrecision") = LM_SINGLE_PRECISION
         ? FloatPrecisionType::Float32
         : FloatPrecisionType::Float64;
+}
 
-    #pragma endregion
+// ------------------------------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-    
-    #pragma region version.h
-    {
-        auto sm = m.def_submodule("version");
-        m.attr("majorVersion") = lm::version::majorVersion();
-        m.attr("minorVersion") = lm::version::minorVersion();
-        m.attr("patchVersion") = lm::version::patchVersion();
-        m.attr("revision") = lm::version::revision();
-        m.attr("buildTimestamp") = lm::version::buildTimestamp();
-        m.attr("platform") = lm::version::platform();
-        m.attr("architecture") = lm::version::architecture();
-        m.attr("formatted") = lm::version::formatted();
-    }
-    #pragma endregion
+// Bind exception.h
+static void bind_exception(pybind11::module& m) {
+    pybind11::register_exception<lm::Exception>(m, "Exception");
+}
 
-    // ------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-    #pragma region math.h
+// Bind version.h
+static void bind_version(pybind11::module& m) {
+    auto sm = m.def_submodule("version");
+    m.attr("majorVersion") = lm::version::majorVersion();
+    m.attr("minorVersion") = lm::version::minorVersion();
+    m.attr("patchVersion") = lm::version::patchVersion();
+    m.attr("revision") = lm::version::revision();
+    m.attr("buildTimestamp") = lm::version::buildTimestamp();
+    m.attr("platform") = lm::version::platform();
+    m.attr("architecture") = lm::version::architecture();
+    m.attr("formatted") = lm::version::formatted();
+}
 
+// ------------------------------------------------------------------------------------------------
+
+// Bind math.h
+static void bind_math(pybind11::module& m) {
     // Constants
     m.attr("Inf") = Inf;
     m.attr("Eps") = Eps;
@@ -153,31 +112,29 @@ static void bind(pybind11::module& m) {
         return Vec3(v1, v2, v3);
     });
 
-    {
-        auto sm = m.def_submodule("math");
-        sm.def("orthonormalBasis", &math::orthonormalBasis);
-        sm.def("safeSqrt", &math::safeSqrt);
-        sm.def("sq", &math::sq);
-        sm.def("reflection", &math::reflection);
-        pybind11::class_<math::RefractionResult>(sm, "RefractionResult")
-            .def_readwrite("wt", &math::RefractionResult::wt)
-            .def_readwrite("total", &math::RefractionResult::total);
-        sm.def("refraction", &math::refraction);
-        sm.def("sampleCosineWeighted", &math::sampleCosineWeighted);
-        sm.def("balanceHeuristic", &math::balanceHeuristic);
-    }
+    // math namespace
+    auto sm = m.def_submodule("math");
+    sm.def("orthonormalBasis", &math::orthonormalBasis);
+    sm.def("safeSqrt", &math::safeSqrt);
+    sm.def("sq", &math::sq);
+    sm.def("reflection", &math::reflection);
+    pybind11::class_<math::RefractionResult>(sm, "RefractionResult")
+        .def_readwrite("wt", &math::RefractionResult::wt)
+        .def_readwrite("total", &math::RefractionResult::total);
+    sm.def("refraction", &math::refraction);
+    sm.def("sampleCosineWeighted", &math::sampleCosineWeighted);
+    sm.def("balanceHeuristic", &math::balanceHeuristic);
+}
 
-    #pragma endregion
+// ------------------------------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-
-    #pragma region component.h
-
+// Bind component.h
+static void bind_component(pybind11::module& m) {
     class Component_Py final : public Component {
     public:
         PYLM_SERIALIZE_IMPL(Component)
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Component, construct, prop);
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Component, construct, prop);
         }
     };
     pybind11::class_<Component, Component_Py, Component::Ptr<Component>>(m, "Component")
@@ -203,230 +160,225 @@ static void bind(pybind11::module& m) {
         })
         .PYLM_DEF_COMP_BIND(Component);
 
-    {
-        auto sm = m.def_submodule("comp");
-        sm.def("get", [](const std::string& locator) -> Component* {
-            return comp::get<Component>(locator);
-        }, pybind11::return_value_policy::reference);
-        sm.def("loadPlugin", &comp::loadPlugin);
-        sm.def("loadPluginDirectory", &comp::loadPluginDirectory);
-        sm.def("unloadPlugins", &comp::unloadPlugins);
-        sm.def("foreachRegistered", &comp::foreachRegistered);
-    }
+    auto sm = m.def_submodule("comp");
+    sm.def("get", [](const std::string& locator) -> Component* {
+        return comp::get<Component>(locator);
+    }, pybind11::return_value_policy::reference);
+    sm.def("loadPlugin", &comp::loadPlugin);
+    sm.def("loadPluginDirectory", &comp::loadPluginDirectory);
+    sm.def("unloadPlugins", &comp::unloadPlugins);
+    sm.def("foreachRegistered", &comp::foreachRegistered);
+}
 
-    #pragma endregion
+// ------------------------------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-
-    #pragma region user.h
-    m.def("init", &init, "type"_a = user::DefaultType, "prop"_a = Json{});
+// Bind user.h
+static void bind_user(pybind11::module& m) {
+    m.def("init", &init, "prop"_a = Json{});
     m.def("shutdown", &shutdown);
     m.def("info", &info);
     m.def("reset", &reset);
-    m.def("asset", (std::string(*)(const std::string&, const std::string&, const Json&))&asset);
-    m.def("asset", (std::string(*)(const std::string&))&asset);
+    m.def("asset", (std::string(*)(const std::string&, const std::string&, const Json&)) & asset);
+    m.def("asset", (std::string(*)(const std::string&)) & asset);
     m.def("build", &build);
     m.def("renderer", &renderer, pybind11::call_guard<pybind11::gil_scoped_release>());
-    m.def("render", (void(*)(bool))&render, "verbose"_a = true, pybind11::call_guard<pybind11::gil_scoped_release>());
-    m.def("render", (void(*)(const std::string&, const Json&))&render, pybind11::call_guard<pybind11::gil_scoped_release>());
+    m.def("render", (void(*)(bool)) & render, "verbose"_a = true, pybind11::call_guard<pybind11::gil_scoped_release>());
+    m.def("render", (void(*)(const std::string&, const Json&)) & render, pybind11::call_guard<pybind11::gil_scoped_release>());
     m.def("save", &save);
     m.def("buffer", &buffer);
-    m.def("serialize", (void(*)(const std::string&))&serialize);
-    m.def("deserialize", (void(*)(const std::string&))&deserialize);
+    m.def("serialize", (void(*)(const std::string&)) & serialize);
+    m.def("deserialize", (void(*)(const std::string&)) & deserialize);
     m.def("rootNode", &rootNode);
     m.def("primitiveNode", &primitiveNode);
     m.def("groupNode", &groupNode);
     m.def("instanceGroupNode", &instanceGroupNode);
     m.def("transformNode", &transformNode);
     m.def("addChild", &addChild);
-	m.def("createGroupFromModel", &createGroupFromModel);
+    m.def("createGroupFromModel", &createGroupFromModel);
     m.def("primitive", &primitive);
-    #pragma endregion
+}
 
-    // ------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-    #pragma region logger.h
-    {
-        auto sm = m.def_submodule("log");
+// Bind logger.h
+static void bind_logger(pybind11::module& m) {
+    auto sm = m.def_submodule("log");
 
-        pybind11::enum_<log::LogLevel>(sm, "LogLevel")
-            .value("Debug", log::LogLevel::Debug)
-            .value("Info", log::LogLevel::Info)
-            .value("Warn", log::LogLevel::Warn)
-            .value("Err", log::LogLevel::Err)
-            .value("Progress", log::LogLevel::Progress)
-            .value("ProgressEnd", log::LogLevel::ProgressEnd);
+    pybind11::enum_<log::LogLevel>(sm, "LogLevel")
+        .value("Debug", log::LogLevel::Debug)
+        .value("Info", log::LogLevel::Info)
+        .value("Warn", log::LogLevel::Warn)
+        .value("Err", log::LogLevel::Err)
+        .value("Progress", log::LogLevel::Progress)
+        .value("ProgressEnd", log::LogLevel::ProgressEnd);
 
-        sm.def("init", &log::init, "type"_a = log::DefaultType, "prop"_a = Json{});
-        sm.def("shutdown", &log::shutdown);
-        using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
-        sm.def("log", (logFuncPtr)&log::log);
-        sm.def("updateIndentation", &log::updateIndentation);
-        using setSeverityFuncPtr = void(*)(int);
-        sm.def("setSeverity", (setSeverityFuncPtr)&log::setSeverity);
+    sm.def("init", &log::init, "type"_a = log::DefaultType, "prop"_a = Json{});
+    sm.def("shutdown", &log::shutdown);
+    using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
+    sm.def("log", (logFuncPtr)&log::log);
+    sm.def("updateIndentation", &log::updateIndentation);
+    using setSeverityFuncPtr = void(*)(int);
+    sm.def("setSeverity", (setSeverityFuncPtr)&log::setSeverity);
 
-        using LoggerContext = log::detail::LoggerContext;
-        class LoggerContext_Py final : public LoggerContext {
-            virtual bool construct(const Json& prop) override {
-                pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD(bool, LoggerContext, construct, prop);
-            }
-            virtual void log(log::LogLevel level, int severity, const char* filename, int line, const char* message) override {
-                pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD_PURE(void, LoggerContext, log, level, severity, filename, line, message);
-            }
-            virtual void updateIndentation(int n) override {
-                pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD_PURE(void, LoggerContext, updateIndentation, n);
-            }
-            virtual void setSeverity(int severity) override {
-                pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD_PURE(void, LoggerContext, setSeverity, severity);
-            }
-        };
-        pybind11::class_<LoggerContext, LoggerContext_Py, Component::Ptr<LoggerContext>>(sm, "LoggerContext")
-            .def(pybind11::init<>())
-            .def("log", &LoggerContext::log)
-            .def("updateIndentation", &LoggerContext::updateIndentation)
-            .PYLM_DEF_COMP_BIND(LoggerContext);
-    }
-    #pragma endregion
-
-    // ------------------------------------------------------------------------
-
-    #pragma region parallel.h
-    {
-        auto sm = m.def_submodule("parallel");
-        sm.def("init", &parallel::init, "type"_a = parallel::DefaultType, "prop"_a = Json{});
-        sm.def("shutdown", &parallel::shutdown);
-        sm.def("numThreads", &parallel::numThreads);
-        sm.def("foreach", [](long long numSamples, const parallel::ParallelProcessFunc& processFunc) {
-            // Release GIL and let the C++ to create new threads
-            pybind11::gil_scoped_release release;
-            parallel::foreach(numSamples, [&](long long index, int threadId) {
-                // Reacquire GIL when we call Python function
-                pybind11::gil_scoped_acquire acquire;
-                processFunc(index, threadId);
-            });
-        });
-    }
-    #pragma endregion
-
-    // ------------------------------------------------------------------------
-
-    #pragma region objloader.h
-    {
-        auto sm = m.def_submodule("objloader");
-        sm.def("init", &objloader::init);
-        sm.def("shutdown", &objloader::shutdown);
-    }
-    #pragma endregion
-
-    // ------------------------------------------------------------------------
-
-    #pragma region progress.h
-    {
-        auto sm = m.def_submodule("progress");
-
-		pybind11::enum_<progress::ProgressMode>(sm, "ProgressMode")
-			.value("Samples", progress::ProgressMode::Samples)
-			.value("Time", progress::ProgressMode::Time);
-
-        sm.def("init", &progress::init, "type"_a = progress::DefaultType, "prop"_a = Json{});
-        sm.def("shutdown", &progress::shutdown);
-        sm.def("start", &progress::start);
-        sm.def("end", &progress::end);
-        sm.def("update", &progress::update);
-
-        using ProgressContext = progress::detail::ProgressContext;
-        class ProgressContext_Py final : public ProgressContext {
-            virtual bool construct(const Json& prop) override {
-                pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD(bool, ProgressContext, construct, prop);
-            }
-            virtual void start(progress::ProgressMode mode, long long total, double totalTime) override {
-                pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, mode, total, totalTime);
-            }
-            virtual void end() override {
-                pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD_PURE(void, ProgressContext, end);
-            }
-            virtual void update(long long processed) override {
-                pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
-            }
-            virtual void updateTime(Float elapsed) override {
-                pybind11::gil_scoped_acquire acquire;
-                PYBIND11_OVERLOAD_PURE(void, ProgressContext, updateTime, elapsed);
-            }
-        };
-        pybind11::class_<ProgressContext, ProgressContext_Py, Component::Ptr<ProgressContext>>(sm, "ProgressContext")
-            .def(pybind11::init<>())
-            .def("start", &ProgressContext::start)
-            .def("end", &ProgressContext::end)
-            .def("update", &ProgressContext::update)
-            .def("updateTime", &ProgressContext::updateTime)
-            .PYLM_DEF_COMP_BIND(ProgressContext);
-    }
-    #pragma endregion
-
-    // ------------------------------------------------------------------------
-
-    #pragma region debugio.h
-    {
-        auto sm = m.def_submodule("debugio");
-        sm.def("init", &debugio::init);
-        sm.def("shutdown", &debugio::shutdown);
-        sm.def("handleMessage", &debugio::handleMessage);
-        sm.def("syncUserContext", &debugio::syncUserContext);
-        sm.def("draw", &debugio::draw);
-    }
-    #pragma endregion
-
-    // ------------------------------------------------------------------------
-
-    #pragma region debug.h
-    {
-        auto sm = m.def_submodule("debug");
-        sm.def("pollFloat", &debug::pollFloat);
-        sm.def("regOnPollFloat", [](const debug::OnPollFloatFunc& onPollFloat) {
-            // We must capture the callback function by value.
-            // Otherwise the function would be dereferenced.
-            debug::regOnPollFloat([onPollFloat](const std::string& name, Float val) {
-                pybind11::gil_scoped_acquire acquire;
-                if (onPollFloat) {
-                    onPollFloat(name, val);
-                }
-            });
-        });
-    }
-    #pragma endregion
-
-    // ------------------------------------------------------------------------
-
-    #pragma region dist.h
-    {
-        auto sm = m.def_submodule("dist");
-        sm.def("init", &dist::init);
-        sm.def("shutdown", &dist::shutdown);
-        sm.def("printWorkerInfo", &dist::printWorkerInfo);
-        sm.def("allowWorkerConnection", &dist::allowWorkerConnection);
-        sm.def("sync", &dist::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
-        sm.def("gatherFilm", &dist::gatherFilm, pybind11::call_guard<pybind11::gil_scoped_release>());
-        {
-            auto sm2 = sm.def_submodule("worker");
-            sm2.def("init", &dist::worker::init);
-            sm2.def("shutdown", &dist::worker::shutdown);
-            sm2.def("run", &dist::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
+    using LoggerContext = log::LoggerContext;
+    class LoggerContext_Py final : public LoggerContext {
+        virtual void construct(const Json& prop) override {
+            pybind11::gil_scoped_acquire acquire;
+            PYBIND11_OVERLOAD(void, LoggerContext, construct, prop);
         }
+        virtual void log(log::LogLevel level, int severity, const char* filename, int line, const char* message) override {
+            pybind11::gil_scoped_acquire acquire;
+            PYBIND11_OVERLOAD_PURE(void, LoggerContext, log, level, severity, filename, line, message);
+        }
+        virtual void updateIndentation(int n) override {
+            pybind11::gil_scoped_acquire acquire;
+            PYBIND11_OVERLOAD_PURE(void, LoggerContext, updateIndentation, n);
+        }
+        virtual void setSeverity(int severity) override {
+            pybind11::gil_scoped_acquire acquire;
+            PYBIND11_OVERLOAD_PURE(void, LoggerContext, setSeverity, severity);
+        }
+    };
+    pybind11::class_<LoggerContext, LoggerContext_Py, Component::Ptr<LoggerContext>>(sm, "LoggerContext")
+        .def(pybind11::init<>())
+        .def("log", &LoggerContext::log)
+        .def("updateIndentation", &LoggerContext::updateIndentation)
+        .PYLM_DEF_COMP_BIND(LoggerContext);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind parallel.h
+static void bind_parallel(pybind11::module& m) {    
+    auto sm = m.def_submodule("parallel");
+    sm.def("init", &parallel::init, "type"_a = parallel::DefaultType, "prop"_a = Json{});
+    sm.def("shutdown", &parallel::shutdown);
+    sm.def("numThreads", &parallel::numThreads);
+    sm.def("foreach", [](long long numSamples, const parallel::ParallelProcessFunc& processFunc) {
+        // Release GIL and let the C++ to create new threads
+        pybind11::gil_scoped_release release;
+        parallel::foreach(numSamples, [&](long long index, int threadId) {
+            // Reacquire GIL when we call Python function
+            pybind11::gil_scoped_acquire acquire;
+            processFunc(index, threadId);
+        });
+    });
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind objloader.h
+static void bind_objloader(pybind11::module& m) {
+    auto sm = m.def_submodule("objloader");
+    sm.def("init", &objloader::init);
+    sm.def("shutdown", &objloader::shutdown);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind progress.h
+static void bind_progress(pybind11::module& m) {
+    auto sm = m.def_submodule("progress");
+
+	pybind11::enum_<progress::ProgressMode>(sm, "ProgressMode")
+		.value("Samples", progress::ProgressMode::Samples)
+		.value("Time", progress::ProgressMode::Time);
+
+    sm.def("init", &progress::init, "type"_a = progress::DefaultType, "prop"_a = Json{});
+    sm.def("shutdown", &progress::shutdown);
+    sm.def("start", &progress::start);
+    sm.def("end", &progress::end);
+    sm.def("update", &progress::update);
+
+    using ProgressContext = progress::ProgressContext;
+    class ProgressContext_Py final : public ProgressContext {
+        virtual void construct(const Json& prop) override {
+            pybind11::gil_scoped_acquire acquire;
+            PYBIND11_OVERLOAD(void, ProgressContext, construct, prop);
+        }
+        virtual void start(progress::ProgressMode mode, long long total, double totalTime) override {
+            pybind11::gil_scoped_acquire acquire;
+            PYBIND11_OVERLOAD_PURE(void, ProgressContext, start, mode, total, totalTime);
+        }
+        virtual void end() override {
+            pybind11::gil_scoped_acquire acquire;
+            PYBIND11_OVERLOAD_PURE(void, ProgressContext, end);
+        }
+        virtual void update(long long processed) override {
+            pybind11::gil_scoped_acquire acquire;
+            PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
+        }
+        virtual void updateTime(Float elapsed) override {
+            pybind11::gil_scoped_acquire acquire;
+            PYBIND11_OVERLOAD_PURE(void, ProgressContext, updateTime, elapsed);
+        }
+    };
+    pybind11::class_<ProgressContext, ProgressContext_Py, Component::Ptr<ProgressContext>>(sm, "ProgressContext")
+        .def(pybind11::init<>())
+        .def("start", &ProgressContext::start)
+        .def("end", &ProgressContext::end)
+        .def("update", &ProgressContext::update)
+        .def("updateTime", &ProgressContext::updateTime)
+        .PYLM_DEF_COMP_BIND(ProgressContext);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind debugio.h
+static void bind_debugio(pybind11::module& m) {
+    auto sm = m.def_submodule("debugio");
+    sm.def("init", &debugio::init);
+    sm.def("shutdown", &debugio::shutdown);
+    sm.def("handleMessage", &debugio::handleMessage);
+    sm.def("syncUserContext", &debugio::syncUserContext);
+    sm.def("draw", &debugio::draw);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind debug.h
+static void bind_debug(pybind11::module& m) {
+    auto sm = m.def_submodule("debug");
+    sm.def("pollFloat", &debug::pollFloat);
+    sm.def("regOnPollFloat", [](const debug::OnPollFloatFunc& onPollFloat) {
+        // We must capture the callback function by value.
+        // Otherwise the function would be dereferenced.
+        debug::regOnPollFloat([onPollFloat](const std::string& name, Float val) {
+            pybind11::gil_scoped_acquire acquire;
+            if (onPollFloat) {
+                onPollFloat(name, val);
+            }
+        });
+    });
+    sm.def("attachToDebugger", &debug::attachToDebugger);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind distributed.h
+static void bind_distributed(pybind11::module& m) {
+    auto sm = m.def_submodule("distributed");
+    {
+        auto sm2 = sm.def_submodule("master");
+        sm2.def("init", &distributed::master::init);
+        sm2.def("shutdown", &distributed::master::shutdown);
+        sm2.def("printWorkerInfo", &distributed::master::printWorkerInfo);
+        sm2.def("allowWorkerConnection", &distributed::master::allowWorkerConnection);
+        sm2.def("sync", &distributed::master::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
+        sm2.def("gatherFilm", &distributed::master::gatherFilm, pybind11::call_guard<pybind11::gil_scoped_release>());
     }
-    #pragma endregion
+    {
+        auto sm2 = sm.def_submodule("worker");
+        sm2.def("init", &distributed::worker::init);
+        sm2.def("shutdown", &distributed::worker::shutdown);
+        sm2.def("run", &distributed::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
+    }
+}
 
-    // ------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-    #pragma region film.h
-
+// Bind film.h
+static void bind_film(pybind11::module& m) {
     // Film size
     pybind11::class_<FilmSize>(m, "FilmSize")
         .def_readwrite("w", &FilmSize::w)
@@ -451,8 +403,8 @@ static void bind(pybind11::module& m) {
     // Film
     class Film_Py final : public Film {
     public:
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Film, construct, prop);
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Film, construct, prop);
         }
         virtual FilmSize size() const override {
             PYBIND11_OVERLOAD_PURE(FilmSize, Film, size);
@@ -495,13 +447,12 @@ static void bind(pybind11::module& m) {
         .def("aspectRatio", &Film::aspectRatio)
         .def("buffer", &Film::buffer)
         .PYLM_DEF_COMP_BIND(Film);
+}
 
-    #pragma endregion
+// ------------------------------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-
-    #pragma region surface.h
-    
+// Bind surface.h
+static void bind_surface(pybind11::module& m) {
     pybind11::class_<PointGeometry>(m, "PointGeometry")
         .def(pybind11::init<>())
         .def_readwrite("degenerated", &PointGeometry::degenerated)
@@ -526,17 +477,15 @@ static void bind(pybind11::module& m) {
         .def_readwrite("geom", &SceneInteraction::geom)
         .def_readwrite("endpoint", &SceneInteraction::endpoint);
 
-    {
-        auto sm = m.def_submodule("surface");
-        sm.def("geometryTerm", &surface::geometryTerm);
-    }
+    auto sm = m.def_submodule("surface");
+    sm.def("geometryTerm", &surface::geometryTerm);
+}
 
-    #pragma endregion
 
-    // ------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-    #pragma region scene.h
-
+// Bind scene.h
+static void bind_scene(pybind11::module& m) {
     pybind11::class_<RaySample>(m, "RaySample")
         .def_readwrite("sp", &RaySample::sp)
         .def_readwrite("wo", &RaySample::wo)
@@ -548,11 +497,14 @@ static void bind(pybind11::module& m) {
         .value("Group", SceneNodeType::Group);
 
     class Scene_Py final : public Scene {
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Scene, construct, prop);
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Scene, construct, prop);
         }
         virtual bool renderable() const override {
             PYBIND11_OVERLOAD_PURE(bool, Scene, renderable);
+        }
+        virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
+            PYBIND11_OVERLOAD_PURE(std::optional<std::string>, Scene, loadAsset, name, implKey, prop);
         }
         virtual int rootNode() override {
             PYBIND11_OVERLOAD_PURE(int, Scene, rootNode);
@@ -648,16 +600,16 @@ static void bind(pybind11::module& m) {
         .def("evalContrbEndpoint", &Scene::evalContrbEndpoint)
         .def("reflectance", &Scene::reflectance)
         .PYLM_DEF_COMP_BIND(Scene);
+}
 
-    #pragma endregion
+// ------------------------------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-
-    #pragma region renderer.h
+// Bind renderer.h
+static void bind_renderer(pybind11::module& m) {
     class Renderer_Py final : public Renderer {
         PYLM_SERIALIZE_IMPL(Renderer)
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Renderer, construct, prop);
+            virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Renderer, construct, prop);
         }
         virtual void render(const Scene* scene) const override {
             PYBIND11_OVERLOAD_PURE(void, Renderer, render, scene);
@@ -667,11 +619,12 @@ static void bind(pybind11::module& m) {
         .def(pybind11::init<>())
         .def("render", &Renderer::render)
         .PYLM_DEF_COMP_BIND(Renderer);
-    #pragma endregion
+}
 
-    // ------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-    #pragma region texture.h
+// Bind texture.h
+static void bind_texture(pybind11::module& m) {
     pybind11::class_<TextureSize>(m, "TextureSize")
         .def_readwrite("w", &TextureSize::w)
         .def_readwrite("h", &TextureSize::h);
@@ -692,12 +645,12 @@ static void bind(pybind11::module& m) {
         .def("eval", &Texture::eval)
         .def("evalByPixelCoords", &Texture::evalByPixelCoords)
         .PYLM_DEF_COMP_BIND(Texture);
-    #pragma endregion
+}
 
-    // ------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-    #pragma region material.h
-
+// Bind material.h
+static void bind_material(pybind11::module& m) {
     pybind11::class_<MaterialDirectionSample>(m, "MaterialDirectionSample")
         .def(pybind11::init<>())
         .def_readwrite("wo", &MaterialDirectionSample::wo)
@@ -705,8 +658,8 @@ static void bind(pybind11::module& m) {
         .def_readwrite("weight", &MaterialDirectionSample::weight);
 
     class Material_Py final : public Material {
-        virtual bool construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(bool, Material, construct, prop);
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Material, construct, prop);
         }
         virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
             PYBIND11_OVERLOAD_PURE(bool, Material, isSpecular, geom, comp);
@@ -735,17 +688,36 @@ static void bind(pybind11::module& m) {
         .def("pdf", &Material::pdf)
         .def("eval", &Material::eval)
         .PYLM_DEF_COMP_BIND(Material);
-
-    #pragma endregion
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 PYBIND11_MODULE(pylm, m) {
     m.doc() = R"x(
         pylm: Python binding of Lightmetrica.
     )x";
-    bind(m);
+
+    // Bind headers.
+    // Changing binding order might cause runtime error.
+    bind_common(m);
+    bind_exception(m);
+    bind_version(m);
+    bind_math(m);
+    bind_component(m);
+    bind_user(m);
+    bind_logger(m);
+    bind_parallel(m);
+    bind_objloader(m);
+    bind_progress(m);
+    bind_debugio(m);
+    bind_debug(m);
+    bind_distributed(m);
+    bind_film(m);
+    bind_surface(m);
+    bind_scene(m);
+    bind_renderer(m);
+    bind_texture(m);
+    bind_material(m);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

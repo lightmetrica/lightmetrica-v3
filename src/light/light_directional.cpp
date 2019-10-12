@@ -30,10 +30,9 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         Le_ = json::value<Vec3>(prop, "Le");
         direction_ = glm::normalize(json::value<Vec3>(prop, "direction"));
-        return true;
     }
 
     virtual std::optional<LightRaySample> sample(Rng&, const PointGeometry& geom, const Transform&) const override {

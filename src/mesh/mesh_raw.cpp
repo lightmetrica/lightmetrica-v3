@@ -33,7 +33,7 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         const auto& ps = prop["ps"];
         for (int i = 0; i < ps.size(); i+=3) {
             ps_.push_back(Vec3(ps[i],ps[i+1],ps[i+2]));
@@ -51,7 +51,6 @@ public:
         for (int i = 0; i < fs_size; i++) {
             fs_.push_back(MeshFaceIndex{ fs["p"][i],fs["t"][i],fs["n"][i] });
         }
-        return true;
     }
 
     virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {

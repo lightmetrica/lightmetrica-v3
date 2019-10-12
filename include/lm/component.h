@@ -6,6 +6,9 @@
 #pragma once
 
 #include "common.h"
+#include "exception.h"
+#include "jsontype.h"
+#include "serialtype.h"
 #include <any>
 #include <memory>
 #include <string>
@@ -19,7 +22,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     @{
 */
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Base component.
@@ -94,7 +97,7 @@ private:
     std::string loc_;
 
     //! Factory function of the component instance.
-    CreateFunction  createFunc_ = nullptr;
+    CreateFunction createFunc_ = nullptr;
 
     //! Release function of the component instance.
     ReleaseFunction releaseFunc_ = nullptr;
@@ -128,7 +131,9 @@ public:
         the function returns an empty string.
         \endrst
     */
-    const std::string& loc() const { return loc_; }
+    const std::string& loc() const {
+        return loc_;
+    }
 
     /*!
         \brief Get parent locator.
@@ -141,11 +146,11 @@ public:
         \endrst
     */
     const std::string parentLoc() const {
-        const auto i = loc_.find_last_of('.');
+        const auto i = loc().find_last_of('.');
         if (i == std::string::npos) {
             return "";
         }
-        return loc_.substr(0, i);
+        return loc().substr(0, i);
     }
 
     /*!
@@ -173,8 +178,9 @@ public:
         \endrst
     */
     const std::string makeLoc(const std::string& base, const std::string& child) const {
+        assert(!base.empty());
         assert(!child.empty());
-        return base.empty() ? child : (base + "." + child);
+        return base + "." + child;
     }
 
     /*!
@@ -199,10 +205,9 @@ public:
         The function is called just after the component instance is created.
         Mostly, the function is called internally by :cpp:func:`lm::comp::create` function.
         The configuration properties are passed by JSON type.
-        The return values indicates if the construction suceeded or not.
         \endrst
     */
-    virtual bool construct(const Json& prop) { LM_UNUSED(prop); return true; }
+    virtual void construct(const Json& prop) { LM_UNUSED(prop); }
     
     /*!
         \brief Deserialize a component.
@@ -214,8 +219,8 @@ public:
         \endrst
     */
     virtual void load(InputArchive& ar) {
-		LM_UNUSED(ar);
-	}
+        LM_UNUSED(ar);
+    }
 
     /*!
         \brief Serialize a component.
@@ -227,8 +232,8 @@ public:
         \endrst
     */
     virtual void save(OutputArchive& ar) {
-		LM_UNUSED(ar);
-	}
+        LM_UNUSED(ar);
+    }
 
 public:
     /*!
@@ -284,7 +289,7 @@ public:
     virtual void* underlyingRawPointer(const std::string& query = "") const { LM_UNUSED(query); return nullptr; }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Deleter for component instances
@@ -305,7 +310,7 @@ struct ComponentDeleter {
     }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     @}
@@ -474,7 +479,7 @@ LM_PUBLIC_API Component* get(const std::string& locator);
 
 LM_NAMESPACE_END(detail)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \addtogroup comp
@@ -543,13 +548,13 @@ visit(const Component::ComponentVisitor& visitor, Component::Ptr<T>& p) {
 }
 
 /*!
-    \brief Create component with specific interface type.
+    \brief Create component with specific interface type without calling construct function.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
     \param loc Component locator of the instance.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc) {
+Component::Ptr<InterfaceT> createWithoutConstruct(const std::string& key, const std::string& loc) {
     auto* inst = detail::createComp(
         detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str());
     if (!inst) {
@@ -567,15 +572,16 @@ Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc
     \param prop Properties.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc, const Json& prop) {
-    auto inst = create<InterfaceT>(key, loc);
-    if (!inst || !inst->construct(prop)) {
+Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc, const Json& prop = {}) {
+    auto inst = createWithoutConstruct<InterfaceT>(key, loc);
+    if (!inst) {
         return {};
     }
+    inst->construct(prop);
     return inst;
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     @}
@@ -627,8 +633,8 @@ public:
     */
     static ContextComponentT& get() {
         if (!initialized()) {
-            throw std::runtime_error(
-                "Uninitialized subsystem. Possible failure to call *::init() function.");
+            LM_THROW_EXCEPTION(Error::Uninitialized,
+                "Uninitialized global component. Possible failure to call *::init() function.");
         }
         return *instance().context.get();
     }
@@ -671,7 +677,7 @@ public:
     }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Scope guard of `loadPlugins` and `loadPlugins`.
@@ -695,7 +701,7 @@ public:
     bool valid() const { return valid_; }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief Registration entry for component implementation.
@@ -742,7 +748,7 @@ LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(comp)
 LM_NAMESPACE_END(LM_NAMESPACE)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \addtogroup comp

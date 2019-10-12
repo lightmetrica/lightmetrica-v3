@@ -35,3 +35,7 @@ namespace fs = std::filesystem;
 #include <fmt/format.h>
 #include <cereal/cereal.hpp>
 #include <cereal/archives/portable_binary.hpp>
+#pragma warning(push)
+#pragma warning(disable:4127)  // conditional expression is constant
+#include <nlohmann/json.hpp>
+#pragma warning(pop)

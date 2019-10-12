@@ -65,27 +65,26 @@ public:
         };
     }
 
-    virtual bool construct(const Json& prop) override {
-		const auto it = prop.find("matrix");
-		if (it != prop.end()) {
-			Mat4 viewM = *it;
-			position_ = Vec3(viewM[3]);
-			const auto viewM3 = Mat3(viewM);
-			u_ = -viewM3[0];
-			v_ = viewM3[1];
-			w_ = -viewM3[2];
-		}
-		else {
-			position_ = json::value<Vec3>(prop, "position"); // Camera position
-			center_ = json::value<Vec3>(prop, "center");     // Look-at position
-			up_ = json::value<Vec3>(prop, "up");             // Up vector
-			w_ = glm::normalize(position_ - center_);        // Compute basis
-			u_ = glm::normalize(glm::cross(up_, w_));
-			v_ = cross(w_, u_);
-		}
-		vfov_ = json::value<Float>(prop, "vfov");        // Vertical FoV
-		tf_ = tan(vfov_ * Pi / 180_f * .5_f);            // Precompute half of screen height
-        return true;
+    virtual void construct(const Json& prop) override {
+        const auto it = prop.find("matrix");
+        if (it != prop.end()) {
+            Mat4 viewM = *it;
+            position_ = Vec3(viewM[3]);
+            const auto viewM3 = Mat3(viewM);
+            u_ = -viewM3[0];
+            v_ = viewM3[1];
+            w_ = -viewM3[2];
+        }
+        else {
+            position_ = json::value<Vec3>(prop, "position"); // Camera position
+            center_ = json::value<Vec3>(prop, "center");     // Look-at position
+            up_ = json::value<Vec3>(prop, "up");             // Up vector
+            w_ = glm::normalize(position_ - center_);        // Compute basis
+            u_ = glm::normalize(glm::cross(up_, w_));
+            v_ = cross(w_, u_);
+        }
+        vfov_ = json::value<Float>(prop, "vfov");        // Vertical FoV
+        tf_ = tan(vfov_ * Pi / 180_f * .5_f);            // Precompute half of screen height
     }
 
     virtual bool isSpecular(const PointGeometry&) const override {

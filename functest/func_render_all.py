@@ -20,6 +20,9 @@
 # %load_ext autoreload
 # %autoreload 2
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -27,7 +30,6 @@ import numpy as np
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
@@ -35,15 +37,15 @@ os.getpid()
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {})
+lm.init()
 lm.parallel.init('parallel::openmp', {
     'numThreads': -1
 })
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_embree'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
 
 lm.objloader.init('objloader::tinyobjloader', {})
 
@@ -59,7 +61,7 @@ for scene in scenes:
     })
     
     # Render
-    lmscene.load(ft.env.scene_path, scene)
+    lmscene.load(env.scene_path, scene)
     lm.build('accel::embree', {})
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output')

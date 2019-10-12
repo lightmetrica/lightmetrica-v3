@@ -17,6 +17,9 @@
 #
 # This test shows an example of updating already-loaded material.
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -25,16 +28,17 @@ import timeit
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {
-    'numThreads': -1,
-    'logger': 'logger::jupyter'
+lm.init()
+lm.parallel.init('parallel::openmp', {
+    'numThreads': -1
 })
+lm.log.init('logger::jupyter', {})
+lm.info()
 
 lm.asset('camera_main', 'camera::pinhole', {
     'position': [5.101118, 1.083746, -2.756308],
@@ -46,7 +50,7 @@ lm.asset('obj_base_mat', 'material::diffuse', {
     'Kd': [.8,.2,.2]
 })
 lm.asset('model_obj', 'model::wavefrontobj', {
-    'path': os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
+    'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     'base_material': lm.asset('obj_base_mat')
 })
 lm.primitive(lm.identity(), {

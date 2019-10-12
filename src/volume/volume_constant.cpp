@@ -21,16 +21,15 @@ public:
 	}
 
 public:
-	virtual bool construct(const Json& prop) override {
+	virtual void construct(const Json& prop) override {
 		bound_.mi = json::value<Vec3>(prop, "bound_min", Vec3(Inf));
 		bound_.ma = json::value<Vec3>(prop, "bound_max", Vec3(-Inf));
 		color_ = json::valueOrNone<Vec3>(prop, "color");
 		scalar_ = json::valueOrNone<Float>(prop, "scalar");
 		if (!color_ && !scalar_) {
-			LM_ERROR("Either 'color' or 'scalar' property is necessary.");
-			return false;
+            LM_THROW_EXCEPTION(Error::InvalidArgument,
+			    "Either 'color' or 'scalar' property is necessary.");
 		}
-		return true;
 	}
 	
 	virtual Bound bound() const override {
@@ -56,7 +55,6 @@ public:
 	virtual Vec3 evalColor(Vec3) const override {
 		return *color_;
 	}
-
 };
 
 LM_COMP_REG_IMPL(Volume_Constant, "volume::constant");

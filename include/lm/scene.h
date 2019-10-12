@@ -63,7 +63,12 @@ struct DistanceSample {
     evaluation of directional terms given a point in the scene,
     ray-scene intersection, visibility query, etc.
     The class is a basic building block to construct your own renderer.
-    For detail, see TODO.
+    
+    A scene is also responsible for managing the collection of assets (e.g., meshes, materials, etc.).
+    Underlying assets are accessed via standard query functions like
+    :cpp:func:`lm::Component::underlying`. The class provides the feature for internal usage
+    and the user may not want to use this interface directly.
+    The feature of the class is exposed by ``user`` namespace.
     \endrst
 */
 class Scene : public Component {
@@ -77,6 +82,30 @@ public:
         \endrst
     */
     virtual bool renderable() const = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    /*!
+        \brief Loads an asset.
+        \param name Name of the asset.
+        \param implKey Key of component implementation in `interface::implementation` format.
+        \param prop Properties.
+        \return Locator of the asset. nullopt if failed.
+
+        \rst
+        Loads an asset from the given information and registers to the class.
+        ``implKey`` is used to create an instance and ``prop`` is used to construct it.
+        ``prop`` is passed to :cpp:func:`lm::Component::construct` function of
+        the implementation of the asset.
+
+        If the asset with same name is already loaded, the function tries
+        to deregister the previously-loaded asset and reload an asset again.
+        If the global component hierarchy contains a reference to the original asset,
+        the function automatically resolves the reference to the new asset.
+        For usage, see ``functest/func_update_asset.py``.
+        \endrst
+    */
+    virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -117,11 +146,11 @@ public:
     */
     virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
 
-	/*!
-	*/
-	virtual int createGroupFromModel(const std::string& modelLoc) = 0;
+    /*!
+    */
+    virtual int createGroupFromModel(const std::string& modelLoc) = 0;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Iterate primitives in the scene.

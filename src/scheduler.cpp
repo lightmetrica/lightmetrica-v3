@@ -29,10 +29,9 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         spp_ = json::value<long long>(prop, "spp");
         film_ = json::compRef<Film>(prop, "output");
-        return true;
     }
 
     virtual long long run(const ProcessFunc& process) const override {
@@ -52,7 +51,7 @@ public:
 
 LM_COMP_REG_IMPL(Scheduler_SPP_Sample, "scheduler::spp::sample");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Time-based SPPScheduler
 class Scheduler_SPP_Time : public Scheduler {
@@ -70,10 +69,9 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         renderTime_ = json::value<Float>(prop, "render_time");
         film_ = json::compRef<Film>(prop, "output");
-        return true;
     }
     
     virtual long long run(const ProcessFunc& process) const override {
@@ -110,7 +108,7 @@ public:
 
 LM_COMP_REG_IMPL(Scheduler_SPP_Time, "scheduler::spp::time");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Sample-based SPIScheduler
 class Scheduler_SPI_Sample : public Scheduler {
@@ -123,9 +121,8 @@ public:
     }
   
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         numSamples_ = json::value<long long>(prop, "num_samples");
-        return true;
     }
 
     virtual long long run(const ProcessFunc& process) const override {
@@ -142,7 +139,7 @@ public:
 
 LM_COMP_REG_IMPL(Scheduler_SPI_Sample, "scheduler::spi::sample");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Time-based SPIScheduler
 class Scheduler_SPI_Time : public Scheduler {
@@ -156,10 +153,9 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         renderTime_ = json::value<Float>(prop, "render_time");
         samplesPerIter_ = json::value<long long>(prop, "samples_per_iter", 1000000);
-        return true;
     }
 
     virtual long long run(const ProcessFunc& process) const override {

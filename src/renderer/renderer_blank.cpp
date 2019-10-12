@@ -26,13 +26,9 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
-        color_ = prop["color"];
-        film_ = comp::get<Film>(prop["output"]);
-        if (!film_) {
-            return false;
-        }
-        return true;
+    virtual void construct(const Json& prop) override {
+        color_ = json::value<Vec3>(prop, "color");
+        film_ = json::compRef<Film>(prop, "output");
     }
 
     virtual bool requiresScene() const override {

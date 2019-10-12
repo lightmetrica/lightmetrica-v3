@@ -38,12 +38,12 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         // Load VDB file
         const auto path = json::value<std::string>(prop, "path");
         LM_INFO("Opening OpenVDB file [path='{}']", path);
         if (!vdbloaderLoadVDBFile(context_, path.c_str())) {
-            return false;
+            LM_THROW_EXCEPTION(Error::IOError, "Failed to load OpenVDB file [path='{}']", path);
         }
 
         // Density scale
@@ -56,8 +56,6 @@ public:
 
         // Maximum density
         maxScalar_ = vbdloaderGetMaxScalar(context_) * scale_;
-
-        return true;
     }
 
     virtual Bound bound() const override {

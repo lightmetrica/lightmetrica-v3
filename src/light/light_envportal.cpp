@@ -34,7 +34,7 @@ struct Bound2 {
     }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Face index of a portal
 namespace FaceIndex {
@@ -108,7 +108,7 @@ struct Portal {
     }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // 2D continuous piecewise-constant distribution for the subregion
 struct Dist2Sub {
@@ -212,7 +212,7 @@ public:
     }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Width and height of the precomputed distributions
 constexpr int DistSize = 4096;
@@ -224,7 +224,7 @@ struct PortalContext {
     std::vector<Vec3> rectEnvmap[2];    // Rectified envmap for front and back faces
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class Light_EnvPortal final : public Light {
 private:
@@ -263,11 +263,11 @@ private:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         // Load environment map
-        envmap_ = comp::create<Texture>("texture::bitmap", "", prop);
+        envmap_ = comp::create<Texture>("texture::bitmap", makeLoc("envmap"), prop);
         if (!envmap_) {
-            return false;
+            LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
         }
         rot_ = glm::radians(json::value(prop, "rot", 0_f));
 
@@ -310,8 +310,6 @@ public:
                 portal.dist[face].init(ls, DistSize, DistSize);
             }
         }
-        
-        return true;
     }
 
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {

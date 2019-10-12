@@ -5,7 +5,7 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Debug mode flag
 #ifndef NDEBUG
@@ -14,26 +14,26 @@
     #define LM_DEBUG_MODE 0
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Configuration flag
 #ifdef LM_USE_CONFIG_DEBUG
-	#define LM_CONFIG_DEBUG 1
+    #define LM_CONFIG_DEBUG 1
 #else
-	#define LM_CONFIG_DEBUG 0
+    #define LM_CONFIG_DEBUG 0
 #endif
 #ifdef LM_USE_CONFIG_RELEASE
-	#define LM_CONFIG_RELEASE 1
+    #define LM_CONFIG_RELEASE 1
 #else
-	#define LM_CONFIG_RELEASE 0
+    #define LM_CONFIG_RELEASE 0
 #endif
 #ifdef LM_USE_CONFIG_RELWITHDEBINFO
-	#define LM_CONFIG_RELWITHDEBINFO 1
+    #define LM_CONFIG_RELWITHDEBINFO 1
 #else
-	#define LM_CONFIG_RELWITHDEBINFO 0
+    #define LM_CONFIG_RELWITHDEBINFO 0
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Platform flag
 #ifdef _WIN32
@@ -52,7 +52,7 @@
     #define LM_PLATFORM_APPLE 0
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Compiler flag
 #ifdef _MSC_VER
@@ -81,7 +81,7 @@
     #define LM_COMPILER_CLANG 0
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Architecture flag
 #if LM_COMPILER_MSVC
@@ -108,7 +108,7 @@
     #endif
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Disable some warnings
 #if LM_PLATFORM_WINDOWS
@@ -121,7 +121,7 @@
     #pragma warning(disable:4505)  // unreferenced local function has been removed
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Dynamic library import and export
 #if LM_COMPILER_MSVC
@@ -144,7 +144,7 @@
     #define LM_HIDDEN_API
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 #pragma region Force inline
 #if LM_COMPILER_MSVC
@@ -154,7 +154,7 @@
 #endif
 #pragma endregion
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Alignment
 #if LM_COMPILER_MSVC
@@ -165,7 +165,7 @@
 #define LM_ALIGN_16 LM_ALIGN(16)
 #define LM_ALIGN_32 LM_ALIGN(32)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Calling convension
 #if LM_COMPILER_MSVC
@@ -174,7 +174,7 @@
     #define LM_CDECL [[gnu::cdecl]]
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Helper macros
 #define LM_TOKENPASTE(x, y) x ## y
@@ -204,9 +204,8 @@
     LM_DISABLE_COPY_AND_MOVE(TypeName);
 
 #define LM_TBA() LM_PRAGMA(error ("TBA"))
-#define LM_TBA_RUNTIME() throw std::runtime_error("TBA")
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Framework namespace
 #ifndef LM_NAMESPACE_BEGIN
@@ -225,7 +224,7 @@
 #define LM_NAMESPACE lm
 #endif
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Unused macro
 // Only use this macro to specify variables being used.
@@ -239,28 +238,9 @@ inline void unused(Args&&...) {}
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(LM_NAMESPACE)
 
-// ----------------------------------------------------------------------------
-
-#pragma warning(push)
-#pragma warning(disable:4127)  // conditional expression is constant
-#include <nlohmann/json.hpp>
-#pragma warning(pop)
-
-// cereal library
-#include <cereal/cereal.hpp>
-#define LM_USE_JSON_ARCHIVE 0
-#if LM_USE_JSON_ARCHIVE
-#include <cereal/archives/json.hpp>
-#else
-#include <cereal/archives/portable_binary.hpp>
-#endif
-
-// fmt library
-#include <fmt/format.h>
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
-
-// ----------------------------------------------------------------------------
 
 // Forward declarations
 struct ComponentDeleter;  // component.h
@@ -275,14 +255,14 @@ class Phase;              // phase.h
 struct FilmBuffer;        // film.h
 class Film;
 struct PointGeometry;     // surface.h
-struct SceneInteraction;      // scene.h
+struct SceneInteraction;  // scene.h
 struct RaySample;
 struct LightSample;
 class Scene;
 class Renderer;           // renderer.h
 LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, struct Access)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Default floating point type
 #define LM_SINGLE_PRECISION 0
@@ -294,37 +274,5 @@ using Float = double;
 #else
 #error "Invalid precision mode"
 #endif
-
-// ----------------------------------------------------------------------------
-
-// JSON type
-using Json = nlohmann::basic_json<
-    std::map,           // Object type
-    std::vector,        // Arrray type
-    std::string,        // String type
-    bool,               // Boolean type
-    std::int64_t,       // Signed integer type
-    std::uint64_t,      // Unsigned integer type
-    Float,              // Floating point type
-    std::allocator,
-    nlohmann::adl_serializer>;
-
-// ----------------------------------------------------------------------------
-
-// Default input/output archives deligated to cereal library.
-#if LM_USE_JSON_ARCHIVE
-using InputArchive = cereal::JSONInputArchive;
-using OutputArchive = cereal::JSONOutputArchive;
-#else
-using InputArchive = cereal::PortableBinaryInputArchive;
-using OutputArchive = cereal::PortableBinaryOutputArchive;
-#endif
-
-// ----------------------------------------------------------------------------
-
-// Exceptions
-#define LM_THROW_UNIMPLEMENTED() throw std::runtime_error("Calling unimplemented function")
-
-// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(LM_NAMESPACE)

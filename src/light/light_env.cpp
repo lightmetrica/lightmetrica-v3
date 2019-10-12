@@ -44,10 +44,10 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         envmap_ = comp::create<Texture>("texture::bitmap", "", prop);
         if (!envmap_) {
-            return false;
+            LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
         }
         rot_ = glm::radians(json::value(prop, "rot", 0_f));
         const auto [w, h] = envmap_->size();
@@ -59,7 +59,6 @@ public:
             ls[i] = glm::compMax(v) * std::sin(Pi * (Float(i) / w + .5_f) / h);
         }
         dist_.init(ls, w, h);
-        return true;
     }
 
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {

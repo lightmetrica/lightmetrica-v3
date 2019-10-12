@@ -4,10 +4,11 @@
 #
 
 # Include and source directories
+set(_PCH_DIR "${PROJECT_SOURCE_DIR}/pch")
 set(_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/lm")
 set(_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # Main library
 set(_PROJECT_NAME liblm)
@@ -16,30 +17,35 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/version.h"
     "${_INCLUDE_DIR}/user.h"
     "${_INCLUDE_DIR}/logger.h"
+    "${_INCLUDE_DIR}/loggercontext.h"
     "${_INCLUDE_DIR}/progress.h"
+    "${_INCLUDE_DIR}/progresscontext.h"
     "${_INCLUDE_DIR}/scheduler.h"
     "${_INCLUDE_DIR}/debugio.h"
     "${_INCLUDE_DIR}/debug.h"
-    "${_INCLUDE_DIR}/dist.h"
+    "${_INCLUDE_DIR}/distributed.h"
     "${_INCLUDE_DIR}/exception.h"
     "${_INCLUDE_DIR}/parallel.h"
+    "${_INCLUDE_DIR}/parallelcontext.h"
     "${_INCLUDE_DIR}/math.h"
-    "${_INCLUDE_DIR}/assets.h"
     "${_INCLUDE_DIR}/mesh.h"
     "${_INCLUDE_DIR}/camera.h"
     "${_INCLUDE_DIR}/texture.h"
     "${_INCLUDE_DIR}/material.h"
     "${_INCLUDE_DIR}/light.h"
     "${_INCLUDE_DIR}/scene.h"
+	"${_INCLUDE_DIR}/scenenode.h"
     "${_INCLUDE_DIR}/accel.h"
     "${_INCLUDE_DIR}/film.h"
     "${_INCLUDE_DIR}/model.h"
     "${_INCLUDE_DIR}/renderer.h"
     "${_INCLUDE_DIR}/json.h"
+    "${_INCLUDE_DIR}/jsontype.h"
     "${_INCLUDE_DIR}/common.h"
     "${_INCLUDE_DIR}/component.h"
     "${_INCLUDE_DIR}/core.h"
     "${_INCLUDE_DIR}/serial.h"
+    "${_INCLUDE_DIR}/serialtype.h"
     "${_INCLUDE_DIR}/surface.h"
     "${_INCLUDE_DIR}/objloader.h"
     "${_INCLUDE_DIR}/medium.h"
@@ -49,7 +55,6 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"
     "${_SOURCE_DIR}/user.cpp"
-    "${_SOURCE_DIR}/assets.cpp"
     "${_SOURCE_DIR}/scene.cpp"
     "${_SOURCE_DIR}/exception.cpp"
     "${_SOURCE_DIR}/logger.cpp"
@@ -57,10 +62,10 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/scheduler.cpp"
     "${_SOURCE_DIR}/debugio.cpp"
     "${_SOURCE_DIR}/debug.cpp"
-    "${_SOURCE_DIR}/dist.cpp"
+    "${_SOURCE_DIR}/distributed.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
-    "${_SOURCE_DIR}/parallel/parallel_dist.cpp"
+    "${_SOURCE_DIR}/parallel/parallel_distributed.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
     "${_SOURCE_DIR}/model/objloader.cpp"
     "${_SOURCE_DIR}/model/objloader_simple.cpp"
@@ -93,6 +98,9 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/phase/phase_hg.cpp"
     "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
+set(_PCH_FILES
+    "${_PCH_DIR}/pch.h"
+    "${_PCH_DIR}/pch.cpp")
 # Add a shared library
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 # Alias to match the target included by add_subdirectory to the exported target
@@ -171,7 +179,7 @@ if (LM_INSTALL)
     )
 endif()
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # Python binding
 set(_PROJECT_NAME pylm)
@@ -179,9 +187,16 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/pylm.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/pylm.cpp")
-add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES})
+set(_PCH_FILES
+    "${_PCH_DIR}/pch_pylm.h"
+    "${_PCH_DIR}/pch_pylm.cpp")
+add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
+target_include_directories(${_PROJECT_NAME} PRIVATE "${_PCH_DIR}")
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
+if (MSVC)
+    add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch_pylm.h" SOURCE_CXX "${_PCH_DIR}/pch_pylm.cpp")
+endif()
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")

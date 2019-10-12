@@ -18,6 +18,9 @@
 # %load_ext autoreload
 # %autoreload 2
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -25,26 +28,25 @@ import numpy as np
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {})
+lm.init()
 lm.parallel.init('parallel::openmp', {
     'numThreads': -1
 })
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'objloader_tinyobjloader'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
 
 
 def build_and_render(scene):
     lm.reset()
-    lmscene.load(ft.env.scene_path, scene)
+    lmscene.load(env.scene_path, scene)
     lm.build('accel::nanort', {})
     lm.asset('film_output', 'film::bitmap', {
         'w': 1920,
@@ -58,6 +60,11 @@ def build_and_render(scene):
 
 objloaders = ['objloader::tinyobjloader']
 scenes = lmscene.scenes_small()
+
+
+def rmse_pixelwised(img1, img2):
+    return np.sqrt(np.sum((img1 - img2) ** 2, axis=2) / 3)
+
 
 for scene in scenes:
     # Reference
@@ -76,7 +83,7 @@ for scene in scenes:
         # Render
         lm.objloader.init(objloader, {})
         img = build_and_render(scene)
-        diff = ft.rmse_pixelwised(ref, img)
+        diff = rmse_pixelwised(ref, img)
     
         # Visualize
         f = plt.figure(figsize=(15,15))

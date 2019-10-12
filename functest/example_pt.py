@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.2.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -24,12 +24,14 @@
 # The use of the renderer is straightforward; we just need to specify ``renderer::pt`` with :cpp:func:`lm::render` function with some renderer-specific parameters. Thanks to the modular design of the framework, the most of the code can be the same as :ref:`example_raycast`.
 # -
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import numpy as np
 import imageio
 # %matplotlib inline
 import matplotlib.pyplot as plt
-import lmfunctest as ft
 import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
@@ -55,7 +57,7 @@ lm.asset('camera1', 'camera::pinhole', {
 
 # OBJ model
 lm.asset('obj1', 'model::wavefrontobj', {
-    'path': os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj')
+    'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj')
 })
 
 # +

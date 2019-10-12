@@ -8,12 +8,15 @@
 #include "component.h"
 #include "math.h"
 #include "logger.h"
+#include "serialtype.h"
+#include <cereal/cereal.hpp>
+#include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <atomic>
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(cereal)
 
@@ -47,7 +50,7 @@ void load(Archive& ar, std::optional<T>& optional) {
     }
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*
     Serialize function specialized for glm::vec<>.
@@ -69,7 +72,7 @@ void serialize(Archive& ar, glm::mat<C, R, T, Q>& v) {
     }
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*
     Save function specialized for std::atomic<T>.
@@ -90,8 +93,7 @@ void load(Archive& ar, std::atomic<T>& v) {
     v = t;
 }
 
-// ----------------------------------------------------------------------------
-
+// ------------------------------------------------------------------------------------------------
 
 /*
     Save owned pointer.
@@ -158,7 +160,8 @@ void load(Archive& ar, lm::Component::Ptr<T>& p) {
         ar(CEREAL_NVP_("loc", loc));
 
         // Create component instance
-        p = lm::comp::create<T>(key, loc);
+        // Be careful not to call construct() function here
+        p = lm::comp::createWithoutConstruct<T>(key, loc);
         if (!p) {
             return;
         }
@@ -168,7 +171,7 @@ void load(Archive& ar, lm::Component::Ptr<T>& p) {
     }
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*
     Specialization of serialize() function for Component*.
@@ -226,12 +229,10 @@ serialize(lm::InputArchive& ar, T*& p) {
 
 LM_NAMESPACE_END(cereal)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(serial)
-
-// ----------------------------------------------------------------------------
 
 /*!
     \addtogroup serial
@@ -286,12 +287,10 @@ void load(const std::string& path, T& v) {
     @}
 */
 
-// ----------------------------------------------------------------------------
-
 LM_NAMESPACE_END(serial)
 LM_NAMESPACE_END(LM_NAMESPACE)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \addtogroup serial

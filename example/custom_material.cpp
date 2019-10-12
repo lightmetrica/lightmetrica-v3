@@ -6,14 +6,10 @@
 #include <lm/lm.h>
 #include <iostream>
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class Material_VisualizeNormal final : public lm::Material {
 public:
-    virtual bool construct(const lm::Json&) override {
-        return true;
-    }
-
     virtual bool isSpecular(const lm::PointGeometry&, int) const override {
         return false;
     }
@@ -41,7 +37,7 @@ public:
 
 LM_COMP_REG_IMPL(Material_VisualizeNormal, "material::visualize_normal");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*
     This example illustrates how to extend features of Lightmetrica
@@ -72,7 +68,7 @@ int main(int argc, char** argv) {
             "vfov": {}
         }})");
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Define assets
 
@@ -101,7 +97,7 @@ int main(int argc, char** argv) {
             {"base_material", lm::asset("visualize_normal_mat")}
         });
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Define scene primitives
 
@@ -115,7 +111,7 @@ int main(int argc, char** argv) {
             {"model", lm::asset("obj1")}
         });
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Render an image
         lm::build("accel::sahbvh");

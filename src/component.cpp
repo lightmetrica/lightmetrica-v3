@@ -15,7 +15,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::comp::detail)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Platform-independent abstruction of shared library.
 class SharedLibrary {
@@ -129,9 +129,9 @@ private:
 
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-class ComponentContext {
+class ComponentContext final {
 public:
     static ComponentContext& instance() {
         static ComponentContext instance;
@@ -243,6 +243,9 @@ public:
     }
 
     void registerRootComp(Component* p) {
+        if (p->loc() != "$") {
+            LM_THROW_EXCEPTION(Error::None, "Root locator must be '$'");
+        }
         root_ = p;
     }
 
@@ -303,16 +306,13 @@ private:
     Component* root_ = nullptr;
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_PUBLIC_API Component* createComp(const std::string& key) {
     return ComponentContext::instance().createComp(key);
 }
 
-LM_PUBLIC_API void reg(
-    const std::string& key,
-    const Component::CreateFunction& createFunc,
-    const Component::ReleaseFunction& releaseFunc) {
+LM_PUBLIC_API void reg(const std::string& key, const Component::CreateFunction& createFunc, const Component::ReleaseFunction& releaseFunc) {
     ComponentContext::instance().reg(key, createFunc, releaseFunc);
 }
 
@@ -344,6 +344,6 @@ LM_PUBLIC_API Component* get(const std::string& locator) {
     return ComponentContext::instance().get(locator);
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_END(LM_NAMESPACE::comp::detail)

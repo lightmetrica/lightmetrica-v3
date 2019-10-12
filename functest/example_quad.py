@@ -22,11 +22,13 @@
 # This example describes how to render a simple scene containing a quad represented by two triangles. The code starts again with :cpp:func:`lm::init` function.
 # -
 
+import lmenv
+lmenv.load('.lmenv')
+
 import numpy as np
 import imageio
 # %matplotlib inline
 import matplotlib.pyplot as plt
-import lmfunctest as ft
 import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 

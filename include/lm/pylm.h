@@ -5,13 +5,13 @@
 
 #pragma once
 
-#include "lm.h"
+#include <lm/core.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(pybind11::detail)
 
@@ -130,7 +130,7 @@ public:
                 return l.release();
             }
             case value_t::discarded: {
-                LM_TBA_RUNTIME();
+                LM_UNREACHABLE();
                 break;
             }
         }
@@ -273,7 +273,7 @@ struct type_caster<glm::mat<C, R, T, Q>> {
 
 LM_NAMESPACE_END(pybind11::detail)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Add component's unique_ptr as internal holder type
 // Third argument must be false (as for default)
@@ -281,7 +281,7 @@ LM_NAMESPACE_END(pybind11::detail)
 // a return type even if we specify return_value_policy::reference.
 PYBIND11_DECLARE_HOLDER_TYPE(T, lm::Component::Ptr<T>, false);
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(detail)
@@ -348,7 +348,7 @@ static pybind11::object castToPythonObject(Component* inst) {
     \brief Wraps creation of component instance.
 */
 template <typename InterfaceT>
-static pybind11::object createCompWrap(const char* name, const char* loc) {
+static pybind11::object createWithoutConstructWrap(const char* name, const char* loc) {
     auto inst = lm::comp::detail::createComp(name);
     if (!inst) {
         return pybind11::object();
@@ -367,9 +367,7 @@ static pybind11::object createCompWrap(const char* name, const char* loc, const 
         return pybind11::object();
     }
     lm::comp::detail::Access::loc(inst) = loc;
-    if (!inst->construct(prop)) {
-        return pybind11::object();
-    }
+    inst->construct(prop);
     return castToPythonObject<InterfaceT>(inst);
 }
 
@@ -387,12 +385,10 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
 #define PYLM_DEF_COMP_BIND(InterfaceT) \
      def_static("reg", &LM_NAMESPACE::detail::regCompWrap<InterfaceT>) \
     .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg) \
+    .def_static("createWithoutConstruct", \
+        &LM_NAMESPACE::detail::createWithoutConstructWrap<InterfaceT>) \
     .def_static("create", \
-        pybind11::overload_cast<const char*, const char*>( \
-            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
-    .def_static("create", \
-        pybind11::overload_cast<const char*, const char*, const LM_NAMESPACE::Json&>( \
-            &LM_NAMESPACE::detail::createCompWrap<InterfaceT>)) \
+        &LM_NAMESPACE::detail::createCompWrap<InterfaceT>) \
     .def_static("castFrom", \
         &LM_NAMESPACE::detail::castFrom<InterfaceT>, \
         pybind11::return_value_policy::reference);
@@ -427,4 +423,22 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
     }
 
 LM_NAMESPACE_END(detail)
+LM_NAMESPACE_END(LM_NAMESPACE)
+
+// ------------------------------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+/*!
+    \brief Module binder for python interfaces.
+*/
+class PyBinder : public lm::Component {
+public:
+    /*!
+        \brief Bind to the module.
+        \param m Pybind11's python module object.
+    */
+    virtual void bind(pybind11::module& m) const = 0;
+};
+
 LM_NAMESPACE_END(LM_NAMESPACE)

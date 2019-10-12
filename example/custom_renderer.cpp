@@ -6,7 +6,7 @@
 #include <lm/lm.h>
 using namespace lm::literals;
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Simple ambient occlusion renderer
 class Renderer_AO final : public lm::Renderer {
@@ -16,13 +16,9 @@ private:
     int rngSeed_ = 42;
 
 public:
-    virtual bool construct(const lm::Json& prop) override {
-        film_ = lm::comp::get<lm::Film>(prop["output"]);
-        if (!film_) {
-            return false;
-        }
-        spp_ = prop["spp"];
-        return true;
+    virtual void construct(const lm::Json& prop) override {
+        film_ = lm::json::compRef<lm::Film>(prop, "output");
+        spp_ = lm::json::value<long long>(prop, "spp");
     }
 
     virtual void render(const lm::Scene* scene) const override {
@@ -50,7 +46,7 @@ public:
 
 LM_COMP_REG_IMPL(Renderer_AO, "renderer::ao");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // This example illustrates how to create custom renderer.
 int main(int argc, char** argv) {
@@ -78,7 +74,7 @@ int main(int argc, char** argv) {
             "vfov": {}
         }})");
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Define assets
 
@@ -103,7 +99,7 @@ int main(int argc, char** argv) {
             {"path", opt["obj"]}
         });
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Define scene primitives
 
@@ -117,7 +113,7 @@ int main(int argc, char** argv) {
             {"model", lm::asset("obj1")}
         });
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         // Render an image
         lm::build("accel::sahbvh");

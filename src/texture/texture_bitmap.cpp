@@ -36,9 +36,9 @@ public:
         return { w_, h_ };
     }
 
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         // Image path
-        const std::string path = sanitizeDirectorySeparator(prop["path"]);
+        const std::string path = sanitizeDirectorySeparator(json::value<std::string>(prop, "path"));
         LM_INFO("Loading texture [path='{}']", fs::path(path).filename().string());
 
         // Load as HDR image
@@ -48,13 +48,11 @@ public:
         float* data = stbi_loadf(path.c_str(), &w_, &h_, &c_, 0);
         if (data == nullptr) {
             LM_ERROR("Failed to load image: {} [path='{}']", stbi_failure_reason(), path);
-            return false;
+            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
         // Allocate and copy the data
         data_.assign(data, data + (w_*h_*c_));
         stbi_image_free(data);
-
-        return true;
     }
 
     virtual Vec3 eval(Vec2 t) const override {

@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.10)
 cmake_policy(SET CMP0048 NEW)
 project(lightmetrica VERSION 3.0.0)
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # Check if the directory is added via add_subdirectory
 set(LM_MASTER_PROJECT OFF)
@@ -24,7 +24,7 @@ option(LM_BUILD_TESTS        "Enable tests"    ${LM_MASTER_PROJECT})
 option(LM_BUILD_EXAMPLES     "Enable examples" ${LM_MASTER_PROJECT})
 option(LM_BUILD_GUI_EXAMPLES "Enable GUI examples" ${LM_MASTER_PROJECT})
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # CMake module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -41,7 +41,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Enable the search of lib64 directory
 set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # External dependencies
 find_package(Threads REQUIRED)
@@ -57,13 +57,19 @@ if (LM_BUILD_TESTS)
     find_package(doctest REQUIRED)
 endif()
 if (LM_BUILD_EXAMPLES AND LM_BUILD_GUI_EXAMPLES)
-    find_package(OpenGL REQUIRED)
-    find_package(GLEW REQUIRED)
-    find_package(glfw3 REQUIRED)
-    find_package(imgui REQUIRED)
+    find_package(OpenGL)
+    if (OpenGL_FOUND)
+        find_package(GLEW REQUIRED)
+        find_package(glfw3 REQUIRED)
+    else()
+        # Disable GUI example if there's no OpenGL support
+        message(WARNING "OpenGL is not supported. Disabled GUI examples. \
+                         To supress this warning, set LM_BUILD_GUI_EXAMPLES=OFF.")
+        set(LM_BUILD_GUI_EXAMPLES OFF)
+    endif()
 endif()
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # Execute git command in the project root and check revision number
 find_package(Git REQUIRED)
@@ -85,13 +91,7 @@ configure_file(
 add_library(lm_version INTERFACE)
 target_include_directories(lm_version INTERFACE "${PROJECT_BINARY_DIR}")
 
-# -----------------------------------------------------------------------------
-
-# PCH related
-set(_PCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/pch")
-set(_PCH_FILES
-    "${_PCH_DIR}/pch.h"
-    "${_PCH_DIR}/pch.cpp")
+# -------------------------------------------------------------------------------------------------
 
 # Main libraries
 add_subdirectory(src)
@@ -111,7 +111,7 @@ if (LM_BUILD_TESTS)
     add_subdirectory(functest)
 endif()
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 # Install
 if (LM_INSTALL)
@@ -121,7 +121,7 @@ if (LM_INSTALL)
     # Package configuration directory
     set(LM_PACKAGE_CONFIG_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 
-    # -------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
 
     # Make package configuration files
     # Use configure_package_config_file to make the package relocatable
@@ -145,7 +145,7 @@ if (LM_INSTALL)
         DESTINATION ${LM_PACKAGE_CONFIG_DIR}
     )
 
-    # -------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------
 
     # Export targets
     # Make export target group

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.2.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -20,6 +20,9 @@
 # %load_ext autoreload
 # %autoreload 2
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -27,7 +30,6 @@ import numpy as np
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
@@ -75,7 +77,7 @@ class Renderer_AO(lm.Renderer):
         lm.progress.end()
 
 
-lm.init('user::default', {})
+lm.init()
 
 lm.parallel.init('parallel::openmp', {
     'numThreads': 1
@@ -92,7 +94,7 @@ lm.asset('film_output', 'film::bitmap', {
     'w': 640,
     'h': 360
 })
-lmscene.load(ft.env.scene_path, 'fireplace_room')
+lmscene.load(env.scene_path, 'fireplace_room')
 
 lm.build('accel::sahbvh', {})
 

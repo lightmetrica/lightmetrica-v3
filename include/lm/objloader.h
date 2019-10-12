@@ -79,7 +79,7 @@ using ProcessMeshFunc = std::function<bool(const OBJMeshFace& fs, const MTLMatPa
 */
 using ProcessMaterialFunc = std::function<bool(const MTLMatParams& m)>;
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 //! Default parallel context type
 constexpr const char* DefaultType = "objloader::simple";
@@ -103,7 +103,7 @@ LM_PUBLIC_API bool load(
     const ProcessMeshFunc& processMesh,
     const ProcessMaterialFunc& processMaterial);
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \brief OBJ loader context.

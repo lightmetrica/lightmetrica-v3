@@ -18,9 +18,8 @@ public:
         ar(g_);
     }
 
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         g_ = json::value<Float>(prop, "g");
-        return true;
     }
 
 public:

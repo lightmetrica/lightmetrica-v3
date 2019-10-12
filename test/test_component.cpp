@@ -10,7 +10,7 @@
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 TEST_CASE("Component") {
     lm::log::ScopedInit init;
@@ -75,7 +75,7 @@ TEST_CASE("Component") {
     }
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 TEST_CASE("Construction") {
     lm::log::ScopedInit init;
@@ -95,7 +95,7 @@ TEST_CASE("Construction") {
     }
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 TEST_CASE_TEMPLATE("Templated component", T, int, double) {
     lm::log::ScopedInit init;
@@ -123,7 +123,7 @@ TEST_CASE_TEMPLATE("Templated component", T, int, double) {
     }
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 namespace {
 
@@ -138,9 +138,8 @@ struct H_Root_ : public H {
         return "root";
     }
 
-    virtual bool construct(const lm::Json&) override {
+    virtual void construct(const lm::Json&) override {
         p1 = lm::comp::create<H>("test::comp::h_p1_", makeLoc("p1"), {});
-        return true;
     }
 
     virtual Component* underlying(const std::string& name) const {
@@ -158,9 +157,8 @@ struct H_P1_ : public H {
         return "p1";
     }
 
-    virtual bool construct(const lm::Json&) override {
+    virtual void construct(const lm::Json&) override {
         p2 = lm::comp::create<H>("test::comp::h_p2_", makeLoc("p2"), {});
-        return true;
     }
 
     virtual Component* underlying(const std::string& name) const {
@@ -213,6 +211,6 @@ TEST_CASE("Component query") {
     }
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_END(LM_TEST_NAMESPACE)

@@ -6,10 +6,8 @@
 #pragma once
 
 // Includes core headers of Lightmetrica
-#include "core.h"
 #include "component.h"
-#include "json.h"
-#include "serial.h"
-#include "math.h"
-#include "logger.h"
 #include "exception.h"
+#include "json.h"
+#include "logger.h"
+#include "serial.h"

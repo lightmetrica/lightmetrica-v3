@@ -5,12 +5,14 @@
 
 #pragma once
 
-#include "common.h"
-#include "math.h"
 #include "component.h"
+#include "jsontype.h"
+#include "math.h"
+#include "exception.h"
+#include <sstream>
 #include <array>
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \addtogroup json
@@ -28,7 +30,7 @@ inline lm::Json operator "" _lmJson(const char* s, size_t n) {
     @}
 */
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(nlohmann)
 
@@ -44,12 +46,12 @@ struct adl_serializer<glm::vec<N, T, Q>> {
     }
     static void from_json(const lm::Json& j, VecT& v) {
         if (!j.is_array()) {
-            throw std::runtime_error(
-                fmt::format("Invalid JSON type [expected='array', actual='{}']", j.type_name()));
+            LM_THROW_EXCEPTION(lm::Error::InvalidArgument,
+                "Invalid JSON type [expected='array', actual='{}']", j.type_name());
         }
         if (j.size() != N) {
-            throw std::runtime_error(
-                fmt::format("Invalid number of elements [expected={}, actual={}]", N, j.size()));
+            LM_THROW_EXCEPTION(lm::Error::InvalidArgument,
+                "Invalid number of elements [expected={}, actual={}]", N, j.size());
         }
         for (int i = 0; i < N; i++) {
             v[i] = static_cast<T>(j[i]);
@@ -71,12 +73,12 @@ struct adl_serializer<glm::mat<C, R, T, Q>> {
     }
     static void from_json(const lm::Json& json, MatT& v) {
         if (!json.is_array()) {
-            throw std::runtime_error(
-                fmt::format("Invalid JSON type [expected='array', actual='{}']", json.type_name()));
+            LM_THROW_EXCEPTION(lm::Error::InvalidArgument,
+                "Invalid JSON type [expected='array', actual='{}']", json.type_name());
         }
         if (json.size() != C*R) {
-            throw std::runtime_error(
-                fmt::format("Invalid number of elements [expected={}, actual={}]", C*R, json.size()));
+            LM_THROW_EXCEPTION(lm::Error::InvalidArgument,
+                "Invalid number of elements [expected={}, actual={}]", C*R, json.size());
         }
         for (int i = 0; i < C; i++) {
             for (int j = 0; j < R; j++) {
@@ -107,12 +109,12 @@ struct adl_serializer<T, std::enable_if_t<std::is_pointer_v<T>, void>> {
 
 LM_NAMESPACE_END(nlohmann)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(json)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(detail)
 
@@ -129,7 +131,7 @@ std::string formatWithStringVector(const std::string& format, const std::vector<
 
 LM_NAMESPACE_END(detail)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /*!
     \addtogroup json
@@ -190,7 +192,7 @@ T value(const Json& j, const std::string& name) {
     if (const auto it = j.find(name); it != j.end()) {
         return *it;
     }
-    throw std::runtime_error(fmt::format("Missing property [name='{}']", name));
+    LM_THROW_EXCEPTION(Error::InvalidArgument, "Missing property [name='{}']", name);
 }
 
 /*!
@@ -208,34 +210,42 @@ T value(const Json& j, const std::string& name, T&& def) {
 }
 
 /*!
-	\brief Get value inside JSON element as component.
-	\param j Json object.
-	\param name Name of the element.
-	
-	\rst
-	This function returns a component pointer
-	referenced by a component locator specified by a JSON element.
-	If not found, the function returns nullptr.
-	\endrst
+    \brief Get value inside JSON element as component.
+    \param j Json object.
+    \param name Name of the element.
+    
+    \rst
+    This function returns a component pointer
+    referenced by a component locator specified by a JSON element.
+    If not found, the function returns nullptr.
+    \endrst
 */
 template <typename T>
 T* compRef(const Json& j, const std::string& name) {
-	const auto it = j.find(name);
-	if (it == j.end()) {
-		throw std::runtime_error(fmt::format("Missing property [name='{}']", name));
-	}
-	if (!it->is_string()) {
-		throw std::runtime_error(fmt::format("Property must be string [name='{}']", name));
-	}
+    const auto it = j.find(name);
+    if (it == j.end()) {
+        LM_THROW_EXCEPTION(Error::InvalidArgument, "Missing property [name='{}']", name);
+    }
+    if (!it->is_string()) {
+        LM_THROW_EXCEPTION(Error::InvalidArgument, "Property must be string [name='{}']", name);
+    }
     const std::string ref = *it;
-	auto* p = comp::get<T>(ref);
-	if (!p) {
-		throw std::runtime_error(fmt::format("Invalid componen reference [name='{}', ref='{}']", name, ref));
-	}
-	return p;
+    auto* p = comp::get<T>(ref);
+    if (!p) {
+        LM_THROW_EXCEPTION(Error::InvalidArgument, "Invalid componen reference [name='{}', ref='{}']", name, ref);
+    }
+    return p;
 }
 
 /*!
+    \brief Get value inside JSON element with std::optional.
+    \param j Json object.
+    \param name Name of the element.
+
+    \rst
+    This variant of value function returns std::nullopt
+    if the json object doesn't contain the element with given name.
+    \endrst
 */
 template <typename T>
 std::optional<T> valueOrNone(const Json& j, const std::string& name) {

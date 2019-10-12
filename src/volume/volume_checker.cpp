@@ -22,10 +22,9 @@ public:
 	}
 
 public:
-	virtual bool construct(const Json& prop) override {
+	virtual void construct(const Json& prop) override {
 		bound_.mi = json::value<Vec3>(prop, "bound_min");
 		bound_.ma = json::value<Vec3>(prop, "bound_max");
-		return true;
 	}
 
 	virtual Bound bound() const override {

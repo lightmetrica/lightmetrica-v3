@@ -29,7 +29,7 @@ private:
     Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         film_ = json::compRef<Film>(prop, "output");
         volume_ = json::compRef<Volume>(prop, "volume");
         marchStep_ = json::value<Float>(prop, "march_step", .5_f);
@@ -45,7 +45,6 @@ public:
                 {"spp", 1},
                 {"output", prop["output"]}
             });
-        return true;
     }
 
     virtual bool requiresScene() const override {

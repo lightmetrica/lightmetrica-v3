@@ -22,14 +22,19 @@
 # This example demonstrates how to render a scene with OBJ models using raycasting.
 # -
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import numpy as np
 import imageio
 # %matplotlib inline
 import matplotlib.pyplot as plt
-import lmfunctest as ft
 import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
+
+if lm.BuildConfig != lm.ConfigType.Release:
+    lm.debug.attachToDebugger()
 
 lm.init()
 lm.log.init('logger::jupyter')
@@ -59,7 +64,7 @@ lm.asset('camera1', 'camera::pinhole', {
 
 # OBJ model
 lm.asset('obj1', 'model::wavefrontobj', {
-    'path': os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj')
+    'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj')
 })
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}

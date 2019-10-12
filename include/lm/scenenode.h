@@ -1,6 +1,6 @@
 /*
-	Lightmetrica - Copyright (c) 2019 Hisanari Otsu
-	Distributed under MIT license. See LICENSE file for details.
+    Lightmetrica - Copyright (c) 2019 Hisanari Otsu
+    Distributed under MIT license. See LICENSE file for details.
 */
 
 #pragma once
@@ -49,7 +49,7 @@ struct SceneNode {
     SceneNodeType type;                     //!< Scene node type.
     int index;                              //!< Node index.
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
     
     struct {
         Mesh* mesh = nullptr;               //!< Underlying mesh.
@@ -64,7 +64,7 @@ struct SceneNode {
         }
     } primitive;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     struct {
         std::vector<int> children;          //!< Child primitives.
@@ -77,14 +77,14 @@ struct SceneNode {
         }
     } group;
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     template <typename Archive>
     void serialize(Archive& ar) {
         ar(type, index, primitive, group);
     }
 
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Make primitive node.

@@ -7,7 +7,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 namespace {
 
@@ -34,17 +34,16 @@ Mat4 convertPbrtXfm(const pbrt::affine3f& v) {
 
 }
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class Mesh_PBRT : public Mesh {
 private:
 	pbrt::TriangleMesh* pbrtMesh_;
 
 public:
-	virtual bool construct(const Json& prop) override {
+	virtual void construct(const Json& prop) override {
 		pbrtMesh_ = prop["mesh_"].get<pbrt::TriangleMesh*>();
 		assert(pbrtMesh_);
-		return true;
 	}
 
 	virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
@@ -105,7 +104,7 @@ public:
 
 LM_COMP_REG_IMPL(Mesh_PBRT, "mesh::pbrt");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class Model_PBRT : public Model {
 private:
@@ -122,12 +121,12 @@ public:
 	}
 
 public:
-	virtual bool construct(const Json& prop) override {
+	virtual void construct(const Json& prop) override {
 		// Load PBRT scene
-		const std::string path = prop["path"];
+		const std::string path = json::value<std::string>(prop, "path");
 		pbrtScene_ = pbrt::importPBRT(path);
 		if (!pbrtScene_) {
-			return false;
+            LM_THROW_EXCEPTION(Error::IOError, "Failed to load PBRT scene [path='{}']", path);
 		}
 
 		// Load camera
@@ -142,7 +141,7 @@ public:
 				{"vfov", Float(pbrtCamera->fov)}
 			});
 			if (!camera_) {
-				return false;
+                LM_THROW_EXCEPTION(Error::InvalidArgument, "Failed to create camera");
 			}
 
 			// Add camera primitive node
@@ -234,8 +233,6 @@ public:
 			}
 		};
 		visitObject(0, pbrtScene_->world, pbrt::affine3f::identity());
-
-		return true;
 	}
 
 	virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const override {

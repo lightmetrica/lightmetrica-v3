@@ -3,25 +3,25 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <pch.h>
+#include <pch_pylm.h>
 #define LM_TEST_INTERFACE_REG_IMPL
 #include <test_interface.h>
-#include "pylm_test.h"
+#include <lm/pylm.h>
 
 namespace py = pybind11;
 using namespace py::literals;
 
-LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
+LM_NAMESPACE_BEGIN(lmtest)
 
-class PyTestBinder_Component : public PyTestBinder {
+class PyTestBinder_Component : public lm::PyBinder {
 public:
     virtual void bind(py::module& m) const {
         // Define a trampoline class (see ref) for the interface A
         // https://pybind11.readthedocs.io/en/stable/advanced/classes.html
         struct A_Py final : public A {
             PYLM_SERIALIZE_IMPL(A)
-            virtual bool construct(const lm::Json& prop) override {
-                PYBIND11_OVERLOAD(bool, A, construct, prop);
+            virtual void construct(const lm::Json& prop) override {
+                PYBIND11_OVERLOAD(void, A, construct, prop);
             }
             virtual int f1() override {
                 PYBIND11_OVERLOAD_PURE(int, A, f1);
@@ -38,11 +38,11 @@ public:
             .def("f2", &A::f2)
             .PYLM_DEF_COMP_BIND(A);
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         struct TestPlugin_Py final : public TestPlugin {
-            virtual bool construct(const lm::Json& prop) override {
-                PYBIND11_OVERLOAD(bool, TestPlugin, construct, prop);
+            virtual void construct(const lm::Json& prop) override {
+                PYBIND11_OVERLOAD(void, TestPlugin, construct, prop);
             }
             virtual int f() override {
                 PYBIND11_OVERLOAD_PURE(int, TestPlugin, f);
@@ -53,11 +53,11 @@ public:
             .def("f", &TestPlugin::f)
             .PYLM_DEF_COMP_BIND(TestPlugin);
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         struct D_Py final : public D {
-            virtual bool construct(const lm::Json& prop) override {
-                PYBIND11_OVERLOAD(bool, D, construct, prop);
+            virtual void construct(const lm::Json& prop) override {
+                PYBIND11_OVERLOAD(void, D, construct, prop);
             }
             virtual int f() override {
                 PYBIND11_OVERLOAD_PURE(int, D, f);
@@ -68,7 +68,7 @@ public:
             .def("f", &D::f)
             .PYLM_DEF_COMP_BIND(D);
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         m.def("createA1", []() {
             return dynamic_cast<A*>(
@@ -105,7 +105,7 @@ public:
             return { v1, v2 };
         });
 
-        // --------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------
 
         m.def("roundTripSerializedA", []() -> int {
             // Create instance registered in Python side
@@ -120,7 +120,7 @@ public:
             const auto serialized = os.str();
             
             // Create another instance and deserialize it
-            auto p2 = lm::comp::create<A>("test::comp::serializable", "");
+            auto p2 = lm::comp::createWithoutConstruct<A>("test::comp::serializable", "");
             {
                 std::istringstream is(serialized);
                 lm::InputArchive ar(is);
@@ -154,4 +154,4 @@ public:
 
 LM_COMP_REG_IMPL(PyTestBinder_Component, "pytestbinder::component");
 
-LM_NAMESPACE_END(LM_TEST_NAMESPACE)
+LM_NAMESPACE_END(lmtest)

@@ -24,11 +24,10 @@ public:
     }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
 		volumeDensity_ = json::compRef<Volume>(prop, "volume_density");
 		volmeAlbedo_ = json::compRef<Volume>(prop, "volume_albedo");
         phase_ = json::compRef<Phase>(prop, "phase");
-        return true;
     }
 
     virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {

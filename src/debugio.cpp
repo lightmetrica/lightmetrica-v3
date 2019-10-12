@@ -26,7 +26,7 @@ struct imemstream : virtual membuf, std::istream {
     }
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Shared command between server and client
 enum class Command {
@@ -35,7 +35,7 @@ enum class Command {
     draw
 };
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 class DebugioContext_Client final : public DebugioContext {
 private:
@@ -49,15 +49,13 @@ public:
     {}
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         try {
-            socket_.connect(prop["address"]);
+            socket_.connect(json::value<std::string>(prop, "address"));
         }
         catch (const zmq::error_t& e) {
-            LM_ERROR("ZMQ Error: {}", e.what());
-            return false;
+            LM_THROW_EXCEPTION(Error::None, "ZMQ Error: {}", e.what());
         }
-        return true;
     }
 
 private:
@@ -98,7 +96,7 @@ public:
 
 LM_COMP_REG_IMPL(DebugioContext_Client, "debugio::client");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(server)
 
@@ -122,17 +120,14 @@ public:
     virtual void on_draw(const DrawFunc& process) override { on_draw_ = process; }
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         // Waiting for the connection of the client
         try {
-            socket_.bind(prop["address"]);
+            socket_.bind(json::value<std::string>(prop, "address"));
         }
         catch (const zmq::error_t& e) {
-            LM_ERROR("ZMQ Error: {}", e.what());
-            return false;
+            LM_THROW_EXCEPTION(Error::None, "ZMQ Error: {}", e.what());
         }
-
-        return true;
     }
 
     virtual void poll() override {
@@ -196,7 +191,7 @@ LM_COMP_REG_IMPL(DebugioContext_Server, "debugio::server");
 
 LM_NAMESPACE_END(server)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 using ClientInstance = comp::detail::ContextInstance<DebugioContext>;
 

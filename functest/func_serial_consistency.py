@@ -17,6 +17,9 @@
 #
 # This test checks the consistency of the internal states between before/after serialization. We render two images. One with normal configuration and the other with deserialized states.
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import imageio
 import pandas as pd
@@ -24,7 +27,6 @@ import numpy as np
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 
@@ -32,7 +34,7 @@ os.getpid()
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {})
+lm.init()
 lm.parallel.init('parallel::openmp', {
     'numThreads': -1
 })
@@ -40,6 +42,11 @@ lm.log.init('logger::jupyter', {})
 lm.info()
 
 scenes = lmscene.scenes_small()
+
+
+def rmse(img1, img2):
+    return np.sqrt(np.mean((img1 - img2) ** 2))
+
 
 rmse_series = pd.Series(index=scenes)
 for scene in scenes:
@@ -53,7 +60,7 @@ for scene in scenes:
     })
     
     # Load scene and render
-    lmscene.load(ft.env.scene_path, scene)
+    lmscene.load(env.scene_path, scene)
     lm.build('accel::sahbvh', {})
     lm.render('renderer::raycast', {
         'output': lm.asset('film_output')
@@ -70,7 +77,7 @@ for scene in scenes:
     img_serial = np.copy(lm.buffer(lm.asset('film_output')))
     
     # Compare two images
-    rmse = ft.rmse(img_orig, img_serial)
-    rmse_series[scene] = rmse
+    e = rmse(img_orig, img_serial)
+    rmse_series[scene] = e
 
 rmse_series

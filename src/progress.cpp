@@ -4,15 +4,15 @@
 */
 
 #include <pch.h>
-#include <lm/progress.h>
+#include <lm/progresscontext.h>
 #include <lm/logger.h>
 
 using namespace std::chrono;
 using namespace std::literals::chrono_literals;
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::progress::detail)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::progress)
 
 // Multiplexed progress reporter
 class ProgressContext_Mux : public ProgressContext {
@@ -20,16 +20,15 @@ private:
     std::vector<Ptr<ProgressContext>> ctx_;
 
 public:
-    virtual bool construct(const Json& prop) override {
+    virtual void construct(const Json& prop) override {
         for (const auto& entry : prop) {
             auto it = entry.begin();
             auto ctx = comp::create<ProgressContext>(it.key(), "", it.value());
             if (!ctx) {
-                return false;
+                LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
             }
             ctx_.push_back(std::move(ctx));
         }
-        return true;
     }
 
     virtual void start(ProgressMode mode, long long total, double totalTime) override {
@@ -51,7 +50,7 @@ public:
 
 LM_COMP_REG_IMPL(ProgressContext_Mux, "progress::mux");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Delay the update for the specified seconds
 class ProgressContext_Delay : public ProgressContext {
@@ -62,11 +61,10 @@ private:
     time_point<high_resolution_clock> lastUpdated_;  // Last updated time
 
 public:
-    virtual bool construct(const Json& prop) override {
-        delay_ = milliseconds(prop["delay"].get<int>());
+    virtual void construct(const Json& prop) override {
+        delay_ = milliseconds(json::value<int>(prop, "delay"));
         auto it = prop["progress"].begin();
         ctx_ = comp::create<ProgressContext>(it.key(), "", it.value());
-        return true;
     }
 
     virtual void start(ProgressMode mode, long long total, double totalTime) override {
@@ -100,22 +98,22 @@ public:
 
 LM_COMP_REG_IMPL(ProgressContext_Delay, "progress::delay");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // Default progress reporter
 class ProgressContext_Default : public ProgressContext {
 private:
-	ProgressMode mode_;								 // Progress reporting mode
+    ProgressMode mode_;								 // Progress reporting mode
     long long total_;                                // Total number of progress updates (used in Samples mode)
-	double totalTime_;								 // Total duration (used in Time mode)
+    double totalTime_;								 // Total duration (used in Time mode)
     time_point<high_resolution_clock> start_;        // Time starting progress report
     time_point<high_resolution_clock> lastUpdated_;  // Last updated time
     
 public:
     virtual void start(ProgressMode mode, long long total, double totalTime) override {
-		mode_ = mode;
+        mode_ = mode;
         total_ = total;
-		totalTime_ = totalTime;
+        totalTime_ = totalTime;
         start_ = high_resolution_clock::now();
         lastUpdated_ = start_;
     }
@@ -136,11 +134,11 @@ public:
                 return fmt::format(", ETA={:.1f}s", eta.count() / 1000.0);
 
             }();
-			LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
-				processed,
-				total_,
-				double(processed) / total_ * 100,
-				etaStr);
+            LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
+                processed,
+                total_,
+                double(processed) / total_ * 100,
+                etaStr);
             lastUpdated_ = now;
         }
     }
@@ -152,13 +150,13 @@ public:
         const auto now = high_resolution_clock::now();
         const auto elapsedFromLastUpdate = duration_cast<milliseconds>(now - lastUpdated_);
         if (elapsedFromLastUpdate > .5s) {
-			const auto eta = totalTime_ - elapsed;
-			const auto etaStr = fmt::format(", ETA={:.1f}s", eta);
-			LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
-				elapsed,
-				totalTime_,
+            const auto eta = totalTime_ - elapsed;
+            const auto etaStr = fmt::format(", ETA={:.1f}s", eta);
+            LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
+                elapsed,
+                totalTime_,
                 elapsed / totalTime_ * 100,
-				etaStr);
+                etaStr);
             lastUpdated_ = now;
         }
     }
@@ -168,24 +166,20 @@ public:
     }
 
 private:
-	// Helper function to compute ETA
-	template <typename T>
-	double estimateETA(time_point<high_resolution_clock> now, T total, T processed) const {
-		const auto eta = duration_cast<milliseconds>(now - start_)
-			* (total - processed) / processed;
-		return eta.count() / 1000.0;
-	}
+    // Helper function to compute ETA
+    template <typename T>
+    double estimateETA(time_point<high_resolution_clock> now, T total, T processed) const {
+        const auto eta = duration_cast<milliseconds>(now - start_)
+            * (total - processed) / processed;
+        return eta.count() / 1000.0;
+    }
 };
 
 LM_COMP_REG_IMPL(ProgressContext_Default, "progress::default");
 
-LM_NAMESPACE_END(LM_NAMESPACE::progress::detail)
+// ------------------------------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::progress)
-
-using Instance = comp::detail::ContextInstance<detail::ProgressContext>;
+using Instance = comp::detail::ContextInstance<ProgressContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
     Instance::init(type, prop);

@@ -39,9 +39,9 @@ def run_functests(output_dir, lmenv_path):
         'func_distributed_rendering_ext',
         'func_error_handling',
         'func_obj_loader_consistency',
-        'func_render_instancing',
         'func_serial_consistency',
         'func_update_asset',
+        'func_scheduler',
         'perf_accel',
         'perf_obj_loader',
         'perf_serial'

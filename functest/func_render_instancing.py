@@ -20,6 +20,9 @@
 # %load_ext autoreload
 # %autoreload 2
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 # + {"code_folding": []}
 # Imports
 import os
@@ -30,7 +33,6 @@ import numpy as np
 # %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import lmfunctest as ft
 import lmscene
 import lightmetrica as lm
 # -
@@ -46,8 +48,8 @@ lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
 # -
 
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_embree'))
-lm.comp.loadPlugin(os.path.join(ft.env.bin_path, 'accel_nanort'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_embree'))
+lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_nanort'))
 
 # + {"code_folding": []}
 # Create a sphere geometry with triangle mesh

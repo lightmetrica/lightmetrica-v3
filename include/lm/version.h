@@ -53,10 +53,7 @@ LM_PUBLIC_API std::string architecture();
 /*!
     \brief Formatted version string.
 */
-static std::string formatted() {
-    return fmt::format("{}.{}.{} (rev. {})",
-        majorVersion(), minorVersion(), patchVersion(), revision());
-}
+LM_PUBLIC_API std::string formatted();
 
 /*!
     @}

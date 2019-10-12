@@ -42,11 +42,11 @@ LM_PUBLIC_API void init(const std::string& type = DefaultType, const Json& prop 
 LM_PUBLIC_API void shutdown();
 
 /*!
-	\brief Progress reporting mode.
+    \brief Progress reporting mode.
 */
 enum class ProgressMode {
-	Samples,
-	Time
+    Samples,
+    Time
 };
 
 /*!
@@ -104,52 +104,18 @@ public:
 };
 
 /*!
-	\brief Scoped guard of `startTime` and `end` functions.
+    \brief Scoped guard of `startTime` and `end` functions.
 */
 class ScopedTimeReport {
 public:
-	ScopedTimeReport(double totalTime) { start(ProgressMode::Time, -1, totalTime); }
-	~ScopedTimeReport() { end(); }
-	LM_DISABLE_COPY_AND_MOVE(ScopedTimeReport)
+    ScopedTimeReport(double totalTime) { start(ProgressMode::Time, -1, totalTime); }
+    ~ScopedTimeReport() { end(); }
+    LM_DISABLE_COPY_AND_MOVE(ScopedTimeReport)
 };
 
 /*!
     @}
 */
-
-// ----------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(detail)
-
-/*!
-    \addtogroup progress
-    @{
-*/
-
-/*!
-    \brief Progress context.
-    
-    \rst
-    You may implement this interface to implement user-specific progress reporting subsystem.
-    Each virtual function corresponds to API call with a free function
-    inside ``progress`` namespace.
-    \endrst
-*/
-class ProgressContext : public Component {
-public:
-    virtual void start(ProgressMode mode, long long total, double totalTime) = 0;
-    virtual void update(long long processed) = 0;
-    virtual void updateTime(Float elapsed) = 0;
-    virtual void end() = 0;
-};
-
-/*!
-    @}
-*/
-
-LM_NAMESPACE_END(detail)
-
-// ----------------------------------------------------------------------------
 
 LM_NAMESPACE_END(progress)
 LM_NAMESPACE_END(LM_NAMESPACE)

@@ -14,19 +14,42 @@
 #pragma comment(lib, "Dbghelp.lib")
 #endif
 
-// ----------------------------------------------------------------------------
-
 #define LM_EXCEPTION_ERROR_CODE(m, code) m[code] = #code
 
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::exception::detail)
+LM_NAMESPACE_BEGIN(LM_NAMESPACE::exception)
 
-class ExceptionContext_Default : public ExceptionContext {
+class ExceptionContext final {
 private:
-    int start_;   // Skips first n entries of the stack trace
-    int stacks_;  // Number of entries of stack trace (0: disable)
+    int start_  = 3;   // Skips first n entries of the stack trace
+    int stacks_ = 0;   // Number of entries of stack trace (0: disable)
 
 public:
-    ExceptionContext_Default() {
+    static ExceptionContext& instance() {
+        static ExceptionContext instance;
+        return instance;
+    }
+
+private:
+    #if LM_PLATFORM_WINDOWS
+    unsigned int setFPExState(unsigned int state) const {
+        // Get current floating-point control word
+        unsigned int old;
+        _controlfp_s(&old, 0, 0);
+
+        // Set a new control word
+        unsigned int current;
+        _controlfp_s(&current, state, _MCW_EM);
+        LM_UNUSED(current);
+
+        return old;
+    }
+    #endif
+
+public:
+    void init(const Json& prop) {
+        start_  = json::value(prop, "start", 3);
+        stacks_ = json::value(prop, "stacks", 0);
+
         #if LM_PLATFORM_WINDOWS
         // Handle structured exception as C++ exception
         _set_se_translator([](unsigned int code, PEXCEPTION_POINTERS data) {
@@ -62,7 +85,7 @@ public:
             LM_ERROR("Structured exception [desc='{}']", desc);
             exception::stackTrace();
 
-            throw std::runtime_error(m[code]);
+            LM_THROW_EXCEPTION(Error::None, "Structured exception has detected [type='{}']", m[code]);
         });
 
         // Handle denormals as zero
@@ -73,7 +96,7 @@ public:
         #endif
     }
 
-    ~ExceptionContext_Default() {
+    void shutdown() {
         #if LM_PLATFORM_WINDOWS
         disableFPEx();
         _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_OFF);
@@ -81,42 +104,19 @@ public:
         #endif
     }
 
-private:
-    #if LM_PLATFORM_WINDOWS
-    unsigned int setFPExState(unsigned int state) const {
-        // Get current floating-point control word
-        unsigned int old;
-        _controlfp_s(&old, 0, 0);
-
-        // Set a new control word
-        unsigned int current;
-        _controlfp_s(&current, state, _MCW_EM);
-        LM_UNUSED(current);
-
-        return old;
-    }
-    #endif
-
-public:
-    virtual bool construct(const Json& prop) override {
-        start_  = json::value(prop, "start", 3);
-        stacks_ = json::value(prop, "stacks", 0);
-        return true;
-    }
-
-    virtual void enableFPEx() override {
+    void enableFPEx() {
         #if LM_PLATFORM_WINDOWS
         setFPExState((unsigned int)(~(_EM_INVALID | _EM_ZERODIVIDE)));
         #endif
     }
 
-    virtual void disableFPEx() override {
+    void disableFPEx() {
         #if LM_PLATFORM_WINDOWS
         setFPExState(_CW_DEFAULT);
         #endif
     }
 
-    virtual void stackTrace() override {
+    void stackTrace() const {
         if (stacks_ == 0) {
             return;
         }
@@ -153,34 +153,24 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(ExceptionContext_Default, "exception::default");
-
-LM_NAMESPACE_END(LM_NAMESPACE::exception::detail)
-
-// ----------------------------------------------------------------------------
-
-LM_NAMESPACE_BEGIN(LM_NAMESPACE::exception)
-
-using Instance = comp::detail::ContextInstance<detail::ExceptionContext>;
-
-LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
-    Instance::init(type, prop);
+LM_PUBLIC_API void init(const Json& prop) {
+    ExceptionContext::instance().init(prop);
 }
 
 LM_PUBLIC_API void shutdown() {
-    Instance::shutdown();
+    ExceptionContext::instance().shutdown();
 }
 
 LM_PUBLIC_API void enableFPEx() {
-    Instance::get().enableFPEx();
+    ExceptionContext::instance().enableFPEx();
 }
 
 LM_PUBLIC_API void disableFPEx() {
-    Instance::get().disableFPEx();
+    ExceptionContext::instance().disableFPEx();
 }
 
 LM_PUBLIC_API void stackTrace() {
-    Instance::get().stackTrace();
+    ExceptionContext::instance().stackTrace();
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::exception)

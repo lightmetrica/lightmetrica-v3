@@ -9,6 +9,7 @@ dependencies:
   - cmake
   - jupyter
   - matplotlib
+  - scipy
   - pandas
   - sphinx
   - sphinx_rtd_theme
@@ -28,7 +29,6 @@ dependencies:
   - doctest-cpp
   - fmt
   - stb
-  - imgui-glfw
   - cereal
   - vdbloader
   - tbb-devel

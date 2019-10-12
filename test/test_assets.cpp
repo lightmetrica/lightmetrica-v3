@@ -5,11 +5,11 @@
 
 #include <pch.h>
 #include "test_common.h"
-#include <lm/assets.h>
+#include <lm/scene.h>
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 struct TestAsset : public lm::Component {
     virtual int f() const = 0;
@@ -18,11 +18,10 @@ struct TestAsset : public lm::Component {
 struct TestAsset_Simple final : public TestAsset {
     int v = -1;
 
-    virtual bool construct(const lm::Json& prop) override {
+    virtual void construct(const lm::Json& prop) override {
         if (prop.count("v")) {
             v = prop["v"];
         }
-        return true;
     }
 
     virtual int f() const override {
@@ -33,12 +32,11 @@ struct TestAsset_Simple final : public TestAsset {
 struct TestAsset_Dependent final : public TestAsset {
     TestAsset* other;
 
-    virtual bool construct(const lm::Json& prop) override {
+    virtual void construct(const lm::Json& prop) override {
         // In this test an instance of Assets are registered as root component
         // thus we can access the underlying component via lm::comp::get function.
         LM_UNUSED(prop);
-        other = lm::comp::get<TestAsset>("$.asset1");
-        return true;
+        other = lm::comp::get<TestAsset>("$.assets.asset1");
     }
 
     virtual void foreachUnderlying(const ComponentVisitor& visit) override {
@@ -53,36 +51,36 @@ struct TestAsset_Dependent final : public TestAsset {
 LM_COMP_REG_IMPL(TestAsset_Simple, "testasset::simple");
 LM_COMP_REG_IMPL(TestAsset_Dependent, "testasset::dependent");
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 TEST_CASE("Assets") {
     lm::log::ScopedInit init;
 
-    auto assets = lm::comp::create<lm::Assets>("assets::default", "$");
-    REQUIRE(assets);
+    auto scene = lm::comp::create<lm::Scene>("scene::default", "$");
+    REQUIRE(scene);
 
     // Set assets as a root component
-    lm::comp::detail::registerRootComp(assets.get());
+    lm::comp::detail::registerRootComp(scene.get());
 
     SUBCASE("Load asset without properties") {
-        auto result = assets->loadAsset("asset1", "testasset::simple", lm::Json());
+        auto result = scene->loadAsset("asset1", "testasset::simple", lm::Json());
         CHECK(result);
-        auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset1"));
+        auto* a = lm::comp::get<TestAsset>("$.assets.asset1");
         REQUIRE(a);
         CHECK(a->f() == -1);
     }
 
     SUBCASE("Load asset with properties") {
-        CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
-        auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset1"));
+        CHECK(scene->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
+        auto* a = lm::comp::get<TestAsset>("$.assets.asset1");
         REQUIRE(a);
         CHECK(a->f() == 42);
     }
 
     SUBCASE("Load asset dependent on an other asset") {
-        CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
-        CHECK(assets->loadAsset("asset2", "testasset::dependent", {}));
-        auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset2"));
+        CHECK(scene->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
+        CHECK(scene->loadAsset("asset2", "testasset::dependent", {}));
+        auto* a = lm::comp::get<TestAsset>("$.assets.asset2");
         REQUIRE(a);
         CHECK(a->f() == 43);
     }
@@ -90,15 +88,15 @@ TEST_CASE("Assets") {
     SUBCASE("Replacing assets") {
         {
             // Load initial asset
-            CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
-            auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset1"));
+            CHECK(scene->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
+            auto* a = lm::comp::get<TestAsset>("$.assets.asset1");
             REQUIRE(a);
             CHECK(a->f() == 42);
         }
         {
             // Load another asset with same name
-            CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 43} }));
-            auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset1"));
+            CHECK(scene->loadAsset("asset1", "testasset::simple", { {"v", 43} }));
+            auto* a = lm::comp::get<TestAsset>("$.assets.asset1");
             REQUIRE(a);
             CHECK(a->f() == 43);
         }
@@ -106,16 +104,16 @@ TEST_CASE("Assets") {
 
     SUBCASE("Replacing dependent assets") {
         {
-            CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
-            CHECK(assets->loadAsset("asset2", "testasset::dependent", {}));
-            auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset2"));
+            CHECK(scene->loadAsset("asset1", "testasset::simple", { {"v", 42} }));
+            CHECK(scene->loadAsset("asset2", "testasset::dependent", {}));
+            auto* a = lm::comp::get<TestAsset>("$.assets.asset2");
             REQUIRE(a);
             CHECK(a->f() == 43);
         }
         {
             // Replace asset1 referenced by asset2
-            CHECK(assets->loadAsset("asset1", "testasset::simple", { {"v", 1} }));
-            auto* a = dynamic_cast<TestAsset*>(assets->underlying("asset2"));
+            CHECK(scene->loadAsset("asset1", "testasset::simple", { {"v", 1} }));
+            auto* a = lm::comp::get<TestAsset>("$.assets.asset2");
             REQUIRE(a);
             CHECK(a->f() == 2);
         }

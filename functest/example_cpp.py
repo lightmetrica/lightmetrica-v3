@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.2.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -17,6 +17,9 @@
 #
 # This example executes the examples written with C++ API.
 
+import lmenv
+env = lmenv.load('.lmenv')
+
 import os
 import sys
 import subprocess as sp
@@ -24,7 +27,6 @@ import numpy as np
 import imageio
 # %matplotlib inline
 import matplotlib.pyplot as plt
-import lmfunctest as ft
 
 outdir = './output'
 width = 1920
@@ -39,7 +41,7 @@ def run_example(ex, params):
     # We convert backslashes as path separator in Windows environment
     # to slashes because subprocess might pass unescaped backslash.
     sp.call([
-        os.path.join(ft.env.bin_path, ex)
+        os.path.join(env.bin_path, ex)
     ] + [str(v).replace('\\', '/') for v in params])
     
 def visualize(out):
@@ -80,7 +82,7 @@ visualize(out)
 
 out = os.path.join(outdir, 'raycast.pfm')
 run_example('raycast', [
-    os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
+    os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     out,
     width, height,
     5.101118, 1.083746, -2.756308,
@@ -91,7 +93,7 @@ visualize(out)
 
 out = os.path.join(outdir, 'pt2.pfm')
 run_example('raycast', [
-    os.path.join(ft.env.scene_path, 'cornell_box/CornellBox-Sphere.obj'),
+    os.path.join(env.scene_path, 'cornell_box/CornellBox-Sphere.obj'),
     out,
     width, height,
     0, 1, 5,
@@ -108,7 +110,7 @@ visualize(out)
 
 out = os.path.join(outdir, 'pt.pfm')
 run_example('pt', [
-    os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
+    os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     out,
     10, 20,
     width, height,
@@ -120,7 +122,7 @@ visualize(out)
 
 out = os.path.join(outdir, 'pt2.pfm')
 run_example('pt', [
-    os.path.join(ft.env.scene_path, 'cornell_box/CornellBox-Sphere.obj'),
+    os.path.join(env.scene_path, 'cornell_box/CornellBox-Sphere.obj'),
     out,
     10, 20,
     width, height,
@@ -138,7 +140,7 @@ visualize(out)
 
 out = os.path.join(outdir, 'custom_material.pfm')
 run_example('custom_material', [
-    os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
+    os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     out,
     width, height,
     5.101118, 1.083746, -2.756308,
@@ -155,7 +157,7 @@ visualize(out)
 
 out = os.path.join(outdir, 'custom_renderer.pfm')
 run_example('custom_renderer', [
-    os.path.join(ft.env.scene_path, 'fireplace_room/fireplace_room.obj'),
+    os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     out,
     10,
     width, height,

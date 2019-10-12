@@ -55,10 +55,10 @@ public:
     */
     virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const = 0;
 
-	/*!
-	*/
-	using VisitNodeFuncType = std::function<void(const SceneNode&)>;
-	virtual void foreachNode(const VisitNodeFuncType& visit) const = 0;
+    /*!
+    */
+    using VisitNodeFuncType = std::function<void(const SceneNode&)>;
+    virtual void foreachNode(const VisitNodeFuncType& visit) const = 0;
 };
 
 /*!
