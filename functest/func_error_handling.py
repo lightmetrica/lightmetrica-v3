@@ -50,7 +50,7 @@ except Exception:
     traceback.print_exc()
 
 # Initializing Lightmetrica fixes the problem
-lm.init('user::default', {})
+lm.init()
 
 # ### No outputs in Jupyter notebook
 #

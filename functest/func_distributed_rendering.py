@@ -48,7 +48,7 @@ import traceback
 import lightmetrica as lm
 def run_worker_process():
     try:
-        lm.init('user::default', {})
+        lm.init()
         lm.info()
         lm.log.setSeverity(1000)
         lm.log.log(lm.log.LogLevel.Err, lm.log.LogLevel.Info, '', 0, 'pid={}'.format(os.getpid()))

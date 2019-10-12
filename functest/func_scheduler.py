@@ -31,7 +31,7 @@ import lmscene
 if lm.BuildConfig != lm.ConfigType.Release:
     lm.attachToDebugger()
 
-lm.init('user::default', {})
+lm.init()
 if lm.BuildConfig != lm.ConfigType.Release:
     lm.parallel.init('parallel::openmp', {'numThreads': 1})
 lm.log.init('logger::jupyter', {})

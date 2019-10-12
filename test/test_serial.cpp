@@ -170,8 +170,8 @@ struct TestSerial_Root final : public lm::Component {
 
     TestSerial_Root() {
         // Register this component as root
-        lm::comp::detail::registerRootComp(this);
         lm::comp::detail::Access::loc(this) = "$";
+        lm::comp::detail::registerRootComp(this);
     }
 
     virtual Component* underlying(const std::string& name) const {

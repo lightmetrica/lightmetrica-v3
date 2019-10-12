@@ -33,10 +33,12 @@ import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter
 
-lm.init('user::default', {
-    'numThreads': -1,
-    'logger': 'logger::jupyter'
+lm.init()
+lm.parallel.init('parallel::openmp', {
+    'numThreads': -1
 })
+lm.log.init('logger::jupyter', {})
+lm.info()
 
 lm.asset('camera_main', 'camera::pinhole', {
     'position': [5.101118, 1.083746, -2.756308],

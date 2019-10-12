@@ -30,7 +30,9 @@ private:
 
 public:
     UserContext() {
-        // User context is the root of the object tree
+        // User context is the root of the object tree.
+        // Root locator is '$'.
+        comp::detail::Access::loc(this) = "$";
         comp::detail::registerRootComp(this);
     }
 

@@ -34,7 +34,7 @@ import lightmetrica as lm
 
 # + {"code_folding": [0]}
 # Initialize Lightmetrica
-lm.init('user::default', {})
+lm.init()
 lm.log.init('logger::jupyter', {})
 lm.parallel.init('parallel::openmp', {
     'numThreads': -1

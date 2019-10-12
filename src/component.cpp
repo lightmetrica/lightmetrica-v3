@@ -243,6 +243,9 @@ public:
     }
 
     void registerRootComp(Component* p) {
+        if (p->loc() != "$") {
+            LM_THROW_EXCEPTION(Error::None, "Root locator must be '$'");
+        }
         root_ = p;
     }
 

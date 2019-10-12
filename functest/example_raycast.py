@@ -33,6 +33,9 @@ import matplotlib.pyplot as plt
 import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
+if lm.BuildConfig != lm.ConfigType.Release:
+    lm.debug.attachToDebugger()
+
 lm.init()
 lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')

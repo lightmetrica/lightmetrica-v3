@@ -54,7 +54,7 @@ class Material_VisualizeNormal(lm.Material):
         return np.zeros(3)
 
 
-lm.init('user::default', {})
+lm.init()
 lm.parallel.init('parallel::openmp', {
     'numThreads': 1
 })
