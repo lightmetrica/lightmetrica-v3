@@ -4,6 +4,7 @@
 #
 
 # Include and source directories
+set(_PCH_DIR "${PROJECT_SOURCE_DIR}/pch")
 set(_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/lm")
 set(_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -97,6 +98,9 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/phase/phase_hg.cpp"
     "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
+set(_PCH_FILES
+    "${_PCH_DIR}/pch.h"
+    "${_PCH_DIR}/pch.cpp")
 # Add a shared library
 add_library(${_PROJECT_NAME} SHARED ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
 # Alias to match the target included by add_subdirectory to the exported target
@@ -183,9 +187,16 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/pylm.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/pylm.cpp")
-add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES})
+set(_PCH_FILES
+    "${_PCH_DIR}/pch_pylm.h"
+    "${_PCH_DIR}/pch_pylm.cpp")
+add_library(${_PROJECT_NAME} MODULE ${_HEADER_FILES} ${_SOURCE_FILES} ${_PCH_FILES})
+target_include_directories(${_PROJECT_NAME} PRIVATE "${_PCH_DIR}")
 source_group(TREE ${_INCLUDE_DIR} PREFIX "Header Files" FILES ${_HEADER_FILES})
 source_group(TREE ${_SOURCE_DIR}  PREFIX "Source Files" FILES ${_SOURCE_FILES})
+if (MSVC)
+    add_precompiled_header(${_PROJECT_NAME} "${_PCH_DIR}/pch_pylm.h" SOURCE_CXX "${_PCH_DIR}/pch_pylm.cpp")
+endif()
 target_link_libraries(${_PROJECT_NAME} PRIVATE liblm pybind11::module)
 set_target_properties(${_PROJECT_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 set_target_properties(${_PROJECT_NAME} PROPERTIES FOLDER "lm/lib")

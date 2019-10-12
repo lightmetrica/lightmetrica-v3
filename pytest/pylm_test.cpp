@@ -3,10 +3,10 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <pch.h>
-#include "pylm_test.h"
+#include <pch_pylm.h>
+#include <lm/pylm.h>
 
-LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
+LM_NAMESPACE_BEGIN(lmtest)
 
 PYBIND11_MODULE(pylm_test, m) {
     m.doc() = "Lightmetrica python test module";
@@ -17,11 +17,11 @@ PYBIND11_MODULE(pylm_test, m) {
         // Find the name matched with 'pytestbinder::*'
         std::smatch match;
         if (std::regex_match(name, match, reg)) {
-            auto binder = lm::comp::create<PyTestBinder>(name, "");
+            auto binder = lm::comp::create<lm::PyBinder>(name, "");
             auto submodule = m.def_submodule(match[1].str().c_str());
             binder->bind(submodule);
         }
     });
 }
 
-LM_NAMESPACE_END(LM_TEST_NAMESPACE)
+LM_NAMESPACE_END(lmtest)

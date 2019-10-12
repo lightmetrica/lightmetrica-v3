@@ -3,12 +3,15 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <pch.h>
-#include "pylm_test.h"
+#include <pch_pylm.h>
+#include <lm/pylm.h>
 
-LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
+namespace py = pybind11;
+using namespace py::literals;
 
-class PyTestBinder_Math : public PyTestBinder {
+LM_NAMESPACE_BEGIN(lmtest)
+
+class PyTestBinder_Math : public lm::PyBinder {
 public:
     virtual void bind(py::module& m) const {
         // Python -> C++
@@ -54,4 +57,4 @@ public:
 
 LM_COMP_REG_IMPL(PyTestBinder_Math, "pytestbinder::math");
 
-LM_NAMESPACE_END(LM_TEST_NAMESPACE)
+LM_NAMESPACE_END(lmtest)

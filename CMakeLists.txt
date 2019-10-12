@@ -93,12 +93,6 @@ target_include_directories(lm_version INTERFACE "${PROJECT_BINARY_DIR}")
 
 # -------------------------------------------------------------------------------------------------
 
-# PCH related
-set(_PCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/pch")
-set(_PCH_FILES
-    "${_PCH_DIR}/pch.h"
-    "${_PCH_DIR}/pch.cpp")
-
 # Main libraries
 add_subdirectory(src)
 

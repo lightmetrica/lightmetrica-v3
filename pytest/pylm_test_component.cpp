@@ -3,17 +3,17 @@
     Distributed under MIT license. See LICENSE file for details.
 */
 
-#include <pch.h>
+#include <pch_pylm.h>
 #define LM_TEST_INTERFACE_REG_IMPL
 #include <test_interface.h>
-#include "pylm_test.h"
+#include <lm/pylm.h>
 
 namespace py = pybind11;
 using namespace py::literals;
 
-LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
+LM_NAMESPACE_BEGIN(lmtest)
 
-class PyTestBinder_Component : public PyTestBinder {
+class PyTestBinder_Component : public lm::PyBinder {
 public:
     virtual void bind(py::module& m) const {
         // Define a trampoline class (see ref) for the interface A
@@ -154,4 +154,4 @@ public:
 
 LM_COMP_REG_IMPL(PyTestBinder_Component, "pytestbinder::component");
 
-LM_NAMESPACE_END(LM_TEST_NAMESPACE)
+LM_NAMESPACE_END(lmtest)

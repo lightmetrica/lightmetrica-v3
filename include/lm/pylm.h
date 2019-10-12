@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "lm.h"
+#include <lm/core.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
@@ -423,4 +423,22 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
     }
 
 LM_NAMESPACE_END(detail)
+LM_NAMESPACE_END(LM_NAMESPACE)
+
+// ------------------------------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+/*!
+    \brief Module binder for python interfaces.
+*/
+class PyBinder : public lm::Component {
+public:
+    /*!
+        \brief Bind to the module.
+        \param m Pybind11's python module object.
+    */
+    virtual void bind(pybind11::module& m) const = 0;
+};
+
 LM_NAMESPACE_END(LM_NAMESPACE)
