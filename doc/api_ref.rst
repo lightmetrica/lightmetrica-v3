@@ -38,10 +38,24 @@ Progress
    :content-only:
    :members:
 
+Debug
+======================
+
+.. doxygengroup:: debug
+   :content-only:
+   :members:
+
 Debug IO
 ======================
 
 .. doxygengroup:: debugio
+   :content-only:
+   :members:
+
+Distributed
+======================
+
+.. doxygengroup:: distributed
    :content-only:
    :members:
 
@@ -86,7 +100,7 @@ Renderer
 .. doxygengroup:: renderer
    :content-only:
    :members:
-   
+
 Camera
 ======================
 
@@ -108,10 +122,31 @@ Light
    :content-only:
    :members:
 
+Participating medium
+======================
+
+.. doxygengroup:: medium
+   :content-only:
+   :members:
+
+Volume data
+======================
+
+.. doxygengroup:: volume
+   :content-only:
+   :members:
+
 Material
 ======================
 
 .. doxygengroup:: material
+   :content-only:
+   :members:
+
+Phase function
+======================
+
+.. doxygengroup:: phase
    :content-only:
    :members:
 

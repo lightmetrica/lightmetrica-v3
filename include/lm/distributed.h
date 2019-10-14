@@ -12,67 +12,137 @@ LM_NAMESPACE_BEGIN(distributed)
 
 // ------------------------------------------------------------------------------------------------
 
+LM_NAMESPACE_BEGIN(master)
+
 /*!
-    \addtogroup dist
+    \addtogroup distributed
     @{
 */
 
-// Initialize master subsystem
+/*!
+    \brief Initialize master context.
+    \param prop Configuration properties.
+*/
 LM_PUBLIC_API void init(const Json& prop);
 
-// Shutdown master subsystem
+/*!
+    \brief Shutdown master context.
+*/
 LM_PUBLIC_API void shutdown();
 
-// Print worker information
+/*!
+    \brief Print worker information.
+
+    \rst
+    This function prints currently connected workers using the log output.
+    \endrst
+*/
 LM_PUBLIC_API void printWorkerInfo();
 
-// Allow or disallow new connections by workers
+/*!
+    \brief Allow or disallow new connections by workers.
+    \param allow True to allow connection.
+
+    \rst
+    If ``allow = false``, this function disables new connection by workers.
+    The default state is ``allow = true``.
+    \endrst
+*/
 LM_PUBLIC_API void allowWorkerConnection(bool allow);
 
-// Synchronize the internal state with the workers
+/*!
+    \brief Synchronize the internal state with the workers.
+*/
 LM_PUBLIC_API void sync();
 
-// Register a callback function to be called when a task is finished
+/*!
+    \brief Callback functon to be called when the task is finished.
+    \param processed Processed number of samples.
+*/
 using WorkerTaskFinishedFunc = std::function<void(long long processed)>;
+
+/*!
+    \brief Register a callback function to be called when a task is finished.
+    \param func Callback function.
+*/
 LM_PUBLIC_API void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func);
 
-// Process a worker task
+/*!
+    \brief Process a worker task.
+    \param start Lower bound of the sample range. Inclusive.
+    \param end Upper bound of the samlpe range. Exclusive.
+
+    \rst
+    This function notifies to process the tasks
+    in the sample range of ``[start, end)``.
+    \endrst
+*/
 LM_PUBLIC_API void processWorkerTask(long long start, long long end);
 
-// Notify process has completed to workers
+/*!
+    \brief Notify process has completed to workers.
+*/
 LM_PUBLIC_API void notifyProcessCompleted();
 
-// Gather films from workers
+/*!
+    \brief Gather films from workers.
+    \param filmloc Locator of the film asset.
+*/
 LM_PUBLIC_API void gatherFilm(const std::string& filmloc);
 
 /*!
     @}
 */
 
+LM_NAMESPACE_END(master)
+
 // ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(worker)
 
 /*!
-    \addtogroup dist
+    \addtogroup distributed
     @{
 */
 
-// Initialize worker subsystem
+/*!
+    \brief Initialize worker context.
+    \param prop Configuration properties.
+*/
 LM_PUBLIC_API void init(const Json& prop);
 
-// Shutdown worker subsystem
+/*!
+    \brief Shutdown worker context.
+*/
 LM_PUBLIC_API void shutdown();
 
-// Run event loop
+/*!
+    \brief Run event loop.
+*/
 LM_PUBLIC_API void run();
 
-// Register a callback function to be called when all processes have completed.
+/*!
+    \brief Callback function being called when all processes have completed.
+*/
 using ProcessCompletedFunc = std::function<void()>;
+
+/*!
+    \brief Register a callback function to be called when all processes have completed.
+    \param func Callback function
+*/
 LM_PUBLIC_API void onProcessCompleted(const ProcessCompletedFunc& func);
 
-// Register a callback function to process a task
+/*!
+    \brief Callback function to process a task.
+    \param start Lower bound of the sample range. Inclusive.
+    \param end Upper bound of the samlpe range. Exclusive.
+*/
 using WorkerProcessFunc = std::function<void(long long start, long long end)>;
+
+/*!
+    \brief Register a callback function to process a task.
+    \param process Callback function.
+*/
 LM_PUBLIC_API void foreach(const WorkerProcessFunc& process);
 
 /*!

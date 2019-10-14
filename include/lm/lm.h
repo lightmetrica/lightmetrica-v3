@@ -18,7 +18,7 @@
 #include "exception.h"
 #include "debug.h"
 #include "debugio.h"
-#include "dist.h"
+#include "distributed.h"
 #include "parallel.h"
 #include "parallelcontext.h"
 #include "math.h"

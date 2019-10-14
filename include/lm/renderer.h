@@ -26,6 +26,7 @@ public:
 
     /*!
         \brief Process rendering.
+        \param scene Reference to the scene.
     */
     virtual void render(const Scene* scene) const = 0;
 };

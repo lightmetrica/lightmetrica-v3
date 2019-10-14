@@ -407,7 +407,8 @@ public:
         
         \rst
         This function evaluates transmittance between two scene interaction events.
-        This function might need a random number generator because heterogeneous media needs stochastic estimation.
+        This function might need a random number generator
+        because heterogeneous media needs stochastic estimation.
         If the space between ``sp1`` and ``sp2`` is vacuum (i.e., no media),
         this function is conceptually equivalent to :cpp:func:`Scene::visible`.
         \endrst
