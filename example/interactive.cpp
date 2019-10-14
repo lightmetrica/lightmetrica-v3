@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 
         // Create OpenGL-ready assets and register primitives
         const auto* scene = lm::comp::get<lm::Scene>("$.scene");
-        scene->traverseNodes([&](const lm::SceneNode& node, lm::Mat4 globalTransform) {
+        scene->traversePrimitiveNodes([&](const lm::SceneNode& node, lm::Mat4 globalTransform) {
             if (node.type != lm::SceneNodeType::Primitive) {
                 return;
             }

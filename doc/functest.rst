@@ -17,3 +17,4 @@ Functional tests
     executed_functest/func_render_instancing
     executed_functest/func_serial_consistency
     executed_functest/func_update_asset
+    executed_functest/func_scheduler

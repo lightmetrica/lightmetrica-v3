@@ -45,12 +45,13 @@ LM_PUBLIC_API void shutdown();
     \brief Progress reporting mode.
 */
 enum class ProgressMode {
-    Samples,
-    Time
+    Samples,    //!< Update sample count.
+    Time        //!< Update time.
 };
 
 /*!
     \brief Start progress reporting.
+    \param mode Progress reporting mode.
     \param total Total number of iterations (used in Samples mode).
     \param totalTime Total time (used in Time mode).
 

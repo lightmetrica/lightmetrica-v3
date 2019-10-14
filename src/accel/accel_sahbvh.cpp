@@ -129,7 +129,7 @@ public:
         LM_INFO("Flattening scene");
         trs_.clear();
         flattenedNodes_.clear();
-        scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+        scene.traversePrimitiveNodes([&](const SceneNode& node, Mat4 globalTransform) {
             if (node.type != SceneNodeType::Primitive) {
                 return;
             }

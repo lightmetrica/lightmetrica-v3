@@ -4,12 +4,14 @@ Tests in Lightmetrica
 Test types
 ==========================
 
-Lightmetrica implements various tests to maintain the quality of the framework.
-We used four types of tests: *unit test*, *functional test*, *performance test*, *statistical test*. All tests are designed to be automated and thus possible to be integrated into a CI service.
+Lightmetrica implements various tests to maintain the quality of the framework. We are using four types of the tests: *unit test*, *functional test*, *performance test*, and *statistical tests*.
 
-**Unit test**.
-*Unit testing* is responsible for the tests of indivisual components of the framework. We mainly use unit testing to test interal features like component object manipulation, assets management, or scene management. 
-In addition to the tests of the internal features written in C++, we provides unit tests for the Python binding of the framework.
+All tests are designed to be automated and integrated into continuous integration (CI) services. Using CI services, we can check the consistency of the tests for every commit to the repository. If a commit breaks a test, the developer is immediately notified the failure. Also, some of the tests that is not determined by assertions are written in Jupyter notebooks and directly integrated into the documentation after the execution in the CI service.
+
+Unit test
+--------------------------
+
+*Unit testing* is responsible for the tests of individual components of the framework. We mainly use unit testing to test internal features like component object manipulation, assets management, or scene management. In addition to the tests of the internal features written in C++, we also provide unit tests for the Python binding of the framework.
 
 - `Unit tests in C++`_
 - `Unit tests in Python`_
@@ -17,24 +19,25 @@ In addition to the tests of the internal features written in C++, we provides un
 .. _Unit tests in C++: https://github.com/hi2p-perim/lightmetrica-v3/tree/master/test
 .. _Unit tests in Python: https://github.com/hi2p-perim/lightmetrica-v3/tree/master/pytest
 
-**Functional test**.
-*Functional testing* is responsible for testing behavioral aspects of the framework without requiring internal knowledge of the framework. 
-In other words, functional testing is in charge for the tests of possible usage by users using *only* the exposed APIs.
-In software development, functional testing is coined as a test to check if software or library functions properly according to the requirements.
-This means we can use functional tests to define the requirements of the framework.
+Functional test
+--------------------------
+
+*Functional testing* is responsible for testing behavioral aspects of the framework without requiring internal knowledge of the framework. In other words, functional testing is in charge for the tests of possible usage by users using only the exposed APIs. In software development, functional testing is coined as a test to check if software or library functions properly according to the requirements. This means we can use functional tests to define the requirements of the framework.
 
 - :ref:`example`
 - :ref:`functest`
 
-**Performance test**.
+Performance test
+--------------------------
+
 *Performance testing* is responsible for testing performance requirements of the framework. We rather focus on testing relative performance rather than absolute performance, because relative performance comparison is what research and development requires. We mainly use the tests to compare performances of multiple implementations of the same interface, for instance, the performance of acceleration structures, scene loading, etc.
 
 - :ref:`perftest`
 
-**Statistical test**.
-*Statistical testing* is responsible for testing correctness of the behavior of the framework using statistical approaches.
-We can describe statistical test being a kind of functional test where the correctness of the behavior is evaluated only by the statistical verifications.
-We used the tests to verify the correctness of sampling functions or rendering techniques.
+Statistical test
+--------------------------
+
+*Statistical testing* is responsible for testing correctness of the behavior of the framework using statistical approaches. We can describe statistical test being a kind of functional test where the correctness of the behavior is evaluated only by the statistical verification. We used the tests to verify the correctness of sampling functions or rendering techniques.
 
 Executing tests
 ==========================

@@ -20,7 +20,7 @@ There are two different options to use the framework. You want to choose either 
 
 1. **Using pre-built binaries**. This option is suitable when you want to use the framework as a renderer without user-defined extensions, or when you want to develope your own plugins but you don't need to extend the framework itself.
 
-2. **Bulilding from source**. This option is suitable for for the framework developers, or for the situation where you have the requirements that cannot be achieved only by plugins.
+2. **Bulilding from source**. This option is suitable for for the framework developers, or for the situation where you have the requirements that cannot be achieved only by plugins. If you want to use the framework for the research purpose, we would recommend to use this option.
 
 .. ----------------------------------------------------------------------------
 

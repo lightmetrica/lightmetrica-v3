@@ -31,21 +31,42 @@ class Medium : public Component {
 public:
     /*!
         \brief Sample a distance in a ray direction.
+        \param rng Random number generator.
+        \param ray Ray.
+        \param tmin Lower bound of the valid range of the ray.
+        \param tmax Upper bound of the valid range of the ray.
+
+        \rst
+        This function samples a scattering event in the valid range of the ray segmnet.
+        Note that this function assumes there is no scene surfaces
+        in the given range of the ray segment.
+        If it does not sample a scattering event, this function returns ``nullopt``.
+        \endrst
     */
     virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
 
     /*!
         \brief Evaluate transmittance.
+
+        \rst
+        This function estimates transmittance of the given ray segment.
+        Note that this function assumes there is no scene surfaces
+        in the given range of the ray segment.
+        This function might need a random number generator
+        because heterogeneous media needs stochastic estimation.
+        \endrst
     */
-    virtual std::optional<Vec3> evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
+    virtual Vec3 evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
 
     /*!
         \brief Check if the medium has emissive component.
+        \return True if the participating media contains emitter.
     */
     virtual bool isEmitter() const = 0;
 
     /*!
         \brief Get underlying phase function.
+        \return PHase function.
     */
     virtual const Phase* phase() const = 0;
 };

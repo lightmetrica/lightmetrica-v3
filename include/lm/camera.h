@@ -108,6 +108,7 @@ public:
     /*!
         \brief Evaluate sensitivity.
         \param wo Outgoing direction.
+        \param aspectRatio Aspect ratio of the film.
 
         \rst
         Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.

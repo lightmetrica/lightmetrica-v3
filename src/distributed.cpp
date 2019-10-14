@@ -5,7 +5,7 @@
 
 #include <pch.h>
 #include <lm/core.h>
-#include <lm/dist.h>
+#include <lm/distributed.h>
 // TODO. Remove the dependency to user.h
 #include <lm/user.h>
 #include <lm/parallel.h>

@@ -148,7 +148,7 @@ public:
                 }();
                 if (nee) [&] {
                     // Sample a light
-                    const auto sL = scene->sampleLight(rng, s->sp);
+                    const auto sL = scene->sampleDirectLight(rng, s->sp);
                     if (!sL) {
                         return;
                     }
@@ -184,7 +184,7 @@ public:
                         }
                         // Compute MIS weight only when wo can be sampled with both strategies.
                         return math::balanceHeuristic(
-                            scene->pdfLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
+                            scene->pdfDirectLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
                     }();
                     const auto C = throughput / pdfSel * fs * sL->weight * misw;
                     film_->splat(*rp, C);
@@ -228,7 +228,7 @@ public:
                         }
                         // The continuation edge can be sampled via both direct and NEE
                         return math::balanceHeuristic(
-                            scene->pdf(s->sp, wi, s->wo), scene->pdfLight(s->sp, *hit, woL));
+                            scene->pdf(s->sp, wi, s->wo), scene->pdfDirectLight(s->sp, *hit, woL));
                     }();
                     const auto C = throughput * fs * misw;
                     film_->splat(rasterPos, C);

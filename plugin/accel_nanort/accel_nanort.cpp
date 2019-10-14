@@ -40,7 +40,7 @@ public:
         fs_.clear();
         flattenNodeAndFacePerTriangle_.clear();
         flattenedNodes_.clear();
-        scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+        scene.traversePrimitiveNodes([&](const SceneNode& node, Mat4 globalTransform) {
             if (node.type != SceneNodeType::Primitive) {
                 return;
             }

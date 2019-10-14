@@ -75,6 +75,7 @@ class Scene : public Component {
 public:
     /*!
         \brief Check if the scene is renderable.
+        \return 
 
         \rst
         This function returns true if the scene is renderable.
@@ -110,14 +111,16 @@ public:
     // --------------------------------------------------------------------------------------------
 
     /*!
+        \brief Get index of the root node.
+        \return Node index.
     */
     virtual int rootNode() = 0;
 
     /*!
         \brief Load scene node(s).
-        \param groupPrimitiveIndex Group index.
-        \param transform Transformation associated to the primitive.
+        \param type Scene node type.
         \param prop Property containing references to the scene components.
+        \return Index of the created node.
 
         \rst
         This function construct a primitive and add it to the scene
@@ -131,7 +134,8 @@ public:
 
     /*!
         \brief Add primitive group.
-        \param groupName Name of the group.
+        \param parent Parent node index.
+        \param child Child node index being added.
 
         \rst
         This function adds a primitive group to the scene
@@ -143,27 +147,66 @@ public:
     virtual void addChild(int parent, int child) = 0;
 
     /*!
+        \brief Add child node from model asset.
+        \param parent Index of the parent node.
+        \param modelLoc Locator of the model asset.
     */
     virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
 
     /*!
+        \brief Create group node from model asset.
+        \param modelLoc Locator of the model asset.
+        \return Index of the created node.
     */
     virtual int createGroupFromModel(const std::string& modelLoc) = 0;
 
     // --------------------------------------------------------------------------------------------
 
     /*!
-        \brief Iterate primitives in the scene.
+        \brief Callback function to traverse the scene nodes.
+        \param node Current node.
+        \param globalTransform Global transform applied to the node.
     */
     using NodeTraverseFunc = std::function<void(const SceneNode& node, Mat4 globalTransform)>;
-    virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const = 0;
 
     /*!
+        \brief Iterate primitive nodes in the scene.
+        \param traverseFunc Function being called for each traversed primitive node.
+        
+        \rst
+        This function traverses the primitive nodes in the scene graph.
+        For each primitive node, global transformation is computed and passed as
+        an argument of the callback function.
+        Note that this function does not traverse intermediate group nodes.
+        If you want to traverse also the group node, consider to use :cpp:func:`Scene::visitNode`.
+        \endrst
+    */
+    virtual void traversePrimitiveNodes(const NodeTraverseFunc& traverseFunc) const = 0;
+
+    /*!
+        \brief Callback function to traverse the scene nodes.
+        \param node Scene node.
     */
     using VisitNodeFunc = std::function<void(const SceneNode& node)>;
+
+    /*!
+        \brief Traverse a node in the scene.
+        \param nodeIndex Note index where the traverse starts.
+        \param visit Callback function being called for each traversed node.
+
+        \rst
+        This function traverse a node in the scene graph.
+        Unlike :cpp:func:`Scene::traversePrimitiveNodes`, this function
+        can be used to traverse all kinds of scene nodes in the scene graph.
+        Be careful the user is responsible to call this function to traverse the node recursively.
+        \endrst
+    */
     virtual void visitNode(int nodeIndex, const VisitNodeFunc& visit) const = 0;
 
     /*!
+        \brief Get scene node by index.
+        \param nodeIndex Scene node index.
+        \return Scene node.
     */
     virtual const SceneNode& nodeAt(int nodeIndex) const = 0;
 
@@ -178,12 +221,26 @@ public:
 
     /*!
         \brief Compute closest intersection point.
+        \param ray Ray.
+        \param tmin Lower bound of the valid range of the ray.
+        \param tmax Upper bound of the valid range of the ray.
+        
+        \rst
+        This function computes closest intersection point between the given ray and the scene
+        utilizing underlying acceleration structure of the scene.
+        If no intersection happens, this function returns ``nullopt``.
+        Note that if the scene contains environment light, this function returns scene intersection structure
+        indicating the intersection with infinite point.
+        This can be examined by checking :cpp:member:`PointGeometry::infinite` being ``true``.
+        \endrst
     */
-    virtual std::optional<SceneInteraction> intersect(
-        Ray ray, Float tmin = Eps, Float tmax = Inf) const = 0;
+    virtual std::optional<SceneInteraction> intersect(Ray ray, Float tmin = Eps, Float tmax = Inf) const = 0;
 
     /*!
         \brief Check if two surface points are mutually visible.
+        \param sp1 Scene interaction of the first point.
+        \param sp2 Scene interaction of the second point.
+        \return Returns true if two points are mutually visible, otherwise returns false.
     */
     bool visible(const SceneInteraction& sp1, const SceneInteraction& sp2) const {
         const auto visible_ = [this](const SceneInteraction& sp1, const SceneInteraction& sp2) -> bool {
@@ -212,11 +269,20 @@ public:
 
     /*!
         \brief Check if given surface point is light.
+        \param sp Scene interaction.
+        \return True if scene interaction is light.
     */
     virtual bool isLight(const SceneInteraction& sp) const = 0;
 
     /*!
         \brief Check if given surface point is specular.
+        \param sp Scene intersection.
+        \return True if scene interaction is specular.
+
+        \rst
+        Scene interaction is specular if the material, light, or camera associated
+        with point specified by scene intersection contains delta function.
+        \endrst
     */
     virtual bool isSpecular(const SceneInteraction& sp) const = 0;
 
@@ -227,11 +293,16 @@ public:
         \param rp Raster position in [0,1]^2.
         \param aspectRatio Aspect ratio of the film.
         \return Generated primary ray.
+
+        \rst
+        This function deterministically generates a primary ray
+        corresponding to the given raster position.
+        \endrst
     */
     virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const = 0;
 
     /*!
-        \brief Compute a raser position.
+        \brief Compute a raster position.
         \param wo Primary ray direction.
         \param aspectRatio Aspect ratio of the film.
         \return Raster position.
@@ -240,75 +311,168 @@ public:
     
     /*!
         \brief Sample a ray given surface point and incident direction.
+        \param rng Random number generator.
+        \param sp Surface interaction.
+        \param wi 
+
         \rst
-        (x,wo) ~ p(x,wo|sp,wi)
+        This function samples a ray given the scene interaction.
+        According to the types of scene interaction, this function samples a different
+        types of the ray from the several distributions.
+
+        (1) If the scene interaction is ``terminator``, this function samples a primary ray
+            according type types of the terminator (camera or light). ``wi`` is ignored in this case.
+
+        (2) If the scene interaction is not ``terminator``, this function samples
+            a ray from the associated distribution to BSDF or phase function
+            given the interaction event ``sp`` and incident ray direction ``wi``.
+
+        In both cases, this function returns ``nullopt`` if the sampling failed,
+        or the case when the early return is possible for instance when 
+        the evaluated contribution of the sampled direction is zero.
         \endrst
     */
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
 
     /*!
-        \brief Sample a ray given pixel position.
+        \brief Sample direction to a light given a scene interaction.
+        \param rng Random number generator.
+        \param sp Scene interaction.
+
         \rst
-        (x,wo) ~ p(x,wo|raster window)
+        This function samples a ray to the light given a scene interaction.
+        Be careful not to confuse the sampled ray with the ray sampled via :cpp:func:`Scene::sampleRay`
+        function from a light source. Both rays are sampled from the different distributions
+        and if you want to evaluate densities you want to use different functions.
         \endrst
     */
-    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const = 0;
-
-    /*!
-        \brief Sample a position on a light.
-    */
-    virtual std::optional<RaySample> sampleLight(Rng& rng, const SceneInteraction& sp) const = 0;
+    virtual std::optional<RaySample> sampleDirectLight(Rng& rng, const SceneInteraction& sp) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
+        \param sp Scene interaction.
+        \param wi Incident ray direction.
+        \param wo Sampled outgoing ray direction.
+        \return Evaluated pdf.
+
+        \rst
+        This function evaluates pdf according to *projected solid angme measure* if ``sp.geom.degenerated=false``
+        and *solid angme measure* if ``sp.geom.degenerated=true``
+        utlizing corresponding densities from which the direction is sampled.
+        \endrst
     */
     virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate pdf for component selection.
+        \param sp Scene interaction.
+        \param wi Incident ray direction.
     */
     virtual Float pdfComp(const SceneInteraction& sp, Vec3 wi) const = 0;
 
     /*!
-        \brief Evaluate pdf for light sampling.
+        \brief Evaluate pdf for light sampling given a scene interaction.
+        \param sp Scene interaction.
+        \param spL Sampled scene interaction of the light.
+        \param wo Sampled outgoing ray directiom *from* the light.
+
+        \rst
+        This function evaluate pdf for the ray sampled via :cpp:func:`Scene::sampleDirectLight`.
+        Be careful ``wo`` is the outgoing direction originated from ``spL``, not ``sp``.
+        \endrst
     */
-    virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const = 0;
+    virtual Float pdfDirectLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Sample a distance in a ray direction.
+        \param rng Random number generator.
+        \param sp Scene interaction.
+        \param wo Ray direction.
+
+        \rst
+        This function samples either a point in a medium or a point on the surface.
+        Note that we don't provide corresponding pdf function because 
+        some underlying distance sampling technique might not have the analitical representation.
+        \endrst
     */
     virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate transmittance.
+        \param rng Random number generator.
+        \param sp1 Scene interaction of the first point.
+        \param sp2 Scene interaction of the second point.
+        
+        \rst
+        This function evaluates transmittance between two scene interaction events.
+        This function might need a random number generator
+        because heterogeneous media needs stochastic estimation.
+        If the space between ``sp1`` and ``sp2`` is vacuum (i.e., no media),
+        this function is conceptually equivalent to :cpp:func:`Scene::visible`.
+        \endrst
     */
-    virtual std::optional<Vec3> evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const = 0;
+    virtual Vec3 evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Evaluate contribution.
+        \param sp Scene interaction.
+        \param wi Incident ray direction.
+        \param wo Outgoing ray direction.
+        \return Evaluated contribution.
+
         \rst
-        This function evaluates either BSDF for surface interaction
-        or phase function for medium interaction.
+        This function evaluate directional contribution according to the scene interaction type.
+        
+        (1) If the scene interaction is endpoint and on a light,
+            this function evaluates luminance function.
+
+        (2) If the scene interaction is endpoint and on a sensor,
+            this function evaluates importance function.
+        
+        (3) If the scene interaction is not endpoint and on a surface,
+            this function evaluates BSDF.
+
+        (4) If the scene interaction is in a medium,
+            this function evaluate phase function.
+
+        Note that the scene interaction obtained from :cpp:func:`Scene::intersect` or 
+        :cpp:func:`Scene::sampleDistance` is not an endpont
+        even if it might represent either a light or a sensor.
+        In this case, you want to use :cpp:func:`Scene::evalContrbEndpoint`
+        to enforce an evaluation as an endpoint.
         \endrst
     */
     virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate endpoint contribution.
+
         \rst
-        f(x,wo) where x is endpoint
+        This function evaluates
+
+        (1) If the scene interaction *contains* a light component,
+            this function evaluates luminance function.
+
+        (2) If the scene interaction *contains* a sensor component,
+            this function evaluates importance function.
+
+        That is, this function enforces the evaluation as an endpoint
+        irrespective to the value of ``sp.endpoint``.
         \endrst
     */
     virtual Vec3 evalContrbEndpoint(const SceneInteraction& sp, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate reflectance (if available).
+        \param sp Surface interaction.
+
         \rst
-        \rho(x)
+        This function evaluate reflectance if ``sp`` is on a surface
+        and the associated material implements :cpp:func:`Material::reflectance` function.
         \endrst
     */
     virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const = 0;

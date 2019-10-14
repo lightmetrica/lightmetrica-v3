@@ -51,6 +51,7 @@ struct SceneNode {
 
     // --------------------------------------------------------------------------------------------
     
+    //! Variables available for Primitive type.
     struct {
         Mesh* mesh = nullptr;               //!< Underlying mesh.
         Material* material = nullptr;       //!< Underlying material.
@@ -58,36 +59,49 @@ struct SceneNode {
         Camera* camera = nullptr;           //!< Underlying camera.
         Medium* medium = nullptr;           //!< Underlying medium.
 
+        //! \cond
         template <typename Archive>
         void serialize(Archive& ar) {
             ar(mesh, material, light, camera, medium);
         }
+        //! \endcond
     } primitive;
 
     // --------------------------------------------------------------------------------------------
 
+    //! Variable available for Group type.
     struct {
         std::vector<int> children;          //!< Child primitives.
         bool instanced;                     //!< True if the group is an instance group.
         std::optional<Mat4> localTransform; //!< Transformation applied to children.
 
+        //! \cond
         template <typename Archive>
         void serialize(Archive& ar) {
             ar(children, instanced, localTransform);
         }
+        //! \endcond
     } group;
 
     // --------------------------------------------------------------------------------------------
 
+    //! \cond
     template <typename Archive>
     void serialize(Archive& ar) {
         ar(type, index, primitive, group);
     }
+    //! \endcond
 
     // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Make primitive node.
+        \param index Primitive index.
+        \param mesh Reference to mesh.
+        \param material Reference to material.
+        \param light Reference to light.
+        \param camera Reference to camera.
+        \param medium Reference to medium.
     */
     static SceneNode makePrimitive(int index, Mesh* mesh, Material* material, Light* light, Camera* camera, Medium* medium) {
         SceneNode p;
@@ -103,6 +117,9 @@ struct SceneNode {
 
     /*!
         \brief Make group node.
+        \param index Primitive index.
+        \param instanced Node is instancing group if true.
+        \param localTransform Local transform applied to the node.
     */
     static SceneNode makeGroup(int index, bool instanced, std::optional<Mat4> localTransform) {
         SceneNode p;

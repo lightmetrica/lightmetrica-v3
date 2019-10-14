@@ -369,7 +369,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const override {
+    virtual void traversePrimitiveNodes(const NodeTraverseFunc& traverseFunc) const override {
         std::function<void(int, Mat4)> visit = [&](int index, Mat4 globalTransform) {
             const auto& node = nodes_.at(index);
             traverseFunc(node, globalTransform);
@@ -402,7 +402,7 @@ public:
         // because the global tranformation can only be obtained by traversing the nodes.
         lightIndicesMap_.clear();
         lights_.clear();
-        traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+        traversePrimitiveNodes([&](const SceneNode& node, Mat4 globalTransform) {
             if (node.type == SceneNodeType::Primitive && node.primitive.light) {
                 lightIndicesMap_[node.index] = int(lights_.size());
                 lights_.push_back({ Transform(globalTransform), node.index });
@@ -548,30 +548,12 @@ public:
         }
     }
 
-    virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
-        const auto s = nodes_.at(*camera_).primitive.camera->samplePrimaryRay(rng, window, aspectRatio);
-        if (!s) {
-            return {};
-        }
-        return RaySample{
-            SceneInteraction::makeCameraEndpoint(
-                *camera_,
-                0,
-                s->geom,
-                window,
-                aspectRatio
-            ),
-            s->wo,
-            s->weight
-        };
-    }
-
     virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const override {
         const auto* camera = nodes_.at(*camera_).primitive.camera;
         return camera->rasterPosition(wo, aspectRatio);
     }
 
-    virtual std::optional<RaySample> sampleLight(Rng& rng, const SceneInteraction& sp) const override {
+    virtual std::optional<RaySample> sampleDirectLight(Rng& rng, const SceneInteraction& sp) const override {
         // Sample a light
         const int n  = int(lights_.size());
         const int i  = glm::clamp(int(rng.u() * n), 0, n-1);
@@ -614,7 +596,7 @@ public:
         }
     }
 
-    virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
+    virtual Float pdfDirectLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
         const auto& primitive = nodes_.at(spL.primitive).primitive;
         const auto lightTransform = lights_.at(lightIndicesMap_.at(spL.primitive)).globalTransform;
         const auto pL = 1_f / int(lights_.size());
@@ -651,9 +633,9 @@ public:
         }
     }
 
-    virtual std::optional<Vec3> evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
+    virtual Vec3 evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
         if (!visible(sp1, sp2)) {
-            return {};
+            return Vec3(0_f);
         }
         if (!medium_) {
             return Vec3(1_f);

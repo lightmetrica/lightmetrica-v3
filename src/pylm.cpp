@@ -521,8 +521,8 @@ static void bind_scene(pybind11::module& m) {
 		virtual int createGroupFromModel(const std::string& modelLoc) override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, createGroupFromModel, modelLoc);
 		}
-        virtual void traverseNodes(const NodeTraverseFunc& traverseFunc) const override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, traverseNodes, traverseFunc);
+        virtual void traversePrimitiveNodes(const NodeTraverseFunc& traverseFunc) const override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, traversePrimitiveNodes, traverseFunc);
         }
         virtual void visitNode(int nodeIndex, const VisitNodeFunc& visit) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, visitNode, nodeIndex, visit);
@@ -551,11 +551,8 @@ static void bind_scene(pybind11::module& m) {
         virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleRay, rng, sp, wi);
         }
-        virtual std::optional<RaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, samplePrimaryRay, rng, window, aspectRatio);
-        }
-        virtual std::optional<RaySample> sampleLight(Rng& rng, const SceneInteraction& sp) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleLight, rng, sp);
+        virtual std::optional<RaySample> sampleDirectLight(Rng& rng, const SceneInteraction& sp) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleDirectLight, rng, sp);
         }
         virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, wi, wo);
@@ -563,14 +560,14 @@ static void bind_scene(pybind11::module& m) {
         virtual Float pdfComp(const SceneInteraction& sp, Vec3 wi) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdfComp, sp, wi);
         }
-        virtual Float pdfLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdfLight, sp, spL, wo);
+        virtual Float pdfDirectLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdfDirectLight, sp, spL, wo);
         }
         virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Scene, sampleDistance, rng, sp, wo);
         }
-        virtual std::optional<Vec3> evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, evalTransmittance, rng, sp1, sp2);
+        virtual Vec3 evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalTransmittance, rng, sp1, sp2);
         }
         virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrb, sp, wi, wo);
@@ -589,14 +586,13 @@ static void bind_scene(pybind11::module& m) {
         .def("createNode", &Scene::createNode)
         .def("addChild", &Scene::addChild)
         .def("addChildFromModel", &Scene::addChildFromModel)
-        .def("traverseNodes", &Scene::traverseNodes)
+        .def("traversePrimitiveNodes", &Scene::traversePrimitiveNodes)
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
         .def("isLight", &Scene::isLight)
         .def("isSpecular", &Scene::isSpecular)
         .def("primaryRay", &Scene::primaryRay)
         .def("sampleRay", &Scene::sampleRay)
-        .def("samplePrimaryRay", &Scene::samplePrimaryRay)
         .def("evalContrbEndpoint", &Scene::evalContrbEndpoint)
         .def("reflectance", &Scene::reflectance)
         .PYLM_DEF_COMP_BIND(Scene);

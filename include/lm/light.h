@@ -105,6 +105,7 @@ public:
     /*!
         \brief Evaluate luminance.
         \param geom Point geometry on the light source.
+        \param comp Component index.
         \param wo Outgoing direction from the point of the light source.
 
         \rst

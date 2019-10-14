@@ -105,6 +105,7 @@ public:
         \brief Evaluate pdf for component selection.
         \param geom Point geometry.
         \param comp Component index.
+        \param wi Incident ray direction.
     */
     virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const = 0;
 

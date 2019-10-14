@@ -69,7 +69,7 @@ public:
 
         // Flatten the scene graph and setup geometries
         LM_INFO("Flattening scene");
-        scene.traverseNodes([&](const SceneNode& node, Mat4 globalTransform) {
+        scene.traversePrimitiveNodes([&](const SceneNode& node, Mat4 globalTransform) {
             if (node.type != SceneNodeType::Primitive) {
                 return;
             }

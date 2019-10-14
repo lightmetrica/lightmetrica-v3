@@ -62,10 +62,12 @@ struct Ray {
     Vec3 o;     //!< Origin
     Vec3 d;     //!< Direction
 
+    //! \cond
     template <typename Archive>
     void serialize(Archive& ar) {
         ar(o, d);
     }
+    //! \endcond
 };
 
 /*!
@@ -75,10 +77,12 @@ struct Bound {
     Vec3 mi = Vec3(Inf);    //!< Minimum coordinates
     Vec3 ma = Vec3(-Inf);   //!< Maximum coordinates
     
+    //! \cond
     template <typename Archive>
     void serialize(Archive& ar) {
         ar(mi, ma);
     }
+    //! \endcond
 
     /*!
         \brief Index operator.
@@ -270,10 +274,12 @@ using Rng = detail::RngImpl<Float>;
 struct Dist {
     std::vector<Float> c{ 0_f }; // CDF
 
+    //! \cond
     template <typename Archive>
     void serialize(Archive& ar) {
         ar(c);
     }
+    //! \endcond
 
     /*!
         \brief Add a value to the distribution.
@@ -323,10 +329,12 @@ struct Dist2 {
     Dist m;                 // Marginal distribution
     int w, h;               // Size of the distribution
 
+    //! \cond
     template <typename Archive>
     void serialize(Archive& ar) {
         ar(ds, m, w, h);
     }
+    //! \endcond
 
     /*!
         \brief Add values to the distribution.
@@ -554,10 +562,12 @@ struct Transform {
     Mat3 normalM;       //!< Transform for normals
     Float J;            //!< J := |det(M_lin)| where M_lin is linear component of M
 
+    //! \cond
     template <typename Archive>
     void serialize(Archive& ar) {
         ar(M, normalM, J);
     }
+    //! \endcond
 
     Transform() = default;
 

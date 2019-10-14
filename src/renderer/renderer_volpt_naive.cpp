@@ -71,23 +71,16 @@ public:
             // Path throughput
             Vec3 throughput(1_f);
 
-            // Initial sampleRay function
-            std::function<std::optional<RaySample>()> sampleRay = [&]() {
-                return scene->samplePrimaryRay(rng, window, film_->aspectRatio());
-            };
+            // Incident direction and current surface point
+            Vec3 wi = {};
+            auto sp = SceneInteraction::makeCameraTerminator(window, film_->aspectRatio());
 
             // Perform random walk
             Vec3 L(0_f);
             Vec2 rasterPos{};
             for (int length = 0; length < maxLength_; length++) {
-                #if LM_DEBUG_MODE
-                if (x == 70 && y == 16) {
-                    __debugbreak();
-                }
-                #endif
-
                 // Sample a ray
-                const auto s = sampleRay();
+                const auto s = scene->sampleRay(rng, sp, wi);
                 if (!s || math::isZero(s->weight)) {
                     break;
                 }
@@ -126,9 +119,8 @@ public:
                 }
 
                 // Update
-                sampleRay = [scene, wi = -s->wo, sp = sd->sp]() {
-                    return scene->sampleRay(rng, sp, wi);
-                };
+                wi = -s->wo;
+                sp = sd->sp;
             }
 
             // Accumulate contribution
