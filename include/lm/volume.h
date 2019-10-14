@@ -43,7 +43,7 @@ public:
     /*!
         \brief Evaluate scalar value.
         \param p Position in volume coordinates.
-        \param Evaluated scalar value.
+        \return Evaluated scalar value.
     */
     virtual Float evalScalar(Vec3 p) const {
         LM_UNUSED(p);
@@ -61,7 +61,7 @@ public:
     /*!
         \brief Evaluate color.
         \param p Position in volume coordinates.
-        \param Evaluated color value.
+        \return Evaluated color value.
     */
     virtual Vec3 evalColor(Vec3 p) const {
         LM_UNUSED(p);

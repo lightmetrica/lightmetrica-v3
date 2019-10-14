@@ -69,7 +69,7 @@ public:
         LM_UNREACHABLE_RETURN();
     }
     
-    virtual std::optional<Vec3> evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+    virtual Vec3 evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range
         if (!volumeDensity_->bound().isectRange(ray, tmin, tmax)) {
             // No intersection with the volume, no attenuation

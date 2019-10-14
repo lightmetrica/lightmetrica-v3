@@ -36,8 +36,12 @@ public:
 
     /*!
         \brief Evaluate transmittance.
+
+        \rst
+        This function assumes there are no scene surfaces in the given range of the ray segment.
+        \endrst
     */
-    virtual std::optional<Vec3> evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
+    virtual Vec3 evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
 
     /*!
         \brief Check if the medium has emissive component.

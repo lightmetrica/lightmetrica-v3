@@ -74,7 +74,7 @@ public:
         }
     }
 
-    virtual std::optional<Vec3> evalTransmittance(Rng&, Ray ray, Float tmin, Float tmax) const override {
+    virtual Vec3 evalTransmittance(Rng&, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range
         if (!bound_.isectRange(ray, tmin, tmax)) {
             // No intersection with the volume, no attenuation

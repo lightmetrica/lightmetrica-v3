@@ -460,18 +460,9 @@ LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string&
 */
 LM_PUBLIC_API void registerRootComp(Component* p);
 
-/*!
-    \brief Get component by locator.
-    \param locator Component locator.
-
-    \rst
-    This function queries an underlying component instance inside the component hierarchy
-    by a component locator. For detail of component locator, see :ref:`component_hierarchy_and_locator`.
-    If a component instance is not found, or the locator is ill-formed,
-    the function returns nullptr with error messages.
-    \endrst
-*/
+//! \cond
 LM_PUBLIC_API Component* get(const std::string& locator);
+//! \endcond
 
 /*!
     @}
@@ -495,6 +486,13 @@ using detail::foreachRegistered;
     \brief Get component by locator.
     \tparam T Component interface type.
     \param locator Component locator.
+
+    \rst
+    This function queries an underlying component instance inside the component hierarchy
+    by a component locator. For detail of component locator, see :ref:`component_hierarchy_and_locator`.
+    If a component instance is not found, or the locator is ill-formed,
+    the function returns nullptr with error messages.
+    \endrst
 */
 template <typename T>
 T* get(const std::string& locator) {

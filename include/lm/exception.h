@@ -193,7 +193,7 @@ public:
         \param file File name.
         \param line Line of code.
         \param message Error message.
-        \param ... Arguments to format the message.
+        \param args Arguments to format the message.
         
         \rst
         Constructs the exception with error type and error message.
@@ -290,11 +290,9 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 /*!
     \brief Throw exception with default message.
     \param error Error code.
-    \param message Error message.
-    \param ... Arguments to format the message.
 
     \rst
-    Convenience macro to throw :class:`Exception`.
+    Convenience macro to throw :class:`Exception` with default message.
     This macro reports the file and line of the code where the exception being raised.
     \endrst
 */

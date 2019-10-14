@@ -115,7 +115,7 @@ public:
 #endif
                 if (nee) [&] {
                     // Sample a light
-                    const auto sL = scene->sampleLight(rng, s->sp);
+                    const auto sL = scene->sampleDirectLight(rng, s->sp);
                     if (!sL) {
                         return;
                     }
@@ -133,22 +133,15 @@ public:
                     
                     // Transmittance
                     const auto Tr = scene->evalTransmittance(rng, s->sp, sL->sp);
-                    if (!Tr) {
+                    if (math::isZero(Tr)) {
                         return;
                     }
-
-                    #if VOLPT_DEBUG_VIS
-                    const bool record = 500 < x && x < 600 && 500 < y && y < 600;
-                    if (threadId == 0 && sampledRays_.size() < 1000 && record) {
-                        sampledRays_.push_back({ s->sp.geom.p, -sL->wo });
-                    }
-                    #endif
 
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
                     const auto fs = scene->evalContrb(s->sp, wi, wo);
                     const auto pdfSel = scene->pdfComp(s->sp, wi);
-                    const auto C = throughput / pdfSel * *Tr * fs * sL->weight;
+                    const auto C = throughput / pdfSel * Tr * fs * sL->weight;
                     film_->splat(*rp, C);
                 }();
 
