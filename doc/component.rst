@@ -302,7 +302,7 @@ and there is no way to find corresponding implementation automatically.
 
 .. _`cereal`: https://github.com/USCiLab/cereal
 
-We workaround this issue by using providing two virtual functions: :cpp:func:`lm::Component::save` and :cpp:func:`lm::Component:load` to implement serialization for a specific archive,
+We workaround this issue by using providing two virtual functions: :cpp:func:`lm::Component::save` and :cpp:func:`lm::Component::load` to implement serialization for a specific archive,
 and route the object finding mechanism of cereal to use these functions.
 This means we can no longer use arbitrary archive type.
 The default archive type is defined as ``lm::InputArchive`` and ``lm::OutputArchive``.
