@@ -23,7 +23,7 @@ Supporting add_submodule
 On a small modification, Lightmetrica Version 3 can inject the library into the user application using either find_package command or ``add_submodule`` command. The latter approach is especially useful when you want to develop both experimental code and the framework managed in the different repository in the same time.
 
 
-Installing dependencies
+Dependency management
 ====================================
 
 In the previous versions, all library dependencies must be installed by a developer using pre-built binaries or platform-dependent package manager or libraries built from the sources. As a result, the installation of the dependencies differs in accordance with the platform. For instance, we provided a pre-built binaries for Windows environment but in Linux environment the developer needs to build the libraries from the source.
