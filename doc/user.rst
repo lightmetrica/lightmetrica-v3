@@ -4,6 +4,7 @@ Basic rendering
 *User context* subsystem provides user-friendly wrapper for the high-level manipulation of the assets, scenes, or rendering. The users want to use this subsystem to implement their experiments. 
 Due to the frequent use, the functions of this subsystem is exposed just below ``lm`` namespace. 
 
+
 Initialization
 ======================
 

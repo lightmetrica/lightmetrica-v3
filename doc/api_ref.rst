@@ -86,14 +86,7 @@ Renderer
 .. doxygengroup:: renderer
    :content-only:
    :members:
-
-Asset management
-======================
-
-.. doxygengroup:: assets
-   :content-only:
-   :members:
-
+   
 Camera
 ======================
 

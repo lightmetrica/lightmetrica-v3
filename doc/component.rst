@@ -3,31 +3,14 @@
 Component
 ######################
 
-Lightmetrica is build upon a component object system
-which provides various features to support extensibility as well as usability
-based on object-oriented paradigm.
-All extensible features of the framework, e.g., materials or renderers etc., are implemented based on this system.
+Introduction
+===========================
 
-The purpose of our component object system is to provide a complete decoupling
-between the interface and the implementation. 
-Our component interface is based on the type erasure by standard virtual classes.
-Once an instance is created, the type of the implementation is erased and
-we can access the underlying implementation through the interface type.
+Lightmetrica is build upon a component object system which provides various features to support extensibility as well as usability based on object-oriented paradigm. All extensible features of the framework, e.g., materials or renderers etc., are implemented based on this system. The purpose of our component object system is to provide a complete decoupling between the interface and the implementation. Our component interface is based on the type erasure by virtual classes in C++. Once an instance is created, the type of the implementation is erased and we can access the underlying implementation through the interface type. 
 
-This is good, but a problem is in the creation of the instance.
-To create an instance, we need to know the type of the derived type
-which increase the coupling between the creator of the instance.
-Also, we need to exposed the header of the derived classes.
-This means it increase the coupling to the private members of the class
-(without tricks like pimpl).
+To create an instance in C++, typically, we need to know the type of the derived class. For instance, assume we have an interface ``A`` (pure virtual class) and an implementation A1 inheriting ``A``. Here, to instantiate A1, we need an definition of the ``A1``, e.g., by including the header containing the definition of ``A1``. A problem is that we pointlessly increase the coupling between ``A1`` and the creator of the class, although once created they are only used through the interface ``A``. This requires to expose the header containing A1 as a separated file, where the header needs to contain private members being never referenced in the installation of the class unless we use the trick like pimpl.
 
-To avoid this, a common practice is to use abstract factory.
-Instead of using actual type of the derived class,
-an instance is created by an (string) identifier.
-The factory need to know the mapping between the identifier and the way of creating instance of an implementation.
-Our component object system can automate the registration process by a simple macro.
-Furthermore, our component system is flexible enough to implement plugins
-as easily as built-in components.
+To resolve this problem, we adopted a common practice to use an abstract factory. Instead of using actual type of the derived class, an instance is created by an (string) identifier. The factory need to know the mapping between the identifier and the way of creating instance of an implementation. Our component object system can automate the registration process by a simple macro. Furthermore, our component system is flexible enough to implement plugins as easily as built-in components.
 
 Creating interface
 ===========================
@@ -96,9 +79,9 @@ For instance, creating ``testcomponent::impl`` component reads
 The first argument is the identifier of the implementation,
 the second argument is the component locator of the instance if the object is integrated into the global component hierarchy.
 For now, let's keep it empty. You need to specify the type of the component interface with template type. 
-If the instance creation fails, the function will return nullptr.
+If the instance creation fails, the function will return ``nullptr``.
 
-:cpp:func:`lm::comp::create` function returns unique_ptr of the specified interface type.
+:cpp:func:`lm::comp::create` function returns ``unique_ptr`` of the specified interface type.
 The lifetime management of the instance is up to the users.
 The unique_ptr is equipped with a custom deleter to support the case where the instance is created in the different dynamic libraries.
 
@@ -148,13 +131,13 @@ Component hierarchy and locator
 
 Composition of the unique_ptr of components or raw pointers inside a component implicitly defines
 a *component hierarchy* of the components.
-In the framework, we adopts a strict ownership constraint
+In the framework, we adopted a strict ownership constraint
 that one instance of the component can only be possessed and managed by a single another component.
-In other words, we do not allow to use shared_ptr to manage the instance of the framework. 
+In other words, we do not allow to use ``shared_ptr`` to manage the instance of the framework. 
 This constraint makes it possible to identify a component inside the hierarchy by a locator.
 
 A *component locator* is a string to uniquely identify an component instance inside the hierarchy. 
-The string start with the character ``$`` and arbitrary sequence of characters separated by ``.``.
+The string start with the character ``$`` and arbitrary sequence of characters separated by ``.`` (dot character).
 For instance, ``$.assets.obj1.mesh1``. Each string separated by ``.`` is used to identify the components
 owned by the current node inside the hierarchy. By iteratively tracing down the hierarchy from the root,
 the locator can identify an single component instance.
@@ -182,7 +165,7 @@ will create a component with locator ``$.test.test2``.
 
 Also, the underlying component must be accessible by the specified name using :cpp:func:`lm::Component::underlying` function.
 :cpp:func:`lm::Component::name` function is useful to extract the name of the component.
-Once the above setup is complete, we can access the underlying component globally by :cpp:func:`lm::comp::get` function.
+Once the above setup completes, we can access the underlying component globally by :cpp:func:`lm::comp::get` function.
 
 .. code-block:: cpp
 
@@ -199,7 +182,6 @@ Once the above setup is complete, we can access the underlying component globall
 
     A root component is internally configured and the user do not care about it.
     But for instance for testing purpose, we can configure it using :cpp:func:`lm::comp::detail::registerRootComp` function.
-    The default root component is :cpp:class:`lm::user::detail::UserContext`.
 
 Weak references
 ===========================
@@ -250,15 +232,14 @@ inaccessible from the component hierarchy.
 Querying information
 ===========================
 
-A component provides a way to query underlying components
-and the framework utilizes this feature to implement some advanced features.
-Every component with underlying components must implement the following functions: :cpp:func:`lm::Component::underlying`
-and :cpp:func:`lm::Component::foreachUnderlying`.
+A component provides a way to query underlying components.
+The framework utilizes this feature to implement some advanced features.
+To support querying of the underlying components, a component must implement both :cpp:func:`lm::Component::underlying` and :cpp:func:`lm::Component::foreachUnderlying` functions.
 
 :cpp:func:`lm::Component::underlying` function return the component with a query by name.
 :cpp:func:`lm::Component::foreachUnderlying` function on the other hands enumerates all the underlying components.
 ``visit`` function needs to distinguish both unique_ptr (owned pointer) and raw pointer (weak reference) in the second argument. Yet :cpp:func:`lm::comp::visit` function will call them automatically according to the types for you.
-
+For instance, the component containing ``unique_ptr`` is like
 
 .. code-block:: cpp
 
@@ -274,6 +255,8 @@ and :cpp:func:`lm::Component::foreachUnderlying`.
             }
         }
     };
+
+Similary, for the component containing weak references is like
 
 .. code-block:: cpp
 
@@ -333,5 +316,12 @@ and our framework implemented globally-accessible yet extensible features using 
 For convenience, we provide :cpp:class:`lm::comp::detail::ContextInstance` class to
 make any component interface a singleton. 
 
-.. Python binding
-.. ===========================
+
+Changes from Version 2
+===========================
+
+In Version 3, we refactored the already-implemented features in the component object system in Version 2. Furthermore, some features are newly implemented but some other features are deprecated due to a design choice.
+
+Particularly in Version 3, we deprecated portable interface support. This feature allows the user to extend the interface irrespective to ABI of the compilers and standard libraries. To achieve this, we needed to reimplement our own virtual function mechanism where a function call is automatically converted to a function call with portable c-interfaces in compile time.
+
+Although the feature worked great as expected, we decided to deprecate the feature with the following reasons. First, to describe the component interface and implementation, a developer needed to write boilerplate codes using C++ macros, which has lessened the maintainability of the codes. Second, this feature could be an cause of massive performance loss because the reimplemented virtual function mechanism could prevent the optimization by compilers (e.g., devirtualization). Last but not least, this feature was rarely used in the actual research projects because in most cases the developer wants to build the framework from the source and doesn't care about the binary portability issues. In Version 3, the interface simpl uses standard virtual function mechanism in C++.
