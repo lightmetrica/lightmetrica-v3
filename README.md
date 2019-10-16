@@ -6,7 +6,7 @@ Lightmetrica -- A research-oriented renderer
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/lightmetrica/lightmetrica-v3/blob/master/LICENSE)
 <!-- [![GitHub Releases](https://img.shields.io/github/release/hi2p-perim/lightmetrica-v3.svg)](https://github.com/hi2p-perim/lightmetrica-v3/releases) -->
 
-*This project is under development for the initial release of Version 3. Please be careful to use the versions in development because they might incur abrupt API changes.*
+*This project is under development for the initial release of Version 3. Please be careful using the versions in development because they might incur abrupt API changes.*
 
 ![teaser](doc/_static/example/pt_fireplace_room.jpg)
 
