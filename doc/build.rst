@@ -140,7 +140,16 @@ If you want to create the environment with an original name, you can use ``-n`` 
 Building framework
 --------------------------
 
-Before building, you want to clone or download the repository to your local directory.
+Before building, you want to clone the repository to your local directory. Be careful to use ``--recursive`` option since the repository contains submodules.
+
+.. code-block:: console
+
+    $ git clone --recursive git@github.com:lightmetrica/lightmetrica-v3.git
+
+.. note::
+
+    If you already cloned the repository without ``--recursive`` option, you must initialize the submodules with ``git submodule init`` and ``git submodule update`` commands.
+
 
 **Windows**. You can generate solution for Visual Studio with the following commands.
 To build Python binding, be sure to activate the previously-created Python environment and start Visual Studio from the same shell.
@@ -269,6 +278,8 @@ Dockerfile for build and tests
 .. note::
 
     For Windows users: running interactive session with docker in Msys's bash (incl. Git bash) needs ``winpty`` command before the above ``docker run`` command. Also, if you want to specify the shared volume with ``-v`` option, you need to use the path starting from ``//c/`` instead of ``c:/``.
+
+.. _dockerfile_only_with_dependencies:
 
 Dockerfile only with dependencies
 -------------------------------------

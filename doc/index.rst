@@ -32,6 +32,7 @@ This documentation includes **guide**, **examples and tests**, and **references*
     :caption: Guide
 
     build
+    managing_experiment
     user
     
 .. toctree::
