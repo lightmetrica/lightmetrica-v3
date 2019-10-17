@@ -122,13 +122,20 @@ Installing dependencies
 
 We distribute the external dependencies as conda packages.
 We recommend to use a separated environment to manage the build environment.
-The dependent packages are written in ``environment_win.yml`` (Windows) or ``environment_linux.yml`` (Linux).
+The dependent packages are written in ``environment.yml``.
 From the file, you can create and activate a new conda environment named ``lm3_dev`` with the following commands. All commands in the following instruction assume the activation of the ``lm3_dev`` environment.
 
 .. code-block:: console
 
-    $ conda env create -f environment_{win,linux}.yml
+    $ conda env create -f environment.yml
     $ conda activate lm3_dev
+
+If you want to create the environment with an original name, you can use ``-n`` option.
+
+.. code-block:: console
+
+    $ conda env create -n <preferred name> -f environment.yml
+    $ conda activate <preferred name>
 
 Building framework
 --------------------------
@@ -202,6 +209,8 @@ For detail, please find ``.travis.yml`` file.
 
 .. ----------------------------------------------------------------------------
 
+.. _working_with_jupyter_notebook:
+
 Working with Jupyter notebook
 =============================
 
@@ -247,54 +256,27 @@ Working with Docker containers
 
 We prepared Dockerfiles to setup linux environments for several use-cases.
 
-``Dockerfile`` in the root directory of the framework setups the dependencies with conda packages and builds the framework,
-followed by the execution of the unit tests. The Dockerfile is also used in the automatic build with CI service.
-The following commands build a docker image ``lm3``.
+Dockerfile for build and tests
+-------------------------------------
+
+``Dockerfile`` in the root directory of the framework setups the dependencies with conda packages and builds the framework, followed by the execution of the unit tests. The Dockerfile is also used in the automatic build with CI service. The following commands build a docker image ``lm3`` and run an interactive session with the container.
 
 .. code-block:: console
 
     $ docker build -t lm3 .
-
-``Dockerfile.jupyter`` is made for the development with Jupyter notebook
-where the source directory of Lightmetrica is supposed to be mounted from the host. 
-Our Dockerfile is based on Jupyter's `docker-stacks`_.
-The following commands create an image ``lm3_jupyter`` and execute a notebook server as a container.
-For convenience, we often mount workspace and scene directories in addition to the source directory.
-
-.. _`docker-stacks`: https://github.com/jupyter/docker-stacks
-
-.. code-block:: console
-
-    $ docker build -t lm3_jupyter -f ./Dockerfile.jupyter .
-    $ docker run \
-        --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-        -it --rm -p 8888:8888 -h lm3_docker \
-        -v ${PWD}:/lightmetrica-v3 \
-        -v <workspace directory on host>:/work \
-        -v <scene directory on host>:/scenes \
-        lm3_jupyter start-notebook.sh \
-            --NotebookApp.token='<access token for notebook>' \
-            --ip=0.0.0.0 --no-browser
-
-``Dockerfile.desktop`` is made for the development with Linux desktop environment, specifically from Windows host.
-We used `docker-ubuntu-vnc-desktop`_ to setup LXDE desktop environment on Ubuntu, which utilizes `noVNC`_ for browser-based VNC connection.
-After executing the commands, you can access the desktop via ``localhost:6080`` using a browser.
-
-.. _`docker-ubuntu-vnc-desktop`: https://github.com/fcwu/docker-ubuntu-vnc-desktop
-.. _`noVNC`: https://novnc.com
-
-.. code-block:: console
-
-    $ docker build -t lm3_desktop -f ./Dockerfile.desktop .
-    $ docker run \
-        --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-        --rm -p 6080:80 -p 5900:5900 -e RESOLUTION=1920x1080 \
-        -v ${PWD}:/lightmetrica-v3 \
-        -v <workspace directory on host>:/work \
-        -v <scene directory on host>:/scenes \
-        lm3_desktop
+    $ docker run --rm -it lm3
 
 .. note::
 
-   The arguments ``--cap-add=SYS_PTRACE --security-opt seccomp=unconfined`` are necessary
-   to execute the applications with gdb in docker containers.
+    For Windows users: running interactive session with docker in Msys's bash (incl. Git bash) needs ``winpty`` command before the above ``docker run`` command. Also, if you want to specify the shared volume with ``-v`` option, you need to use the path starting from ``//c/`` instead of ``c:/``.
+
+Dockerfile only with dependencies
+-------------------------------------
+
+``Dockerfile.conda`` configures conda dependencies of Lightmetrica as an docker image. Unlike ``Dockerfile``, this image does not build the framework by default. This docker image is useful when you want to share the code with host machine while development.
+
+.. code-block:: console
+
+    $ docker build -t lm3_dev -f Dockerfile.conda .
+    $ docker run --rm -it lm3_dev
+
