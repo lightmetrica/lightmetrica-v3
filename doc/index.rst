@@ -8,7 +8,7 @@ Lightmetrica -- Research-oriented renderer
 
 .. warning::
 
-    `This project is under development for the initial release of Version 3. Please be careful to use the versions in development because they might incur abrupt API changes.`
+    `This project is under development for the initial release of Version 3. Please be careful using the versions in development because they might incur abrupt API changes.`
 
 Welcome to Lightmetrica Version 3 documentation!
 This documentation includes **guide**, **examples and tests**, and **references**.
@@ -32,6 +32,7 @@ This documentation includes **guide**, **examples and tests**, and **references*
     :caption: Guide
 
     build
+    managing_experiment
     user
     
 .. toctree::
