@@ -36,7 +36,8 @@ Once it is finished, you can activate the environment with
 
 .. _use_case_for_framework_users:
 
-Use-case for framework users
+
+Use-case: Framework users
 ============================================
 
 This option is suitable for the *user* of the framework.
@@ -158,7 +159,7 @@ For the experimental scripts, you can use ``.lmenv_docker`` file (6-2) to config
         "scene_path": "/projects/..."
     }
 
-Use-case for plugin developers
+Use-case: Plugin developers
 ============================================
 
 This options is suitable if the requirements are
@@ -289,3 +290,50 @@ Typically, you want to call this function only if you are running the code with 
 .. note::
 
     :cpp:func:`lm::debug::attachToDebugger` uses Windows specific feature thus is only supported in Windows environment.
+
+
+Use-case: Framework developers
+============================================
+
+This option is suitable if
+
+- you need to modify the framework to implement your experiments,
+- or you are a contributor of this project
+
+
+Directory structure
+--------------------------------
+
+The recommended directory structure is same as :ref:`use_case_for_framework_users`. However, in this case, the code and directory structures under ``lightmetrica-v3`` direction can be also modified.
+
+When you are a contributer who wants to add a new feature to the framework, we recommend to follow this directory structure even if the most of modifications happens under ``lightmetrica-v3/src`` directory, because in the course of development you might (always) need to write experimental scripts (mostly one-shot scripts) that we don't want to include in the framework's repository.
+
+Partially replacing dependencies
+--------------------------------
+
+Sometime you want to replace the dependencies automatically installed by ``environment.yml``. For instance, when you want to use patched version of `embree <https://github.com/embree/embree>`_ library, you need to replace default ``embree`` distribution by conda with your own version.
+
+We can achive this by providing additional argument ``<package name>_DIR`` to cmake command. For instance, in Windows environment:
+
+.. code-block:: console
+
+    $ cd <your modified library>
+    $ mkdir build && cd build
+    $ cmake -G "Visual Studio 15 2017 Win64" \
+            -D CMAKE_INSTALL_PREFIX=<install directory>
+    $ cmake --build _build --config Release --target install
+    $ cd <project_root>/build
+    $ cmake -G "Visual Studio 15 2017 Win64" \
+            -D <package name>_DIR=<install directory> ..
+
+The first cmake command configures the modified version of the library, followed by build and install in the second cmake command. Next we build the framework and plugins by replacing the package with the modified version. Here, ``<package name>_DIR`` must be set so that the search proceidure of ``find_package`` command can find ``*Config.cmake`` file located in install directory of the package. For detail, consult the `reference of find_package command <https://cmake.org/cmake/help/git-master/command/find_package.html>`_.
+
+
+.. note::
+
+    Please be careful that some packages depend on transitive dependencies. For instance, ``embree`` depends on ``tbb``, which is also installed as a conda package. This implies when you build your own version of the library, *you need to use the transitive dependencies being installed as conda packages*. Otherwise inconsistencies will happen.
+
+.. note::
+
+    Some packages cannot be replaced by providing ``<package name>_DIR`` because the source directory is directly included as a submodule. In this case, you want to replace the submodule to your own version.
+
