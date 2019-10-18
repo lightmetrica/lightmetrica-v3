@@ -34,14 +34,16 @@ Once it is finished, you can activate the environment with
     When you try to activate the environment at the first time, 
     depending on the conda version and your environment, you might be asked to call initial setup command ``conda init``.
 
+.. _use_case_for_framework_users:
 
-Use-case: Basic experiments
+Use-case for framework users
 ============================================
 
-This option is suitable if the requirements are:
+This option is suitable for the *user* of the framework.
+You want to choose this option if your requirements are
 
-1. You don't need to develop a plugin to conduct your experiments.
-2. But you want to use pre-release feature that is not in the latest release yet.
+- not to develop a plugin to conduct your experiments,
+- and to use pre-release feature that only accessible from the latest source.
 
 Directory structure
 --------------------------------
@@ -50,20 +52,20 @@ In this option, we suggest to use the following directory structure:
 
 .. code-block:: plain
 
-    - project_root/                 - (1)
-        - your_experiment_1.ipynb   - (2)
+    - project_root/                 # (1)
+        - your_experiment_1.ipynb   # (2)
         - your_experiment_2.ipynb
         - ...
-        - lightmetrica-v3/          - (3)
-            - build                 - (4)
-            - build_docker          - (4-2)
+        - lightmetrica-v3/          # (3)
+            - build/                # (4)
+            - build_docker/         # (4-2)
             - ...
-        - lmenv.py                  - (5)
-        - .lmenv                    - (6)
-        - .lmenv_docker             - (6-2)
-        - .lmenv_debug              - (6-3)
+        - lmenv.py                  # (5)
+        - .lmenv                    # (6)
+        - .lmenv_docker             # (6-2)
+        - .lmenv_debug              # (6-3)
         - ...
-        - .gitignore                - (7)
+        - .gitignore                # (7)
 
 The project root directory (1) manages all the experiments related codes (2) and cloned instance of Lightmetrica *inside* the project directory (3). We recommend this configuration because different projects might depends on the feature from the different versions of the framework.
 The framework is build under the ``build`` directory (4). Refer to :ref:`building_from_source` for the instruction of how to build the framework.
@@ -108,7 +110,7 @@ Managing directory as a git repository
 
 You can manage a project directory as a git repository. To do this, you want to configure appropriate ``.gitignore`` file (7) excluding ``lightmetrica-v3`` directory and machine-specific files like ``.lmenv``, since it may include machine-specific fullpaths. Alternatively, you can add lightmetrica-v3 as a submodule. 
 
-lso, `jupytext <https://github.com/mwouts/jupytext>`_ Jupyter notebook extension is useful to maange Jupyter notebooks inside a git repository. The extension is already installed if you have the environment via ``environment.yml``.
+Also, `jupytext <https://github.com/mwouts/jupytext>`_ Jupyter notebook extension is useful to maange Jupyter notebooks inside a git repository. The extension is already installed if you have the environment via ``environment.yml``.
 
 Multi-platform development
 --------------------------------
@@ -144,7 +146,9 @@ Then we can build the framework being accessed through the shared volume. For de
     # cd /projects/project_root
     # jupyter notebook --ip=0.0.0.0 --allow-root --NotebookApp.token=''
 
-Here you can use ``.lmenv_docker`` file (6-2) to configure the path to the binaries. Note that you must specify absolute paths inside the container.
+Then you can access the notebooks from ``http://localhost:10000`` from the brower in the host.
+
+For the experimental scripts, you can use ``.lmenv_docker`` file (6-2) to configure the path to the binaries. Note that you must specify absolute paths inside the container.
 
 .. code-block:: JSON
 
@@ -154,10 +158,134 @@ Here you can use ``.lmenv_docker`` file (6-2) to configure the path to the binar
         "scene_path": "/projects/..."
     }
 
-.. Use-case: 
-.. ============================================
+Use-case for plugin developers
+============================================
 
-.. Debugging experiments
-.. --------------------------------
+This options is suitable if the requirements are
 
-.. You can prepare multiple versions of `.lmenv` file 
+- to develop your own plugin to conduct your experiments,
+- but not to want to modify the code of the framework itself.
+
+Note that this option shares many patterns in :ref:`use_case_for_framework_users`, which we will not repeat the explanation in this section.
+
+Directory structure
+--------------------------------
+
+The recommended directory structure is almost same as what we saw in :ref:`use_case_for_framework_users`, yet we moved ``build`` directory (1) to just under the project root.
+
+.. code-block:: plain
+
+    - project_root/
+        - build/                    # (1)
+        - CMakeLists.txt            # (2)
+        - your_plugin_1.cpp         # (3)
+        - ...
+        - your_experiment_1.ipynb   # Experimental scripts
+        - your_experiment_2.ipynb
+        - ...
+        - lightmetrica-v3/          # Framework clone
+        - lmenv.py                  # Helper module to find the framework
+        - .lmenv                    # Machine-dependent configuration
+        - .lmenv_debug              # (4)
+        - ...
+        - .gitignore
+
+Managing build
+--------------------------------
+
+Although it is possible to directly add your codes to the framework directory under ``lightmetrica-v3``,
+we recommend to separate your plugin codes (3) to the outside of the framework directory unless necessary. This simplifies the management of your plugin codes via separated repository, and avoids possible merging burdens due to the upcoming updates of the framework. 
+
+We create ``CMakeLists.txt`` to manage the build of the framework and your plugins. In CMakeLists, Lightmetrica supports direct inclusion of the directory via ``add_subdirectory``. Your ``CMakeLists.txt`` would look like
+
+.. code-block:: cmake
+
+    cmake_minimum_required(VERSION 3.10)
+    project(your_experimental_project)
+
+    # Add Lightmetrica via add_subdirectory
+    add_subdirectory(lightmetrica-v3)
+
+    # Craete plugins
+    add_library(my_plugin MODULE "your_plugin_1.cpp")
+    target_link_libraries(my_plugin PRIVATE lightmetrica::liblm)
+    set_target_properties(my_plugin PROPERTIES DEBUG_POSTFIX "-debug")
+    set_target_properties(my_plugin PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    # ...
+
+``my_plugin`` is the target for your plugin. The library type should be ``MODULE`` because a plugin is dynamically loaded from the framework. Linking the target against ``lightmetrica::liblm`` allows the target to access the features of Lightmetrica.
+
+You can build this project similarly as we described in :ref:`building_from_source`. For instance, in Windows environment (with Msys's bash):
+
+.. code-block:: console
+
+    $ cd <project_root>
+    $ mkdir build && cd build
+    $ cmake -G "Visual Studio 15 2017 Win64" ..
+    $ start your_experimental_project.sln
+
+Note that solution name is not ``lightmetrica.sln`` but ``your_experimental_project.sln`` as you wrote in ``CMakeLists.txt``. You also want to configure ``.lmenv`` file to the appropriate path to the build directory.
+
+In your experimental scripts, you can load your plugin via :cpp:func:`lm::comp::loadPlugin` function. We assume we already configured ``env`` with ``lmenv.load()`` function.
+
+.. code-block:: ipython
+
+    In [1]: lm.comp.loadPlugin(os.path.join(env.bin_path, 'my_plugin'))
+    
+
+.. note::
+
+    Once you execute the ``loadPlugin`` function, the Python process locks the shared library from further modification, which causes a compilation error when you update the code. To prevent this, you want to restart the kernel before compilation (``Kernel > Restart`` from the menu, or shortcut ``0-0``). 
+
+Debugging experiments
+--------------------------------
+
+In Windows
+~~~~~~~~~~~~~~~~~~~~~~
+
+You might want to debug your plugin to fix bugs using a debugger.
+In this section, we will describe how to debug a plugin using Visual Studio debugger. 
+
+To do this, you want to first build the framework and your plugin in ``Debug`` build configuration.
+To manage the path to the debug binaries, we recommend to create another ``.lmenv_debug`` file containing path to the debug binary path (4):
+
+.. code-block:: JSON
+    :emphasize-lines: 3
+
+    {
+        "path": "c:/path/to/project_root/lightmetrica-v3",
+        "bin_path": "c:/path/to/project_root/build/bin/Debug",
+        "scene_path": "c:/path/to/scene_directory"
+    }
+
+You can easily switch two profiles by directly changing the string in the experimental script to
+
+.. code-block:: ipython
+
+    In [1]: import lmenv
+       ...: env = lmenv.load('.lmenv_debug')
+
+.. note::
+
+    You must restart the kernel after you modify a reference to ``.lmenv`` file,
+    since Python process holds a reference to the binary in the previously specified ``.lmenv`` file.
+
+
+The experimental scripts are written in Python and executed in a Jupyter notebook. To debug the dynamically loaded plugin from the framework, you thus need to use ``Attach to Process`` feature of Visual Studio debugger (from menu, ``Debug > Attach to Process...``). However, this feature needs to locate the Python process you are currently focusing on. Typically you will find multiple Python processes in the list and cannot identify which is the process to which you want to attach by name. You can also use a process ID to locate the process, which can be obtained by calling ``os.getpid()`` function from inside the notebook.
+
+However, you need to iterate this process once you restarted the kernel since the process ID changes every time. Also, since you need to restart the kernel every time you update the binary, you need to iterate this process every time you recompile the code. Using recently added feature of ``Reattach to Process`` is also not usable, because it detects the previously attached process by name (there's always multple choices) or process ID (changes every time).
+
+To resolve the problem, we provide :cpp:func:`lm::debug::attachToDebugger` function to attach to the debugger from the Python code. Once the function is called, it opens a dialog to select an instance of Visual Studio (``vsjitdebugger.exe``). You want to select the opening Visual Studio instance and press Yes, then the debugger is launched with the Python process being attached to the debugger.
+
+Typically, you want to call this function only if you are running the code with Debug or RelWithDebInfo build configuations, which can be checked by examing ``lm.BuildConfig``:
+
+.. code-block:: ipython
+
+    In [1]: if lm.BuildConfig != lm.ConfigType.Release:
+       ...:     lm.debug.attachToDebugger()
+
+
+.. note::
+
+    :cpp:func:`lm::debug::attachToDebugger` uses Windows specific feature thus is only supported in Windows environment.
