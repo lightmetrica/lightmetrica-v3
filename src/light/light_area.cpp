@@ -70,7 +70,7 @@ public:
         const auto n = glm::normalize(glm::cross(b - a, c - a));
         const auto geomL = PointGeometry::makeOnSurface(
             transform.M * Vec4(p, 1_f),
-            transform.normalM * n);
+            glm::normalize(transform.normalM * n));
         const auto ppL = geomL.p - geom.p;
         const auto wo = glm::normalize(ppL);
         const auto pL = pdf(geom, geomL, 0, transform, -wo);

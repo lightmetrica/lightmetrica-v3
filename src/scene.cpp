@@ -442,7 +442,7 @@ public:
             -1,
             PointGeometry::makeOnSurface(
                 globalTransform.M * Vec4(p.p, 1_f),
-                globalTransform.normalM * p.n,
+                glm::normalize(globalTransform.normalM * p.n),
                 p.t
             )
         );
