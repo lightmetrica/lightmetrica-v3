@@ -16,6 +16,7 @@
 #include "progress.h"
 #include "progresscontext.h"
 #include "exception.h"
+#include "scheduler.h"
 #include "debug.h"
 #include "debugio.h"
 #include "distributed.h"

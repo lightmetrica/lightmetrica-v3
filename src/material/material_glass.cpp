@@ -101,6 +101,21 @@ public:
         };
     }
 
+    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng&, const PointGeometry& geom, int comp, Vec3 wi) const override {
+        if (comp == 0) {
+            return math::reflection(wi, geom.n);
+        }
+        else if (comp == 1) {
+            const bool in = glm::dot(wi, geom.n) > 0_f;
+            const auto n = in ? geom.n : -geom.n;
+            const auto eta = in ? 1_f / Ni_ : Ni_;
+            const auto [wt, total] = math::refraction(wi, n, eta);
+            LM_UNUSED(total);
+            return wt;
+        }
+        LM_UNREACHABLE_RETURN();
+    }
+
     virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const override {
         const bool in = glm::dot(wi, geom.n) > 0_f;
         const auto n = in ? geom.n : -geom.n;

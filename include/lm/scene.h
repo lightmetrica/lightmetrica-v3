@@ -27,6 +27,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 struct RaySample {
     SceneInteraction sp;   //!< Surface point information.
+    int comp;              //!< Sampled component index.
     Vec3 wo;               //!< Sampled direction.
     Vec3 weight;           //!< Contribution divided by probability.
 
@@ -284,7 +285,7 @@ public:
         with point specified by scene intersection contains delta function.
         \endrst
     */
-    virtual bool isSpecular(const SceneInteraction& sp) const = 0;
+    virtual bool isSpecular(const SceneInteraction& sp, int comp) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -308,7 +309,7 @@ public:
         \return Raster position.
     */
     virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const = 0;
-    
+
     /*!
         \brief Sample a ray given surface point and incident direction.
         \param rng Random number generator.
@@ -333,6 +334,11 @@ public:
         \endrst
     */
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
+
+    /*!
+        \brief Sample direction given component.
+    */
+    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
 
     /*!
         \brief Sample direction to a light given a scene interaction.
@@ -361,14 +367,14 @@ public:
         utlizing corresponding densities from which the direction is sampled.
         \endrst
     */
-    virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate pdf for component selection.
         \param sp Scene interaction.
         \param wi Incident ray direction.
     */
-    virtual Float pdfComp(const SceneInteraction& sp, Vec3 wi) const = 0;
+    virtual Float pdfComp(const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate pdf for light sampling given a scene interaction.
@@ -381,7 +387,7 @@ public:
         Be careful ``wo`` is the outgoing direction originated from ``spL``, not ``sp``.
         \endrst
     */
-    virtual Float pdfDirectLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const = 0;
+    virtual Float pdfDirectLight(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -446,7 +452,7 @@ public:
         to enforce an evaluation as an endpoint.
         \endrst
     */
-    virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Vec3 evalContrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate endpoint contribution.
@@ -475,7 +481,7 @@ public:
         and the associated material implements :cpp:func:`Material::reflectance` function.
         \endrst
     */
-    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const = 0;
+    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const = 0;
 };
 
 /*!

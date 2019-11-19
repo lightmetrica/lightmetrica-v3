@@ -18,6 +18,7 @@ private:
     Vec3 bgColor_;
     bool useConstantColor_;
     bool visualizeNormal_;
+    std::optional<Vec3> color_;
     Film* film_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
@@ -43,6 +44,7 @@ public:
         bgColor_ = json::value(prop, "bg_color", Vec3(0_f));
         useConstantColor_ = json::value(prop, "use_constant_color", false);
         visualizeNormal_ = json::value(prop, "visualize_normal", false);
+        color_ = json::valueOrNone<Vec3>(prop, "color");
         film_ = json::compRef<Film>(prop, "output");
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spp::sample", makeLoc("scheduler"), {
@@ -67,7 +69,7 @@ public:
                 film_->setPixel(x, y, glm::abs(sp->geom.n));
             }
             else {
-                const auto R = scene->reflectance(*sp);
+                const auto R = color_ ? *color_ : scene->reflectance(*sp, -1);
                 auto C = R ? *R : Vec3();
                 if (!useConstantColor_) {
                     C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));
