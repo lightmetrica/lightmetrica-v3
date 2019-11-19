@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import platform
 import lightmetrica as lm
 import time
+from IPython import get_ipython
 from IPython.display import display, Markdown
 
 def jupyter_init_config(outfilm):
@@ -45,10 +46,24 @@ def widen(arg):
     from IPython.core.display import display, HTML
     display(HTML("<style>.container { width:100% !important; }</style>"))
 
+def skip_if(line, cell=None):
+    """Skip execution of a cell by condition"""
+    if eval(line):
+        return
+    get_ipython().ex(cell)
+
+def skip_if_not(line, cell=None):
+    """Skip execution of a cell by condition"""
+    if not eval(line):
+        return
+    get_ipython().ex(cell)
+
 def load_ipython_extension(ip):
     """Register as IPython extension"""
-    # Register line magic function
+    # Register line magic functions
     ip.register_magic_function(widen)
+    ip.register_magic_function(skip_if, 'line_cell')
+    ip.register_magic_function(skip_if_not, 'line_cell')
 
     # Register some components
     @lm.pylm_component('logger::jupyter')
