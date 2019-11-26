@@ -156,6 +156,23 @@ struct PointGeometry {
         const int i = glm::dot(wi, n) > 0;
         return { i ? n : -n, u, i ? v : -v };
     }
+
+    /*!
+        \brief Compute a transformation matrix to change local shading coordinates to world coordinates.
+        \return Transformation matrix.
+    */
+    Mat3 getShadingLocalToWorld(Vec3 wi) const {
+        const auto [n_, u_, v_] = orthonormalBasis(wi);
+        return Mat3(u_, v_, n_);
+    }
+
+    /*!
+        \brief Compute a transformation matrix to change world coordinates to local shading coordinates.
+        \return Transformation matrix.
+    */
+    Mat3 getWorldToShadingLocal(Vec3 wi) const {
+        return glm::transpose(getShadingLocalToWorld(wi));
+    }
 };
 
 namespace SurfaceComp {
