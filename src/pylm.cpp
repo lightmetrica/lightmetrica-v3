@@ -520,6 +520,12 @@ static void bind_scene(pybind11::module& m) {
 		virtual int createGroupFromModel(const std::string& modelLoc) override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, createGroupFromModel, modelLoc);
 		}
+        virtual int envLightNode() const override {
+            PYBIND11_OVERLOAD_PURE(int, Scene, envLightNode);
+        }
+        virtual int numLights() const override {
+            PYBIND11_OVERLOAD_PURE(int, Scene, numLights);
+        }
         virtual void traversePrimitiveNodes(const NodeTraverseFunc& traverseFunc) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, traversePrimitiveNodes, traverseFunc);
         }

@@ -282,6 +282,14 @@ struct Dist {
     //! \endcond
 
     /*!
+        \brief Clear internal state.
+    */
+    void clear() {
+        c.clear();
+        c.push_back(0_f);
+    }
+
+    /*!
         \brief Add a value to the distribution.
         \param v Value to be added.
     */

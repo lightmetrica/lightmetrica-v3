@@ -367,6 +367,14 @@ public:
         return offset;
     }
 
+    virtual int envLightNode() const override {
+        return envLight_ ? *envLight_ : -1;
+    }
+
+    virtual int numLights() const override {
+        return (int)(lights_.size());
+    }
+
     // --------------------------------------------------------------------------------------------
 
     virtual void traversePrimitiveNodes(const NodeTraverseFunc& traverseFunc) const override {

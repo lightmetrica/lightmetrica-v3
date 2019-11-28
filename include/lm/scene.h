@@ -161,6 +161,20 @@ public:
     */
     virtual int createGroupFromModel(const std::string& modelLoc) = 0;
 
+    /*!
+        \brief Get environment map node index.
+
+        \rst
+        This function returns -1 if the scene doesn't contain environment light.
+        \endrst
+    */
+    virtual int envLightNode() const = 0;
+
+    /*!
+        \brief Get number of lights in the scene.
+    */
+    virtual int numLights() const = 0;
+
     // --------------------------------------------------------------------------------------------
 
     /*!
