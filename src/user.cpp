@@ -148,9 +148,6 @@ public:
             LM_INFO("Starting render [name='{}']", renderer_->key());
             LM_INDENT();
         }
-        if (renderer_->requiresScene() && !scene_->renderable()) {
-            LM_THROW_EXCEPTION_DEFAULT(Error::FailedToRender);
-        }
         renderer_->render(scene_.get());
     }
 

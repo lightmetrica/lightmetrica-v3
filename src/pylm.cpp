@@ -499,9 +499,6 @@ static void bind_scene(pybind11::module& m) {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Scene, construct, prop);
         }
-        virtual bool renderable() const override {
-            PYBIND11_OVERLOAD_PURE(bool, Scene, renderable);
-        }
         virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(std::optional<std::string>, Scene, loadAsset, name, implKey, prop);
         }
@@ -520,12 +517,18 @@ static void bind_scene(pybind11::module& m) {
 		virtual int createGroupFromModel(const std::string& modelLoc) override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, createGroupFromModel, modelLoc);
 		}
-        virtual int envLightNode() const override {
-            PYBIND11_OVERLOAD_PURE(int, Scene, envLightNode);
-        }
+		virtual int numNodes() const override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, numNodes);
+		}
         virtual int numLights() const override {
             PYBIND11_OVERLOAD_PURE(int, Scene, numLights);
         }
+		virtual int cameraNode() const override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, cameraNode);
+		}
+		virtual int envLightNode() const override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, envLightNode);
+		}
         virtual void traversePrimitiveNodes(const NodeTraverseFunc& traverseFunc) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, traversePrimitiveNodes, traverseFunc);
         }
@@ -589,7 +592,6 @@ static void bind_scene(pybind11::module& m) {
     };
     pybind11::class_<Scene, Scene_Py, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
-        .def("renderable", &Scene::renderable)
         .def("rootNode", &Scene::rootNode)
         .def("createNode", &Scene::createNode)
         .def("addChild", &Scene::addChild)

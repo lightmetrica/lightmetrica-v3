@@ -75,19 +75,6 @@ struct DistanceSample {
 class Scene : public Component {
 public:
     /*!
-        \brief Check if the scene is renderable.
-        \return 
-
-        \rst
-        This function returns true if the scene is renderable.
-        If not, the function returns false with error messages.
-        \endrst
-    */
-    virtual bool renderable() const = 0;
-
-    // --------------------------------------------------------------------------------------------
-
-    /*!
         \brief Loads an asset.
         \param name Name of the asset.
         \param implKey Key of component implementation in `interface::implementation` format.
@@ -161,20 +148,6 @@ public:
     */
     virtual int createGroupFromModel(const std::string& modelLoc) = 0;
 
-    /*!
-        \brief Get environment map node index.
-
-        \rst
-        This function returns -1 if the scene doesn't contain environment light.
-        \endrst
-    */
-    virtual int envLightNode() const = 0;
-
-    /*!
-        \brief Get number of lights in the scene.
-    */
-    virtual int numLights() const = 0;
-
     // --------------------------------------------------------------------------------------------
 
     /*!
@@ -224,6 +197,103 @@ public:
         \return Scene node.
     */
     virtual const SceneNode& nodeAt(int nodeIndex) const = 0;
+
+	/*!
+		\brierf Get number of nodes.
+
+		\rst
+		Note that the scene contains at least one node (root node).
+		\endrst
+	*/
+	virtual int numNodes() const = 0;
+
+	/*!
+		\brief Get number of lights in the scene.
+	*/
+	virtual int numLights() const = 0;
+
+	/*!
+		\brief Get camera node index.
+
+		\rst
+		This function returns -1 if there is camera in the scene.
+		\endrst
+	*/
+	virtual int cameraNode() const = 0;
+
+	/*!
+		\brief Get environment map node index.
+
+		\rst
+		This function returns -1 if there is no environment light in the scene.
+		\endrst
+	*/
+	virtual int envLightNode() const = 0;
+
+	// --------------------------------------------------------------------------------------------
+
+	/*!
+		\brief Throws an exception if there is no primitive in the scene.
+	*/
+	virtual void require_primitive() const {
+		if (numNodes() > 1) {
+			return;
+		}
+		LM_THROW_EXCEPTION(Error::Unsupported,
+			"Missing primitives. Use lm::primitive() function to add primitives.");
+	}
+
+	/*!
+		\brief Throws an exception if there is no camera in the scene.
+	*/
+	virtual void require_camera() const {
+		if (cameraNode() != -1) {
+			return;
+		}
+		LM_THROW_EXCEPTION(Error::Unsupported,
+			"Missing camera primitive. Use lm::primitive() function to add camera primitive.");
+	}
+
+	/*!
+		\brief Throws an exception if there is no light in the scene.
+	*/
+	virtual void require_light() const {
+		if (numLights() > 0) {
+			return;
+		}
+		LM_THROW_EXCEPTION(Error::Unsupported,
+			"No light in the scene. Add at least one light sources to the scene.");
+	}
+
+	/*!
+		\brief Throws an exception if there is no accel created for the scene.
+	*/
+	virtual void require_accel() const {
+		if (underlying("accel")) {
+			return;
+		}
+		LM_THROW_EXCEPTION(Error::Unsupported,
+			"Missing acceleration structure. Use lm::build() function before rendering.");
+	}
+
+	/*!
+		\brief Throws an exception if there the scene is not renderable.
+
+		\rst
+		This function is equivalent to calling the following functions:
+
+		- :cpp:func:`require_primitive`
+		- :cpp:func:`require_camera`
+		- :cpp:func:`require_light`
+		- :cpp:func:`require_accel`
+		\endrst
+	*/
+	virtual void require_renderable() const {
+		require_primitive();
+		require_camera();
+		require_light();
+		require_accel();
+	}
 
     // --------------------------------------------------------------------------------------------
 

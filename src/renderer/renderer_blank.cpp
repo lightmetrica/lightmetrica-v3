@@ -31,10 +31,6 @@ public:
         film_ = json::compRef<Film>(prop, "output");
     }
 
-    virtual bool requiresScene() const override {
-        return false;
-    }
-
     virtual void render(const Scene*) const override {
         film_->clear();
         const auto [w, h] = film_->size();

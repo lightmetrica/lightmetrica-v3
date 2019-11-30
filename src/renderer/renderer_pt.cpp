@@ -78,6 +78,8 @@ public:
     }
 
     virtual void render(const Scene* scene) const override {
+		scene->require_renderable();
+
         // Clear film
         film_->clear();
         const auto size = film_->size();

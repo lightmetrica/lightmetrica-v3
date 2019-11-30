@@ -50,6 +50,8 @@ public:
     }
 
     virtual void render(const Scene* scene) const override {
+		scene->require_renderable();
+
         film_->clear();
         const auto size = film_->size();
         const auto processed = sched_->run([&](long long pixelIndex, long long, int threadid) {

@@ -191,24 +191,6 @@ public:
     }
 
 public:
-    virtual bool renderable() const override {
-        if (nodes_.size() == 1) {
-            LM_ERROR("Missing primitives. Use lm::primitive() function to add primitives.");
-            return false;
-        }
-        if (!camera_) {
-            LM_ERROR("Missing camera primitive. Use lm::primitive() function to add camera primitive.");
-            return false;
-        }
-        if (!accel_) {
-            LM_ERROR("Missing acceleration structure. Use lm::build() function before rendering.");
-            return false;
-        }
-        return true;
-    }
-
-    // --------------------------------------------------------------------------------------------
-
     virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
         return assets_->loadAsset(name, implKey, prop);
     }
@@ -367,14 +349,6 @@ public:
         return offset;
     }
 
-    virtual int envLightNode() const override {
-        return envLight_ ? *envLight_ : -1;
-    }
-
-    virtual int numLights() const override {
-        return (int)(lights_.size());
-    }
-
     // --------------------------------------------------------------------------------------------
 
     virtual void traversePrimitiveNodes(const NodeTraverseFunc& traverseFunc) const override {
@@ -400,6 +374,22 @@ public:
     virtual const SceneNode& nodeAt(int nodeIndex) const override {
         return nodes_.at(nodeIndex);
     }
+
+	virtual int numNodes() const override {
+		return (int)(nodes_.size());
+	}
+
+	virtual int envLightNode() const override {
+		return envLight_ ? *envLight_ : -1;
+	}
+
+	virtual int cameraNode() const override {
+		return camera_ ? *camera_ : -1;
+	}
+
+	virtual int numLights() const override {
+		return (int)(lights_.size());
+	}
 
     // --------------------------------------------------------------------------------------------
 

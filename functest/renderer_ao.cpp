@@ -20,6 +20,10 @@ public:
     }
 
     virtual void render(const Scene* scene) const override {
+		scene->require_primitive();
+		scene->require_accel();
+		scene->require_camera();
+
         const auto [w, h] = film_->size();
         parallel::foreach(w*h, [&](long long index, int threadId) -> void {
             thread_local Rng rng(rngSeed_ + threadId);

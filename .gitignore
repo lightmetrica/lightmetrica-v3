@@ -37,6 +37,7 @@ jupyter
 *.serialized
 .lmenv
 .lmenv_debug
+.lmenv_linux
 *.ipynb
 functest/output
 functest/_lm_renderer_ao.py

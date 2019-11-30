@@ -54,6 +54,10 @@ public:
     }
 
     virtual void render(const Scene* scene) const override {
+		scene->require_primitive();
+		scene->require_accel();
+		scene->require_camera();
+
         film_->clear();
         const auto size = film_->size();
         sched_->run([&](long long index, long long, int) {
