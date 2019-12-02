@@ -156,6 +156,23 @@ struct PointGeometry {
         const int i = glm::dot(wi, n) > 0;
         return { i ? n : -n, u, i ? v : -v };
     }
+
+    /*!
+        \brief Compute a transformation matrix to change local shading coordinates to world coordinates.
+        \return Transformation matrix.
+    */
+    Mat3 getShadingLocalToWorld(Vec3 wi) const {
+        const auto [n_, u_, v_] = orthonormalBasis(wi);
+        return Mat3(u_, v_, n_);
+    }
+
+    /*!
+        \brief Compute a transformation matrix to change world coordinates to local shading coordinates.
+        \return Transformation matrix.
+    */
+    Mat3 getWorldToShadingLocal(Vec3 wi) const {
+        return glm::transpose(getShadingLocalToWorld(wi));
+    }
 };
 
 namespace SurfaceComp {
@@ -190,7 +207,6 @@ enum class TerminatorType {
 */
 struct SceneInteraction {
     int primitive;          //!< Primitive node index.
-    int comp;               //!< Component index.
     PointGeometry geom;     //!< Surface point geometry information.
     bool endpoint;          //!< True if endpoint of light path.
     bool medium;            //!< True if it is medium interaction.
@@ -209,10 +225,9 @@ struct SceneInteraction {
         \param geom Point geometry.
         \return Created scene interaction.
     */
-    static SceneInteraction makeSurfaceInteraction(int primitive, int comp, const PointGeometry& geom) {
+    static SceneInteraction makeSurfaceInteraction(int primitive, const PointGeometry& geom) {
         SceneInteraction si;
         si.primitive = primitive;
-        si.comp = comp;
         si.geom = geom;
         si.endpoint = false;
         si.medium = false;
@@ -227,10 +242,9 @@ struct SceneInteraction {
         \param geom Point geometry.
         \return Created scene interaction.
     */
-    static SceneInteraction makeMediumInteraction(int primitive, int comp, const PointGeometry& geom) {
+    static SceneInteraction makeMediumInteraction(int primitive, const PointGeometry& geom) {
         SceneInteraction si;
         si.primitive = primitive;
-        si.comp = comp;
         si.geom = geom;
         si.endpoint = false;
         si.medium = true;
@@ -247,10 +261,9 @@ struct SceneInteraction {
         \param aspectRatio Aspect ratio.
         \return Created scene interaction.
     */
-    static SceneInteraction makeCameraEndpoint(int primitive, int comp, const PointGeometry& geom, Vec4 window, Float aspectRatio) {
+    static SceneInteraction makeCameraEndpoint(int primitive, const PointGeometry& geom, Vec4 window, Float aspectRatio) {
         SceneInteraction si;
         si.primitive = primitive;
-        si.comp = comp;
         si.geom = geom;
         si.endpoint = true;
         si.medium = false;
@@ -266,10 +279,9 @@ struct SceneInteraction {
         \param comp Compnent index.
         \param geom Point geometry.
     */
-    static SceneInteraction makeLightEndpoint(int primitive, int comp, const PointGeometry& geom) {
+    static SceneInteraction makeLightEndpoint(int primitive, const PointGeometry& geom) {
         SceneInteraction si;
         si.primitive = primitive;
-        si.comp = comp;
         si.geom = geom;
         si.endpoint = true;
         si.medium = false;

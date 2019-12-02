@@ -27,6 +27,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 struct RaySample {
     SceneInteraction sp;   //!< Surface point information.
+    int comp;              //!< Sampled component index.
     Vec3 wo;               //!< Sampled direction.
     Vec3 weight;           //!< Contribution divided by probability.
 
@@ -73,19 +74,6 @@ struct DistanceSample {
 */
 class Scene : public Component {
 public:
-    /*!
-        \brief Check if the scene is renderable.
-        \return 
-
-        \rst
-        This function returns true if the scene is renderable.
-        If not, the function returns false with error messages.
-        \endrst
-    */
-    virtual bool renderable() const = 0;
-
-    // --------------------------------------------------------------------------------------------
-
     /*!
         \brief Loads an asset.
         \param name Name of the asset.
@@ -210,6 +198,103 @@ public:
     */
     virtual const SceneNode& nodeAt(int nodeIndex) const = 0;
 
+	/*!
+		\brierf Get number of nodes.
+
+		\rst
+		Note that the scene contains at least one node (root node).
+		\endrst
+	*/
+	virtual int numNodes() const = 0;
+
+	/*!
+		\brief Get number of lights in the scene.
+	*/
+	virtual int numLights() const = 0;
+
+	/*!
+		\brief Get camera node index.
+
+		\rst
+		This function returns -1 if there is camera in the scene.
+		\endrst
+	*/
+	virtual int cameraNode() const = 0;
+
+	/*!
+		\brief Get environment map node index.
+
+		\rst
+		This function returns -1 if there is no environment light in the scene.
+		\endrst
+	*/
+	virtual int envLightNode() const = 0;
+
+	// --------------------------------------------------------------------------------------------
+
+	/*!
+		\brief Throws an exception if there is no primitive in the scene.
+	*/
+	virtual void require_primitive() const {
+		if (numNodes() > 1) {
+			return;
+		}
+		LM_THROW_EXCEPTION(Error::Unsupported,
+			"Missing primitives. Use lm::primitive() function to add primitives.");
+	}
+
+	/*!
+		\brief Throws an exception if there is no camera in the scene.
+	*/
+	virtual void require_camera() const {
+		if (cameraNode() != -1) {
+			return;
+		}
+		LM_THROW_EXCEPTION(Error::Unsupported,
+			"Missing camera primitive. Use lm::primitive() function to add camera primitive.");
+	}
+
+	/*!
+		\brief Throws an exception if there is no light in the scene.
+	*/
+	virtual void require_light() const {
+		if (numLights() > 0) {
+			return;
+		}
+		LM_THROW_EXCEPTION(Error::Unsupported,
+			"No light in the scene. Add at least one light sources to the scene.");
+	}
+
+	/*!
+		\brief Throws an exception if there is no accel created for the scene.
+	*/
+	virtual void require_accel() const {
+		if (underlying("accel")) {
+			return;
+		}
+		LM_THROW_EXCEPTION(Error::Unsupported,
+			"Missing acceleration structure. Use lm::build() function before rendering.");
+	}
+
+	/*!
+		\brief Throws an exception if there the scene is not renderable.
+
+		\rst
+		This function is equivalent to calling the following functions:
+
+		- :cpp:func:`require_primitive`
+		- :cpp:func:`require_camera`
+		- :cpp:func:`require_light`
+		- :cpp:func:`require_accel`
+		\endrst
+	*/
+	virtual void require_renderable() const {
+		require_primitive();
+		require_camera();
+		require_light();
+		require_accel();
+	}
+
     // --------------------------------------------------------------------------------------------
 
     /*!
@@ -284,7 +369,7 @@ public:
         with point specified by scene intersection contains delta function.
         \endrst
     */
-    virtual bool isSpecular(const SceneInteraction& sp) const = 0;
+    virtual bool isSpecular(const SceneInteraction& sp, int comp) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -308,7 +393,7 @@ public:
         \return Raster position.
     */
     virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const = 0;
-    
+
     /*!
         \brief Sample a ray given surface point and incident direction.
         \param rng Random number generator.
@@ -333,6 +418,11 @@ public:
         \endrst
     */
     virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
+
+    /*!
+        \brief Sample direction given component.
+    */
+    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
 
     /*!
         \brief Sample direction to a light given a scene interaction.
@@ -361,14 +451,14 @@ public:
         utlizing corresponding densities from which the direction is sampled.
         \endrst
     */
-    virtual Float pdf(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate pdf for component selection.
         \param sp Scene interaction.
         \param wi Incident ray direction.
     */
-    virtual Float pdfComp(const SceneInteraction& sp, Vec3 wi) const = 0;
+    virtual Float pdfComp(const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate pdf for light sampling given a scene interaction.
@@ -381,7 +471,7 @@ public:
         Be careful ``wo`` is the outgoing direction originated from ``spL``, not ``sp``.
         \endrst
     */
-    virtual Float pdfDirectLight(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const = 0;
+    virtual Float pdfDirectLight(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -446,7 +536,7 @@ public:
         to enforce an evaluation as an endpoint.
         \endrst
     */
-    virtual Vec3 evalContrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Vec3 evalContrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate endpoint contribution.
@@ -475,7 +565,7 @@ public:
         and the associated material implements :cpp:func:`Material::reflectance` function.
         \endrst
     */
-    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const = 0;
+    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const = 0;
 };
 
 /*!

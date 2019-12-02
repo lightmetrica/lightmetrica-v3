@@ -88,7 +88,7 @@ lm.primitive(lm.identity(), {
 lm.build('accel::sahbvh', {})
 lm.render('renderer::raycast', {
     'output': lm.asset('film1'),
-    'color': [0,0,0]
+    'bg_color': [0,0,0]
 })
 
 img = np.copy(lm.buffer(lm.asset('film1')))

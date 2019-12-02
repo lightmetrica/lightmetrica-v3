@@ -46,10 +46,6 @@ public:
                 {"output", prop["output"]}
             });
     }
-
-    virtual bool requiresScene() const override {
-        return false;
-    }
     
     // Assume volume stores density of the extinction coefficient and
     // densityScale_ is multipled to the evaluated density value.

@@ -78,6 +78,8 @@ public:
     }
 
     virtual void render(const Scene* scene) const override {
+		scene->require_renderable();
+
         // Clear film
         film_->clear();
         const auto size = film_->size();
@@ -139,11 +141,11 @@ public:
                     // (according to BSDF / phase) doesn't contain delta component.
                     if (imageSampleMode_ == ImageSampleMode::Pixel) {
                         // Primary ray is not samplable via NEE in the pixel space sample mode
-                        return length > 0 && !scene->isSpecular(s->sp);
+                        return length > 0 && !scene->isSpecular(s->sp, s->comp);
                     }
                     else {
                         // Primary ray is samplable via NEE in the image space sample mode
-                        return !scene->isSpecular(s->sp);
+                        return !scene->isSpecular(s->sp, s->comp);
                     }
                 }();
                 if (nee) [&] {
@@ -169,12 +171,12 @@ public:
 
                     // This light is not samplable by direct strategy
                     // if the light contain delta component or degenerated.
-                    const bool directL = !scene->isSpecular(sL->sp) && !sL->sp.geom.degenerated;
+                    const bool directL = !scene->isSpecular(sL->sp, sL->comp) && !sL->sp.geom.degenerated;
 
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
-                    const auto fs = scene->evalContrb(s->sp, wi, wo);
-                    const auto pdfSel = scene->pdfComp(s->sp, wi);
+                    const auto fs = scene->evalContrb(s->sp, s->comp, wi, wo);
+                    const auto pdfSel = scene->pdfComp(s->sp, s->comp, wi);
                     const auto misw = [&]() -> Float {
                         if (ptMode_ == PTMode::NEE) {
                             return 1_f;
@@ -184,7 +186,8 @@ public:
                         }
                         // Compute MIS weight only when wo can be sampled with both strategies.
                         return math::balanceHeuristic(
-                            scene->pdfDirectLight(s->sp, sL->sp, sL->wo), scene->pdf(s->sp, wi, wo));
+                            scene->pdfDirectLight(s->sp, sL->sp, sL->comp, sL->wo), 
+                            scene->pdf(s->sp, s->comp, wi, wo));
                     }();
                     const auto C = throughput / pdfSel * fs * sL->weight * misw;
                     film_->splat(*rp, C);
@@ -228,7 +231,8 @@ public:
                         }
                         // The continuation edge can be sampled via both direct and NEE
                         return math::balanceHeuristic(
-                            scene->pdf(s->sp, wi, s->wo), scene->pdfDirectLight(s->sp, *hit, woL));
+                            scene->pdf(s->sp, s->comp, wi, s->wo),
+                            scene->pdfDirectLight(s->sp, *hit, -1, woL));
                     }();
                     const auto C = throughput * fs * misw;
                     film_->splat(rasterPos, C);

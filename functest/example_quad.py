@@ -32,9 +32,16 @@ import matplotlib.pyplot as plt
 import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
+if lm.BuildConfig != lm.ConfigType.Release:
+    lm.debug.attachToDebugger()
+
 lm.init()
 lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
+if lm.BuildConfig != lm.ConfigType.Release:
+    lm.parallel.init('parallel::openmp', {
+        'numThread': 1
+    })
 lm.info()
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
@@ -100,7 +107,7 @@ lm.primitive(lm.identity(), {
 lm.build('accel::sahbvh', {})
 lm.render('renderer::raycast', {
     'output': lm.asset('film1'),
-    'color': [0,0,0]
+    'bg_color': [0,0,0]
 })
 
 img = np.copy(lm.buffer(lm.asset('film1')))

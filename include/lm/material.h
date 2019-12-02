@@ -74,6 +74,14 @@ public:
     virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
 
     /*!
+        \brief Sample a ray direction given a component.
+    */
+    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const {
+        LM_UNUSED(rng, geom, comp, wi);
+        LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
+    }
+
+    /*!
         \brief Evaluate reflectance.
         \param geom Point geometry.
         \param comp Component index.

@@ -48,6 +48,10 @@ public:
         return ref_->sample(rng, geom, wi);
     }
 
+    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const override {
+        return ref_->sampleDirectionGivenComp(rng, geom, comp, wi);
+    }
+
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
         return ref_->reflectance(geom, comp);
     }

@@ -282,6 +282,14 @@ struct Dist {
     //! \endcond
 
     /*!
+        \brief Clear internal state.
+    */
+    void clear() {
+        c.clear();
+        c.push_back(0_f);
+    }
+
+    /*!
         \brief Add a value to the distribution.
         \param v Value to be added.
     */
@@ -539,6 +547,18 @@ static Float balanceHeuristic(Float p1, Float p2) {
         return 0_f;
     }
     return p1 / (p1 + p2);
+}
+
+/*!
+    \brief Convert spherical to cartesian coordinates.
+*/
+static auto sphericalToCartesian(Float theta, Float phi) -> Vec3 {
+    const auto sinTheta = glm::sin(theta);
+    return Vec3(
+        sinTheta * glm::cos(phi),
+        sinTheta * glm::sin(phi),
+        glm::cos(theta)
+    );
 }
 
 /*!

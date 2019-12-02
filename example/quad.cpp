@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
         lm::build("accel::sahbvh");
         lm::render("renderer::raycast", {
             {"output", lm::asset("film1")},
-            {"color", {0,0,0}}
+            {"bg_color", {0,0,0}}
         });
         // _end_render
 

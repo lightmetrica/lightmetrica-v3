@@ -422,6 +422,10 @@ public:
         };
     }
 
+    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const override {
+        return materials_.at(comp)->sampleDirectionGivenComp(rng, geom, SurfaceComp::DontCare, wi);
+    }
+
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
         if (comp >= 0) {
             return materials_.at(comp)->reflectance(geom, SurfaceComp::DontCare);

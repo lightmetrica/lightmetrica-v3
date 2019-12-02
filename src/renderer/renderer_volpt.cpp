@@ -66,6 +66,8 @@ public:
     }
 
     virtual void render(const Scene* scene) const override {
+		scene->require_renderable();
+
         film_->clear();
         const auto size = film_->size();
         const auto processed = sched_->run([&](long long pixelIndex, long long, int threadid) {
@@ -111,7 +113,7 @@ public:
 #if VOLPT_IMAGE_SAMPLNG
                 const bool nee = !scene->isSpecular(s->sp);
 #else
-                const bool nee = length > 0 && !scene->isSpecular(s->sp);
+                const bool nee = length > 0 && !scene->isSpecular(s->sp, s->comp);
 #endif
                 if (nee) [&] {
                     // Sample a light
@@ -139,8 +141,8 @@ public:
 
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
-                    const auto fs = scene->evalContrb(s->sp, wi, wo);
-                    const auto pdfSel = scene->pdfComp(s->sp, wi);
+                    const auto fs = scene->evalContrb(s->sp, s->comp, wi, wo);
+                    const auto pdfSel = scene->pdfComp(s->sp, s->comp, wi);
                     const auto C = throughput / pdfSel * Tr * fs * sL->weight;
                     film_->splat(*rp, C);
                 }();

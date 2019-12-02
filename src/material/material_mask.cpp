@@ -39,6 +39,10 @@ public:
         };
     }
 
+    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng&, const PointGeometry&, int, Vec3 wi) const override {
+        return -wi;
+    }
+
     virtual Float pdf(const PointGeometry&, int, Vec3, Vec3) const override {
         LM_UNREACHABLE_RETURN();
     }
