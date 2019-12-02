@@ -49,7 +49,7 @@ public:
     struct Hit {
         Float t;                    //!< Distance to the hit point.
         Vec2 uv;                    //!< Barycentric coordinates.
-        Transform globalTransform;  //!< Global transformation.
+        Transform global_transform;	//!< Global transformation.
         int primitive;              //!< Primitive node index.
         int face;                   //!< Face index.
     };

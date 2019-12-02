@@ -51,8 +51,8 @@ public:
 
         // Bound
         const auto b = vdbloaderGetBound(context_);
-        bound_.mi = Vec3(b.min.x, b.min.y, b.min.z);
-        bound_.ma = Vec3(b.max.x, b.max.y, b.max.z);
+        bound_.min = Vec3(b.min.x, b.min.y, b.min.z);
+        bound_.max = Vec3(b.max.x, b.max.y, b.max.z);
 
         // Maximum density
         maxScalar_ = vbdloaderGetMaxScalar(context_) * scale_;
@@ -62,20 +62,20 @@ public:
         return bound_;
     }
 
-    virtual Float maxScalar() const override {
+    virtual Float max_scalar() const override {
         return maxScalar_;
     }
 
-    virtual bool hasScalar() const override {
+    virtual bool has_scalar() const override {
         return true;
     }
 
-    virtual Float evalScalar(Vec3 p) const override {
+    virtual Float eval_scalar(Vec3 p) const override {
         const auto d = vbdloaderEvalScalar(context_, VDBLoaderFloat3{ p.x, p.y, p.z });
         return d * scale_;
     }
 
-    virtual bool hasColor() const override {
+    virtual bool has_color() const override {
         return false;
     }
 

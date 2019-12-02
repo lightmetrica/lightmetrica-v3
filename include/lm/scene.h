@@ -77,13 +77,13 @@ public:
     /*!
         \brief Loads an asset.
         \param name Name of the asset.
-        \param implKey Key of component implementation in `interface::implementation` format.
+        \param impl_key Key of component implementation in `interface::implementation` format.
         \param prop Properties.
         \return Locator of the asset. nullopt if failed.
 
         \rst
         Loads an asset from the given information and registers to the class.
-        ``implKey`` is used to create an instance and ``prop`` is used to construct it.
+        ``impl_key`` is used to create an instance and ``prop`` is used to construct it.
         ``prop`` is passed to :cpp:func:`lm::Component::construct` function of
         the implementation of the asset.
 
@@ -94,7 +94,7 @@ public:
         For usage, see ``functest/func_update_asset.py``.
         \endrst
     */
-    virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
+    virtual std::optional<std::string> load_asset(const std::string& name, const std::string& impl_key, const Json& prop) = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -102,7 +102,7 @@ public:
         \brief Get index of the root node.
         \return Node index.
     */
-    virtual int rootNode() = 0;
+    virtual int root_node() = 0;
 
     /*!
         \brief Load scene node(s).
@@ -118,7 +118,7 @@ public:
         The function returns true if the loading is a success.
         \endrst
     */
-    virtual int createNode(SceneNodeType type, const Json& prop) = 0;
+    virtual int create_node(SceneNodeType type, const Json& prop) = 0;
 
     /*!
         \brief Add primitive group.
@@ -132,44 +132,44 @@ public:
         this function returns the index of the registered group.
         \endrst
     */
-    virtual void addChild(int parent, int child) = 0;
+    virtual void add_child(int parent, int child) = 0;
 
     /*!
         \brief Add child node from model asset.
         \param parent Index of the parent node.
-        \param modelLoc Locator of the model asset.
+        \param model_loc Locator of the model asset.
     */
-    virtual void addChildFromModel(int parent, const std::string& modelLoc) = 0;
+    virtual void add_child_from_model(int parent, const std::string& model_loc) = 0;
 
     /*!
         \brief Create group node from model asset.
-        \param modelLoc Locator of the model asset.
+        \param model_loc Locator of the model asset.
         \return Index of the created node.
     */
-    virtual int createGroupFromModel(const std::string& modelLoc) = 0;
+    virtual int create_group_from_model(const std::string& model_loc) = 0;
 
     // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Callback function to traverse the scene nodes.
         \param node Current node.
-        \param globalTransform Global transform applied to the node.
+        \param global_transform Global transform applied to the node.
     */
-    using NodeTraverseFunc = std::function<void(const SceneNode& node, Mat4 globalTransform)>;
+    using NodeTraverseFunc = std::function<void(const SceneNode& node, Mat4 global_transform)>;
 
     /*!
         \brief Iterate primitive nodes in the scene.
-        \param traverseFunc Function being called for each traversed primitive node.
+        \param traverse_func Function being called for each traversed primitive node.
         
         \rst
         This function traverses the primitive nodes in the scene graph.
         For each primitive node, global transformation is computed and passed as
         an argument of the callback function.
         Note that this function does not traverse intermediate group nodes.
-        If you want to traverse also the group node, consider to use :cpp:func:`Scene::visitNode`.
+        If you want to traverse also the group node, consider to use :cpp:func:`Scene::visit_node`.
         \endrst
     */
-    virtual void traversePrimitiveNodes(const NodeTraverseFunc& traverseFunc) const = 0;
+    virtual void traverse_primitive_nodes(const NodeTraverseFunc& traverse_func) const = 0;
 
     /*!
         \brief Callback function to traverse the scene nodes.
@@ -179,24 +179,24 @@ public:
 
     /*!
         \brief Traverse a node in the scene.
-        \param nodeIndex Note index where the traverse starts.
+        \param node_index Note index where the traverse starts.
         \param visit Callback function being called for each traversed node.
 
         \rst
         This function traverse a node in the scene graph.
-        Unlike :cpp:func:`Scene::traversePrimitiveNodes`, this function
+        Unlike :cpp:func:`Scene::traverse_primitive_nodes`, this function
         can be used to traverse all kinds of scene nodes in the scene graph.
         Be careful the user is responsible to call this function to traverse the node recursively.
         \endrst
     */
-    virtual void visitNode(int nodeIndex, const VisitNodeFunc& visit) const = 0;
+    virtual void visit_node(int node_index, const VisitNodeFunc& visit) const = 0;
 
     /*!
         \brief Get scene node by index.
-        \param nodeIndex Scene node index.
+        \param node_index Scene node index.
         \return Scene node.
     */
-    virtual const SceneNode& nodeAt(int nodeIndex) const = 0;
+    virtual const SceneNode& node_at(int node_index) const = 0;
 
 	/*!
 		\brierf Get number of nodes.
@@ -205,12 +205,12 @@ public:
 		Note that the scene contains at least one node (root node).
 		\endrst
 	*/
-	virtual int numNodes() const = 0;
+	virtual int num_nodes() const = 0;
 
 	/*!
 		\brief Get number of lights in the scene.
 	*/
-	virtual int numLights() const = 0;
+	virtual int num_lights() const = 0;
 
 	/*!
 		\brief Get camera node index.
@@ -219,7 +219,7 @@ public:
 		This function returns -1 if there is camera in the scene.
 		\endrst
 	*/
-	virtual int cameraNode() const = 0;
+	virtual int camera_node() const = 0;
 
 	/*!
 		\brief Get environment map node index.
@@ -228,7 +228,7 @@ public:
 		This function returns -1 if there is no environment light in the scene.
 		\endrst
 	*/
-	virtual int envLightNode() const = 0;
+	virtual int env_light_node() const = 0;
 
 	// --------------------------------------------------------------------------------------------
 
@@ -236,7 +236,7 @@ public:
 		\brief Throws an exception if there is no primitive in the scene.
 	*/
 	virtual void require_primitive() const {
-		if (numNodes() > 1) {
+		if (num_nodes() > 1) {
 			return;
 		}
 		LM_THROW_EXCEPTION(Error::Unsupported,
@@ -247,7 +247,7 @@ public:
 		\brief Throws an exception if there is no camera in the scene.
 	*/
 	virtual void require_camera() const {
-		if (cameraNode() != -1) {
+		if (camera_node() != -1) {
 			return;
 		}
 		LM_THROW_EXCEPTION(Error::Unsupported,
@@ -258,7 +258,7 @@ public:
 		\brief Throws an exception if there is no light in the scene.
 	*/
 	virtual void require_light() const {
-		if (numLights() > 0) {
+		if (num_lights() > 0) {
 			return;
 		}
 		LM_THROW_EXCEPTION(Error::Unsupported,
@@ -357,7 +357,7 @@ public:
         \param sp Scene interaction.
         \return True if scene interaction is light.
     */
-    virtual bool isLight(const SceneInteraction& sp) const = 0;
+    virtual bool is_light(const SceneInteraction& sp) const = 0;
 
     /*!
         \brief Check if given surface point is specular.
@@ -369,14 +369,14 @@ public:
         with point specified by scene intersection contains delta function.
         \endrst
     */
-    virtual bool isSpecular(const SceneInteraction& sp, int comp) const = 0;
+    virtual bool is_specular(const SceneInteraction& sp, int comp) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Generate a primary ray.
         \param rp Raster position in [0,1]^2.
-        \param aspectRatio Aspect ratio of the film.
+        \param aspect_ratio Aspect ratio of the film.
         \return Generated primary ray.
 
         \rst
@@ -384,15 +384,15 @@ public:
         corresponding to the given raster position.
         \endrst
     */
-    virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const = 0;
+    virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const = 0;
 
     /*!
         \brief Compute a raster position.
         \param wo Primary ray direction.
-        \param aspectRatio Aspect ratio of the film.
+        \param aspect_ratio Aspect ratio of the film.
         \return Raster position.
     */
-    virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const = 0;
+    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const = 0;
 
     /*!
         \brief Sample a ray given surface point and incident direction.
@@ -417,12 +417,12 @@ public:
         the evaluated contribution of the sampled direction is zero.
         \endrst
     */
-    virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
+    virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
 
     /*!
         \brief Sample direction given component.
     */
-    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
+    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
 
     /*!
         \brief Sample direction to a light given a scene interaction.
@@ -431,12 +431,12 @@ public:
 
         \rst
         This function samples a ray to the light given a scene interaction.
-        Be careful not to confuse the sampled ray with the ray sampled via :cpp:func:`Scene::sampleRay`
+        Be careful not to confuse the sampled ray with the ray sampled via :cpp:func:`Scene::sample_ray`
         function from a light source. Both rays are sampled from the different distributions
         and if you want to evaluate densities you want to use different functions.
         \endrst
     */
-    virtual std::optional<RaySample> sampleDirectLight(Rng& rng, const SceneInteraction& sp) const = 0;
+    virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
@@ -458,7 +458,7 @@ public:
         \param sp Scene interaction.
         \param wi Incident ray direction.
     */
-    virtual Float pdfComp(const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
+    virtual Float pdf_comp(const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate pdf for light sampling given a scene interaction.
@@ -467,11 +467,11 @@ public:
         \param wo Sampled outgoing ray directiom *from* the light.
 
         \rst
-        This function evaluate pdf for the ray sampled via :cpp:func:`Scene::sampleDirectLight`.
+        This function evaluate pdf for the ray sampled via :cpp:func:`Scene::sample_direct_light`.
         Be careful ``wo`` is the outgoing direction originated from ``spL``, not ``sp``.
         \endrst
     */
-    virtual Float pdfDirectLight(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const = 0;
+    virtual Float pdf_direct_light(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -487,7 +487,7 @@ public:
         some underlying distance sampling technique might not have the analitical representation.
         \endrst
     */
-    virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const = 0;
+    virtual std::optional<DistanceSample> sample_distance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate transmittance.
@@ -503,7 +503,7 @@ public:
         this function is conceptually equivalent to :cpp:func:`Scene::visible`.
         \endrst
     */
-    virtual Vec3 evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const = 0;
+    virtual Vec3 eval_transmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -530,13 +530,13 @@ public:
             this function evaluate phase function.
 
         Note that the scene interaction obtained from :cpp:func:`Scene::intersect` or 
-        :cpp:func:`Scene::sampleDistance` is not an endpont
+        :cpp:func:`Scene::sample_distance` is not an endpont
         even if it might represent either a light or a sensor.
-        In this case, you want to use :cpp:func:`Scene::evalContrbEndpoint`
+        In this case, you want to use :cpp:func:`Scene::eval_contrb_endpoint`
         to enforce an evaluation as an endpoint.
         \endrst
     */
-    virtual Vec3 evalContrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate endpoint contribution.
@@ -554,7 +554,7 @@ public:
         irrespective to the value of ``sp.endpoint``.
         \endrst
     */
-    virtual Vec3 evalContrbEndpoint(const SceneInteraction& sp, Vec3 wo) const = 0;
+    virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate reflectance (if available).

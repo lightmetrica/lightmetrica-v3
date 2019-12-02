@@ -15,7 +15,7 @@ private:
 
 public:
     virtual void construct(const Json& prop) override {
-        film_ = json::compRef<Film>(prop, "output");
+        film_ = json::comp_ref<Film>(prop, "output");
         spp_ = json::value<long long>(prop, "spp");
     }
 
@@ -29,19 +29,19 @@ public:
             thread_local Rng rng(rngSeed_ + threadId);
             const int x = int(index % w);
             const int y = int(index / w);
-            const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h}, film_->aspectRatio());
+            const auto ray = scene->primary_ray({(x+.5_f)/w, (y+.5_f)/h}, film_->aspect_ratio());
             const auto hit = scene->intersect(ray);
             if (!hit) {
                 return;
             }
             auto V = 0_f;
             for (long long i = 0; i < spp_; i++) {
-                const auto [n, u, v] = hit->geom.orthonormalBasis(-ray.d);
-                const auto d = math::sampleCosineWeighted(rng);
+                const auto [n, u, v] = hit->geom.orthonormal_basis(-ray.d);
+                const auto d = math::sample_cosine_weighted(rng);
                 V += scene->intersect({hit->geom.p, u*d.x+v*d.y+n*d.z}, Eps, .2_f) ? 0_f : 1_f;
             }
             V /= spp_;
-            film_->setPixel(x, y, Vec3(V));
+            film_->set_pixel(x, y, Vec3(V));
         });
     }
 };

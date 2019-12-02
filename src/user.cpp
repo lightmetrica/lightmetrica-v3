@@ -33,7 +33,7 @@ public:
         // User context is the root of the object tree.
         // Root locator is '$'.
         comp::detail::Access::loc(this) = "$";
-        comp::detail::registerRootComp(this);
+        comp::detail::register_root_comp(this);
     }
 
 public:
@@ -114,13 +114,13 @@ public:
     }
 
     void reset() {
-        scene_ = comp::create<Scene>("scene::default", makeLoc("scene"));
+        scene_ = comp::create<Scene>("scene::default", make_loc("scene"));
         assert(scene_);
         renderer_.reset();
     }
 
     std::string asset(const std::string& name, const std::string& implKey, const Json& prop) {
-        const auto loc = scene_->loadAsset(name, implKey, prop);
+        const auto loc = scene_->load_asset(name, implKey, prop);
         if (!loc) {
             LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
@@ -137,7 +137,7 @@ public:
 
     void renderer(const std::string& rendererName, const Json& prop) {
         LM_INFO("Creating renderer [renderer='{}']", rendererName);
-        renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc("renderer"), prop);
+        renderer_ = lm::comp::create<Renderer>(rendererName, make_loc("renderer"), prop);
         if (!renderer_) {
             LM_THROW_EXCEPTION_DEFAULT(Error::FailedToRender);
         }
@@ -181,40 +181,40 @@ public:
         serial::load(is, renderer_);
     }
 
-    int rootNode() {
-        return scene_->rootNode();
+    int root_node() {
+        return scene_->root_node();
     }
 
-    int primitiveNode(const Json& prop) {
-        return scene_->createNode(SceneNodeType::Primitive, prop);
+    int primitive_node(const Json& prop) {
+        return scene_->create_node(SceneNodeType::Primitive, prop);
     }
 
-    int groupNode() {
-        return scene_->createNode(SceneNodeType::Group, {});
+    int group_node() {
+        return scene_->create_node(SceneNodeType::Group, {});
     }
 
-    int instanceGroupNode() {
-        return scene_->createNode(SceneNodeType::Group, {
+    int instance_group_node() {
+        return scene_->create_node(SceneNodeType::Group, {
             {"instanced", true}
         });
     }
 
-    int transformNode(Mat4 transform) {
-        return scene_->createNode(SceneNodeType::Group, {
+    int transform_node(Mat4 transform) {
+        return scene_->create_node(SceneNodeType::Group, {
             {"transform", transform}
         });
     }
 
-    void addChild(int parent, int child) {
-        scene_->addChild(parent, child);
+    void add_child(int parent, int child) {
+        scene_->add_child(parent, child);
     }
 
-    void addChildFromModel(int parent, const std::string& modelLoc) {
-        scene_->addChildFromModel(parent, modelLoc);
+    void add_child_from_model(int parent, const std::string& modelLoc) {
+        scene_->add_child_from_model(parent, modelLoc);
     }
 
-    int createGroupFromModel(const std::string& modelLoc) {
-        return scene_->createGroupFromModel(modelLoc);
+    int create_group_from_model(const std::string& modelLoc) {
+        return scene_->create_group_from_model(modelLoc);
     }
 };
 
@@ -273,47 +273,47 @@ LM_PUBLIC_API void deserialize(std::istream& is) {
     UserContext::instance().deserialize(is);
 }
 
-LM_PUBLIC_API int rootNode() {
-    return UserContext::instance().rootNode();
+LM_PUBLIC_API int root_node() {
+    return UserContext::instance().root_node();
 }
 
-LM_PUBLIC_API int primitiveNode(const Json& prop) {
-    return UserContext::instance().primitiveNode(prop);
+LM_PUBLIC_API int primitive_node(const Json& prop) {
+    return UserContext::instance().primitive_node(prop);
 }
 
-LM_PUBLIC_API int groupNode() {
-    return UserContext::instance().groupNode();
+LM_PUBLIC_API int group_node() {
+    return UserContext::instance().group_node();
 }
 
-LM_PUBLIC_API int instanceGroupNode() {
-    return UserContext::instance().instanceGroupNode();
+LM_PUBLIC_API int instance_group_node() {
+    return UserContext::instance().instance_group_node();
 }
 
-LM_PUBLIC_API int transformNode(Mat4 transform) {
-    return UserContext::instance().transformNode(transform);
+LM_PUBLIC_API int transform_node(Mat4 transform) {
+    return UserContext::instance().transform_node(transform);
 }
 
-LM_PUBLIC_API void addChild(int parent, int child) {
-    UserContext::instance().addChild(parent, child);
+LM_PUBLIC_API void add_child(int parent, int child) {
+    UserContext::instance().add_child(parent, child);
 }
 
-LM_PUBLIC_API void addChildFromModel(int parent, const std::string& modelLoc) {
-    UserContext::instance().addChildFromModel(parent, modelLoc);
+LM_PUBLIC_API void add_child_from_model(int parent, const std::string& modelLoc) {
+    UserContext::instance().add_child_from_model(parent, modelLoc);
 }
 
-LM_PUBLIC_API int createGroupFromModel(const std::string& modelLoc) {
-    return UserContext::instance().createGroupFromModel(modelLoc);
+LM_PUBLIC_API int create_group_from_model(const std::string& modelLoc) {
+    return UserContext::instance().create_group_from_model(modelLoc);
 }
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
-    auto t = transformNode(transform);
+    auto t = transform_node(transform);
     if (prop.find("model") != prop.end()) {
-        addChildFromModel(t, prop["model"]);
+        add_child_from_model(t, prop["model"]);
     }
     else {
-        addChild(t, primitiveNode(prop));
+        add_child(t, primitive_node(prop));
     }
-    addChild(rootNode(), t);
+    add_child(root_node(), t);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

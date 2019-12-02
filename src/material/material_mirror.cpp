@@ -30,7 +30,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Material_Mirror final : public Material {
 private:
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return true;
     }
 
@@ -42,7 +42,7 @@ private:
         };
     }
 
-    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng&, const PointGeometry& geom, int, Vec3 wi) const override {
+    virtual std::optional<Vec3> sample_direction_given_comp(Rng&, const PointGeometry& geom, int, Vec3 wi) const override {
         return math::reflection(wi, geom.n);
     }
 
@@ -50,7 +50,7 @@ private:
         LM_UNREACHABLE_RETURN();
     }
 
-    virtual Float pdfComp(const PointGeometry&, int, Vec3) const override {
+    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
         return 1_f;
     }
 

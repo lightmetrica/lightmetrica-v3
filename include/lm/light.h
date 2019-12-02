@@ -51,7 +51,7 @@ public:
         contains a component of delta function.
         \endrst
     */
-    virtual bool isSpecular(const PointGeometry& geom, int comp) const = 0;
+    virtual bool is_specular(const PointGeometry& geom, int comp) const = 0;
 
     /*!
         \brief Sample a position on the light.
@@ -100,7 +100,7 @@ public:
         such as environment light or directional light.
         \endrst
     */
-    virtual bool isInfinite() const = 0;
+    virtual bool is_infinite() const = 0;
 
     /*!
         \brief Evaluate luminance.

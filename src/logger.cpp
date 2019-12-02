@@ -148,7 +148,7 @@ public:
         }
     }
 
-    void updateIndentation(int n) {
+    void update_indentation(int n) {
         std::unique_lock<std::mutex> lock(mutex_);
         indentation_ += n;
         if (indentation_ > 0) {
@@ -160,7 +160,7 @@ public:
         }
     }
 
-    void setSeverity(int severity) override {
+    void set_severity(int severity) override {
         severity_ = severity;
     }
 };
@@ -179,9 +179,9 @@ LM_PUBLIC_API void shutdown() {
     Instance::shutdown();
 }
 
-LM_PUBLIC_API void setSeverity(int severity) {
+LM_PUBLIC_API void set_severity(int severity) {
     if (Instance::initialized()) {
-        Instance::get().setSeverity(severity);
+        Instance::get().set_severity(severity);
     }
 }
 
@@ -195,9 +195,9 @@ LM_PUBLIC_API void log(LogLevel level, int severity, const char* filename, int l
     }
 }
 
-LM_PUBLIC_API void updateIndentation(int n) {
+LM_PUBLIC_API void update_indentation(int n) {
     if (Instance::initialized()) {
-        Instance::get().updateIndentation(n);
+        Instance::get().update_indentation(n);
     }
 }
 

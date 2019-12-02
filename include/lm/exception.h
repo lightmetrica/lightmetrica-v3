@@ -47,22 +47,22 @@ LM_PUBLIC_API void shutdown();
 
     \rst
     This function enables floating-point exception.
-    You may use :class:`ScopedDisableFPEx` class to automatically enable/disable
+    You may use :cpp:class:`ScopedDisableFPEx` class to automatically enable/disable
     the floating point exception inside a scope.
     \endrst
 */
-LM_PUBLIC_API void enableFPEx();
+LM_PUBLIC_API void enable_fpex();
 
 /*!
     \brief Disable floating point exceptions.
     
     \rst
     This function disables floating-point exception.
-    You may use :class:`ScopedDisableFPEx` class to automatically enable/disable
+    You may use :cpp:class:`ScopedDisableFPEx` class to automatically enable/disable
     the floating point exception inside a scope.
     \endrst
 */
-LM_PUBLIC_API void disableFPEx();
+LM_PUBLIC_API void disable_fpex();
 
 /*!
     \brief Print stack trace.
@@ -73,7 +73,7 @@ LM_PUBLIC_API void disableFPEx();
     as well as an error message.
     \endrst
 */
-LM_PUBLIC_API void stackTrace();
+LM_PUBLIC_API void stack_trace();
 
 /*!
     \brief Scoped disable of floating point exception.
@@ -100,8 +100,8 @@ LM_PUBLIC_API void stackTrace();
 */
 class ScopedDisableFPEx {
 public:
-    ScopedDisableFPEx() { disableFPEx(); }
-    ~ScopedDisableFPEx() { enableFPEx(); }
+    ScopedDisableFPEx() { disable_fpex(); }
+    ~ScopedDisableFPEx() { enable_fpex(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedDisableFPEx)
 };
 

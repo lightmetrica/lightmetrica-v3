@@ -59,11 +59,11 @@ static void bind_exception(pybind11::module& m) {
 // Bind version.h
 static void bind_version(pybind11::module& m) {
     auto sm = m.def_submodule("version");
-    m.attr("majorVersion") = lm::version::majorVersion();
-    m.attr("minorVersion") = lm::version::minorVersion();
-    m.attr("patchVersion") = lm::version::patchVersion();
+    m.attr("major_version") = lm::version::major_version();
+    m.attr("minor_version") = lm::version::minor_version();
+    m.attr("patch_version") = lm::version::patch_version();
     m.attr("revision") = lm::version::revision();
-    m.attr("buildTimestamp") = lm::version::buildTimestamp();
+    m.attr("build_timestamp") = lm::version::build_timestamp();
     m.attr("platform") = lm::version::platform();
     m.attr("architecture") = lm::version::architecture();
     m.attr("formatted") = lm::version::formatted();
@@ -114,16 +114,16 @@ static void bind_math(pybind11::module& m) {
 
     // math namespace
     auto sm = m.def_submodule("math");
-    sm.def("orthonormalBasis", &math::orthonormalBasis);
-    sm.def("safeSqrt", &math::safeSqrt);
+    sm.def("orthonormalBasis", &math::orthonormal_basis);
+    sm.def("safeSqrt", &math::safe_sqrt);
     sm.def("sq", &math::sq);
     sm.def("reflection", &math::reflection);
     pybind11::class_<math::RefractionResult>(sm, "RefractionResult")
         .def_readwrite("wt", &math::RefractionResult::wt)
         .def_readwrite("total", &math::RefractionResult::total);
     sm.def("refraction", &math::refraction);
-    sm.def("sampleCosineWeighted", &math::sampleCosineWeighted);
-    sm.def("balanceHeuristic", &math::balanceHeuristic);
+    sm.def("sampleCosineWeighted", &math::sample_cosine_weighted);
+    sm.def("balanceHeuristic", &math::balance_heuristic);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -141,10 +141,10 @@ static void bind_component(pybind11::module& m) {
         .def(pybind11::init<>())
         .def("key", &Component::key)
         .def("loc", &Component::loc)
-        .def("parentLoc", &Component::parentLoc)
+        .def("parentLoc", &Component::parent_loc)
         .def("construct", &Component::construct)
         .def("underlying", &Component::underlying, pybind11::return_value_policy::reference)
-        .def("underlyingValue", &Component::underlyingValue, "query"_a = "")
+        .def("underlyingValue", &Component::underlying_value, "query"_a = "")
         .def("save", [](Component* self) -> pybind11::bytes {
             std::ostringstream os;
             {
@@ -164,10 +164,10 @@ static void bind_component(pybind11::module& m) {
     sm.def("get", [](const std::string& locator) -> Component* {
         return comp::get<Component>(locator);
     }, pybind11::return_value_policy::reference);
-    sm.def("loadPlugin", &comp::loadPlugin);
-    sm.def("loadPluginDirectory", &comp::loadPluginDirectory);
-    sm.def("unloadPlugins", &comp::unloadPlugins);
-    sm.def("foreachRegistered", &comp::foreachRegistered);
+    sm.def("loadPlugin", &comp::load_plugin);
+    sm.def("loadPluginDirectory", &comp::load_plugin_directory);
+    sm.def("unloadPlugins", &comp::unload_plugins);
+    sm.def("foreachRegistered", &comp::foreach_registered);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -188,13 +188,13 @@ static void bind_user(pybind11::module& m) {
     m.def("buffer", &buffer);
     m.def("serialize", (void(*)(const std::string&)) & serialize);
     m.def("deserialize", (void(*)(const std::string&)) & deserialize);
-    m.def("rootNode", &rootNode);
-    m.def("primitiveNode", &primitiveNode);
-    m.def("groupNode", &groupNode);
-    m.def("instanceGroupNode", &instanceGroupNode);
-    m.def("transformNode", &transformNode);
-    m.def("addChild", &addChild);
-    m.def("createGroupFromModel", &createGroupFromModel);
+    m.def("root_node", &root_node);
+    m.def("primitive_node", &primitive_node);
+    m.def("group_node", &group_node);
+    m.def("instance_group_node", &instance_group_node);
+    m.def("transform_node", &transform_node);
+    m.def("add_child", &add_child);
+    m.def("create_group_from_model", &create_group_from_model);
     m.def("primitive", &primitive);
 }
 
@@ -216,9 +216,9 @@ static void bind_logger(pybind11::module& m) {
     sm.def("shutdown", &log::shutdown);
     using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
     sm.def("log", (logFuncPtr)&log::log);
-    sm.def("updateIndentation", &log::updateIndentation);
+    sm.def("updateIndentation", &log::update_indentation);
     using setSeverityFuncPtr = void(*)(int);
-    sm.def("setSeverity", (setSeverityFuncPtr)&log::setSeverity);
+    sm.def("setSeverity", (setSeverityFuncPtr)&log::set_severity);
 
     using LoggerContext = log::LoggerContext;
     class LoggerContext_Py final : public LoggerContext {
@@ -230,19 +230,19 @@ static void bind_logger(pybind11::module& m) {
             pybind11::gil_scoped_acquire acquire;
             PYBIND11_OVERLOAD_PURE(void, LoggerContext, log, level, severity, filename, line, message);
         }
-        virtual void updateIndentation(int n) override {
+        virtual void update_indentation(int n) override {
             pybind11::gil_scoped_acquire acquire;
-            PYBIND11_OVERLOAD_PURE(void, LoggerContext, updateIndentation, n);
+            PYBIND11_OVERLOAD_PURE(void, LoggerContext, update_indentation, n);
         }
-        virtual void setSeverity(int severity) override {
+        virtual void set_severity(int severity) override {
             pybind11::gil_scoped_acquire acquire;
-            PYBIND11_OVERLOAD_PURE(void, LoggerContext, setSeverity, severity);
+            PYBIND11_OVERLOAD_PURE(void, LoggerContext, set_severity, severity);
         }
     };
     pybind11::class_<LoggerContext, LoggerContext_Py, Component::Ptr<LoggerContext>>(sm, "LoggerContext")
         .def(pybind11::init<>())
         .def("log", &LoggerContext::log)
-        .def("updateIndentation", &LoggerContext::updateIndentation)
+        .def("updateIndentation", &LoggerContext::update_indentation)
         .PYLM_DEF_COMP_BIND(LoggerContext);
 }
 
@@ -253,7 +253,7 @@ static void bind_parallel(pybind11::module& m) {
     auto sm = m.def_submodule("parallel");
     sm.def("init", &parallel::init, "type"_a = parallel::DefaultType, "prop"_a = Json{});
     sm.def("shutdown", &parallel::shutdown);
-    sm.def("numThreads", &parallel::numThreads);
+    sm.def("numThreads", &parallel::num_threads);
     sm.def("foreach", [](long long numSamples, const parallel::ParallelProcessFunc& processFunc) {
         // Release GIL and let the C++ to create new threads
         pybind11::gil_scoped_release release;
@@ -308,9 +308,9 @@ static void bind_progress(pybind11::module& m) {
             pybind11::gil_scoped_acquire acquire;
             PYBIND11_OVERLOAD_PURE(void, ProgressContext, update, processed);
         }
-        virtual void updateTime(Float elapsed) override {
+        virtual void update_time(Float elapsed) override {
             pybind11::gil_scoped_acquire acquire;
-            PYBIND11_OVERLOAD_PURE(void, ProgressContext, updateTime, elapsed);
+            PYBIND11_OVERLOAD_PURE(void, ProgressContext, update_time, elapsed);
         }
     };
     pybind11::class_<ProgressContext, ProgressContext_Py, Component::Ptr<ProgressContext>>(sm, "ProgressContext")
@@ -318,7 +318,7 @@ static void bind_progress(pybind11::module& m) {
         .def("start", &ProgressContext::start)
         .def("end", &ProgressContext::end)
         .def("update", &ProgressContext::update)
-        .def("updateTime", &ProgressContext::updateTime)
+        .def("update_time", &ProgressContext::update_time)
         .PYLM_DEF_COMP_BIND(ProgressContext);
 }
 
@@ -329,8 +329,8 @@ static void bind_debugio(pybind11::module& m) {
     auto sm = m.def_submodule("debugio");
     sm.def("init", &debugio::init);
     sm.def("shutdown", &debugio::shutdown);
-    sm.def("handleMessage", &debugio::handleMessage);
-    sm.def("syncUserContext", &debugio::syncUserContext);
+    sm.def("handle_message", &debugio::handle_message);
+    sm.def("sync_user_context", &debugio::sync_user_context);
     sm.def("draw", &debugio::draw);
 }
 
@@ -339,18 +339,18 @@ static void bind_debugio(pybind11::module& m) {
 // Bind debug.h
 static void bind_debug(pybind11::module& m) {
     auto sm = m.def_submodule("debug");
-    sm.def("pollFloat", &debug::pollFloat);
+    sm.def("pollFloat", &debug::poll_float);
     sm.def("regOnPollFloat", [](const debug::OnPollFloatFunc& onPollFloat) {
         // We must capture the callback function by value.
         // Otherwise the function would be dereferenced.
-        debug::regOnPollFloat([onPollFloat](const std::string& name, Float val) {
+        debug::reg_on_poll_float([onPollFloat](const std::string& name, Float val) {
             pybind11::gil_scoped_acquire acquire;
             if (onPollFloat) {
                 onPollFloat(name, val);
             }
         });
     });
-    sm.def("attachToDebugger", &debug::attachToDebugger);
+    sm.def("attachToDebugger", &debug::attach_to_debugger);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -362,10 +362,10 @@ static void bind_distributed(pybind11::module& m) {
         auto sm2 = sm.def_submodule("master");
         sm2.def("init", &distributed::master::init);
         sm2.def("shutdown", &distributed::master::shutdown);
-        sm2.def("printWorkerInfo", &distributed::master::printWorkerInfo);
-        sm2.def("allowWorkerConnection", &distributed::master::allowWorkerConnection);
+        sm2.def("printWorkerInfo", &distributed::master::print_worker_info);
+        sm2.def("allowWorkerConnection", &distributed::master::allow_worker_connection);
         sm2.def("sync", &distributed::master::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
-        sm2.def("gatherFilm", &distributed::master::gatherFilm, pybind11::call_guard<pybind11::gil_scoped_release>());
+        sm2.def("gatherFilm", &distributed::master::gather_film, pybind11::call_guard<pybind11::gil_scoped_release>());
     }
     {
         auto sm2 = sm.def_submodule("worker");
@@ -409,11 +409,11 @@ static void bind_film(pybind11::module& m) {
         virtual FilmSize size() const override {
             PYBIND11_OVERLOAD_PURE(FilmSize, Film, size);
         }
-        virtual long long numPixels() const override {
-            PYBIND11_OVERLOAD_PURE(long long, Film, numPixels);
+        virtual long long num_pixels() const override {
+            PYBIND11_OVERLOAD_PURE(long long, Film, num_pixels);
         }
-        virtual void setPixel(int x, int y, Vec3 v) override {
-            PYBIND11_OVERLOAD_PURE(void, Film, setPixel, x, y, v);
+        virtual void set_pixel(int x, int y, Vec3 v) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, set_pixel, x, y, v);
         }
         virtual bool save(const std::string& outpath) const override {
             PYBIND11_OVERLOAD_PURE(bool, Film, save, outpath);
@@ -424,11 +424,11 @@ static void bind_film(pybind11::module& m) {
         virtual void accum(const Film* film) override {
             PYBIND11_OVERLOAD_PURE(void, Film, accum, film);
         }
-        virtual void splatPixel(int x, int y, Vec3 v) override {
-            PYBIND11_OVERLOAD_PURE(void, Film, splatPixel, x, y, v);
+        virtual void splat_pixel(int x, int y, Vec3 v) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, splat_pixel, x, y, v);
         }
-        virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) override {
-            PYBIND11_OVERLOAD_PURE(void, Film, updatePixel, x, y, updateFunc);
+        virtual void update_pixel(int x, int y, const PixelUpdateFunc& updateFunc) override {
+            PYBIND11_OVERLOAD_PURE(void, Film, update_pixel, x, y, updateFunc);
         }
         virtual void rescale(Float s) override {
             PYBIND11_OVERLOAD_PURE(void, Film, rescale, s);
@@ -441,10 +441,10 @@ static void bind_film(pybind11::module& m) {
         .def(pybind11::init<>())
         .def("loc", &Film::loc)
         .def("size", &Film::size)
-        .def("numPixels", &Film::numPixels)
-        .def("setPixel", &Film::setPixel)
+        .def("numPixels", &Film::num_pixels)
+        .def("setPixel", &Film::set_pixel)
         .def("save", &Film::save)
-        .def("aspectRatio", &Film::aspectRatio)
+        .def("aspectRatio", &Film::aspect_ratio)
         .def("buffer", &Film::buffer)
         .PYLM_DEF_COMP_BIND(Film);
 }
@@ -463,12 +463,12 @@ static void bind_surface(pybind11::module& m) {
         .def_readwrite("t", &PointGeometry::t)
         .def_readwrite("u", &PointGeometry::u)
         .def_readwrite("v", &PointGeometry::v)
-        .def_static("makeDegenerated", &PointGeometry::makeDegenerated)
-        .def_static("makeInfinite", &PointGeometry::makeInfinite)
-        .def_static("makeOnSurface", (PointGeometry(*)(Vec3, Vec3, Vec2))&PointGeometry::makeOnSurface)
-        .def_static("makeOnSurface", (PointGeometry(*)(Vec3, Vec3))&PointGeometry::makeOnSurface)
+        .def_static("make_degenerated", &PointGeometry::make_degenerated)
+        .def_static("make_infinite", &PointGeometry::make_infinite)
+        .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3, Vec2))&PointGeometry::make_on_surface)
+        .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3))&PointGeometry::make_on_surface)
         .def("opposite", &PointGeometry::opposite)
-        .def("orthonormalBasis", &PointGeometry::orthonormalBasis);
+        .def("orthonormalBasis", &PointGeometry::orthonormal_basis);
 
     pybind11::class_<SceneInteraction>(m, "SceneInteraction")
         .def(pybind11::init<>())
@@ -477,7 +477,7 @@ static void bind_surface(pybind11::module& m) {
         .def_readwrite("endpoint", &SceneInteraction::endpoint);
 
     auto sm = m.def_submodule("surface");
-    sm.def("geometryTerm", &surface::geometryTerm);
+    sm.def("geometry_term", &surface::geometry_term);
 }
 
 
@@ -499,44 +499,44 @@ static void bind_scene(pybind11::module& m) {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Scene, construct, prop);
         }
-        virtual std::optional<std::string> loadAsset(const std::string& name, const std::string& implKey, const Json& prop) override {
-            PYBIND11_OVERLOAD_PURE(std::optional<std::string>, Scene, loadAsset, name, implKey, prop);
+        virtual std::optional<std::string> load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
+            PYBIND11_OVERLOAD_PURE(std::optional<std::string>, Scene, load_asset, name, implKey, prop);
         }
-        virtual int rootNode() override {
-            PYBIND11_OVERLOAD_PURE(int, Scene, rootNode);
+        virtual int root_node() override {
+            PYBIND11_OVERLOAD_PURE(int, Scene, root_node);
         }
-        virtual int createNode(SceneNodeType type, const Json& prop) override {
+        virtual int create_node(SceneNodeType type, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(int, Scene, loadPrimitive, type, prop);
         }
-        virtual void addChild(int parent, int child) override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, addChild, parent, child);
+        virtual void add_child(int parent, int child) override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, add_child, parent, child);
         }
-        virtual void addChildFromModel(int parent, const std::string& modelLoc) override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, addChildFromModel, parent, modelLoc);
+        virtual void add_child_from_model(int parent, const std::string& modelLoc) override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, add_child_from_model, parent, modelLoc);
         }
-		virtual int createGroupFromModel(const std::string& modelLoc) override {
-			PYBIND11_OVERLOAD_PURE(int, Scene, createGroupFromModel, modelLoc);
+		virtual int create_group_from_model(const std::string& modelLoc) override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, create_group_from_model, modelLoc);
 		}
-		virtual int numNodes() const override {
-			PYBIND11_OVERLOAD_PURE(int, Scene, numNodes);
+		virtual int num_nodes() const override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, num_nodes);
 		}
-        virtual int numLights() const override {
-            PYBIND11_OVERLOAD_PURE(int, Scene, numLights);
+        virtual int num_lights() const override {
+            PYBIND11_OVERLOAD_PURE(int, Scene, num_lights);
         }
-		virtual int cameraNode() const override {
-			PYBIND11_OVERLOAD_PURE(int, Scene, cameraNode);
+		virtual int camera_node() const override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, camera_node);
 		}
-		virtual int envLightNode() const override {
-			PYBIND11_OVERLOAD_PURE(int, Scene, envLightNode);
+		virtual int env_light_node() const override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, env_light_node);
 		}
-        virtual void traversePrimitiveNodes(const NodeTraverseFunc& traverseFunc) const override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, traversePrimitiveNodes, traverseFunc);
+        virtual void traverse_primitive_nodes(const NodeTraverseFunc& traverseFunc) const override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, traverse_primitive_nodes, traverseFunc);
         }
-        virtual void visitNode(int nodeIndex, const VisitNodeFunc& visit) const override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, visitNode, nodeIndex, visit);
+        virtual void visit_node(int nodeIndex, const VisitNodeFunc& visit) const override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, visit_node, nodeIndex, visit);
         }
-        virtual const SceneNode& nodeAt(int nodeIndex) const override {
-            PYBIND11_OVERLOAD_PURE(const SceneNode&, Scene, nodeAt, nodeIndex);
+        virtual const SceneNode& node_at(int nodeIndex) const override {
+            PYBIND11_OVERLOAD_PURE(const SceneNode&, Scene, node_at, nodeIndex);
         }
         virtual void build(const std::string& name, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
@@ -544,47 +544,47 @@ static void bind_scene(pybind11::module& m) {
         virtual std::optional<SceneInteraction> intersect(Ray ray, Float tmin, Float tmax) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<SceneInteraction>, Scene, intersect, ray, tmin, tmax);
         }
-        virtual bool isLight(const SceneInteraction& sp) const override {
-            PYBIND11_OVERLOAD_PURE(bool, Scene, isLight, sp);
+        virtual bool is_light(const SceneInteraction& sp) const override {
+            PYBIND11_OVERLOAD_PURE(bool, Scene, is_light, sp);
         }
-        virtual bool isSpecular(const SceneInteraction& sp, int comp) const override {
-            PYBIND11_OVERLOAD_PURE(bool, Scene, isSpecular, sp, comp);
+        virtual bool is_specular(const SceneInteraction& sp, int comp) const override {
+            PYBIND11_OVERLOAD_PURE(bool, Scene, is_specular, sp, comp);
         }
-        virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const override {
-            PYBIND11_OVERLOAD_PURE(Ray, Scene, primaryRay, rp, aspectRatio);
+        virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const override {
+            PYBIND11_OVERLOAD_PURE(Ray, Scene, primary_ray, rp, aspect_ratio);
         }
-        virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, rasterPosition, wo, aspectRatio);
+        virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, raster_position, wo, aspect_ratio);
         }
-        virtual std::optional<RaySample> sampleRay(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleRay, rng, sp, wi);
+        virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_ray, rng, sp, wi);
         }
-        virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, sampleDirectionGivenComp, rng, sp, comp, wi);
+        virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, sample_direction_given_comp, rng, sp, comp, wi);
         }
-        virtual std::optional<RaySample> sampleDirectLight(Rng& rng, const SceneInteraction& sp) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sampleDirectLight, rng, sp);
+        virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_direct_light, rng, sp);
         }
         virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, comp, wi, wo);
         }
-        virtual Float pdfComp(const SceneInteraction& sp, int comp, Vec3 wi) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdfComp, sp, comp, wi);
+        virtual Float pdf_comp(const SceneInteraction& sp, int comp, Vec3 wi) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_comp, sp, comp, wi);
         }
-        virtual Float pdfDirectLight(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdfDirectLight, sp, spL, compL, wo);
+        virtual Float pdf_direct_light(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direct_light, sp, spL, compL, wo);
         }
-        virtual std::optional<DistanceSample> sampleDistance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Scene, sampleDistance, rng, sp, wo);
+        virtual std::optional<DistanceSample> sample_distance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Scene, sample_distance, rng, sp, wo);
         }
-        virtual Vec3 evalTransmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalTransmittance, rng, sp1, sp2);
+        virtual Vec3 eval_transmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_transmittance, rng, sp1, sp2);
         }
-        virtual Vec3 evalContrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrb, sp, comp, wi, wo);
+        virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb, sp, comp, wi, wo);
         }
-        virtual Vec3 evalContrbEndpoint(const SceneInteraction& sp, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Scene, evalContrbEndpoint, sp, wo);
+        virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb_endpoint, sp, wo);
         }
         virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp, comp);
@@ -592,18 +592,18 @@ static void bind_scene(pybind11::module& m) {
     };
     pybind11::class_<Scene, Scene_Py, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
-        .def("rootNode", &Scene::rootNode)
-        .def("createNode", &Scene::createNode)
-        .def("addChild", &Scene::addChild)
-        .def("addChildFromModel", &Scene::addChildFromModel)
-        .def("traversePrimitiveNodes", &Scene::traversePrimitiveNodes)
+        .def("root_node", &Scene::root_node)
+        .def("create_node", &Scene::create_node)
+        .def("add_child", &Scene::add_child)
+        .def("add_child_from_model", &Scene::add_child_from_model)
+        .def("traverse_primitive_nodes", &Scene::traverse_primitive_nodes)
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
-        .def("isLight", &Scene::isLight)
-        .def("isSpecular", &Scene::isSpecular)
-        .def("primaryRay", &Scene::primaryRay)
-        .def("sampleRay", &Scene::sampleRay)
-        .def("evalContrbEndpoint", &Scene::evalContrbEndpoint)
+        .def("is_light", &Scene::is_light)
+        .def("isSpecular", &Scene::is_specular)
+        .def("primary_ray", &Scene::primary_ray)
+        .def("sample_ray", &Scene::sample_ray)
+        .def("eval_contrb_endpoint", &Scene::eval_contrb_endpoint)
         .def("reflectance", &Scene::reflectance)
         .PYLM_DEF_COMP_BIND(Scene);
 }
@@ -641,15 +641,15 @@ static void bind_texture(pybind11::module& m) {
         virtual Vec3 eval(Vec2 t) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Texture, eval, t);
         }
-        virtual Vec3 evalByPixelCoords(int x, int y) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Texture, evalByPixelCoords, x, y);
+        virtual Vec3 eval_by_pixel_coords(int x, int y) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Texture, eval_by_pixel_coords, x, y);
         }
     };
     pybind11::class_<Texture, Texture_Py, Component::Ptr<Texture>>(m, "Texture")
         .def(pybind11::init<>())
         .def("size", &Texture::size)
         .def("eval", &Texture::eval)
-        .def("evalByPixelCoords", &Texture::evalByPixelCoords)
+        .def("eval_by_pixel_coords", &Texture::eval_by_pixel_coords)
         .PYLM_DEF_COMP_BIND(Texture);
 }
 
@@ -667,8 +667,8 @@ static void bind_material(pybind11::module& m) {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Material, construct, prop);
         }
-        virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
-            PYBIND11_OVERLOAD_PURE(bool, Material, isSpecular, geom, comp);
+        virtual bool is_specular(const PointGeometry& geom, int comp) const override {
+            PYBIND11_OVERLOAD_PURE(bool, Material, is_specular, geom, comp);
         }
         virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<MaterialDirectionSample>, Material, sample, rng, geom, wi);
@@ -679,8 +679,8 @@ static void bind_material(pybind11::module& m) {
         virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Material, pdf, geom, comp, wi, wo);
         }
-        virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Material, pdfComp, geom, comp, wi);
+        virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3 wi) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_comp, geom, comp, wi);
         }
         virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, comp, wi, wo);
@@ -688,7 +688,7 @@ static void bind_material(pybind11::module& m) {
     };
     pybind11::class_<Material, Material_Py, Component::Ptr<Material>>(m, "Material")
         .def(pybind11::init<>())
-        .def("isSpecular", &Material::isSpecular)
+        .def("isSpecular", &Material::is_specular)
         .def("sample", &Material::sample)
         .def("reflectance", &Material::reflectance)
         .def("pdf", &Material::pdf)

@@ -10,7 +10,7 @@
 
 class Material_VisualizeNormal final : public lm::Material {
 public:
-    virtual bool isSpecular(const lm::PointGeometry&, int) const override {
+    virtual bool is_specular(const lm::PointGeometry&, int) const override {
         return false;
     }
 
@@ -26,7 +26,7 @@ public:
         LM_UNREACHABLE_RETURN();
     }
 
-    virtual lm::Float pdfComp(const lm::PointGeometry&, int, lm::Vec3) const {
+    virtual lm::Float pdf_comp(const lm::PointGeometry&, int, lm::Vec3) const {
         LM_UNREACHABLE_RETURN();
     }
 
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
         lm::info();
 
         // Parse command line arguments
-        const auto opt = lm::json::parsePositionalArgs<13>(argc, argv, R"({{
+        const auto opt = lm::json::parse_positional_args<13>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
             "w": {},

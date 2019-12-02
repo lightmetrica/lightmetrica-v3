@@ -31,9 +31,9 @@ public:
         albedo_ = json::value<Vec3>(prop, "albedo");
         muS_ = albedo_ * density_;
         muA_ = density_ - muS_;
-        phase_ = json::compRef<Phase>(prop, "phase");
-        bound_.mi = json::value<Vec3>(prop, "bound_min", Vec3(-Inf));
-        bound_.ma = json::value<Vec3>(prop, "bound_max", Vec3(Inf));
+        phase_ = json::comp_ref<Phase>(prop, "phase");
+        bound_.min = json::value<Vec3>(prop, "bound_min", Vec3(-Inf));
+        bound_.max = json::value<Vec3>(prop, "bound_max", Vec3(Inf));
     }
 
     /*
@@ -46,9 +46,9 @@ public:
         - Weight for medium interaction. \mu_s T(t)/p(t) = \mu_s/\mu_t
         - Weight for surface interaction. T(s)/P[t>s] = 1
     */
-    virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+    virtual std::optional<MediumDistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range between volume and bound
-        if (!bound_.isectRange(ray, tmin, tmax)) {
+        if (!bound_.isect_range(ray, tmin, tmax)) {
             // No intersection with volume, use surface interaction
             return {};
         }
@@ -74,16 +74,16 @@ public:
         }
     }
 
-    virtual Vec3 evalTransmittance(Rng&, Ray ray, Float tmin, Float tmax) const override {
+    virtual Vec3 eval_transmittance(Rng&, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range
-        if (!bound_.isectRange(ray, tmin, tmax)) {
+        if (!bound_.isect_range(ray, tmin, tmax)) {
             // No intersection with the volume, no attenuation
             return Vec3(1_f);
         }
         return Vec3(std::exp(-density_ * (tmax - tmin)));
     }
 
-    virtual bool isEmitter() const override {
+    virtual bool is_emitter() const override {
         return false;
     }
 

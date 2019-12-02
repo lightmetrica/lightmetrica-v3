@@ -14,7 +14,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 namespace {  
 
 struct FlattenedPrimitiveNode {
-    Transform globalTransform;  // Global transform of the primitive
+    Transform global_transform;  // Global transform of the primitive
     int primitive;              // Primitive node index
 };
 
@@ -33,7 +33,7 @@ class Accel_Embree final : public Accel {
 private:
     RTCDevice device_ = nullptr;
     RTCScene scene_ = nullptr;
-    std::vector<FlattenedPrimitiveNode> flattenedNodes_;
+    std::vector<FlattenedPrimitiveNode> flattened_nodes_;
 
 public:
     Accel_Embree() {
@@ -57,7 +57,7 @@ private:
             rtcReleaseScene(scene_);
             scene_ = nullptr;
         }
-        flattenedNodes_.clear();
+        flattened_nodes_.clear();
     }
 
 public:
@@ -69,7 +69,7 @@ public:
 
         // Flatten the scene graph and setup geometries
         LM_INFO("Flattening scene");
-        scene.traversePrimitiveNodes([&](const SceneNode& node, Mat4 globalTransform) {
+        scene.traverse_primitive_nodes([&](const SceneNode& node, Mat4 global_transform) {
             if (node.type != SceneNodeType::Primitive) {
                 return;
             }
@@ -78,18 +78,18 @@ public:
             }
 
             // Record flattened primitive
-            const int flattenNodeIndex = int(flattenedNodes_.size());
-            flattenedNodes_.push_back({ Transform(globalTransform), node.index });
+            const int flattenNodeIndex = int(flattened_nodes_.size());
+            flattened_nodes_.push_back({ Transform(global_transform), node.index });
 
             // Create triangle mesh
             auto geom = rtcNewGeometry(device_, RTC_GEOMETRY_TYPE_TRIANGLE);
-            const int numTriangles = node.primitive.mesh->numTriangles();
-            auto* vs = (glm::vec3*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(glm::vec3), numTriangles*3);
-            auto* fs = (glm::uvec3*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(glm::uvec3), numTriangles);
-            node.primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
-                const auto p1 = globalTransform * Vec4(tri.p1.p, 1_f);
-                const auto p2 = globalTransform * Vec4(tri.p2.p, 1_f);
-                const auto p3 = globalTransform * Vec4(tri.p3.p, 1_f);
+            const int num_triangles = node.primitive.mesh->num_triangles();
+            auto* vs = (glm::vec3*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(glm::vec3), num_triangles*3);
+            auto* fs = (glm::uvec3*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(glm::uvec3), num_triangles);
+            node.primitive.mesh->foreach_triangle([&](int face, const Mesh::Tri& tri) {
+                const auto p1 = global_transform * Vec4(tri.p1.p, 1_f);
+                const auto p2 = global_transform * Vec4(tri.p2.p, 1_f);
+                const auto p3 = global_transform * Vec4(tri.p3.p, 1_f);
                 vs[3*face  ] = glm::vec3(p1);
                 vs[3*face+1] = glm::vec3(p2);
                 vs[3*face+2] = glm::vec3(p3);
@@ -135,11 +135,11 @@ public:
         }
         
         // Store hit information
-        const auto& fn = flattenedNodes_.at(rayhit.hit.geomID);
+        const auto& fn = flattened_nodes_.at(rayhit.hit.geomID);
         return Hit{
             Float(rayhit.ray.tfar),
             Vec2(Float(rayhit.hit.u), Float(rayhit.hit.v)),
-            fn.globalTransform,
+            fn.global_transform,
             fn.primitive,
             int(rayhit.hit.primID)
         };

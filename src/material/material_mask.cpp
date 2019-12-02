@@ -27,7 +27,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Material_Mask final : public Material {
 public:
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return true;
     }
 
@@ -39,7 +39,7 @@ public:
         };
     }
 
-    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng&, const PointGeometry&, int, Vec3 wi) const override {
+    virtual std::optional<Vec3> sample_direction_given_comp(Rng&, const PointGeometry&, int, Vec3 wi) const override {
         return -wi;
     }
 
@@ -47,7 +47,7 @@ public:
         LM_UNREACHABLE_RETURN();
     }
 
-    virtual Float pdfComp(const PointGeometry&, int, Vec3) const override {
+    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
         return 1_f;
     }
 

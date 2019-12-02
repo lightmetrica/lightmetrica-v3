@@ -23,7 +23,7 @@ public:
     }
 
 public:
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool is_specular(const PointGeometry&) const override {
         return false;
     }
 
@@ -37,12 +37,12 @@ public:
                 return (1_f+g_*g_-sq*sq)/(2_f*g_);
             }
         }();
-        const auto sinT = math::safeSqrt(1_f-cosT*cosT);
+        const auto sinT = math::safe_sqrt(1_f-cosT*cosT);
         const auto phi = 2_f * Pi * rng.u();
         const auto sinP = std::sin(phi);
         const auto cosP = std::cos(phi);
         const auto localWo = Vec3(sinT*cosP, sinT*sinP, cosT);
-        const auto [u, v] = math::orthonormalBasis(-wi);
+        const auto [u, v] = math::orthonormal_basis(-wi);
         const auto wo = Mat3(u, v, -wi) * localWo;
         return PhaseDirectionSample{ wo, Vec3(1_f) };
     }

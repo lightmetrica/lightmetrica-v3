@@ -145,7 +145,7 @@ struct TestSerial_Container final : public lm::Component {
 
     // Add a component to the container
     void add(const std::string& name, const std::string& key, const lm::Json& prop) {
-        auto p = lm::comp::create<lm::Component>(key, makeLoc(loc(), name), prop);
+        auto p = lm::comp::create<lm::Component>(key, make_loc(loc(), name), prop);
         CHECK(p);
         m[name] = int(v.size());
         v.push_back(std::move(p));
@@ -171,7 +171,7 @@ struct TestSerial_Root final : public lm::Component {
     TestSerial_Root() {
         // Register this component as root
         lm::comp::detail::Access::loc(this) = "$";
-        lm::comp::detail::registerRootComp(this);
+        lm::comp::detail::register_root_comp(this);
     }
 
     virtual Component* underlying(const std::string& name) const {
@@ -278,7 +278,7 @@ TEST_CASE("Serialization") {
             TestSerial_Container container;
             lm::comp::detail::Access::loc(&container) = "$";
             container.add("p1", "testserial_simple", { { "v1", 1 }, { "v2", 2 } });
-            lm::comp::detail::registerRootComp(&container);
+            lm::comp::detail::register_root_comp(&container);
             
             // Check serialization of Component*
             auto* orig = lm::comp::get<lm::Component>("$.p1");

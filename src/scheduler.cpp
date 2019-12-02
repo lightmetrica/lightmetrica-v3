@@ -24,18 +24,18 @@ public:
         ar(spp_, film_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
         comp::visit(visit, film_);
     }
 
 public:
     virtual void construct(const Json& prop) override {
         spp_ = json::value<long long>(prop, "spp");
-        film_ = json::compRef<Film>(prop, "output");
+        film_ = json::comp_ref<Film>(prop, "output");
     }
 
     virtual long long run(const ProcessFunc& process) const override {
-        const auto numPixels = film_->numPixels();
+        const auto numPixels = film_->num_pixels();
         progress::ScopedReport progress_ctx_(numPixels * spp_);
         
         // Parallel loop for each pixel
@@ -64,18 +64,18 @@ public:
         ar(renderTime_, film_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
         comp::visit(visit, film_);
     }
 
 public:
     virtual void construct(const Json& prop) override {
         renderTime_ = json::value<Float>(prop, "render_time");
-        film_ = json::compRef<Film>(prop, "output");
+        film_ = json::comp_ref<Film>(prop, "output");
     }
     
     virtual long long run(const ProcessFunc& process) const override {
-        const auto numPixels = film_->numPixels();
+        const auto numPixels = film_->num_pixels();
         progress::ScopedTimeReport progress_ctx_(renderTime_);
         
         const auto start = std::chrono::high_resolution_clock::now();
@@ -88,7 +88,7 @@ public:
                 using namespace std::chrono;
                 const auto now = high_resolution_clock::now();
                 const auto elapsed = duration_cast<milliseconds>(now - start).count() / 1000.0;
-                progress::updateTime(elapsed);
+                progress::update_time(elapsed);
             });
 
             // Update processed spp
@@ -170,7 +170,7 @@ public:
                 using namespace std::chrono;
                 const auto now = high_resolution_clock::now();
                 const auto elapsed = duration_cast<milliseconds>(now - start).count() / 1000.0;
-                progress::updateTime(elapsed);
+                progress::update_time(elapsed);
             });
 
             // Update processed samples

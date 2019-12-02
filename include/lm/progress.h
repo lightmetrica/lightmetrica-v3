@@ -53,7 +53,7 @@ enum class ProgressMode {
     \brief Start progress reporting.
     \param mode Progress reporting mode.
     \param total Total number of iterations (used in Samples mode).
-    \param totalTime Total time (used in Time mode).
+    \param total_time Total time (used in Time mode).
 
     \rst
     This function specifies the start of the progress reporting.
@@ -63,7 +63,7 @@ enum class ProgressMode {
     the floating point exception inside a scope.
     \endrst
 */
-LM_PUBLIC_API void start(ProgressMode mode, long long total, double totalTime);
+LM_PUBLIC_API void start(ProgressMode mode, long long total, double total_time);
 
 /*!
     \brief End progress reporting.
@@ -92,7 +92,7 @@ LM_PUBLIC_API void update(long long processed);
     \brief Update time progress.
     \param elapsed Elapsed time from the start.
 */
-LM_PUBLIC_API void updateTime(Float elapsed);
+LM_PUBLIC_API void update_time(Float elapsed);
 
 /*!
     \brief Scoped guard of `start` and `end` functions.

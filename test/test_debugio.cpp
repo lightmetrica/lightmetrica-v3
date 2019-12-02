@@ -21,7 +21,7 @@ TEST_CASE("Debugio") {
             {"address", "tcp://*:5555"}
         });
         std::atomic<bool> done = false;
-        lm::debugio::server::on_handleMessage([&](const std::string& message) {
+        lm::debugio::server::on_handle_message([&](const std::string& message) {
             CHECK(message == "hai domo");
             done = true;
         });
@@ -37,7 +37,7 @@ TEST_CASE("Debugio") {
         });
 
         // Send a message to the server
-        lm::debugio::handleMessage("hai domo");
+        lm::debugio::handle_message("hai domo");
     });
 
     thread_client.join();

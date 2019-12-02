@@ -30,8 +30,8 @@ struct imemstream : virtual membuf, std::istream {
 
 // Shared command between server and client
 enum class Command {
-    handleMessage,
-    syncUserContext,
+    handle_message,
+    sync_user_context,
     draw
 };
 
@@ -74,17 +74,17 @@ private:
     }
 
 public:
-    virtual void handleMessage(const std::string& message) override {
+    virtual void handle_message(const std::string& message) override {
         std::stringstream ss;
         serial::save(ss, message);
-        call(Command::handleMessage, ss.str());
+        call(Command::handle_message, ss.str());
     }
 
-    virtual void syncUserContext() override {
+    virtual void sync_user_context() override {
         LM_INFO("Syncing user context");
         std::stringstream ss;
         lm::serialize(ss);
-        call(Command::syncUserContext, ss.str());
+        call(Command::sync_user_context, ss.str());
     }
 
     virtual void draw(int type, Vec3 color, const std::vector<Vec3>& vs) override {
@@ -163,13 +163,13 @@ private:
         imemstream is(req_args.data<char>(), req_args.size());
 #endif
         switch (command) {
-            case Command::handleMessage: {
+            case Command::handle_message: {
                 std::string message;
                 serial::load(is, message);
                 on_handleMessage_(message);
                 break;
             }
-            case Command::syncUserContext: {
+            case Command::sync_user_context: {
                 lm::deserialize(is);
                 on_syncUserContext_();
                 break;
@@ -203,15 +203,15 @@ LM_PUBLIC_API void shutdown() {
     ClientInstance::shutdown();
 }
 
-LM_PUBLIC_API void handleMessage(const std::string& message) {
+LM_PUBLIC_API void handle_message(const std::string& message) {
     if (ClientInstance::initialized()) {
-        ClientInstance::get().handleMessage(message);
+        ClientInstance::get().handle_message(message);
     }
 }
 
-LM_PUBLIC_API void syncUserContext() {
+LM_PUBLIC_API void sync_user_context() {
     if (ClientInstance::initialized()) {
-        ClientInstance::get().syncUserContext();
+        ClientInstance::get().sync_user_context();
     }
 }
 
@@ -241,11 +241,11 @@ LM_PUBLIC_API void run() {
     ServerInstance::get().run();
 }
 
-LM_PUBLIC_API void on_handleMessage(const HandleMessageFunc& process) {
+LM_PUBLIC_API void on_handle_message(const HandleMessageFunc& process) {
     ServerInstance::get().on_handleMessage(process);
 }
 
-LM_PUBLIC_API void on_syncUserContext(const SyncUserContextFunc& process) {
+LM_PUBLIC_API void on_sync_user_context(const SyncUserContextFunc& process) {
     ServerInstance::get().on_syncUserContext(process);
 }
 

@@ -14,35 +14,35 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Medium_Heterogeneous final : public Medium {
 private:
-	const Volume* volumeDensity_;	// Density volume. density := \mu_t = \mu_a + \mu_s
-	const Volume* volmeAlbedo_;		// Albedo volume. albedo := \mu_s / \mu_t
-    const Phase* phase_;			// Underlying phase function.
+    const Volume* volume_density_;  // Density volume. density := \mu_t = \mu_a + \mu_s
+    const Volume* volme_albedo_;	// Albedo volume. albedo := \mu_s / \mu_t
+    const Phase* phase_;            // Underlying phase function.
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(volumeDensity_, volmeAlbedo_, phase_);
+        ar(volume_density_, volme_albedo_, phase_);
     }
 
 public:
     virtual void construct(const Json& prop) override {
-		volumeDensity_ = json::compRef<Volume>(prop, "volume_density");
-		volmeAlbedo_ = json::compRef<Volume>(prop, "volume_albedo");
-        phase_ = json::compRef<Phase>(prop, "phase");
+        volume_density_ = json::comp_ref<Volume>(prop, "volume_density");
+        volme_albedo_ = json::comp_ref<Volume>(prop, "volume_albedo");
+        phase_ = json::comp_ref<Phase>(prop, "phase");
     }
 
-    virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+    virtual std::optional<MediumDistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range between the ray and the volume
-        if (!volumeDensity_->bound().isectRange(ray, tmin, tmax)) {
+        if (!volume_density_->bound().isect_range(ray, tmin, tmax)) {
             // No intersection with the volume, use surface interaction
             return {};
         }
         
         // Sample distance by delta tracking
         Float t = tmin;
-        const auto invMaxDensity = 1_f / volumeDensity_->maxScalar();
+        const auto inv_max_density = 1_f / volume_density_->max_scalar();
         while (true) {
             // Sample a distance from the 'homogenized' volume
-            t -= glm::log(1_f-rng.u()) * invMaxDensity;
+            t -= glm::log(1_f-rng.u()) * inv_max_density;
             if (t >= tmax) {
                 // Hit with boundary, use surface interaction
                 return {};
@@ -50,13 +50,13 @@ public:
 
             // Density at the sampled point
             const auto p = ray.o + ray.d*t;
-            const auto density = volumeDensity_->evalScalar(p);
+            const auto density = volume_density_->eval_scalar(p);
 
             // Determine scattering collision or null collision
             // Continue tracking if null collusion is seleced
-            if (density * invMaxDensity > rng.u()) {
+            if (density * inv_max_density > rng.u()) {
                 // Scattering collision
-                const auto albedo = volmeAlbedo_->evalColor(p);
+                const auto albedo = volme_albedo_->eval_color(p);
                 return MediumDistanceSample{
                     ray.o + ray.d*t,
                     albedo,     // T_{\bar{\mu}}(t) / p_{\bar{\mu}}(t) * \mu_s(t)
@@ -69,9 +69,9 @@ public:
         LM_UNREACHABLE_RETURN();
     }
     
-    virtual Vec3 evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+    virtual Vec3 eval_transmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range
-        if (!volumeDensity_->bound().isectRange(ray, tmin, tmax)) {
+        if (!volume_density_->bound().isect_range(ray, tmin, tmax)) {
             // No intersection with the volume, no attenuation
             return Vec3(1_f);
         }
@@ -79,21 +79,21 @@ public:
         // Perform ratio tracking [Novak et al. 2014]
         Float Tr = 1_f;
         Float t = tmin;
-        const auto invMaxDensity = 1_f / volumeDensity_->maxScalar();
+        const auto inv_max_density = 1_f / volume_density_->max_scalar();
         while (true) {
-            t -= glm::log(1_f - rng.u()) * invMaxDensity;
+            t -= glm::log(1_f - rng.u()) * inv_max_density;
             if (t >= tmax) {
                 break;
             }
             const auto p = ray.o + ray.d*t;
-            const auto density = volumeDensity_->evalScalar(p);
-            Tr *= 1_f - density * invMaxDensity;
+            const auto density = volume_density_->eval_scalar(p);
+            Tr *= 1_f - density * inv_max_density;
         }
 
         return Vec3(Tr);
     }
 
-    virtual bool isEmitter() const override {
+    virtual bool is_emitter() const override {
         return false;
     }
 

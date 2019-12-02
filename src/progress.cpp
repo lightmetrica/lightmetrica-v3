@@ -39,8 +39,8 @@ public:
         for (auto& ctx : ctx_) { ctx->update(processed); }
     }
 
-    virtual void updateTime(Float elapsed) override {
-        for (auto& ctx : ctx_) { ctx->updateTime(elapsed); }
+    virtual void update_time(Float elapsed) override {
+        for (auto& ctx : ctx_) { ctx->update_time(elapsed); }
     }
 
     virtual void end() override {
@@ -82,11 +82,11 @@ public:
         }
     }
 
-    virtual void updateTime(Float elapsed_) override {
+    virtual void update_time(Float elapsed_) override {
         const auto now = high_resolution_clock::now();
         const auto elapsed = duration_cast<milliseconds>(now - lastUpdated_);
         if (elapsed > delay_) {
-            ctx_->updateTime(elapsed_);
+            ctx_->update_time(elapsed_);
             lastUpdated_ = now;
         }
     }
@@ -143,7 +143,7 @@ public:
         }
     }
 
-    virtual void updateTime(Float elapsed) override {
+    virtual void update_time(Float elapsed) override {
         if (mode_ != ProgressMode::Time) {
             return;
         }
@@ -197,8 +197,8 @@ LM_PUBLIC_API void update(long long processed) {
     Instance::get().update(processed);
 }
 
-LM_PUBLIC_API void updateTime(Float elapsed) {
-    Instance::get().updateTime(elapsed);
+LM_PUBLIC_API void update_time(Float elapsed) {
+    Instance::get().update_time(elapsed);
 }
 
 LM_PUBLIC_API void end() {

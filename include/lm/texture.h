@@ -84,7 +84,7 @@ public:
         of the specified pixel coordinates.
         \endrst
     */
-    virtual Vec3 evalByPixelCoords(int x, int y) const = 0;
+    virtual Vec3 eval_by_pixel_coords(int x, int y) const = 0;
 
     /*!
         \brief Evaluate alpha component of the texture.
@@ -93,11 +93,11 @@ public:
         \rst
         This evalutes alpha component of the texture.
         If the texture has no alpha component, the behavior is undefined.
-        Use :cpp:func:`lm::Texture::hasAlpha` function to check
+        Use :cpp:func:`lm::Texture::has_alpha` function to check
         if the texture has an alpha component.
         \endrst
     */
-    virtual Float evalAlpha(Vec2 t) const { LM_UNUSED(t); return 0_f; }
+    virtual Float eval_alpha(Vec2 t) const { LM_UNUSED(t); return 0_f; }
 
     /*!
         \brief Check if texture has alpha component.
@@ -106,7 +106,7 @@ public:
         This function returns true if the texture has an alpha component.
         \endrst
     */
-    virtual bool hasAlpha() const { return false; }
+    virtual bool has_alpha() const { return false; }
 
     /*!
         \brief Get buffer of the texture.

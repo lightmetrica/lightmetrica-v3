@@ -28,24 +28,24 @@ public:
         ar(film_, maxLength_, rrProb_, sched_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
         comp::visit(visit, film_);
         comp::visit(visit, sched_);
     }
 
 public:
     virtual void construct(const Json& prop) override {
-        film_ = json::compRef<Film>(prop, "output");
+        film_ = json::comp_ref<Film>(prop, "output");
         maxLength_ = json::value<int>(prop, "max_length");
         rrProb_ = json::value<Float>(prop, "rr_prob", .2_f);
         const auto schedName = json::value<std::string>(prop, "scheduler");
-        seed_ = json::valueOrNone<unsigned int>(prop, "seed");
+        seed_ = json::value_or_none<unsigned int>(prop, "seed");
 #if VOLPT_IMAGE_SAMPLNG
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spi::" + schedName, makeLoc("scheduler"), prop);
 #else
         sched_ = comp::create<scheduler::Scheduler>(
-            "scheduler::spp::" + schedName, makeLoc("scheduler"), prop);
+            "scheduler::spp::" + schedName, make_loc("scheduler"), prop);
 #endif
     }
 
@@ -56,7 +56,7 @@ public:
         const auto size = film_->size();
         const auto processed = sched_->run([&](long long pixelIndex, long long, int threadid) {
             // Per-thread random number generator
-            thread_local Rng rng(seed_ ? *seed_ + threadid : math::rngSeed());
+            thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
 #if VOLPT_IMAGE_SAMPLNG
             LM_UNUSED(pixelIndex);
@@ -75,25 +75,25 @@ public:
 
             // Incident direction and current surface point
             Vec3 wi = {};
-            auto sp = SceneInteraction::makeCameraTerminator(window, film_->aspectRatio());
+            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect_ratio());
 
             // Perform random walk
             Vec3 L(0_f);
             Vec2 rasterPos{};
             for (int length = 0; length < maxLength_; length++) {
                 // Sample a ray
-                const auto s = scene->sampleRay(rng, sp, wi);
-                if (!s || math::isZero(s->weight)) {
+                const auto s = scene->sample_ray(rng, sp, wi);
+                if (!s || math::is_zero(s->weight)) {
                     break;
                 }
 
                 // Compute raster position for the primary ray
                 if (length == 0) {
-                    rasterPos = *scene->rasterPosition(s->wo, film_->aspectRatio());
+                    rasterPos = *scene->raster_position(s->wo, film_->aspect_ratio());
                 }
 
                 // Sample next scene interaction
-                const auto sd = scene->sampleDistance(rng, s->sp, s->wo);
+                const auto sd = scene->sample_distance(rng, s->sp, s->wo);
                 if (!sd) {
                     break;
                 }
@@ -102,12 +102,12 @@ public:
                 throughput *= s->weight * sd->weight;
 
                 if (x == 70 && y == 16) {
-                    debug::pollFloat("throughput", glm::compMax(throughput));
+                    debug::poll_float("throughput", glm::compMax(throughput));
                 }
 
                 // Accumulate contribution from emissive interaction
-                if (scene->isLight(sd->sp)) {
-                    const auto C = throughput * scene->evalContrbEndpoint(sd->sp, -s->wo);
+                if (scene->is_light(sd->sp)) {
+                    const auto C = throughput * scene->eval_contrb_endpoint(sd->sp, -s->wo);
                     L += C;
                 }
 

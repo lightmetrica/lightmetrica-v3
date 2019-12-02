@@ -107,7 +107,7 @@ LM_PUBLIC_API void build(const std::string& accelName, const Json& prop = {});
 
 /*!
     \brief Initialize renderer.
-    \param rendererName Type of renderer.
+    \param renderer_name Type of renderer.
     \param prop Property for configuration.
 */
 LM_PUBLIC_API void renderer(const std::string& rendererName, const Json& prop = {});
@@ -127,11 +127,11 @@ LM_PUBLIC_API void render(bool verbose = true);
 
 /*!
     \brief Initialize renderer and render.
-    \param rendererName Type of renderer.
+    \param renderer_name Type of renderer.
     \param prop Property for configuration.
 */
-static void render(const std::string& rendererName, const Json& prop = {}) {
-    renderer(rendererName, prop);
+static void render(const std::string& renderer_name, const Json& prop = {}) {
+    renderer(renderer_name, prop);
     render();
 }
 
@@ -139,27 +139,27 @@ static void render(const std::string& rendererName, const Json& prop = {}) {
 
 /*!
     \brief Save an image.
-    \param filmName Identifier of a film asset.
+    \param film_name Identifier of a film asset.
     \param outpath Output path.
     \see `example/blank.cpp`
 
     \rst
     This function saves the film to the specified output path.
-    The behavior of the save depends on the asset type specified in ``filmName``.
+    The behavior of the save depends on the asset type specified in ``film_name``.
     \endrst
 */
-LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath);
+LM_PUBLIC_API void save(const std::string& film_name, const std::string& outpath);
 
 /*!
     \brief Get buffer of an image.
-    \param filmName Identifier of a film asset.
+    \param film_name Identifier of a film asset.
     \return Film buffer.
 
     \rst
-    This function obtains the buffer to the film asset specified by ``filmName``.
+    This function obtains the buffer to the film asset specified by ``film_name``.
     \endrst
 */
-LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName);
+LM_PUBLIC_API FilmBuffer buffer(const std::string& film_name);
 
 // ------------------------------------------------------------------------------------------------
 
@@ -229,7 +229,7 @@ public:
     \brief Get index of the root node.
     \return Node index.
 */
-LM_PUBLIC_API int rootNode();
+LM_PUBLIC_API int root_node();
 
 /*!
     \brief Create primitive node.
@@ -240,46 +240,46 @@ LM_PUBLIC_API int rootNode();
     TODO: Describe about properties.
     \endrst
 */
-LM_PUBLIC_API int primitiveNode(const Json& prop);
+LM_PUBLIC_API int primitive_node(const Json& prop);
 
 /*!
     \brief Create group node.
     \return Index of the created node.
 */
-LM_PUBLIC_API int groupNode();
+LM_PUBLIC_API int group_node();
 
 /*!
     \brief Create instanece group node.
     \return Index of the created node.
 */
-LM_PUBLIC_API int instanceGroupNode();
+LM_PUBLIC_API int instance_group_node();
 
 /*!
     \brief Create transform node.
     \return Index of the created node.
 */
-LM_PUBLIC_API int transformNode(Mat4 transform);
+LM_PUBLIC_API int transform_node(Mat4 transform);
 
 /*!
     \brief Add child node.
     \param parent Index of the parent node.
     \param child Index of the node being added to the parent.
 */
-LM_PUBLIC_API void addChild(int parent, int child);
+LM_PUBLIC_API void add_child(int parent, int child);
 
 /*!
     \brief Add child node from model asset.
     \param parent Index of the parent node.
-    \param modelLoc Locator of the model asset.
+    \param model_loc Locator of the model asset.
 */
-LM_PUBLIC_API void addChildFromModel(int parent, const std::string& modelLoc);
+LM_PUBLIC_API void add_child_from_model(int parent, const std::string& model_loc);
 
 /*!
     \brief Create group node from model asset.
-    \param modelLoc Locator of the model asset.
+    \param model_loc Locator of the model asset.
     \return Index of the created node.
 */
-LM_PUBLIC_API int createGroupFromModel(const std::string& modelLoc);
+LM_PUBLIC_API int create_group_from_model(const std::string& modelLoc);
 
 /*!
     \brief Create primitive(s) and add to the scene.

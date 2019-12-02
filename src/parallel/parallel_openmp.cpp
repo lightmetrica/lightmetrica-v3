@@ -29,11 +29,11 @@ public:
         omp_set_num_threads(numThreads_);
     }
 
-    virtual int numThreads() const override {
+    virtual int num_threads() const override {
         return numThreads_;
     }
 
-    virtual bool mainThread() const override {
+    virtual bool main_thread() const override {
         return omp_get_thread_num() == 0;
     }
 

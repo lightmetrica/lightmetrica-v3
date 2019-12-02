@@ -349,7 +349,7 @@ static pybind11::object castToPythonObject(Component* inst) {
 */
 template <typename InterfaceT>
 static pybind11::object createWithoutConstructWrap(const char* name, const char* loc) {
-    auto inst = lm::comp::detail::createComp(name);
+    auto inst = lm::comp::detail::create_comp(name);
     if (!inst) {
         return pybind11::object();
     }
@@ -362,7 +362,7 @@ static pybind11::object createWithoutConstructWrap(const char* name, const char*
 */
 template <typename InterfaceT>
 static pybind11::object createCompWrap(const char* name, const char* loc, const Json& prop) {
-    auto inst = lm::comp::detail::createComp(name);
+    auto inst = lm::comp::detail::create_comp(name);
     if (!inst) {
         return pybind11::object();
     }

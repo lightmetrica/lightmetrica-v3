@@ -39,16 +39,16 @@ public:
         ar(film_, maxLength_, ptMode_, sched_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
         comp::visit(visit, film_);
         comp::visit(visit, sched_);
     }
 
 public:
     virtual void construct(const Json& prop) override {
-        film_ = json::compRef<Film>(prop, "output");
+        film_ = json::comp_ref<Film>(prop, "output");
         maxLength_ = json::value<int>(prop, "max_length");
-        seed_ = json::valueOrNone<unsigned int>(prop, "seed");
+        seed_ = json::value_or_none<unsigned int>(prop, "seed");
         {
             const auto s = json::value<std::string>(prop, "mode", "mis");
             if (s == "naive") {
@@ -67,12 +67,12 @@ public:
             if (s == "pixel") {
                 imageSampleMode_ = ImageSampleMode::Pixel;
                 sched_ = comp::create<scheduler::Scheduler>(
-                    "scheduler::spp::" + schedName, makeLoc("scheduler"), prop);
+                    "scheduler::spp::" + schedName, make_loc("scheduler"), prop);
             }
             else if (s == "image") {
                 imageSampleMode_ = ImageSampleMode::Image;
                 sched_ = comp::create<scheduler::Scheduler>(
-                    "scheduler::spi::" + schedName, makeLoc("scheduler"), prop);
+                    "scheduler::spi::" + schedName, make_loc("scheduler"), prop);
             }
         }
     }
@@ -87,7 +87,7 @@ public:
         // Dispatch rendering
         const auto processed = sched_->run([&](long long pixelIndex, long long, int threadid) {
             // Per-thread random number generator
-            thread_local Rng rng(seed_ ? *seed_ + threadid : math::rngSeed());
+            thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
             // ------------------------------------------------------------------------------------
 
@@ -112,7 +112,7 @@ public:
 
             // Incident direction and current surface point
             Vec3 wi = {};
-            auto sp = SceneInteraction::makeCameraTerminator(window, film_->aspectRatio());
+            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect_ratio());
 
             // Raster position
             Vec2 rasterPos{};
@@ -120,13 +120,13 @@ public:
             // Perform random walk
             for (int length = 0; length < maxLength_; length++) {
                 // Sample a ray
-                const auto s = scene->sampleRay(rng, sp, wi);
-                if (!s || math::isZero(s->weight)) {
+                const auto s = scene->sample_ray(rng, sp, wi);
+                if (!s || math::is_zero(s->weight)) {
                     break;
                 }
                 // Compute raster position for the primary ray
                 if (length == 0) {
-                    rasterPos = *scene->rasterPosition(s->wo, film_->aspectRatio());
+                    rasterPos = *scene->raster_position(s->wo, film_->aspect_ratio());
                 }
 
                 // --------------------------------------------------------------------------------
@@ -141,16 +141,16 @@ public:
                     // (according to BSDF / phase) doesn't contain delta component.
                     if (imageSampleMode_ == ImageSampleMode::Pixel) {
                         // Primary ray is not samplable via NEE in the pixel space sample mode
-                        return length > 0 && !scene->isSpecular(s->sp, s->comp);
+                        return length > 0 && !scene->is_specular(s->sp, s->comp);
                     }
                     else {
                         // Primary ray is samplable via NEE in the image space sample mode
-                        return !scene->isSpecular(s->sp, s->comp);
+                        return !scene->is_specular(s->sp, s->comp);
                     }
                 }();
                 if (nee) [&] {
                     // Sample a light
-                    const auto sL = scene->sampleDirectLight(rng, s->sp);
+                    const auto sL = scene->sample_direct_light(rng, s->sp);
                     if (!sL) {
                         return;
                     }
@@ -161,7 +161,7 @@ public:
                     // Recompute raster position for the primary edge
                     const auto rp = [&]() -> std::optional<Vec2> {
                         if (length == 0)
-                            return scene->rasterPosition(-sL->wo, film_->aspectRatio());
+                            return scene->raster_position(-sL->wo, film_->aspect_ratio());
                         else
                             return rasterPos;
                     }();
@@ -171,12 +171,12 @@ public:
 
                     // This light is not samplable by direct strategy
                     // if the light contain delta component or degenerated.
-                    const bool directL = !scene->isSpecular(sL->sp, sL->comp) && !sL->sp.geom.degenerated;
+                    const bool directL = !scene->is_specular(sL->sp, sL->comp) && !sL->sp.geom.degenerated;
 
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
-                    const auto fs = scene->evalContrb(s->sp, s->comp, wi, wo);
-                    const auto pdfSel = scene->pdfComp(s->sp, s->comp, wi);
+                    const auto fs = scene->eval_contrb(s->sp, s->comp, wi, wo);
+                    const auto pdfSel = scene->pdf_comp(s->sp, s->comp, wi);
                     const auto misw = [&]() -> Float {
                         if (ptMode_ == PTMode::NEE) {
                             return 1_f;
@@ -185,8 +185,8 @@ public:
                             return 1_f;
                         }
                         // Compute MIS weight only when wo can be sampled with both strategies.
-                        return math::balanceHeuristic(
-                            scene->pdfDirectLight(s->sp, sL->sp, sL->comp, sL->wo), 
+                        return math::balance_heuristic(
+                            scene->pdf_direct_light(s->sp, sL->sp, sL->comp, sL->wo), 
                             scene->pdf(s->sp, s->comp, wi, wo));
                     }();
                     const auto C = throughput / pdfSel * fs * sL->weight * misw;
@@ -213,15 +213,15 @@ public:
                     // Direct strategy is samplable if the ray hit with light
                     if (ptMode_ == PTMode::NEE) {
                         // In NEE mode, use direct strategy only when a NEE edge cannot be sampled.
-                        return !nee && scene->isLight(*hit);
+                        return !nee && scene->is_light(*hit);
                     }
                     else {
-                        return scene->isLight(*hit);
+                        return scene->is_light(*hit);
                     }
                 }();
                 if (direct) {
                     const auto woL = -s->wo;
-                    const auto fs = scene->evalContrbEndpoint(*hit, woL);
+                    const auto fs = scene->eval_contrb_endpoint(*hit, woL);
                     const auto misw = [&]() -> Float {
                         if (ptMode_ == PTMode::Naive) {
                             return 1_f;
@@ -230,9 +230,9 @@ public:
                             return 1_f;
                         }
                         // The continuation edge can be sampled via both direct and NEE
-                        return math::balanceHeuristic(
+                        return math::balance_heuristic(
                             scene->pdf(s->sp, s->comp, wi, s->wo),
-                            scene->pdfDirectLight(s->sp, *hit, -1, woL));
+                            scene->pdf_direct_light(s->sp, *hit, -1, woL));
                     }();
                     const auto C = throughput * fs * misw;
                     film_->splat(rasterPos, C);

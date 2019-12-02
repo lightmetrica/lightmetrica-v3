@@ -42,7 +42,7 @@ LM_PUBLIC_API void shutdown();
     \brief Handle a message.
     \param message Send a message to the server.
 */
-LM_PUBLIC_API void handleMessage(const std::string& message);
+LM_PUBLIC_API void handle_message(const std::string& message);
 
 /*!
     \brief Synchronize the state of user context.
@@ -52,7 +52,7 @@ LM_PUBLIC_API void handleMessage(const std::string& message);
     of the client process to the server process.
     \endrst
 */
-LM_PUBLIC_API void syncUserContext();
+LM_PUBLIC_API void sync_user_context();
 
 /*!
     \brief Debugio mesh type.
@@ -92,8 +92,8 @@ public:
 */
 class DebugioContext : public Component {
 public:
-    virtual void handleMessage(const std::string& message) { LM_UNUSED(message); }
-    virtual void syncUserContext() {}
+    virtual void handle_message(const std::string& message) { LM_UNUSED(message); }
+    virtual void sync_user_context() {}
     virtual void draw(int type, Vec3 color, const std::vector<Vec3>& vs) { LM_UNUSED(type, color, vs); }
 };
 
@@ -143,27 +143,27 @@ LM_PUBLIC_API void poll();
 LM_PUBLIC_API void run();
 
 /*!
-    \brief Callback function for handleMessage.
+    \brief Callback function for handle_message.
     \param message Received message.
 */
 using HandleMessageFunc = std::function<void(const std::string& message)>;
 
 /*!
-    \brief Register callback function for handleMessage.
+    \brief Register callback function for handle_message.
     \param process Callback function.
 */
-LM_PUBLIC_API void on_handleMessage(const HandleMessageFunc& process);
+LM_PUBLIC_API void on_handle_message(const HandleMessageFunc& process);
 
 /*!
-    \brief Callback function for syncUserContext.
+    \brief Callback function for sync_user_context.
 */
 using SyncUserContextFunc = std::function<void()>;
 
 /*!
-    \brief Register callback function for syncUserContext.
+    \brief Register callback function for sync_user_context.
     \param process Callback function.
 */
-LM_PUBLIC_API void on_syncUserContext(const SyncUserContextFunc& process);
+LM_PUBLIC_API void on_sync_user_context(const SyncUserContextFunc& process);
 
 /*!
     \brief Callback function for draw.

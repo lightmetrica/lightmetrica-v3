@@ -120,13 +120,13 @@ LM_NAMESPACE_BEGIN(detail)
 
 // https://stackoverflow.com/questions/48875467/how-to-pass-not-variadic-values-to-fmtformat
 template <std::size_t ... Is>
-std::string formatWithStringVector(const std::string& format, const std::vector<std::string>& v, std::index_sequence<Is...>) {
+std::string format_with_string_vector(const std::string& format, const std::vector<std::string>& v, std::index_sequence<Is...>) {
     return fmt::format(format, v[Is]...);
 }
 
 template <std::size_t N>
-std::string formatWithStringVector(const std::string& format, const std::vector<std::string>& v) {
-    return formatWithStringVector(format, v, std::make_index_sequence<N>());
+std::string format_with_string_vector(const std::string& format, const std::vector<std::string>& v) {
+    return format_with_string_vector(format, v, std::make_index_sequence<N>());
 }
 
 LM_NAMESPACE_END(detail)
@@ -140,6 +140,8 @@ LM_NAMESPACE_END(detail)
 
 /*!
     \brief Merge two parameters.
+	\param j1 Parameters.
+	\param j2 Parameters.
     
     \rst
     If the same key is used, the value in `j1` has priority.
@@ -173,8 +175,8 @@ LM_INLINE Json merge(const Json& j1, const Json& j2) {
     \endrst
 */
 template <size_t N>
-Json parsePositionalArgs(int argc, char** argv, const std::string& temp) {
-    return Json::parse(detail::formatWithStringVector<N>(temp, { argv + 1, argv + argc }));
+Json parse_positional_args(int argc, char** argv, const std::string& temp) {
+    return Json::parse(detail::format_with_string_vector<N>(temp, { argv + 1, argv + argc }));
 }
 
 /*!
@@ -221,7 +223,7 @@ T value(const Json& j, const std::string& name, T&& def) {
     \endrst
 */
 template <typename T>
-T* compRef(const Json& j, const std::string& name) {
+T* comp_ref(const Json& j, const std::string& name) {
     const auto it = j.find(name);
     if (it == j.end()) {
         LM_THROW_EXCEPTION(Error::InvalidArgument, "Missing property [name='{}']", name);
@@ -248,7 +250,7 @@ T* compRef(const Json& j, const std::string& name) {
     \endrst
 */
 template <typename T>
-std::optional<T> valueOrNone(const Json& j, const std::string& name) {
+std::optional<T> value_or_none(const Json& j, const std::string& name) {
     if (const auto it = j.find(name); it != j.end()) {
         T v = *it;
         return v;

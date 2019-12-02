@@ -83,7 +83,7 @@ public:
             // Print error message
             const std::string desc = m[code];
             LM_ERROR("Structured exception [desc='{}']", desc);
-            exception::stackTrace();
+            exception::stack_trace();
 
             LM_THROW_EXCEPTION(Error::None, "Structured exception has detected [type='{}']", m[code]);
         });
@@ -161,15 +161,15 @@ LM_PUBLIC_API void shutdown() {
     ExceptionContext::instance().shutdown();
 }
 
-LM_PUBLIC_API void enableFPEx() {
+LM_PUBLIC_API void enable_fpex() {
     ExceptionContext::instance().enableFPEx();
 }
 
-LM_PUBLIC_API void disableFPEx() {
+LM_PUBLIC_API void disable_fpex() {
     ExceptionContext::instance().disableFPEx();
 }
 
-LM_PUBLIC_API void stackTrace() {
+LM_PUBLIC_API void stack_trace() {
     ExceptionContext::instance().stackTrace();
 }
 

@@ -21,9 +21,9 @@ LM_PUBLIC_API void shutdown() {
 LM_PUBLIC_API bool load(
     const std::string& path,
     OBJSurfaceGeometry& geo,
-    const ProcessMeshFunc& processMesh,
-    const ProcessMaterialFunc& processMaterial) {
-    return Instance::get().load(path, geo, processMesh, processMaterial);
+    const ProcessMeshFunc& process_mesh,
+    const ProcessMaterialFunc& process_material) {
+    return Instance::get().load(path, geo, process_mesh, process_material);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::objloader)

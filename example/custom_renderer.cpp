@@ -17,7 +17,7 @@ private:
 
 public:
     virtual void construct(const lm::Json& prop) override {
-        film_ = lm::json::compRef<lm::Film>(prop, "output");
+        film_ = lm::json::comp_ref<lm::Film>(prop, "output");
         spp_ = lm::json::value<long long>(prop, "spp");
     }
 
@@ -27,19 +27,19 @@ public:
             thread_local lm::Rng rng(rngSeed_ + threadId);
             const int x = int(index % w);
             const int y = int(index / w);
-            const auto ray = scene->primaryRay({(x+.5_f)/w, (y+.5_f)/h}, film_->aspectRatio());
+            const auto ray = scene->primary_ray({(x+.5_f)/w, (y+.5_f)/h}, film_->aspect_ratio());
             const auto hit = scene->intersect(ray);
             if (!hit) {
                 return;
             }
             auto V = 0_f;
             for (long long i = 0; i < spp_; i++) {
-                const auto [n, u, v] = hit->geom.orthonormalBasis(-ray.d);
-                const auto d = lm::math::sampleCosineWeighted(rng);
+                const auto [n, u, v] = hit->geom.orthonormal_basis(-ray.d);
+                const auto d = lm::math::sample_cosine_weighted(rng);
                 V += scene->intersect({hit->geom.p, u*d.x+v*d.y+n*d.z}, lm::Eps, .2_f) ? 0_f : 1_f;
             }
             V /= spp_;
-            film_->setPixel(x, y, lm::Vec3(V));
+            film_->set_pixel(x, y, lm::Vec3(V));
         });
     }
 };
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
         lm::info();
 
         // Parse command line arguments
-        const auto opt = lm::json::parsePositionalArgs<13>(argc, argv, R"({{
+        const auto opt = lm::json::parse_positional_args<13>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
             "spp": {},

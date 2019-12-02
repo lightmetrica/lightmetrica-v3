@@ -330,11 +330,11 @@ LM_PUBLIC_API void shutdown() {
     MasterContext::instance().shutdown();
 }
 
-LM_PUBLIC_API void printWorkerInfo() {
+LM_PUBLIC_API void print_worker_info() {
     MasterContext::instance().printWorkerInfo();
 }
 
-LM_PUBLIC_API void allowWorkerConnection(bool allow) {
+LM_PUBLIC_API void allow_worker_connection(bool allow) {
     MasterContext::instance().allowWorkerConnection(allow);
 }
 
@@ -342,19 +342,19 @@ LM_PUBLIC_API void sync() {
     MasterContext::instance().sync();
 }
 
-LM_PUBLIC_API void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) {
+LM_PUBLIC_API void on_worker_task_finished(const WorkerTaskFinishedFunc& func) {
     MasterContext::instance().onWorkerTaskFinished(func);
 }
 
-LM_PUBLIC_API void processWorkerTask(long long start, long long end) {
+LM_PUBLIC_API void process_worker_task(long long start, long long end) {
     MasterContext::instance().processWorkerTask(start, end);
 }
 
-LM_PUBLIC_API void notifyProcessCompleted() {
+LM_PUBLIC_API void notify_process_completed() {
     MasterContext::instance().notifyProcessCompleted();
 }
 
-LM_PUBLIC_API void gatherFilm(const std::string& filmloc) {
+LM_PUBLIC_API void gather_film(const std::string& filmloc) {
     MasterContext::instance().gatherFilm(filmloc);
 }
 
@@ -529,7 +529,7 @@ public:
                     lm::serial::load(is, filmloc);
                     sendFunc(*pushSocket_, PushToMasterCommand::gatherFilm, [&](std::ostream& os) {
                         lm::serial::save(os, numProcessedTasks_, filmloc);
-                        lm::serial::saveOwned(os, lm::comp::get<Film>(filmloc));
+                        lm::serial::save_owned(os, lm::comp::get<Film>(filmloc));
                     });
                 }
             }
@@ -549,7 +549,7 @@ LM_PUBLIC_API void run() {
     WorkerContext::instance().run();
 }
 
-LM_PUBLIC_API void onProcessCompleted(const ProcessCompletedFunc& func) {
+LM_PUBLIC_API void on_process_completed(const ProcessCompletedFunc& func) {
     WorkerContext::instance().onProcessCompleted(func);
 }
 

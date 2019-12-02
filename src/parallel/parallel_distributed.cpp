@@ -14,11 +14,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
 
 class ParallelContext_DistMaster final : public ParallelContext {
 public:
-    virtual int numThreads() const {
+    virtual int num_threads() const {
         return 0;
     }
 
-    virtual bool mainThread() const {
+    virtual bool main_thread() const {
         return true;
     }
 
@@ -28,7 +28,7 @@ public:
         long long totalProcessed = 0;
 
         // Called when a task is finished
-        distributed::master::onWorkerTaskFinished([&](long long processed) {
+        distributed::master::on_worker_task_finished([&](long long processed) {
             std::unique_lock<std::mutex> lock(mut);
             totalProcessed += processed;
             cond.notify_one();
@@ -40,7 +40,7 @@ public:
         for (long long i = 0; i < Iter; i++) {
             const long long start = i * WorkSize;
             const long long end = std::min((i + 1) * WorkSize, numSamples);
-            distributed::master::processWorkerTask(start, end);
+            distributed::master::process_worker_task(start, end);
         }
 
         // Wait for completion
@@ -51,7 +51,7 @@ public:
         });
 
         // Notify process has completed
-        distributed::master::notifyProcessCompleted();
+        distributed::master::notify_process_completed();
     }
 };
 
@@ -68,12 +68,12 @@ public:
         localContext_ = comp::create<ParallelContext>("parallel::openmp", "", prop);
     }
     
-    virtual int numThreads() const {
-        return localContext_->numThreads();
+    virtual int num_threads() const {
+        return localContext_->num_threads();
     }
 
-    virtual bool mainThread() const {
-        return localContext_->mainThread();
+    virtual bool main_thread() const {
+        return localContext_->main_thread();
     }
 
     virtual void foreach(long long, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc&) const override {
@@ -82,7 +82,7 @@ public:
         bool done = false;
 
         // Called when the process is completed.
-        distributed::worker::onProcessCompleted([&] {
+        distributed::worker::on_process_completed([&] {
             std::unique_lock<std::mutex> lock(mut);
             done = true;
             cond.notify_one();

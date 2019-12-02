@@ -29,7 +29,7 @@ private:
 
     // Underlying assets
     std::vector<Component::Ptr<Component>> assets_;
-    std::unordered_map<std::string, int> assetsMap_;
+    std::unordered_map<std::string, int> assets_map_;
 
     // Mesh group which assocites a mesh and a material
     struct Group {
@@ -46,10 +46,10 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(geo_, groups_, assetsMap_, assets_);
+        ar(geo_, groups_, assets_map_, assets_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
         for (auto& asset : assets_) {
             comp::visit(visit, asset);
         }
@@ -57,7 +57,7 @@ public:
 
 public:
     virtual Component* underlying(const std::string& name) const override {
-        return assets_[assetsMap_.at(name)].get();
+        return assets_[assets_map_.at(name)].get();
     }
 
 	virtual void construct(const Json& prop) override {
@@ -66,9 +66,9 @@ public:
             // Process mesh
             [&](const OBJMeshFace& fs, const MTLMatParams& m) -> bool {
                 // Create mesh
-                const std::string meshName = fmt::format("mesh_{}", assets_.size());
+                const std::string mesh_name = fmt::format("mesh_{}", assets_.size());
                 auto mesh = comp::create<Mesh>(
-                    "mesh::wavefrontobj", makeLoc(meshName),
+                    "mesh::wavefrontobj", make_loc(mesh_name),
                     json::merge(prop, {
                         {"model_", this},
                         {"fs_", (const OBJMeshFace*)&fs}
@@ -77,28 +77,28 @@ public:
                 if (!mesh) {
                     return false;
                 }
-                assetsMap_[meshName] = int(assets_.size());
+                assets_map_[mesh_name] = int(assets_.size());
                 assets_.push_back(std::move(mesh));
 
                 // Create area light if Ke > 0
-                int lightIndex = -1;
+                int light_index = -1;
                 if (glm::compMax(m.Ke) > 0_f) {
-                    const auto lightImplName = json::value<std::string>(prop, "light", "light::area");
-                    const auto lightName = meshName + "_light";
-                    auto light = comp::create<Light>(lightImplName, makeLoc(lightName), {
+                    const auto light_impl_name = json::value<std::string>(prop, "light", "light::area");
+                    const auto light_name = mesh_name + "_light";
+                    auto light = comp::create<Light>(light_impl_name, make_loc(light_name), {
                         {"Ke", m.Ke},
-                        {"mesh", makeLoc(meshName)}
+                        {"mesh", make_loc(mesh_name)}
                     });
                     if (!light) {
                         return false;
                     }
-                    lightIndex = int(assets_.size());
-                    assetsMap_[lightName] = int(assets_.size());
+                    light_index = int(assets_.size());
+                    assets_map_[light_name] = int(assets_.size());
                     assets_.push_back(std::move(light));
                 }
 
                 // Create mesh group
-                groups_.push_back({ assetsMap_[meshName], assetsMap_[m.name], lightIndex });
+                groups_.push_back({ assets_map_[mesh_name], assets_map_[m.name], light_index });
 
                 return true;
             },
@@ -106,13 +106,13 @@ public:
             [&](const MTLMatParams& m) -> bool {
                 // User-specified material
                 if (const auto it = prop.find("base_material"); it != prop.end()) {
-                    auto mat = comp::create<Material>("material::proxy", makeLoc(m.name), {
+                    auto mat = comp::create<Material>("material::proxy", make_loc(m.name), {
                         {"ref", *it}
                     });
                     if (!mat) {
                         return false;
                     }
-                    assetsMap_[m.name] = int(assets_.size());
+                    assets_map_[m.name] = int(assets_.size());
                     assets_.push_back(std::move(mat));
                     return true;
                 }
@@ -124,26 +124,26 @@ public:
                     const auto id = "texture_" + fs::path(m.mapKd).stem().string();
 
                     // Check if already loaded
-                    if (auto it = assetsMap_.find(id); it == assetsMap_.end()) {
+                    if (auto it = assets_map_.find(id); it == assets_map_.end()) {
                         // If not loaded, load the texture
                         const auto textureAssetName = json::value<std::string>(prop, "texture", "texture::bitmap");
-                        auto texture = comp::create<Texture>(textureAssetName, makeLoc(id), {
+                        auto texture = comp::create<Texture>(textureAssetName, make_loc(id), {
                             {"path", (fs::path(path).remove_filename()/m.mapKd).string()}
                         });
                         if (!texture) {
                             return false;
                         }
-                        assetsMap_[id] = int(assets_.size());
+                        assets_map_[id] = int(assets_.size());
                         assets_.push_back(std::move(texture));
                     }
 
                     // Locator of the texture
-                    mapKd_loc = makeLoc(id);
+                    mapKd_loc = make_loc(id);
                 }
 
                 // Default mixture material
                 auto mat = comp::create<Material>(
-                    "material::wavefrontobj", makeLoc(m.name),
+                    "material::wavefrontobj", make_loc(m.name),
                     json::merge(prop, {
                         {"matparams_", (const MTLMatParams*)&m},
                         {"mapKd_", mapKd_loc}
@@ -152,7 +152,7 @@ public:
                 if (!mat) {
                     return false;
                 }
-                assetsMap_[m.name] = int(assets_.size());
+                assets_map_[m.name] = int(assets_.size());
                 assets_.push_back(std::move(mat));
 
                 return true;
@@ -162,7 +162,7 @@ public:
         }
     }
     
-    virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const override {
+    virtual void create_primitives(const CreatePrimitiveFunc& createPrimitive) const override {
         for (auto [mesh, material, light] : groups_) {
             auto* meshp = assets_.at(mesh).get();
             auto* materialp = assets_.at(material).get();
@@ -173,7 +173,7 @@ public:
         }
     }
 
-	virtual void foreachNode(const VisitNodeFuncType&) const override {
+	virtual void foreach_node(const VisitNodeFuncType&) const override {
         LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
 	}
 };
@@ -192,7 +192,7 @@ public:
         ar(model_, fs_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
         comp::visit(visit, model_);
     }
 
@@ -202,13 +202,13 @@ public:
         fs_ = *prop["fs_"].get<const OBJMeshFace*>();
     }
 
-    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
+    virtual void foreach_triangle(const ProcessTriangleFunc& processTriangle) const override {
         for (int fi = 0; fi < int(fs_.size())/3; fi++) {
-            processTriangle(fi, triangleAt(fi));
+            processTriangle(fi, triangle_at(fi));
         }
     }
 
-    virtual Tri triangleAt(int face) const override {
+    virtual Tri triangle_at(int face) const override {
         const auto& geo_ = model_->geo_;
         const auto f1 = fs_[3*face];
         const auto f2 = fs_[3*face+1];
@@ -220,7 +220,7 @@ public:
         };
     }
 
-    virtual Point surfacePoint(int face, Vec2 uv) const override {
+    virtual Point surface_point(int face, Vec2 uv) const override {
         const auto& geo_ = model_->geo_;
         const auto i1 = fs_[3*face];
         const auto i2 = fs_[3*face+1];
@@ -230,18 +230,18 @@ public:
         const auto p3 = geo_.ps[i3.p];
         return {
             // Position
-            math::mixBarycentric(p1, p2, p3, uv),
+            math::mix_barycentric(p1, p2, p3, uv),
             // Normal. Use geometry normal if the attribute is missing.
             i1.n < 0 ? glm::normalize(glm::cross(p2-p1, p3-p1))
-                     : glm::normalize(math::mixBarycentric(
+                     : glm::normalize(math::mix_barycentric(
                          geo_.ns[i1.n], geo_.ns[i2.n], geo_.ns[i3.n], uv)),
             // Texture coordinates
-            i1.t < 0 ? Vec2(0) : math::mixBarycentric(
+            i1.t < 0 ? Vec2(0) : math::mix_barycentric(
                 geo_.ts[i1.t], geo_.ts[i2.t], geo_.ts[i3.t], uv)
         };
     }
 
-    virtual int numTriangles() const override {
+    virtual int num_triangles() const override {
         return int(fs_.size()) / 3;
     }
 };
@@ -257,7 +257,7 @@ private:
 
     // Underlying material components
     std::vector<Component::Ptr<Material>> materials_;
-    std::unordered_map<std::string, int> typeToIndexMap_;
+    std::unordered_map<std::string, int> type_to_index_map_;
 
     // Component indices
     int diffuse_ = -1;
@@ -267,30 +267,30 @@ private:
     int mask_ = -1;
 
     // Texture for the alpha mask
-    Texture* maskTex_ = nullptr;
+    Texture* mask_tex_ = nullptr;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(objmat_, materials_, typeToIndexMap_,
+        ar(objmat_, materials_, type_to_index_map_,
            diffuse_, glossy_, glass_, mirror_, mask_,
-           maskTex_);
+           mask_tex_);
     }
 
     virtual Component* underlying(const std::string& name) const override {
-        if (auto it = typeToIndexMap_.find(name); it != typeToIndexMap_.end()) {
+        if (auto it = type_to_index_map_.find(name); it != type_to_index_map_.end()) {
             return materials_.at(it->second).get();
         }
         return nullptr;
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
-        comp::visit(visit, maskTex_);
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, mask_tex_);
         for (auto& material : materials_) {
             comp::visit(visit, material);
         }
     }
 
-    virtual Json underlyingValue(const std::string& query) const override {
+    virtual Json underlying_value(const std::string& query) const override {
         LM_UNUSED(query);
         return {
             { "name", objmat_.name },
@@ -307,13 +307,13 @@ public:
 
 private:
     int addMaterial(const std::string& name, const std::string& type, const Json& prop) {
-        auto p = comp::create<Material>(name, makeLoc(type), prop);
+        auto p = comp::create<Material>(name, make_loc(type), prop);
         if (!p) {
             return -1;
         }
         int index = int(materials_.size());
         materials_.push_back(std::move(p));
-        typeToIndexMap_[type] = index;
+        type_to_index_map_[type] = index;
         return index;
     }
 
@@ -325,8 +325,8 @@ public:
         // Make parent component as a parent for the newly created components
         if (objmat_.illum == 7) {
             // Glass material
-            const auto glassMaterialName = json::value<std::string>(prop, "glass", "material::glass");
-            glass_ = addMaterial(glassMaterialName, "glass", {
+            const auto glass_material_name = json::value<std::string>(prop, "glass", "material::glass");
+            glass_ = addMaterial(glass_material_name, "glass", {
                 {"Ni", objmat_.Ni}
             });
             if (glass_ < 0) {
@@ -335,29 +335,29 @@ public:
         }
         else if (objmat_.illum == 5) {
             // Mirror material
-            const auto mirrorMaterialName = json::value<std::string>(prop, "mirror", "material::mirror");
-            mirror_ = addMaterial(mirrorMaterialName, "mirror", {});
+            const auto mirror_material_name = json::value<std::string>(prop, "mirror", "material::mirror");
+            mirror_ = addMaterial(mirror_material_name, "mirror", {});
             if (mirror_ < 0) {
                 LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
             }
         }
         else {
             // Diffuse material
-            const auto diffuseMaterialName = json::value<std::string>(prop, "diffuse", "material::diffuse");
+            const auto diffuse_material_name = json::value<std::string>(prop, "diffuse", "material::diffuse");
             Json matprop{ {"Kd", objmat_.Kd} };
             if (!objmat_.mapKd.empty()) {
                 matprop["mapKd"] = objmat_.mapKd;
             }
-            diffuse_ = addMaterial(diffuseMaterialName, "diffuse", matprop);
+            diffuse_ = addMaterial(diffuse_material_name, "diffuse", matprop);
             if (diffuse_ < 0) {
                 LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
             }
 
             // Glossy material
-            const auto glossyMaterialName = json::value<std::string>(prop, "glossy", "material::glossy");
+            const auto glossy_material_name = json::value<std::string>(prop, "glossy", "material::glossy");
             const auto r = 2_f / (2_f + objmat_.Ns);
-            const auto as = math::safeSqrt(1_f - objmat_.an * .9_f);
-            glossy_ = addMaterial(glossyMaterialName, "glossy", {
+            const auto as = math::safe_sqrt(1_f - objmat_.an * .9_f);
+            glossy_ = addMaterial(glossy_material_name, "glossy", {
                 {"Ks", objmat_.Ks},
                 {"ax", std::max(1e-3_f, r / as)},
                 {"ay", std::max(1e-3_f, r * as)}
@@ -369,8 +369,8 @@ public:
             // Mask texture
             if (!objmat_.mapKd.empty()) {
                 auto* texture = lm::comp::get<Texture>(objmat_.mapKd);
-                if (texture->hasAlpha()) {
-                    maskTex_ = texture;
+                if (texture->has_alpha()) {
+                    mask_tex_ = texture;
                     mask_ = addMaterial("material::mask", "mask", {});
                     if (mask_ < 0) {
                         LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
@@ -380,8 +380,8 @@ public:
         }
     }
 
-    virtual bool isSpecular(const PointGeometry& geom, int comp) const override {
-        return materials_.at(comp)->isSpecular(geom, SurfaceComp::DontCare);
+    virtual bool is_specular(const PointGeometry& geom, int comp) const override {
+        return materials_.at(comp)->is_specular(geom, SurfaceComp::DontCare);
     }
 
     virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
@@ -398,9 +398,9 @@ public:
             }
 
             // Diffuse or glossy or mask
-            const auto wd = diffuseSelectionWeight(geom);
+            const auto wd = diffuse_selection_weight(geom);
             if (rng.u() < wd) {
-                if (maskTex_ && rng.u() > maskTex_->evalAlpha(geom.t)) {
+                if (mask_tex_ && rng.u() > mask_tex_->eval_alpha(geom.t)) {
                     return { mask_, 1_f/wd };
                 }
                 else {
@@ -422,8 +422,8 @@ public:
         };
     }
 
-    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const override {
-        return materials_.at(comp)->sampleDirectionGivenComp(rng, geom, SurfaceComp::DontCare, wi);
+    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const override {
+        return materials_.at(comp)->sample_direction_given_comp(rng, geom, SurfaceComp::DontCare, wi);
     }
 
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
@@ -440,11 +440,11 @@ public:
         return materials_.at(comp)->pdf(geom, SurfaceComp::DontCare, wi, wo);
     }
 
-    virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3) const override {
+    virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3) const override {
         if (comp == glass_ || comp == mirror_) {
             return 1_f;
         }
-        const auto wd = diffuseSelectionWeight(geom);
+        const auto wd = diffuse_selection_weight(geom);
         return comp == glossy_ ? (1_f - wd) : wd;
     }
 
@@ -453,7 +453,7 @@ public:
     }
 
 private:
-    Float diffuseSelectionWeight(const PointGeometry& geom) const {
+    Float diffuse_selection_weight(const PointGeometry& geom) const {
         const auto* D = materials_.at(diffuse_).get();
         const auto* G = materials_.at(glossy_).get();
         const auto wd = [&]() {

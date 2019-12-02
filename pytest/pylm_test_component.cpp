@@ -72,7 +72,7 @@ public:
 
         m.def("createA1", []() {
             return dynamic_cast<A*>(
-                lm::comp::detail::createComp("test::comp::a1"));
+                lm::comp::detail::create_comp("test::comp::a1"));
         });
 
         m.def("createTestPlugin", []() {
@@ -120,7 +120,7 @@ public:
             const auto serialized = os.str();
             
             // Create another instance and deserialize it
-            auto p2 = lm::comp::createWithoutConstruct<A>("test::comp::serializable", "");
+            auto p2 = lm::comp::create_without_construct<A>("test::comp::serializable", "");
             {
                 std::istringstream is(serialized);
                 lm::InputArchive ar(is);

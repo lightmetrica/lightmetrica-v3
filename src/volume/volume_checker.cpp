@@ -23,32 +23,32 @@ public:
 
 public:
 	virtual void construct(const Json& prop) override {
-		bound_.mi = json::value<Vec3>(prop, "bound_min");
-		bound_.ma = json::value<Vec3>(prop, "bound_max");
+		bound_.min = json::value<Vec3>(prop, "bound_min");
+		bound_.max = json::value<Vec3>(prop, "bound_max");
 	}
 
 	virtual Bound bound() const override {
 		return bound_;
 	}
 
-	virtual bool hasScalar() const override {
+	virtual bool has_scalar() const override {
 		return true;
 	}
 
-	virtual Float maxScalar() const override {
+	virtual Float max_scalar() const override {
 		return 1_f;
 	}
 
-	virtual Float evalScalar(Vec3 p) const override {
+	virtual Float eval_scalar(Vec3 p) const override {
 		const auto Delta = .2_f;
-		const auto t = (p - bound_.mi) / (bound_.ma - bound_.mi);
+		const auto t = (p - bound_.min) / (bound_.max - bound_.min);
 		const auto x = int(t.x / Delta);
 		const auto y = int(t.y / Delta);
 		//const auto z = int(t.z / Delta);
 		return (x + y) % 2 == 0 ? 1_f : 0_f;
 	}
 
-	virtual bool hasColor() const override {
+	virtual bool has_color() const override {
 		return false;
 	}
 };

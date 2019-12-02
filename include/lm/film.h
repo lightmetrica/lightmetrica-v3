@@ -62,7 +62,7 @@ public:
     /*!
         \brief Get the number of pixels.
     */
-    virtual long long numPixels() const = 0;
+    virtual long long num_pixels() const = 0;
 
     /*!
         \brief Set pixel value.
@@ -76,7 +76,7 @@ public:
         in the process of rendering.
         \endrst
     */
-    virtual void setPixel(int x, int y, Vec3 v) = 0;
+    virtual void set_pixel(int x, int y, Vec3 v) = 0;
 
     /*!
         \brief Save rendered film.
@@ -114,7 +114,7 @@ public:
         \param y y coordinate of the film.
         \param v Color.
     */
-    virtual void splatPixel(int x, int y, Vec3 v) = 0;
+    virtual void splat_pixel(int x, int y, Vec3 v) = 0;
 
     /*!
         \brief Callback function for updating a pixel value.
@@ -129,7 +129,7 @@ public:
         to update a pixel value. The given function might be called more than once.
         \endrst
     */
-    virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) = 0;
+    virtual void update_pixel(int x, int y, const PixelUpdateFunc& updateFunc) = 0;
 
     /*!
         \brief Rescale the film.
@@ -147,7 +147,7 @@ public:
         \brief Get aspect ratio.
         \return Aspect ratio.
     */
-    Float aspectRatio() const {
+    Float aspect_ratio() const {
         const auto [w, h] = size();
         return Float(w) / h;
     }
@@ -163,7 +163,7 @@ public:
         the pixel coodinates are clamped to [0,w-1]\times [0,h-1].
         \endrst
     */
-    glm::ivec2 rasterToPixel(Vec2 rp) const {
+    glm::ivec2 raster_to_pixel(Vec2 rp) const {
         const auto [w, h] = size();
         const int x = glm::clamp((int)(rp.x * Float(w)), 0, w-1);
         const int y = glm::clamp((int)(rp.y * Float(h)), 0, h-1);
@@ -177,8 +177,8 @@ public:
         \param index Current sample index.
         \param v Color.
     */
-    void incAve(int x, int y, long long index, Vec3 v) {
-        updatePixel(x, y, [&](Vec3 curr) -> Vec3 {
+    void inc_ave(int x, int y, long long index, Vec3 v) {
+        update_pixel(x, y, [&](Vec3 curr) -> Vec3 {
             return curr + (v - curr) / (Float)(index + 1);
         });
     }
@@ -189,9 +189,9 @@ public:
         \param index Current sample index.
         \param v Color.
     */
-    void incAve(Vec2 rp, long long index, Vec3 v) {
-        const auto p = rasterToPixel(rp);
-        incAve(p.x, p.y, index, v);
+    void inc_ave(Vec2 rp, long long index, Vec3 v) {
+        const auto p = raster_to_pixel(rp);
+        inc_ave(p.x, p.y, index, v);
     }
 
     /*!
@@ -200,8 +200,8 @@ public:
         \param v Color.
     */
     virtual void splat(Vec2 rp, Vec3 v) {
-        const auto p = rasterToPixel(rp);
-        splatPixel(p.x, p.y, v);
+        const auto p = raster_to_pixel(rp);
+        splat_pixel(p.x, p.y, v);
     }
 };
 

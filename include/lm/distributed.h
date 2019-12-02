@@ -37,7 +37,7 @@ LM_PUBLIC_API void shutdown();
     This function prints currently connected workers using the log output.
     \endrst
 */
-LM_PUBLIC_API void printWorkerInfo();
+LM_PUBLIC_API void print_worker_info();
 
 /*!
     \brief Allow or disallow new connections by workers.
@@ -48,7 +48,7 @@ LM_PUBLIC_API void printWorkerInfo();
     The default state is ``allow = true``.
     \endrst
 */
-LM_PUBLIC_API void allowWorkerConnection(bool allow);
+LM_PUBLIC_API void allow_worker_connection(bool allow);
 
 /*!
     \brief Synchronize the internal state with the workers.
@@ -65,7 +65,7 @@ using WorkerTaskFinishedFunc = std::function<void(long long processed)>;
     \brief Register a callback function to be called when a task is finished.
     \param func Callback function.
 */
-LM_PUBLIC_API void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func);
+LM_PUBLIC_API void on_worker_task_finished(const WorkerTaskFinishedFunc& func);
 
 /*!
     \brief Process a worker task.
@@ -77,18 +77,18 @@ LM_PUBLIC_API void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func);
     in the sample range of ``[start, end)``.
     \endrst
 */
-LM_PUBLIC_API void processWorkerTask(long long start, long long end);
+LM_PUBLIC_API void process_worker_task(long long start, long long end);
 
 /*!
     \brief Notify process has completed to workers.
 */
-LM_PUBLIC_API void notifyProcessCompleted();
+LM_PUBLIC_API void notify_process_completed();
 
 /*!
     \brief Gather films from workers.
     \param filmloc Locator of the film asset.
 */
-LM_PUBLIC_API void gatherFilm(const std::string& filmloc);
+LM_PUBLIC_API void gather_film(const std::string& filmloc);
 
 /*!
     @}
@@ -130,7 +130,7 @@ using ProcessCompletedFunc = std::function<void()>;
     \brief Register a callback function to be called when all processes have completed.
     \param func Callback function
 */
-LM_PUBLIC_API void onProcessCompleted(const ProcessCompletedFunc& func);
+LM_PUBLIC_API void on_process_completed(const ProcessCompletedFunc& func);
 
 /*!
     \brief Callback function to process a task.

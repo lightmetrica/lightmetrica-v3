@@ -308,7 +308,7 @@ private:
 
 // ------------------------------------------------------------------------------------------------
 
-LM_PUBLIC_API Component* createComp(const std::string& key) {
+LM_PUBLIC_API Component* create_comp(const std::string& key) {
     return ComponentContext::instance().createComp(key);
 }
 
@@ -320,23 +320,23 @@ LM_PUBLIC_API void unreg(const std::string& key) {
     ComponentContext::instance().unreg(key);
 }
 
-LM_PUBLIC_API bool loadPlugin(const std::string& path) {
+LM_PUBLIC_API bool load_plugin(const std::string& path) {
     return ComponentContext::instance().loadPlugin(path);
 }
 
-LM_PUBLIC_API void loadPluginDirectory(const std::string& directory) {
+LM_PUBLIC_API void load_plugin_directory(const std::string& directory) {
     ComponentContext::instance().loadPluginDirectory(directory);
 }
 
-LM_PUBLIC_API void unloadPlugins() {
+LM_PUBLIC_API void unload_plugins() {
     ComponentContext::instance().unloadPlugins();
 }
 
-LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func) {
+LM_PUBLIC_API void foreach_registered(const std::function<void(const std::string& name)>& func) {
     ComponentContext::instance().foreachRegistered(func);
 }
 
-LM_PUBLIC_API void registerRootComp(Component* p) {
+LM_PUBLIC_API void register_root_comp(Component* p) {
     ComponentContext::instance().registerRootComp(p);
 }
 

@@ -56,7 +56,7 @@ public:
     }
 
 public:
-    virtual Json underlyingValue(const std::string&) const override {
+    virtual Json underlying_value(const std::string&) const override {
         return {
             {"eye", position_},
             {"center", center_},
@@ -87,29 +87,29 @@ public:
         tf_ = tan(vfov_ * Pi / 180_f * .5_f);            // Precompute half of screen height
     }
 
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool is_specular(const PointGeometry&) const override {
         return false;
     }
 
-    virtual Ray primaryRay(Vec2 rp, Float aspectRatio) const override {
+    virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const override {
         rp = 2_f*rp-1_f;
-        const auto d = glm::normalize(Vec3(aspectRatio*tf_*rp.x, tf_*rp.y, -1_f));
+        const auto d = glm::normalize(Vec3(aspect_ratio*tf_*rp.x, tf_*rp.y, -1_f));
         return { position_, u_*d.x+v_*d.y+w_*d.z };
     }
 
-    virtual std::optional<Vec2> rasterPosition(Vec3 wo, Float aspectRatio) const override {
+    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const override {
         // Convert to camera space
-        const auto toEye = glm::transpose(Mat3(u_, v_, w_));
-        const auto woEye = toEye * wo;
-        if (woEye.z >= 0) {
+        const auto to_eye = glm::transpose(Mat3(u_, v_, w_));
+        const auto wo_eye = to_eye * wo;
+        if (wo_eye.z >= 0) {
             // wo is directed to the opposition direction
             return {};
         }
 
         // Calculate raster position
         const auto rp = Vec2(
-            -woEye.x/woEye.z/tf_/aspectRatio,
-            -woEye.y/woEye.z/tf_)*.5_f + .5_f;
+            -wo_eye.x/wo_eye.z/tf_/aspect_ratio,
+            -wo_eye.y/wo_eye.z/tf_)*.5_f + .5_f;
         if (rp.x < 0_f || rp.x > 1_f || rp.y < 0_f || rp.y > 1_f) {
             // wo is not in the view frustum
             return {};
@@ -118,48 +118,48 @@ public:
         return rp;
     }
 
-    virtual std::optional<CameraRaySample> samplePrimaryRay(Rng& rng, Vec4 window, Float aspectRatio) const override {
+    virtual std::optional<CameraRaySample> sample_primary_ray(Rng& rng, Vec4 window, Float aspect_ratio) const override {
         const auto [x, y, w, h] = window.data.data;
         return CameraRaySample{
-            PointGeometry::makeDegenerated(position_),
-            primaryRay({x+w*rng.u(), y+h*rng.u()}, aspectRatio).d,
+            PointGeometry::make_degenerated(position_),
+            primary_ray({x+w*rng.u(), y+h*rng.u()}, aspect_ratio).d,
             Vec3(1_f)
         };
     }
 
-    virtual Float pdf(Vec3 wo, Float aspectRatio) const override {
+    virtual Float pdf(Vec3 wo, Float aspect_ratio) const override {
         // Given directions is not samplable if raster position is not in [0,1]^2
-        if (!rasterPosition(wo, aspectRatio)) {
+        if (!raster_position(wo, aspect_ratio)) {
             return 0_f;
         }
-        return J(wo, aspectRatio);
+        return J(wo, aspect_ratio);
     }
 
-    virtual Vec3 eval(Vec3 wo, Float aspectRatio) const override {
-        if (!rasterPosition(wo, aspectRatio)) {
+    virtual Vec3 eval(Vec3 wo, Float aspect_ratio) const override {
+        if (!raster_position(wo, aspect_ratio)) {
             return Vec3(0_f);
         }
-        return Vec3(J(wo, aspectRatio));
+        return Vec3(J(wo, aspect_ratio));
     }
 
-    virtual Mat4 viewMatrix() const override {
+    virtual Mat4 view_matrix() const override {
         return glm::lookAt(position_, position_ - w_, up_);
     }
 
-    virtual Mat4 projectionMatrix(Float aspectRatio) const override {
-        return glm::perspective(glm::radians(vfov_), aspectRatio, 0.01_f, 10000_f);
+    virtual Mat4 projection_matrix(Float aspect_ratio) const override {
+        return glm::perspective(glm::radians(vfov_), aspect_ratio, 0.01_f, 10000_f);
     }
 
 private:
     // Compute Jacobian
     // TODO. Add derivation in documentataion
-    Float J(Vec3 wo, Float aspectRatio) const {
+    Float J(Vec3 wo, Float aspect_ratio) const {
         const auto V = glm::transpose(Mat3(u_, v_, w_));
-        const auto woEye = V * wo;
-        const Float cosTheta = -woEye.z;
-        const Float invCosTheta = 1_f / cosTheta;
-        const Float A = tf_ * tf_ * aspectRatio * 4_f;
-        return invCosTheta * invCosTheta * invCosTheta / A;
+        const auto wo_eye = V * wo;
+        const Float cos_theta = -wo_eye.z;
+        const Float inv_cos_theta = 1_f / cos_theta;
+        const Float A = tf_ * tf_ * aspect_ratio * 4_f;
+        return inv_cos_theta * inv_cos_theta * inv_cos_theta / A;
     }
 };
 

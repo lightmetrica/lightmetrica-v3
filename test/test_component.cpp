@@ -71,7 +71,7 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Failed to load plugin") {
-        REQUIRE(!lm::comp::detail::loadPlugin("__missing_plugin__"));
+        REQUIRE(!lm::comp::detail::load_plugin("__missing_plugin__"));
     }
 }
 
@@ -139,7 +139,7 @@ struct H_Root_ : public H {
     }
 
     virtual void construct(const lm::Json&) override {
-        p1 = lm::comp::create<H>("test::comp::h_p1_", makeLoc("p1"), {});
+        p1 = lm::comp::create<H>("test::comp::h_p1_", make_loc("p1"), {});
     }
 
     virtual Component* underlying(const std::string& name) const {
@@ -158,7 +158,7 @@ struct H_P1_ : public H {
     }
 
     virtual void construct(const lm::Json&) override {
-        p2 = lm::comp::create<H>("test::comp::h_p2_", makeLoc("p2"), {});
+        p2 = lm::comp::create<H>("test::comp::h_p2_", make_loc("p2"), {});
     }
 
     virtual Component* underlying(const std::string& name) const {
@@ -186,7 +186,7 @@ TEST_CASE("Component query") {
     
     // Create a component and register it as a root component
     const auto root = lm::comp::create<lm::Component>("test::comp::h_root_", "$", {});
-    lm::comp::detail::registerRootComp(root.get());
+    lm::comp::detail::register_root_comp(root.get());
 
     // Our hierarchy
     // - $

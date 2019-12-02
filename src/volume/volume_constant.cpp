@@ -22,10 +22,10 @@ public:
 
 public:
 	virtual void construct(const Json& prop) override {
-		bound_.mi = json::value<Vec3>(prop, "bound_min", Vec3(Inf));
-		bound_.ma = json::value<Vec3>(prop, "bound_max", Vec3(-Inf));
-		color_ = json::valueOrNone<Vec3>(prop, "color");
-		scalar_ = json::valueOrNone<Float>(prop, "scalar");
+		bound_.min = json::value<Vec3>(prop, "bound_min", Vec3(Inf));
+		bound_.max = json::value<Vec3>(prop, "bound_max", Vec3(-Inf));
+		color_ = json::value_or_none<Vec3>(prop, "color");
+		scalar_ = json::value_or_none<Float>(prop, "scalar");
 		if (!color_ && !scalar_) {
             LM_THROW_EXCEPTION(Error::InvalidArgument,
 			    "Either 'color' or 'scalar' property is necessary.");
@@ -36,23 +36,23 @@ public:
 		return bound_;
 	}
 
-	virtual bool hasScalar() const override {
+	virtual bool has_scalar() const override {
 		return scalar_.has_value();
 	}
 
-	virtual Float maxScalar() const override {
+	virtual Float max_scalar() const override {
 		return *scalar_;
 	}
 
-	virtual Float evalScalar(Vec3) const override {
+	virtual Float eval_scalar(Vec3) const override {
 		return *scalar_;
 	}
 
-	virtual bool hasColor() const override {
+	virtual bool has_color() const override {
 		return color_.has_value();
 	}
 
-	virtual Vec3 evalColor(Vec3) const override {
+	virtual Vec3 eval_color(Vec3) const override {
 		return *color_;
 	}
 };

@@ -47,7 +47,7 @@ public:
         return nullptr;
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
         comp::visit(visit, mapKd_);
     }
 
@@ -61,14 +61,14 @@ public:
         }
     }
 
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return false;
     }
 
     virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-        const auto[n, u, v] = geom.orthonormalBasis(wi);
+        const auto[n, u, v] = geom.orthonormal_basis(wi);
         const auto Kd = mapKd_ ? mapKd_->eval(geom.t) : Kd_;
-        const auto d = math::sampleCosineWeighted(rng);
+        const auto d = math::sample_cosine_weighted(rng);
         return MaterialDirectionSample{
             u*d.x + v * d.y + n * d.z,
             SurfaceComp::DontCare,
@@ -76,7 +76,7 @@ public:
         };
     }
 
-    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const PointGeometry& geom, int, Vec3 wi) const override {
+    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int, Vec3 wi) const override {
         return sample(rng, geom, wi)->wo;
     }
 
@@ -88,7 +88,7 @@ public:
         return geom.opposite(wi, wo) ? 0_f : 1_f / Pi;
     }
 
-    virtual Float pdfComp(const PointGeometry&, int, Vec3) const override {
+    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
         return 1_f;
     }
 
@@ -96,7 +96,7 @@ public:
         if (geom.opposite(wi, wo)) {
             return {};
         }
-        const auto a = (mapKd_ && mapKd_->hasAlpha()) ? mapKd_->evalAlpha(geom.t) : 1_f;
+        const auto a = (mapKd_ && mapKd_->has_alpha()) ? mapKd_->eval_alpha(geom.t) : 1_f;
         return (mapKd_ ? mapKd_->eval(geom.t) : Kd_) * (a / Pi);
     }
 };

@@ -18,12 +18,12 @@ LM_PUBLIC_API void shutdown() {
     Instance::shutdown();
 }
 
-LM_PUBLIC_API int numThreads() {
-    return Instance::get().numThreads();
+LM_PUBLIC_API int num_threads() {
+    return Instance::get().num_threads();
 }
 
-LM_PUBLIC_API bool mainThread() {
-    return Instance::get().mainThread();
+LM_PUBLIC_API bool main_thread() {
+    return Instance::get().main_thread();
 }
 
 LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc& progressFunc) {

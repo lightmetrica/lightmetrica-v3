@@ -30,8 +30,8 @@ private:
 
 public:
     virtual void construct(const Json& prop) override {
-        film_ = json::compRef<Film>(prop, "output");
-        volume_ = json::compRef<Volume>(prop, "volume");
+        film_ = json::comp_ref<Film>(prop, "output");
+        volume_ = json::comp_ref<Volume>(prop, "volume");
         marchStep_ = json::value<Float>(prop, "march_step", .5_f);
         marchStepShadow_ = json::value<Float>(prop, "march_step_shadow", 1_f);
         lightDir_ = glm::normalize(json::value<Vec3>(prop, "light_dir", Vec3(1_f)));
@@ -41,7 +41,7 @@ public:
         muT_ = muA_ + muS_;
         cutoff_ = json::value<Float>(prop, "cutoff", 0.005_f);
         sched_ = comp::create<scheduler::Scheduler>(
-            "scheduler::spp::sample", makeLoc("scheduler"), {
+            "scheduler::spp::sample", make_loc("scheduler"), {
                 {"spp", 1},
                 {"output", prop["output"]}
             });
@@ -59,7 +59,7 @@ public:
             const int y = int(pixelIndex / size.w);
 
             // Generate primary ray
-            const auto ray = scene->primaryRay({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspectRatio());
+            const auto ray = scene->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
 
             // Ray marching
             Vec3 L(0_f);
@@ -67,7 +67,7 @@ public:
             volume_->march(ray, Eps, Inf, marchStep_, [&](Float t) {
                 // Compute transmittance
                 const auto p = ray.o + ray.d * t;
-                const auto density = volume_->evalScalar(p);
+                const auto density = volume_->eval_scalar(p);
                 const auto muT = muT_ * density;
                 const auto T = glm::exp(-muT * marchStep_);
 
@@ -77,7 +77,7 @@ public:
                 Vec3 Tr_shadow(1_f);
                 volume_->march(shadowRay, Eps, Inf, marchStepShadow_, [&](Float t_shadow) {
                     const auto p_shadow = shadowRay.o + shadowRay.d * t_shadow;
-                    const auto density_shadow = volume_->evalScalar(p_shadow);
+                    const auto density_shadow = volume_->eval_scalar(p_shadow);
                     const auto muT_shadow = muT_ * density_shadow;
                     const auto T_shadow = glm::exp(-muT_shadow * marchStepShadow_);
                     Tr_shadow *= T_shadow;
@@ -99,7 +99,7 @@ public:
             });
 
             // Record to the film
-            film_->setPixel(x, y, L);
+            film_->set_pixel(x, y, L);
         });
     }
 };

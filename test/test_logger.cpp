@@ -95,7 +95,7 @@ TEST_CASE("Logger") {
     SUBCASE("Controlling severity") {
         {
             const auto out = captureStdout([]() {
-                lm::log::setSeverity(lm::log::LogLevel::Warn);
+                lm::log::set_severity(lm::log::LogLevel::Warn);
                 LM_INFO("Info");
                 LM_WARN("Warning");
                 LM_ERROR("Error");
@@ -106,7 +106,7 @@ TEST_CASE("Logger") {
         }
         {
             const auto out = captureStdout([]() {
-                lm::log::setSeverity(lm::log::LogLevel::Err);
+                lm::log::set_severity(lm::log::LogLevel::Err);
                 LM_INFO("Info");
                 LM_WARN("Warning");
                 LM_ERROR("Error");
@@ -119,7 +119,7 @@ TEST_CASE("Logger") {
     SUBCASE("User-defined severity") {
         {
             const auto out = captureStdout([]() {
-                lm::log::setSeverity(10);
+                lm::log::set_severity(10);
                 LM_LOG(10, "Severity 10");
                 LM_LOG(20, "Severity 20");
                 LM_LOG(30, "Severity 30");
@@ -131,7 +131,7 @@ TEST_CASE("Logger") {
         }
         {
             const auto out = captureStdout([]() {
-                lm::log::setSeverity(20);
+                lm::log::set_severity(20);
                 LM_LOG(10, "Severity 10");
                 LM_LOG(20, "Severity 20");
                 LM_LOG(30, "Severity 30");
@@ -147,8 +147,8 @@ class LoggerContext_User final : public lm::log::LoggerContext {
     void log(lm::log::LogLevel, int, const char*, int, const char* message) override {
         std::cout << "[user] " << message << std::endl;
     }
-    void updateIndentation(int) override {}
-    void setSeverity(int) override {}
+    void update_indentation(int) override {}
+    void set_severity(int) override {}
 };
 
 LM_COMP_REG_IMPL(LoggerContext_User, "logger::user");

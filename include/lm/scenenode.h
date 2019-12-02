@@ -71,14 +71,14 @@ struct SceneNode {
 
     //! Variable available for Group type.
     struct {
-        std::vector<int> children;          //!< Child primitives.
-        bool instanced;                     //!< True if the group is an instance group.
-        std::optional<Mat4> localTransform; //!< Transformation applied to children.
+        std::vector<int> children;			    //!< Child primitives.
+        bool instanced;							//!< True if the group is an instance group.
+        std::optional<Mat4> local_transform;	//!< Transformation applied to children.
 
         //! \cond
         template <typename Archive>
         void serialize(Archive& ar) {
-            ar(children, instanced, localTransform);
+            ar(children, instanced, local_transform);
         }
         //! \endcond
     } group;
@@ -103,7 +103,7 @@ struct SceneNode {
         \param camera Reference to camera.
         \param medium Reference to medium.
     */
-    static SceneNode makePrimitive(int index, Mesh* mesh, Material* material, Light* light, Camera* camera, Medium* medium) {
+    static SceneNode make_primitive(int index, Mesh* mesh, Material* material, Light* light, Camera* camera, Medium* medium) {
         SceneNode p;
         p.type = SceneNodeType::Primitive;
         p.index = index;
@@ -119,14 +119,14 @@ struct SceneNode {
         \brief Make group node.
         \param index Primitive index.
         \param instanced Node is instancing group if true.
-        \param localTransform Local transform applied to the node.
+        \param local_transform Local transform applied to the node.
     */
-    static SceneNode makeGroup(int index, bool instanced, std::optional<Mat4> localTransform) {
+    static SceneNode make_group(int index, bool instanced, std::optional<Mat4> local_transform) {
         SceneNode p;
         p.type = SceneNodeType::Group;
         p.index = index;
         p.group.instanced = instanced;
-        p.group.localTransform = localTransform;
+        p.group.local_transform = local_transform;
         return p;
     }
 };
