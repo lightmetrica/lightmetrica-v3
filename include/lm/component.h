@@ -302,10 +302,10 @@ public:
 struct ComponentDeleter {
     ComponentDeleter() = default;
     void operator()(Component* p) const noexcept {
-        if (auto releaseFunc = p->release_func_; releaseFunc) {
+        if (auto release_func = p->release_func_; release_func) {
             // If the instance is directly created inside Python script
-            // and managed by Python interpreter, releaseFunc can be nullptr. 
-            releaseFunc(p);
+            // and managed by Python interpreter, release_func can be nullptr. 
+            release_func(p);
         }
     }
 };
@@ -328,10 +328,10 @@ struct Access {
     static const std::string& key(const Component* p) { return p->key_; }
     static std::string& loc(Component* p) { return p->loc_; }
     static const std::string& loc(const Component* p) { return p->loc_; }
-    static Component::CreateFunction& createFunc(Component* p) { return p->create_func_; }
-    static const Component::CreateFunction& createFunc(const Component* p) { return p->create_func_; }
-    static Component::ReleaseFunction& releaseFunc(Component* p) { return p->release_func_; }
-    static const Component::ReleaseFunction& releaseFunc(const Component* p) { return p->release_func_; }
+    static Component::CreateFunction& create_func(Component* p) { return p->create_func_; }
+    static const Component::CreateFunction& create_func(const Component* p) { return p->create_func_; }
+    static Component::ReleaseFunction& release_func(Component* p) { return p->release_func_; }
+    static const Component::ReleaseFunction& release_func(const Component* p) { return p->release_func_; }
     static std::any& ownerRef(Component* p) { return p->owner_ref_; }
     static const std::any& ownerRef(const Component* p) { return p->owner_ref_; }
 };
@@ -378,8 +378,8 @@ LM_PUBLIC_API Component* create_comp(const std::string& key);
 /*!
     \brief Register a component.
     \param key Implementation key.
-    \param createFunc Create function.
-    \param releaseFunc Release function.
+    \param create_func Create function.
+    \param release_func Release function.
 
     \rst
     This function registers a component implementation into the framework.
@@ -389,8 +389,8 @@ LM_PUBLIC_API Component* create_comp(const std::string& key);
 */
 LM_PUBLIC_API void reg(
     const std::string& key,
-    const Component::CreateFunction& createFunc,
-    const Component::ReleaseFunction& releaseFunc);
+    const Component::CreateFunction& create_func,
+    const Component::ReleaseFunction& release_func);
 
 /*!
     \brief Unregister a component.
@@ -509,7 +509,7 @@ T* get(const std::string& locator) {
 */
 template <typename T>
 std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
-updateWeakRef(T*& p) {
+update_weak_ref(T*& p) {
     if (!p) {
         return;
     }

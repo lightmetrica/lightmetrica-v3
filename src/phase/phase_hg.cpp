@@ -41,9 +41,9 @@ public:
         const auto phi = 2_f * Pi * rng.u();
         const auto sinP = std::sin(phi);
         const auto cosP = std::cos(phi);
-        const auto localWo = Vec3(sinT*cosP, sinT*sinP, cosT);
+        const auto local_wo = Vec3(sinT*cosP, sinT*sinP, cosT);
         const auto [u, v] = math::orthonormal_basis(-wi);
-        const auto wo = Mat3(u, v, -wi) * localWo;
+        const auto wo = Mat3(u, v, -wi) * local_wo;
         return PhaseDirectionSample{ wo, Vec3(1_f) };
     }
 

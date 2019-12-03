@@ -29,7 +29,7 @@ private:
     std::vector<Float> vs_;
     std::vector<unsigned int> fs_;
     nanort::BVHAccel<Float> accel_;
-    std::vector<std::tuple<int, int>> flattenNodeAndFacePerTriangle_;
+    std::vector<std::tuple<int, int>> flatten_node_and_face_per_triangle_;
     std::vector<FlattenedPrimitiveNode> flattened_nodes_;
 
 public:
@@ -38,7 +38,7 @@ public:
         LM_INFO("Flattening scene");
         vs_.clear();
         fs_.clear();
-        flattenNodeAndFacePerTriangle_.clear();
+        flatten_node_and_face_per_triangle_.clear();
         flattened_nodes_.clear();
         scene.traverse_primitive_nodes([&](const SceneNode& node, Mat4 global_transform) {
             if (node.type != SceneNodeType::Primitive) {
@@ -49,7 +49,7 @@ public:
             }
 
             // Record flattened primitive
-            const int flattenNodeIndex = int(flattened_nodes_.size());
+            const int flatten_node_index = int(flattened_nodes_.size());
             flattened_nodes_.push_back({ Transform(global_transform), node.index });
 
             // Triangles
@@ -60,7 +60,7 @@ public:
                 vs_.insert(vs_.end(), { p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z });
                 auto s = (unsigned int)(fs_.size());
                 fs_.insert(fs_.end(), { s, s+1, s+2 });
-                flattenNodeAndFacePerTriangle_.push_back({ flattenNodeIndex, face });
+                flatten_node_and_face_per_triangle_.push_back({ flatten_node_index, face });
             });
         });
 
@@ -91,7 +91,7 @@ public:
             return {};
         }
         
-        const auto [node, face] = flattenNodeAndFacePerTriangle_.at(isect.prim_id);
+        const auto [node, face] = flatten_node_and_face_per_triangle_.at(isect.prim_id);
         const auto& fn = flattened_nodes_.at(node);
         return Hit{ isect.t, Vec2(isect.u, isect.v), fn.global_transform, fn.primitive, face };
     }

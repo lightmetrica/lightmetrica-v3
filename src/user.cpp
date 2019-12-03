@@ -119,8 +119,8 @@ public:
         renderer_.reset();
     }
 
-    std::string asset(const std::string& name, const std::string& implKey, const Json& prop) {
-        const auto loc = scene_->load_asset(name, implKey, prop);
+    std::string asset(const std::string& name, const std::string& impl_key, const Json& prop) {
+        const auto loc = scene_->load_asset(name, impl_key, prop);
         if (!loc) {
             LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
@@ -131,13 +131,13 @@ public:
         return "$.scene.assets." + name;
     }
 
-    void build(const std::string& accelName, const Json& prop) {
-        scene_->build(accelName, prop);
+    void build(const std::string& accel_name, const Json& prop) {
+        scene_->build(accel_name, prop);
     }
 
-    void renderer(const std::string& rendererName, const Json& prop) {
-        LM_INFO("Creating renderer [renderer='{}']", rendererName);
-        renderer_ = lm::comp::create<Renderer>(rendererName, make_loc("renderer"), prop);
+    void renderer(const std::string& renderer_name, const Json& prop) {
+        LM_INFO("Creating renderer [renderer='{}']", renderer_name);
+        renderer_ = lm::comp::create<Renderer>(renderer_name, make_loc("renderer"), prop);
         if (!renderer_) {
             LM_THROW_EXCEPTION_DEFAULT(Error::FailedToRender);
         }
@@ -151,8 +151,8 @@ public:
         renderer_->render(scene_.get());
     }
 
-    void save(const std::string& filmName, const std::string& outpath) {
-        const auto* film = comp::get<Film>(filmName);
+    void save(const std::string& film_name, const std::string& outpath) {
+        const auto* film = comp::get<Film>(film_name);
         if (!film) {
             LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
@@ -161,8 +161,8 @@ public:
         }
     }
 
-    FilmBuffer buffer(const std::string& filmName) {
-        auto* film = comp::get<Film>(filmName);
+    FilmBuffer buffer(const std::string& film_name) {
+        auto* film = comp::get<Film>(film_name);
         if (!film) {
             LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
@@ -209,17 +209,16 @@ public:
         scene_->add_child(parent, child);
     }
 
-    void add_child_from_model(int parent, const std::string& modelLoc) {
-        scene_->add_child_from_model(parent, modelLoc);
+    void add_child_from_model(int parent, const std::string& model_loc) {
+        scene_->add_child_from_model(parent, model_loc);
     }
 
-    int create_group_from_model(const std::string& modelLoc) {
-        return scene_->create_group_from_model(modelLoc);
+    int create_group_from_model(const std::string& model_loc) {
+        return scene_->create_group_from_model(model_loc);
     }
 };
 
 // ------------------------------------------------------------------------------------------------
-
 
 LM_PUBLIC_API void init(const Json& prop) {
     UserContext::instance().init(prop);
@@ -237,20 +236,20 @@ LM_PUBLIC_API void info() {
     UserContext::instance().info();
 }
 
-LM_PUBLIC_API std::string asset(const std::string& name, const std::string& implKey, const Json& prop) {
-    return UserContext::instance().asset(name, implKey, prop);
+LM_PUBLIC_API std::string asset(const std::string& name, const std::string& impl_key, const Json& prop) {
+    return UserContext::instance().asset(name, impl_key, prop);
 }
 
 LM_PUBLIC_API std::string asset(const std::string& name) {
     return UserContext::instance().asset(name);
 }
 
-LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
-    UserContext::instance().build(accelName, prop);
+LM_PUBLIC_API void build(const std::string& accel_name, const Json& prop) {
+    UserContext::instance().build(accel_name, prop);
 }
 
-LM_PUBLIC_API void renderer(const std::string& rendererName, const Json& prop) {
-    UserContext::instance().renderer(rendererName, prop);
+LM_PUBLIC_API void renderer(const std::string& renderer_name, const Json& prop) {
+    UserContext::instance().renderer(renderer_name, prop);
 }
 
 LM_PUBLIC_API void render(bool verbose) {
@@ -297,12 +296,12 @@ LM_PUBLIC_API void add_child(int parent, int child) {
     UserContext::instance().add_child(parent, child);
 }
 
-LM_PUBLIC_API void add_child_from_model(int parent, const std::string& modelLoc) {
-    UserContext::instance().add_child_from_model(parent, modelLoc);
+LM_PUBLIC_API void add_child_from_model(int parent, const std::string& model_loc) {
+    UserContext::instance().add_child_from_model(parent, model_loc);
 }
 
-LM_PUBLIC_API int create_group_from_model(const std::string& modelLoc) {
-    return UserContext::instance().create_group_from_model(modelLoc);
+LM_PUBLIC_API int create_group_from_model(const std::string& model_loc) {
+    return UserContext::instance().create_group_from_model(model_loc);
 }
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {

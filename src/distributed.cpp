@@ -141,21 +141,21 @@ class MasterContext final {
 private:
     int port_;
     zmq::context_t context_;
-    std::unique_ptr<zmq::socket_t> pushSocket_;
-    std::unique_ptr<zmq::socket_t> pullSocket_;
-    std::unique_ptr<zmq::socket_t> pubSocket_;
-    std::unique_ptr<zmq::socket_t> repSocket_;
+    std::unique_ptr<zmq::socket_t> push_socket_;
+    std::unique_ptr<zmq::socket_t> pull_socket_;
+    std::unique_ptr<zmq::socket_t> pub_socket_;
+    std::unique_ptr<zmq::socket_t> rep_socket_;
     #if LM_DIST_MONITOR_SOCKET
-    SocketMonitor monitor_repSocket_;
+    SocketMonitor monitor_rep_socket_;
     #endif
-    WorkerTaskFinishedFunc onWorkerTaskFinished_;
-    long long numIssuedTasks_;   // Number of issued tasks
-    std::mutex gatherFilmMutex_;
-    std::condition_variable gatherFilmCond_;
-    long long gatherFilmSync_;
-    std::thread eventLoopThread_;
-    bool done_ = false;                 // True if the event loop is finished
-    bool allowWorkerConnection_ = true; // True if master allows new connections by workers
+    WorkerTaskFinishedFunc on_worker_task_finished_;
+    long long num_issued_tasks_;   // Number of issued tasks
+    std::mutex gather_film_mutex_;
+    std::condition_variable gather_film_cond_;
+    long long gather_film_sync_;
+    std::thread event_loop_thread_;
+    bool done_ = false;						 // True if the event loop is finished
+    bool allow_worker_connection_ = true;	 // True if master allows new connections by workers
 
 public:
     static MasterContext& instance() {
@@ -167,7 +167,7 @@ public:
     MasterContext()
         : context_(1)
         #if LM_DIST_MONITOR_SOCKET
-        , monitor_repSocket_("rep")
+        , monitor_rep_socket_("rep")
         #endif
     {}
 
@@ -180,32 +180,32 @@ public:
         parallel::init("parallel::distributed_master", prop);
 
         // PUSH and PUB sockets in main thread
-        pushSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUSH);
-        pubSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUB);
-        pushSocket_->bind(fmt::format("tcp://*:{}", port_));
-        pubSocket_->bind(fmt::format("tcp://*:{}", port_ + 2));
+        push_socket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUSH);
+        pub_socket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUB);
+        push_socket_->bind(fmt::format("tcp://*:{}", port_));
+        pub_socket_->bind(fmt::format("tcp://*:{}", port_ + 2));
         
         
         // Thread for event loop
-        eventLoopThread_ = std::thread([this]() {
+        event_loop_thread_ = std::thread([this]() {
             // PULL and REP sockets in event loop thread
-            pullSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PULL);
-            repSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_REP);
-            pullSocket_->bind(fmt::format("tcp://*:{}", port_ + 1));
-            repSocket_->bind(fmt::format("tcp://*:{}", port_ + 3));
+            pull_socket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PULL);
+            rep_socket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_REP);
+            pull_socket_->bind(fmt::format("tcp://*:{}", port_ + 1));
+            rep_socket_->bind(fmt::format("tcp://*:{}", port_ + 3));
             #if LM_DIST_MONITOR_SOCKET
-            monitor_repSocket_.init(*repSocket_, "inproc://monitor_rep", ZMQ_EVENT_ALL);
+            monitor_rep_socket_.init(*rep_socket_, "inproc://monitor_rep", ZMQ_EVENT_ALL);
             #endif
 
             // Event loop
             zmq::pollitem_t items[] = {
-                { (void*)*pullSocket_, 0, ZMQ_POLLIN, 0 },
-                { (void*)*repSocket_, 0, ZMQ_POLLIN, 0 },
+                { (void*)*pull_socket_, 0, ZMQ_POLLIN, 0 },
+                { (void*)*rep_socket_, 0, ZMQ_POLLIN, 0 },
             };
             while (!done_) {
                 #if LM_DIST_MONITOR_SOCKET
                 // Monitor socket
-                monitor_repSocket_.check_event();
+                monitor_rep_socket_.check_event();
                 #endif
 
                 // Handle events
@@ -215,7 +215,7 @@ public:
                 if (items[0].revents & ZMQ_POLLIN) {
                     // Receive message
                     zmq::message_t mes;
-                    pullSocket_->recv(mes);
+                    pull_socket_->recv(mes);
                     std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
                     // Extract command
@@ -231,7 +231,7 @@ public:
                     else if (command == PushToMasterCommand::processFunc) {
                         long long processed;
                         lm::serial::load(is, processed);
-                        onWorkerTaskFinished_(processed);
+                        on_worker_task_finished_(processed);
                     }
                     else if (command == PushToMasterCommand::gatherFilm) {
                         long long numProcessedTasks;
@@ -241,16 +241,16 @@ public:
                         lm::serial::load(is, workerFilm);
                         auto* film = lm::comp::get<Film>(filmloc);
                         film->accum(workerFilm.get());
-                        std::unique_lock<std::mutex> lock(gatherFilmMutex_);
-                        gatherFilmSync_ += numProcessedTasks;
-                        gatherFilmCond_.notify_one();
+                        std::unique_lock<std::mutex> lock(gather_film_mutex_);
+                        gather_film_sync_ += numProcessedTasks;
+                        gather_film_cond_.notify_one();
                     }
                 }
 
                 // REP socket
-                if ((items[1].revents & ZMQ_POLLIN) && allowWorkerConnection_) {
+                if ((items[1].revents & ZMQ_POLLIN) && allow_worker_connection_) {
                     zmq::message_t mes;
-                    repSocket_->recv(mes);
+                    rep_socket_->recv(mes);
                     std::istringstream is(std::string(mes.data<char>(), mes.size()));
                     ReqToMasterCommand command;
                     lm::serial::load(is, command);
@@ -259,7 +259,7 @@ public:
                         lm::serial::load(is, info);
                         LM_INFO("Connected worker [name='{}']", info.name);
                         zmq::message_t ok;
-                        repSocket_->send(ok, zmq::send_flags::none);
+                        rep_socket_->send(ok, zmq::send_flags::none);
                     }
                 }
             }
@@ -268,56 +268,56 @@ public:
 
     void shutdown() {
         done_ = true;
-        eventLoopThread_.join();
+        event_loop_thread_.join();
     }
 
 public:
     void printWorkerInfo() {
-        send(*pubSocket_, PubToWorkerCommand::workerinfo);
+        send(*pub_socket_, PubToWorkerCommand::workerinfo);
     }
 
     void allowWorkerConnection(bool allow) {
-        allowWorkerConnection_ = allow;
+        allow_worker_connection_ = allow;
     }
 
     void sync() {
         // Synchronize internal state and dispatch rendering in worker process
-        sendFunc(*pubSocket_, PubToWorkerCommand::sync, [&](std::ostream& os) {
+        sendFunc(*pub_socket_, PubToWorkerCommand::sync, [&](std::ostream& os) {
             lm::serialize(os);
         });
     }
 
     void onWorkerTaskFinished(const WorkerTaskFinishedFunc& func) {
-        onWorkerTaskFinished_ = func;
+        on_worker_task_finished_ = func;
     }
 
     void processWorkerTask(long long start, long long end) {
         if (start == 0) {
             // Reset the issued task
-            numIssuedTasks_ = 0;
+            num_issued_tasks_ = 0;
         }
-        send(*pushSocket_, PushToWorkerCommand::processWorkerTask, start, end);
-        numIssuedTasks_++;
+        send(*push_socket_, PushToWorkerCommand::processWorkerTask, start, end);
+        num_issued_tasks_++;
     }
 
     void notifyProcessCompleted()  {
-        send(*pubSocket_, PubToWorkerCommand::processCompleted);
+        send(*pub_socket_, PubToWorkerCommand::processCompleted);
     }
 
     void gatherFilm(const std::string& filmloc) {
         // Initialize film
-        gatherFilmSync_ = 0;
+        gather_film_sync_ = 0;
         lm::comp::get<Film>(filmloc)->clear();
 
         // Send command
-        send(*pubSocket_, PubToWorkerCommand::gatherFilm, filmloc);
+        send(*pub_socket_, PubToWorkerCommand::gatherFilm, filmloc);
 
         // Synchronize
-        progress::ScopedReport progress_(numIssuedTasks_);
-        std::unique_lock<std::mutex> lock(gatherFilmMutex_);
-        gatherFilmCond_.wait(lock, [&] {
-            progress::update(gatherFilmSync_);
-            return gatherFilmSync_ == numIssuedTasks_;
+        progress::ScopedReport progress_(num_issued_tasks_);
+        std::unique_lock<std::mutex> lock(gather_film_mutex_);
+        gather_film_cond_.wait(lock, [&] {
+            progress::update(gather_film_sync_);
+            return gather_film_sync_ == num_issued_tasks_;
         });
     }
 };
@@ -367,18 +367,18 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::distributed::worker)
 class WorkerContext final {
 private:
     zmq::context_t context_;
-    std::unique_ptr<zmq::socket_t> pullSocket_;
-    std::unique_ptr<zmq::socket_t> pushSocket_;
-    std::unique_ptr<zmq::socket_t> subSocket_;
-    std::unique_ptr<zmq::socket_t> reqSocket_;
+    std::unique_ptr<zmq::socket_t> pull_socket_;
+    std::unique_ptr<zmq::socket_t> push_socket_;
+    std::unique_ptr<zmq::socket_t> sub_socket_;
+    std::unique_ptr<zmq::socket_t> req_socket_;
     std::string name_;
     #if LM_DIST_MONITOR_SOCKET
-    SocketMonitor monitor_reqSocket_;
+    SocketMonitor monitor_req_socket_;
     #endif
-    WorkerProcessFunc processFunc_;
-    ProcessCompletedFunc processCompletedFunc_;
-    std::thread renderThread_;
-    long long numProcessedTasks_;  // Number of procesed tasks
+    WorkerProcessFunc process_func_;
+    ProcessCompletedFunc process_completed_func_;
+    std::thread render_thread_;
+    long long num_processed_tasks_;  // Number of procesed tasks
 
 public:
     static WorkerContext& instance() {
@@ -390,7 +390,7 @@ public:
     WorkerContext()
         : context_(1)
         #if LM_DIST_MONITOR_SOCKET
-        , monitor_reqSocket_("req")
+        , monitor_req_socket_("req")
         #endif
     {}
 
@@ -402,11 +402,11 @@ public:
 
         // First try to connect only with REQ socket.
         // Once a connection is established, connect with other sockets.
-        reqSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_REQ);
-        reqSocket_->connect(fmt::format("tcp://{}:{}", address, port+3));
+        req_socket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_REQ);
+        req_socket_->connect(fmt::format("tcp://{}:{}", address, port+3));
         #if LM_DIST_MONITOR_SOCKET
         // Register monitors
-        monitor_reqSocket_.init(*reqSocket_, "inproc://monitor_req", ZMQ_EVENT_ALL);
+        monitor_req_socket_.init(*req_socket_, "inproc://monitor_req", ZMQ_EVENT_ALL);
         #endif
 
         // Synchronize
@@ -414,24 +414,24 @@ public:
         // cf. http://zguide.zeromq.org/page:all#Node-Coordination
         while (true) {
             // Send worker information
-            send(*reqSocket_, ReqToMasterCommand::notifyConnection, WorkerInfo{ name_ });
+            send(*req_socket_, ReqToMasterCommand::notifyConnection, WorkerInfo{ name_ });
             zmq::message_t mes;
-            if (reqSocket_->recv(mes)) {
+            if (req_socket_->recv(mes)) {
                 break;
             }
         }
 
         // Create sockets
-        pullSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PULL);
-        pushSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUSH);
-        subSocket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_SUB);
+        pull_socket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PULL);
+        push_socket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_PUSH);
+        sub_socket_ = std::make_unique<zmq::socket_t>(context_, ZMQ_SUB);
 
         // Connect
         LM_INFO("Connecting [addr='{}', port='{}']", address, port);
-        pullSocket_->connect(fmt::format("tcp://{}:{}", address, port));
-        pushSocket_->connect(fmt::format("tcp://{}:{}", address, port+1));
-        subSocket_->connect(fmt::format("tcp://{}:{}", address, port+2));
-        subSocket_->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+        pull_socket_->connect(fmt::format("tcp://{}:{}", address, port));
+        push_socket_->connect(fmt::format("tcp://{}:{}", address, port+1));
+        sub_socket_->connect(fmt::format("tcp://{}:{}", address, port+2));
+        sub_socket_->setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
         // Initialize parallel subsystem
         parallel::init("parallel::distributed_worker", prop);
@@ -440,23 +440,23 @@ public:
     void shutdown() {}
 
     void foreach(const WorkerProcessFunc& process) {
-        processFunc_ = process;
-        numProcessedTasks_ = 0;
+        process_func_ = process;
+        num_processed_tasks_ = 0;
     }
 
     void onProcessCompleted(const ProcessCompletedFunc& func) {
-        processCompletedFunc_ = func;
+        process_completed_func_ = func;
     }
 
     void run() {
         zmq::pollitem_t items[] = {
-            { (void*)*pullSocket_, 0, ZMQ_POLLIN, 0 },
-            { (void*)*subSocket_, 0, ZMQ_POLLIN, 0 },
+            { (void*)*pull_socket_, 0, ZMQ_POLLIN, 0 },
+            { (void*)*sub_socket_, 0, ZMQ_POLLIN, 0 },
         };
         while (true) {
             #if LM_DIST_MONITOR_SOCKET
             // Monitor socket
-            monitor_reqSocket_.check_event();
+            monitor_req_socket_.check_event();
             #endif
 
             // Handle events
@@ -465,13 +465,13 @@ public:
             // PULL socket
             if (items[0].revents & ZMQ_POLLIN) [&]{
                 // Process function is not ready, wait for render() function being called
-                if (!processFunc_) {
+                if (!process_func_) {
                     return;
                 }
 
                 // Receive message
                 zmq::message_t mes;
-                pullSocket_->recv(mes);
+                pull_socket_->recv(mes);
                 std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
                 // Extract command
@@ -485,12 +485,12 @@ public:
                     lm::serial::load(is, start, end);
                 
                     // Process a task
-                    numProcessedTasks_++;
-                    processFunc_(start, end);
+                    num_processed_tasks_++;
+                    process_func_(start, end);
 
                     // Notify completion
                     // Send processed number of samples
-                    send(*pushSocket_, PushToMasterCommand::processFunc, end - start);
+                    send(*push_socket_, PushToMasterCommand::processFunc, end - start);
                 }
             }();
 
@@ -498,7 +498,7 @@ public:
             if (items[1].revents & ZMQ_POLLIN) {
                 // Receive message
                 zmq::message_t mes;
-                subSocket_->recv(mes);
+                sub_socket_->recv(mes);
                 std::istringstream is(std::string(mes.data<char>(), mes.size()));
 
                 // Extract command
@@ -507,28 +507,28 @@ public:
 
                 // Process commands
                 if (command == PubToWorkerCommand::workerinfo) {
-                    send(*pushSocket_, PushToMasterCommand::workerinfo, WorkerInfo{ name_ });
+                    send(*push_socket_, PushToMasterCommand::workerinfo, WorkerInfo{ name_ });
                 }
                 else if (command == PubToWorkerCommand::sync) {
                     lm::deserialize(is);
 
                     // Dispatch renderer in the different thread
                     // to prevent early return of the Renderer::render() function.
-                    renderThread_ = std::thread([&] {
+                    render_thread_ = std::thread([&] {
                         lm::render();
                     });
                 }
                 else if (command == PubToWorkerCommand::processCompleted) {;
-                    processCompletedFunc_();
-                    renderThread_.join();
-                    processFunc_ = {};
-                    processCompletedFunc_ = {};
+                    process_completed_func_();
+                    render_thread_.join();
+                    process_func_ = {};
+                    process_completed_func_ = {};
                 }
                 else if (command == PubToWorkerCommand::gatherFilm) {
                     std::string filmloc;
                     lm::serial::load(is, filmloc);
-                    sendFunc(*pushSocket_, PushToMasterCommand::gatherFilm, [&](std::ostream& os) {
-                        lm::serial::save(os, numProcessedTasks_, filmloc);
+                    sendFunc(*push_socket_, PushToMasterCommand::gatherFilm, [&](std::ostream& os) {
+                        lm::serial::save(os, num_processed_tasks_, filmloc);
                         lm::serial::save_owned(os, lm::comp::get<Film>(filmloc));
                     });
                 }

@@ -196,8 +196,8 @@ class DebugioServerContext : public Component {
 public:
     virtual void poll() = 0;
     virtual void run() = 0;
-    virtual void on_handleMessage(const HandleMessageFunc& process) = 0;
-    virtual void on_syncUserContext(const SyncUserContextFunc& process) = 0;
+    virtual void on_handle_message(const HandleMessageFunc& process) = 0;
+    virtual void on_sync_user_context(const SyncUserContextFunc& process) = 0;
     virtual void on_draw(const DrawFunc& process) = 0;
 };
 

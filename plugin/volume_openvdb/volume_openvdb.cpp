@@ -14,7 +14,7 @@ private:
     VDBLoaderContext context_;
     Float scale_;
     Bound bound_;
-    Float maxScalar_;
+    Float max_scalar_;
 
 public:
     Volume_OpenVDBScalar() {
@@ -55,7 +55,7 @@ public:
         bound_.max = Vec3(b.max.x, b.max.y, b.max.z);
 
         // Maximum density
-        maxScalar_ = vbdloaderGetMaxScalar(context_) * scale_;
+        max_scalar_ = vbdloaderGetMaxScalar(context_) * scale_;
     }
 
     virtual Bound bound() const override {
@@ -63,7 +63,7 @@ public:
     }
 
     virtual Float max_scalar() const override {
-        return maxScalar_;
+        return max_scalar_;
     }
 
     virtual bool has_scalar() const override {

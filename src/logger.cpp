@@ -20,7 +20,7 @@ private:
     int severity_ = 0;
     #endif
     int indentation_ = 0;
-    std::string indentationString_;
+    std::string indentation_string_;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_ =
         std::chrono::high_resolution_clock::now();
     std::mutex mutex_;
@@ -58,7 +58,7 @@ public:
         const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_);
 
         // Line and filename
-        const auto lineAndFilename = fmt::format("{}@{}",
+        const auto line_and_filename = fmt::format("{}@{}",
             line,
             fs::path(filename).stem().string());
 
@@ -71,19 +71,19 @@ public:
         // <body>    = <indentations><message>
         const auto header = fmt::format("[{}|{:.3f}|{:<10}] ",
             style.name, elapsed.count() / 1000.0,
-            lineAndFilename.substr(0, 10));
+            line_and_filename.substr(0, 10));
 
         // Case with progress message
         // Progress message does not support multiline message.
         if (level == LogLevel::Progress || level == LogLevel::ProgressEnd) {
             // Message with indentation
             const auto body = fmt::format("{}{}",
-                indentationString_,
+                indentation_string_,
                 message);
 
             // Calculate white spaces to hide already written message if necessary.
             // Keep track of maximum message length for progress outputs.
-            static int maxProgressMessageLen = 0;
+            static int max_progress_message_len = 0;
             static std::string whitespaces;
             if (level == LogLevel::Progress || level == LogLevel::ProgressEnd) {
                 // Current message length
@@ -91,11 +91,11 @@ public:
 
                 // If the current message is shorter than maximum,
                 // hide the message with white spaces.
-                if (maxProgressMessageLen > messageLen) {
-                    whitespaces.assign(maxProgressMessageLen - messageLen, ' ');
+                if (max_progress_message_len > messageLen) {
+                    whitespaces.assign(max_progress_message_len - messageLen, ' ');
                 }
                 else {
-                    maxProgressMessageLen = messageLen;
+                    max_progress_message_len = messageLen;
                 }
             }
 
@@ -110,17 +110,17 @@ public:
 
             // ProgressEnd incurs newline so reset the cached values
             if (level == LogLevel::ProgressEnd) {
-                maxProgressMessageLen = 0;
+                max_progress_message_len = 0;
                 whitespaces.clear();
             }
         }
         // Other message types
         else {
             // Process one line
-            const auto processLine = [&](const std::string& message) {
+            const auto process_line = [&](const std::string& message) {
                 // Message with indentation
                 const auto body = fmt::format("{}{}",
-                    indentationString_,
+                    indentation_string_,
                     message);
 
                 // Print formatted log message
@@ -135,14 +135,14 @@ public:
 
             if (strlen(message) == 0) {
                 // Empty line
-                processLine("");
+                process_line("");
             }
             else {
                 // Split the mesagge by lines
                 std::stringstream ss(message);
-                std::string messageByLine;
-                while (std::getline(ss, messageByLine, '\n')) {
-                    processLine(messageByLine);
+                std::string message_by_line;
+                while (std::getline(ss, message_by_line, '\n')) {
+                    process_line(message_by_line);
                 }
             }
         }
@@ -152,11 +152,11 @@ public:
         std::unique_lock<std::mutex> lock(mutex_);
         indentation_ += n;
         if (indentation_ > 0) {
-            indentationString_ = std::string(2 * indentation_, '.') + " ";
+            indentation_string_ = std::string(2 * indentation_, '.') + " ";
         }
         else {
             indentation_ = 0;
-            indentationString_ = "";
+            indentation_string_ = "";
         }
     }
 

@@ -22,11 +22,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Assets final : public Component {
 private:
     std::vector<Component::Ptr<Component>> assets_;
-    std::unordered_map<std::string, int> assetIndexMap_;
+    std::unordered_map<std::string, int> asset_index_map_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(assetIndexMap_, assets_);
+        ar(asset_index_map_, assets_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visitor) override {
@@ -36,8 +36,8 @@ public:
     }
 
     virtual Component* underlying(const std::string& name) const override {
-        auto it = assetIndexMap_.find(name);
-        if (it == assetIndexMap_.end()) {
+        auto it = asset_index_map_.find(name);
+        if (it == asset_index_map_.end()) {
             LM_ERROR("Invalid asset name [name='{}']", name);
             return nullptr;
         }
@@ -45,7 +45,7 @@ public:
     }
 
 private:
-    bool validAssetName(const std::string& name) const {
+    bool valid_asset_name(const std::string& name) const {
         std::regex regex(R"x([:\w_-]+)x");
         std::smatch match;
         return std::regex_match(name, match, regex);
@@ -57,14 +57,14 @@ public:
         LM_INDENT();
 
         // Check if asset name is valid
-        if (!validAssetName(name)) {
+        if (!valid_asset_name(name)) {
             LM_ERROR("Invalid asset name [name='{}']", name);
             return {};
         }
 
         // Check if the asset with given name has been already loaded
-        const auto it = assetIndexMap_.find(name);
-        const bool found = it != assetIndexMap_.end();
+        const auto it = asset_index_map_.find(name);
+        const bool found = it != asset_index_map_.end();
         if (found) {
             LM_INFO("Asset [name='{}'] has been already loaded. Replacing..", name);
         }
@@ -107,14 +107,14 @@ public:
                     comp->foreach_underlying(visitor);
                 }
                 else {
-                    comp::updateWeakRef(comp);
+                    comp::update_weak_ref(comp);
                 }
             };
             comp::get<lm::Component>("$")->foreach_underlying(visitor);
         }
         else {
             // Register as a new asset
-            assetIndexMap_[name] = int(assets_.size());
+            asset_index_map_[name] = int(assets_.size());
             assets_.push_back(std::move(p));
             asset = assets_.back().get();
 
@@ -142,18 +142,18 @@ struct LightPrimitiveIndex {
 
 class Scene_ final : public Scene {
 private:
-    Ptr<Assets> assets_;                            // Underlying assets
-    std::vector<SceneNode> nodes_;                  // Scene nodes
-    Ptr<Accel> accel_;                              // Acceleration structure
-    std::optional<int> camera_;                     // Camera index
-    std::vector<LightPrimitiveIndex> lights_;       // Primitive node indices of lights and global transforms
-    std::unordered_map<int, int> lightIndicesMap_;  // Map from node indices to light indices.
-    std::optional<int> envLight_;                   // Environment light index
-    std::optional<int> medium_;                     // Medium index
+    Ptr<Assets> assets_;                             // Underlying assets
+    std::vector<SceneNode> nodes_;                   // Scene nodes
+    Ptr<Accel> accel_;                               // Acceleration structure
+    std::optional<int> camera_;                      // Camera index
+    std::vector<LightPrimitiveIndex> lights_;        // Primitive node indices of lights and global transforms
+    std::unordered_map<int, int> light_indices_map_; // Map from node indices to light indices.
+    std::optional<int> env_light_;                   // Environment light index
+    std::optional<int> medium_;                      // Medium index
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(assets_, nodes_, accel_, camera_, lights_, lightIndicesMap_, envLight_);
+        ar(assets_, nodes_, accel_, camera_, lights_, light_indices_map_, env_light_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
@@ -204,7 +204,7 @@ public:
     virtual int create_node(SceneNodeType type, const Json& prop) override {
         if (type == SceneNodeType::Primitive) {
             // Find an asset by property name
-            const auto getAssetRefBy = [&](const std::string& propName) -> Component* {
+            const auto get_asset_ref_by = [&](const std::string& propName) -> Component* {
                 const auto it = prop.find(propName);
                 if (it == prop.end()) {
                     return nullptr;
@@ -216,11 +216,11 @@ public:
             const int index = int(nodes_.size());
 
             // Get asset references
-            auto* mesh = dynamic_cast<Mesh*>(getAssetRefBy("mesh"));
-            auto* material = dynamic_cast<Material*>(getAssetRefBy("material"));
-            auto* light = dynamic_cast<Light*>(getAssetRefBy("light"));
-            auto* camera = dynamic_cast<Camera*>(getAssetRefBy("camera"));
-            auto* medium = dynamic_cast<Medium*>(getAssetRefBy("medium"));
+            auto* mesh = dynamic_cast<Mesh*>(get_asset_ref_by("mesh"));
+            auto* material = dynamic_cast<Material*>(get_asset_ref_by("material"));
+            auto* light = dynamic_cast<Light*>(get_asset_ref_by("light"));
+            auto* camera = dynamic_cast<Camera*>(get_asset_ref_by("camera"));
+            auto* medium = dynamic_cast<Medium*>(get_asset_ref_by("medium"));
 
             // Check validity
             if (!mesh && !material && !light && !camera && !medium) {
@@ -239,12 +239,12 @@ public:
 
             // Envlight
             if (light && light->is_infinite()) {
-                if (envLight_) {
+                if (env_light_) {
                     LM_ERROR("Environment light is already registered. "
                              "You can register only one environment light in the scene.");
                     return false;
                 }
-                envLight_ = index;
+                env_light_ = index;
             }
 
             // Medium
@@ -367,29 +367,29 @@ public:
         visit(0, Mat4(1_f));
     }
 
-    virtual void visit_node(int nodeIndex, const VisitNodeFunc& visit) const override {
-        visit(nodes_.at(nodeIndex));
+    virtual void visit_node(int node_index, const VisitNodeFunc& visit) const override {
+        visit(nodes_.at(node_index));
     }
 
-    virtual const SceneNode& node_at(int nodeIndex) const override {
-        return nodes_.at(nodeIndex);
+    virtual const SceneNode& node_at(int node_index) const override {
+        return nodes_.at(node_index);
     }
 
-	virtual int num_nodes() const override {
-		return (int)(nodes_.size());
-	}
+    virtual int num_nodes() const override {
+        return (int)(nodes_.size());
+    }
 
-	virtual int env_light_node() const override {
-		return envLight_ ? *envLight_ : -1;
-	}
+    virtual int env_light_node() const override {
+        return env_light_ ? *env_light_ : -1;
+    }
 
-	virtual int camera_node() const override {
-		return camera_ ? *camera_ : -1;
-	}
+    virtual int camera_node() const override {
+        return camera_ ? *camera_ : -1;
+    }
 
-	virtual int num_lights() const override {
-		return (int)(lights_.size());
-	}
+    virtual int num_lights() const override {
+        return (int)(lights_.size());
+    }
 
     // --------------------------------------------------------------------------------------------
 
@@ -398,11 +398,11 @@ public:
         // We keep the global transformation of the light primitive as well as the references.
         // We need to recompute the indices when an update of the scene happens,
         // because the global tranformation can only be obtained by traversing the nodes.
-        lightIndicesMap_.clear();
+        light_indices_map_.clear();
         lights_.clear();
         traverse_primitive_nodes([&](const SceneNode& node, Mat4 global_transform) {
             if (node.type == SceneNodeType::Primitive && node.primitive.light) {
-                lightIndicesMap_[node.index] = int(lights_.size());
+                light_indices_map_[node.index] = int(lights_.size());
                 lights_.push_back({ Transform(global_transform), node.index });
             }
         });
@@ -424,11 +424,11 @@ public:
             if (tmax < Inf) {
                 return {};
             }
-            if (!envLight_) {
+            if (!env_light_) {
                 return {};
             }
             return SceneInteraction::make_light_endpoint(
-                *envLight_,
+                *env_light_,
                 PointGeometry::make_infinite(-ray.d));
         }
         const auto [t, uv, global_transform, primitiveIndex, faceIndex] = *hit;
@@ -608,9 +608,9 @@ public:
 
     virtual Float pdf_direct_light(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const override {
         const auto& primitive = nodes_.at(spL.primitive).primitive;
-        const auto lightTransform = lights_.at(lightIndicesMap_.at(spL.primitive)).global_transform;
+        const auto light_transform = lights_.at(light_indices_map_.at(spL.primitive)).global_transform;
         const auto pL = 1_f / int(lights_.size());
-        return primitive.light->pdf(sp.geom, spL.geom, compL, lightTransform, wo) * pL;
+        return primitive.light->pdf(sp.geom, spL.geom, compL, light_transform, wo) * pL;
     }
 
     // --------------------------------------------------------------------------------------------

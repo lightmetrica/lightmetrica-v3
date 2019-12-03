@@ -14,7 +14,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-std::string sanitizeDirectorySeparator(std::string p) {
+std::string sanitize_directory_separator(std::string p) {
     std::replace(p.begin(), p.end(), '\\', '/');
     return p;
 }
@@ -38,7 +38,7 @@ public:
 
     virtual void construct(const Json& prop) override {
         // Image path
-        const std::string path = sanitizeDirectorySeparator(json::value<std::string>(prop, "path"));
+        const std::string path = sanitize_directory_separator(json::value<std::string>(prop, "path"));
         LM_INFO("Loading texture [path='{}']", fs::path(path).filename().string());
 
         // Load as HDR image

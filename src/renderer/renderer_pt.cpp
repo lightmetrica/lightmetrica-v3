@@ -28,15 +28,15 @@ enum class ImageSampleMode {
 class Renderer_PT : public Renderer {
 private:
     Film* film_;
-    int maxLength_;
+    int max_length_;
     std::optional<unsigned int> seed_;
-    PTMode ptMode_;
-    ImageSampleMode imageSampleMode_;
+    PTMode pt_mode_;
+    ImageSampleMode image_sample_mode_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, maxLength_, ptMode_, sched_);
+        ar(film_, max_length_, pt_mode_, sched_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
@@ -47,30 +47,30 @@ public:
 public:
     virtual void construct(const Json& prop) override {
         film_ = json::comp_ref<Film>(prop, "output");
-        maxLength_ = json::value<int>(prop, "max_length");
+        max_length_ = json::value<int>(prop, "max_length");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
         {
             const auto s = json::value<std::string>(prop, "mode", "mis");
             if (s == "naive") {
-                ptMode_ = PTMode::Naive;
+                pt_mode_ = PTMode::Naive;
             }
             else if (s == "nee") {
-                ptMode_ = PTMode::NEE;
+                pt_mode_ = PTMode::NEE;
             }
             else if (s == "mis") {
-                ptMode_ = PTMode::MIS;
+                pt_mode_ = PTMode::MIS;
             }
         }
         {
             const auto schedName = json::value<std::string>(prop, "scheduler");
             const auto s = json::value<std::string>(prop, "image_sample_mode", "pixel");
             if (s == "pixel") {
-                imageSampleMode_ = ImageSampleMode::Pixel;
+                image_sample_mode_ = ImageSampleMode::Pixel;
                 sched_ = comp::create<scheduler::Scheduler>(
                     "scheduler::spp::" + schedName, make_loc("scheduler"), prop);
             }
             else if (s == "image") {
-                imageSampleMode_ = ImageSampleMode::Image;
+                image_sample_mode_ = ImageSampleMode::Image;
                 sched_ = comp::create<scheduler::Scheduler>(
                     "scheduler::spi::" + schedName, make_loc("scheduler"), prop);
             }
@@ -85,7 +85,7 @@ public:
         const auto size = film_->size();
 
         // Dispatch rendering
-        const auto processed = sched_->run([&](long long pixelIndex, long long, int threadid) {
+        const auto processed = sched_->run([&](long long pixel_index, long long, int threadid) {
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
@@ -93,9 +93,9 @@ public:
 
             // Sample window
             const auto window = [&]() -> Vec4 {
-                if (imageSampleMode_ == ImageSampleMode::Pixel) {
-                    const int x = int(pixelIndex % size.w);
-                    const int y = int(pixelIndex / size.w);
+                if (image_sample_mode_ == ImageSampleMode::Pixel) {
+                    const int x = int(pixel_index % size.w);
+                    const int y = int(pixel_index / size.w);
                     const auto dx = 1_f / size.w;
                     const auto dy = 1_f / size.h;
                     return { dx * x, dy * y, dx, dy };
@@ -115,10 +115,10 @@ public:
             auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect_ratio());
 
             // Raster position
-            Vec2 rasterPos{};
+            Vec2 raster_pos{};
 
             // Perform random walk
-            for (int length = 0; length < maxLength_; length++) {
+            for (int length = 0; length < max_length_; length++) {
                 // Sample a ray
                 const auto s = scene->sample_ray(rng, sp, wi);
                 if (!s || math::is_zero(s->weight)) {
@@ -126,7 +126,7 @@ public:
                 }
                 // Compute raster position for the primary ray
                 if (length == 0) {
-                    rasterPos = *scene->raster_position(s->wo, film_->aspect_ratio());
+                    raster_pos = *scene->raster_position(s->wo, film_->aspect_ratio());
                 }
 
                 // --------------------------------------------------------------------------------
@@ -134,12 +134,12 @@ public:
                 // Sample a NEE edge
                 const bool nee = [&]() {
                     // Ignore NEE edge with naive direct sampling mode
-                    if (ptMode_ == PTMode::Naive) {
+                    if (pt_mode_ == PTMode::Naive) {
                         return false;
                     }
                     // NEE edge can be samplable if current direction sampler
                     // (according to BSDF / phase) doesn't contain delta component.
-                    if (imageSampleMode_ == ImageSampleMode::Pixel) {
+                    if (image_sample_mode_ == ImageSampleMode::Pixel) {
                         // Primary ray is not samplable via NEE in the pixel space sample mode
                         return length > 0 && !scene->is_specular(s->sp, s->comp);
                     }
@@ -163,7 +163,7 @@ public:
                         if (length == 0)
                             return scene->raster_position(-sL->wo, film_->aspect_ratio());
                         else
-                            return rasterPos;
+                            return raster_pos;
                     }();
                     if (!rp) {
                         return;
@@ -176,9 +176,9 @@ public:
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
                     const auto fs = scene->eval_contrb(s->sp, s->comp, wi, wo);
-                    const auto pdfSel = scene->pdf_comp(s->sp, s->comp, wi);
+                    const auto pdf_sel = scene->pdf_comp(s->sp, s->comp, wi);
                     const auto misw = [&]() -> Float {
-                        if (ptMode_ == PTMode::NEE) {
+                        if (pt_mode_ == PTMode::NEE) {
                             return 1_f;
                         }
                         if (!directL) {
@@ -189,7 +189,7 @@ public:
                             scene->pdf_direct_light(s->sp, sL->sp, sL->comp, sL->wo), 
                             scene->pdf(s->sp, s->comp, wi, wo));
                     }();
-                    const auto C = throughput / pdfSel * fs * sL->weight * misw;
+                    const auto C = throughput / pdf_sel * fs * sL->weight * misw;
                     film_->splat(*rp, C);
                 }();
 
@@ -211,7 +211,7 @@ public:
                 // Accumulate contribution from light
                 const bool direct = [&]() -> bool {
                     // Direct strategy is samplable if the ray hit with light
-                    if (ptMode_ == PTMode::NEE) {
+                    if (pt_mode_ == PTMode::NEE) {
                         // In NEE mode, use direct strategy only when a NEE edge cannot be sampled.
                         return !nee && scene->is_light(*hit);
                     }
@@ -223,7 +223,7 @@ public:
                     const auto woL = -s->wo;
                     const auto fs = scene->eval_contrb_endpoint(*hit, woL);
                     const auto misw = [&]() -> Float {
-                        if (ptMode_ == PTMode::Naive) {
+                        if (pt_mode_ == PTMode::Naive) {
                             return 1_f;
                         }
                         if (!nee) {
@@ -235,7 +235,7 @@ public:
                             scene->pdf_direct_light(s->sp, *hit, -1, woL));
                     }();
                     const auto C = throughput * fs * misw;
-                    film_->splat(rasterPos, C);
+                    film_->splat(raster_pos, C);
                 }
 
                 // --------------------------------------------------------------------------------
@@ -260,7 +260,7 @@ public:
         // ----------------------------------------------------------------------------------------
         
         // Rescale film
-        if (imageSampleMode_ == ImageSampleMode::Pixel) {
+        if (image_sample_mode_ == ImageSampleMode::Pixel) {
             film_->rescale(1_f / processed);
         }
         else {

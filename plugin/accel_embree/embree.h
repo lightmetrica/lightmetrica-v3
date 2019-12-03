@@ -13,7 +13,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-static void handleEmbreeError(void*, RTCError code, const char* str = nullptr) {
+static void handle_embree_error(void*, RTCError code, const char* str = nullptr) {
     if (code == RTC_ERROR_NONE) {
         return;
     }

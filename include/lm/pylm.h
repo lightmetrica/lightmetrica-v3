@@ -315,7 +315,7 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             auto instPy = std::any_cast<pybind11::object>(comp::detail::Access::ownerRef(p));
             instPy.dec_ref();
             // Prevent further invocation of release function
-            comp::detail::Access::releaseFunc(p) = nullptr;
+            comp::detail::Access::release_func(p) = nullptr;
         });
 }
 

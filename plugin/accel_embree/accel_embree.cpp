@@ -38,8 +38,8 @@ private:
 public:
     Accel_Embree() {
         device_ = rtcNewDevice("");
-        handleEmbreeError(nullptr, rtcGetDeviceError(device_));
-        rtcSetDeviceErrorFunction(device_, handleEmbreeError, nullptr);
+        handle_embree_error(nullptr, rtcGetDeviceError(device_));
+        rtcSetDeviceErrorFunction(device_, handle_embree_error, nullptr);
     }
 
     ~Accel_Embree() {
@@ -78,7 +78,7 @@ public:
             }
 
             // Record flattened primitive
-            const int flattenNodeIndex = int(flattened_nodes_.size());
+            const int flatten_node_index = int(flattened_nodes_.size());
             flattened_nodes_.push_back({ Transform(global_transform), node.index });
 
             // Create triangle mesh
@@ -98,7 +98,7 @@ public:
                 fs[face][2] = 3*face+2;
             });
             rtcCommitGeometry(geom);
-            rtcAttachGeometryByID(scene_, geom, flattenNodeIndex);
+            rtcAttachGeometryByID(scene_, geom, flatten_node_index);
             rtcReleaseGeometry(geom);
         });
 

@@ -18,14 +18,14 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Renderer_VolPTNaive final : public Renderer {
 private:
     Film* film_;
-    int maxLength_;
-    Float rrProb_;
+    int max_length_;
+    Float rr_prob_;
     std::optional<unsigned int> seed_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, maxLength_, rrProb_, sched_);
+        ar(film_, max_length_, rr_prob_, sched_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
@@ -36,16 +36,16 @@ public:
 public:
     virtual void construct(const Json& prop) override {
         film_ = json::comp_ref<Film>(prop, "output");
-        maxLength_ = json::value<int>(prop, "max_length");
-        rrProb_ = json::value<Float>(prop, "rr_prob", .2_f);
-        const auto schedName = json::value<std::string>(prop, "scheduler");
+        max_length_ = json::value<int>(prop, "max_length");
+        rr_prob_ = json::value<Float>(prop, "rr_prob", .2_f);
+        const auto sched_name = json::value<std::string>(prop, "scheduler");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
 #if VOLPT_IMAGE_SAMPLNG
         sched_ = comp::create<scheduler::Scheduler>(
-            "scheduler::spi::" + schedName, makeLoc("scheduler"), prop);
+            "scheduler::spi::" + sched_name, makeLoc("scheduler"), prop);
 #else
         sched_ = comp::create<scheduler::Scheduler>(
-            "scheduler::spp::" + schedName, make_loc("scheduler"), prop);
+            "scheduler::spp::" + sched_name, make_loc("scheduler"), prop);
 #endif
     }
 
@@ -54,7 +54,7 @@ public:
 
         film_->clear();
         const auto size = film_->size();
-        const auto processed = sched_->run([&](long long pixelIndex, long long, int threadid) {
+        const auto processed = sched_->run([&](long long pixel_index, long long, int threadid) {
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
@@ -63,8 +63,8 @@ public:
             const Vec4 window(0_f, 0_f, 1_f, 1_f);
 #else
             // Pixel positions
-            const int x = int(pixelIndex % size.w);
-            const int y = int(pixelIndex / size.w);
+            const int x = int(pixel_index % size.w);
+            const int y = int(pixel_index / size.w);
             const auto dx = 1_f / size.w;
             const auto dy = 1_f / size.h;
             const Vec4 window(dx * x, dy * y, dx, dy);
@@ -80,7 +80,7 @@ public:
             // Perform random walk
             Vec3 L(0_f);
             Vec2 rasterPos{};
-            for (int length = 0; length < maxLength_; length++) {
+            for (int length = 0; length < max_length_; length++) {
                 // Sample a ray
                 const auto s = scene->sample_ray(rng, sp, wi);
                 if (!s || math::is_zero(s->weight)) {
@@ -113,7 +113,7 @@ public:
 
                 // Russian roulette
                 if (length > 3) {
-                    const auto q = glm::max(rrProb_, 1_f - glm::compMax(throughput));
+                    const auto q = glm::max(rr_prob_, 1_f - glm::compMax(throughput));
                     if (rng.u() < q) {
                         break;
                     }

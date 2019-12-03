@@ -11,7 +11,7 @@ class Renderer_AO final : public Renderer {
 private:
     Film* film_;
     long long spp_;
-    int rngSeed_ = 42;
+    int rng_seed_ = 42;
 
 public:
     virtual void construct(const Json& prop) override {
@@ -26,7 +26,7 @@ public:
 
         const auto [w, h] = film_->size();
         parallel::foreach(w*h, [&](long long index, int threadId) -> void {
-            thread_local Rng rng(rngSeed_ + threadId);
+            thread_local Rng rng(rng_seed_ + threadId);
             const int x = int(index % w);
             const int y = int(index / w);
             const auto ray = scene->primary_ray({(x+.5_f)/w, (y+.5_f)/h}, film_->aspect_ratio());

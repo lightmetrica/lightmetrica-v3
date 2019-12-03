@@ -15,23 +15,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // Bind common.h
 static void bind_common(pybind11::module& m) {
-    // Debug or Release mode
-    m.attr("Debug") = LM_DEBUG_MODE ? true : false;
-
-    // Configuration
-    enum class ConfigType {
-        Debug,
-        Release,
-        RelWithDebInfo
-    };
-    pybind11::enum_<ConfigType>(m, "ConfigType")
-        .value("Debug", ConfigType::Debug)
-        .value("Release", ConfigType::Release)
-        .value("RelWithDebInfo", ConfigType::RelWithDebInfo);
-    m.attr("BuildConfig") =
-        LM_CONFIG_DEBUG ? ConfigType::Debug :
-        LM_CONFIG_RELEASE ? ConfigType::Release :
-        ConfigType::RelWithDebInfo;
+    // Build config
+    m.attr("Debug") = LM_CONFIG_DEBUG ? true : false;
+	m.attr("Release") = LM_CONFIG_RELEASE ? true : false;
+	m.attr("RelWithDebInfo") = LM_CONFIG_RELWITHDEBINFO ? true : false;
 
     // Supported floating point type
     enum class FloatPrecisionType {
@@ -114,16 +101,16 @@ static void bind_math(pybind11::module& m) {
 
     // math namespace
     auto sm = m.def_submodule("math");
-    sm.def("orthonormalBasis", &math::orthonormal_basis);
-    sm.def("safeSqrt", &math::safe_sqrt);
+    sm.def("orthonormal_basis", &math::orthonormal_basis);
+    sm.def("safe_sqrt", &math::safe_sqrt);
     sm.def("sq", &math::sq);
     sm.def("reflection", &math::reflection);
     pybind11::class_<math::RefractionResult>(sm, "RefractionResult")
         .def_readwrite("wt", &math::RefractionResult::wt)
         .def_readwrite("total", &math::RefractionResult::total);
     sm.def("refraction", &math::refraction);
-    sm.def("sampleCosineWeighted", &math::sample_cosine_weighted);
-    sm.def("balanceHeuristic", &math::balance_heuristic);
+    sm.def("sample_cosine_weighted", &math::sample_cosine_weighted);
+    sm.def("balance_heuristic", &math::balance_heuristic);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -144,7 +131,7 @@ static void bind_component(pybind11::module& m) {
         .def("parentLoc", &Component::parent_loc)
         .def("construct", &Component::construct)
         .def("underlying", &Component::underlying, pybind11::return_value_policy::reference)
-        .def("underlyingValue", &Component::underlying_value, "query"_a = "")
+        .def("underlying_value", &Component::underlying_value, "query"_a = "")
         .def("save", [](Component* self) -> pybind11::bytes {
             std::ostringstream os;
             {
@@ -164,10 +151,10 @@ static void bind_component(pybind11::module& m) {
     sm.def("get", [](const std::string& locator) -> Component* {
         return comp::get<Component>(locator);
     }, pybind11::return_value_policy::reference);
-    sm.def("loadPlugin", &comp::load_plugin);
-    sm.def("loadPluginDirectory", &comp::load_plugin_directory);
-    sm.def("unloadPlugins", &comp::unload_plugins);
-    sm.def("foreachRegistered", &comp::foreach_registered);
+    sm.def("load_plugin", &comp::load_plugin);
+    sm.def("load_plugin_directory", &comp::load_plugin_directory);
+    sm.def("unload_plugins", &comp::unload_plugins);
+    sm.def("foreach_registered", &comp::foreach_registered);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -216,9 +203,9 @@ static void bind_logger(pybind11::module& m) {
     sm.def("shutdown", &log::shutdown);
     using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
     sm.def("log", (logFuncPtr)&log::log);
-    sm.def("updateIndentation", &log::update_indentation);
+    sm.def("update_indentation", &log::update_indentation);
     using setSeverityFuncPtr = void(*)(int);
-    sm.def("setSeverity", (setSeverityFuncPtr)&log::set_severity);
+    sm.def("set_severity", (setSeverityFuncPtr)&log::set_severity);
 
     using LoggerContext = log::LoggerContext;
     class LoggerContext_Py final : public LoggerContext {
@@ -242,7 +229,7 @@ static void bind_logger(pybind11::module& m) {
     pybind11::class_<LoggerContext, LoggerContext_Py, Component::Ptr<LoggerContext>>(sm, "LoggerContext")
         .def(pybind11::init<>())
         .def("log", &LoggerContext::log)
-        .def("updateIndentation", &LoggerContext::update_indentation)
+        .def("update_indentation", &LoggerContext::update_indentation)
         .PYLM_DEF_COMP_BIND(LoggerContext);
 }
 
@@ -253,7 +240,7 @@ static void bind_parallel(pybind11::module& m) {
     auto sm = m.def_submodule("parallel");
     sm.def("init", &parallel::init, "type"_a = parallel::DefaultType, "prop"_a = Json{});
     sm.def("shutdown", &parallel::shutdown);
-    sm.def("numThreads", &parallel::num_threads);
+    sm.def("num_threads", &parallel::num_threads);
     sm.def("foreach", [](long long numSamples, const parallel::ParallelProcessFunc& processFunc) {
         // Release GIL and let the C++ to create new threads
         pybind11::gil_scoped_release release;
@@ -339,8 +326,8 @@ static void bind_debugio(pybind11::module& m) {
 // Bind debug.h
 static void bind_debug(pybind11::module& m) {
     auto sm = m.def_submodule("debug");
-    sm.def("pollFloat", &debug::poll_float);
-    sm.def("regOnPollFloat", [](const debug::OnPollFloatFunc& onPollFloat) {
+    sm.def("poll_float", &debug::poll_float);
+    sm.def("reg_on_poll_float", [](const debug::OnPollFloatFunc& onPollFloat) {
         // We must capture the callback function by value.
         // Otherwise the function would be dereferenced.
         debug::reg_on_poll_float([onPollFloat](const std::string& name, Float val) {
@@ -362,10 +349,10 @@ static void bind_distributed(pybind11::module& m) {
         auto sm2 = sm.def_submodule("master");
         sm2.def("init", &distributed::master::init);
         sm2.def("shutdown", &distributed::master::shutdown);
-        sm2.def("printWorkerInfo", &distributed::master::print_worker_info);
-        sm2.def("allowWorkerConnection", &distributed::master::allow_worker_connection);
+        sm2.def("print_worker_info", &distributed::master::print_worker_info);
+        sm2.def("allow_worker_connection", &distributed::master::allow_worker_connection);
         sm2.def("sync", &distributed::master::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
-        sm2.def("gatherFilm", &distributed::master::gather_film, pybind11::call_guard<pybind11::gil_scoped_release>());
+        sm2.def("gather_film", &distributed::master::gather_film, pybind11::call_guard<pybind11::gil_scoped_release>());
     }
     {
         auto sm2 = sm.def_submodule("worker");
@@ -441,10 +428,10 @@ static void bind_film(pybind11::module& m) {
         .def(pybind11::init<>())
         .def("loc", &Film::loc)
         .def("size", &Film::size)
-        .def("numPixels", &Film::num_pixels)
-        .def("setPixel", &Film::set_pixel)
+        .def("num_pixels", &Film::num_pixels)
+        .def("set_pixel", &Film::set_pixel)
         .def("save", &Film::save)
-        .def("aspectRatio", &Film::aspect_ratio)
+        .def("aspect_ratio", &Film::aspect_ratio)
         .def("buffer", &Film::buffer)
         .PYLM_DEF_COMP_BIND(Film);
 }
@@ -468,7 +455,7 @@ static void bind_surface(pybind11::module& m) {
         .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3, Vec2))&PointGeometry::make_on_surface)
         .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3))&PointGeometry::make_on_surface)
         .def("opposite", &PointGeometry::opposite)
-        .def("orthonormalBasis", &PointGeometry::orthonormal_basis);
+        .def("orthonormal_basis", &PointGeometry::orthonormal_basis);
 
     pybind11::class_<SceneInteraction>(m, "SceneInteraction")
         .def(pybind11::init<>())
@@ -532,11 +519,11 @@ static void bind_scene(pybind11::module& m) {
         virtual void traverse_primitive_nodes(const NodeTraverseFunc& traverseFunc) const override {
             PYBIND11_OVERLOAD_PURE(void, Scene, traverse_primitive_nodes, traverseFunc);
         }
-        virtual void visit_node(int nodeIndex, const VisitNodeFunc& visit) const override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, visit_node, nodeIndex, visit);
+        virtual void visit_node(int node_index, const VisitNodeFunc& visit) const override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, visit_node, node_index, visit);
         }
-        virtual const SceneNode& node_at(int nodeIndex) const override {
-            PYBIND11_OVERLOAD_PURE(const SceneNode&, Scene, node_at, nodeIndex);
+        virtual const SceneNode& node_at(int node_index) const override {
+            PYBIND11_OVERLOAD_PURE(const SceneNode&, Scene, node_at, node_index);
         }
         virtual void build(const std::string& name, const Json& prop) override {
             PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
@@ -600,7 +587,7 @@ static void bind_scene(pybind11::module& m) {
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
         .def("is_light", &Scene::is_light)
-        .def("isSpecular", &Scene::is_specular)
+        .def("is_specular", &Scene::is_specular)
         .def("primary_ray", &Scene::primary_ray)
         .def("sample_ray", &Scene::sample_ray)
         .def("eval_contrb_endpoint", &Scene::eval_contrb_endpoint)
@@ -688,7 +675,7 @@ static void bind_material(pybind11::module& m) {
     };
     pybind11::class_<Material, Material_Py, Component::Ptr<Material>>(m, "Material")
         .def(pybind11::init<>())
-        .def("isSpecular", &Material::is_specular)
+        .def("is_specular", &Material::is_specular)
         .def("sample", &Material::sample)
         .def("reflectance", &Material::reflectance)
         .def("pdf", &Material::pdf)

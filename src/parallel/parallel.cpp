@@ -26,8 +26,8 @@ LM_PUBLIC_API bool main_thread() {
     return Instance::get().main_thread();
 }
 
-LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc& progressFunc) {
-	Instance::get().foreach(numSamples, processFunc, progressFunc);
+LM_PUBLIC_API void foreach(long long num_samples, const ParallelProcessFunc& process_func, const ProgressUpdateFunc& progress_func) {
+	Instance::get().foreach(num_samples, process_func, progress_func);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::parallel)

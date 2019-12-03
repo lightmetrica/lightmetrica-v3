@@ -15,16 +15,16 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_Raycast final : public Renderer {
 private:
-    Vec3 bgColor_;
-    bool useConstantColor_;
-    bool visualizeNormal_;
+    Vec3 bg_color_;
+    bool use_constant_color_;
+    bool visualize_normal_;
     std::optional<Vec3> color_;
     Film* film_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(bgColor_, useConstantColor_, visualizeNormal_, film_, sched_);
+        ar(bg_color_, use_constant_color_, visualize_normal_, film_, sched_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
@@ -41,9 +41,9 @@ public:
 
 public:
     virtual void construct(const Json& prop) override {
-        bgColor_ = json::value(prop, "bg_color", Vec3(0_f));
-        useConstantColor_ = json::value(prop, "use_constant_color", false);
-        visualizeNormal_ = json::value(prop, "visualize_normal", false);
+        bg_color_ = json::value(prop, "bg_color", Vec3(0_f));
+        use_constant_color_ = json::value(prop, "use_constant_color", false);
+        visualize_normal_ = json::value(prop, "visualize_normal", false);
         color_ = json::value_or_none<Vec3>(prop, "color");
         film_ = json::comp_ref<Film>(prop, "output");
         sched_ = comp::create<scheduler::Scheduler>(
@@ -66,16 +66,16 @@ public:
             const auto ray = scene->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
             const auto sp = scene->intersect(ray);
             if (!sp) {
-                film_->set_pixel(x, y, bgColor_);
+                film_->set_pixel(x, y, bg_color_);
                 return;
             }
-            if (visualizeNormal_) {
+            if (visualize_normal_) {
                 film_->set_pixel(x, y, glm::abs(sp->geom.n));
             }
             else {
                 const auto R = color_ ? *color_ : scene->reflectance(*sp, -1);
                 auto C = R ? *R : Vec3();
-                if (!useConstantColor_) {
+                if (!use_constant_color_) {
                     C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));
                 }
                 film_->set_pixel(x, y, C);
