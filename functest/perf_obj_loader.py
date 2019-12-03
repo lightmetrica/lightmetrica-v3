@@ -33,12 +33,12 @@ import lightmetrica as lm
 
 lm.init()
 lm.parallel.init('parallel::openmp', {
-    'numThreads': -1
+    'num_threads': -1
 })
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
 
 objloaders = ['objloader::simple', 'objloader::tinyobjloader']
 scenes = lmscene.scenes_small()

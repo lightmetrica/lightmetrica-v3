@@ -36,7 +36,7 @@ lmenv.load('.lmenv')
 
 import lightmetrica as lm
 
-if lm.BuildConfig != lm.ConfigType.Release:
+if not lm.Release:
     lm.debug.attachToDebugger()
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}

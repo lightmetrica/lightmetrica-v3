@@ -35,10 +35,6 @@ import lightmetrica as lm
 
 # %load_ext lightmetrica_jupyter
 
-# +
-# lm.debug.attachToDebugger()
-# -
-
 # ### Calling Lightmetrica API without initialization
 #
 # Calling Lightmetrica API without initialization causes an exception.

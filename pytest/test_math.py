@@ -6,9 +6,9 @@ import lightmetrica as lm
 from pylm_test import math as m
 
 def to_lmfloat(v):
-    if lm.FloatPrecision == lm.Float32:
+    if lm.FloatT == lm.Float32:
         return v.astype(np.float32)
-    elif lm.FloatPrecision == lm.Float64:
+    elif lm.FloatT == lm.Float64:
         return v.astype(np.float64)
 
 def test_from_python():

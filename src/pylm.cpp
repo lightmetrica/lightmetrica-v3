@@ -21,17 +21,17 @@ static void bind_common(pybind11::module& m) {
 	m.attr("RelWithDebInfo") = LM_CONFIG_RELWITHDEBINFO ? true : false;
 
     // Supported floating point type
-    enum class FloatPrecisionType {
+    enum class FloatType {
         Float32,
         Float64
     };
-    pybind11::enum_<FloatPrecisionType>(m, "FloatPrecisionType")
-        .value("Float32", FloatPrecisionType::Float32)
-        .value("Float64", FloatPrecisionType::Float64)
+    pybind11::enum_<FloatType>(m, "FloatType")
+        .value("Float32", FloatType::Float32)
+        .value("Float64", FloatType::Float64)
         .export_values();
-    m.attr("FloatPrecision") = LM_SINGLE_PRECISION
-        ? FloatPrecisionType::Float32
-        : FloatPrecisionType::Float64;
+    m.attr("FloatT") = LM_SINGLE_PRECISION
+        ? FloatType::Float32
+        : FloatType::Float64;
 }
 
 // ------------------------------------------------------------------------------------------------

@@ -35,7 +35,7 @@ import lightmetrica as lm
 
 lm.init()
 lm.parallel.init('parallel::openmp', {
-    'numThreads': -1
+    'num_threads': -1
 })
 lm.log.init('logger::jupyter', {})
 lm.info()

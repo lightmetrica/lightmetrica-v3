@@ -40,8 +40,8 @@ lm.parallel.init('parallel::openmp', {
     'numThreads': -1
 })
 lm.info()
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_nanort'))
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_embree'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_nanort'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 
 
 # -

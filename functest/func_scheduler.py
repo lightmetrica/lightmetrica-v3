@@ -28,17 +28,17 @@ import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 import lmscene
 
-if lm.BuildConfig != lm.ConfigType.Release:
+if not lm.Release:
     lm.attachToDebugger()
 
 lm.init()
-if lm.BuildConfig != lm.ConfigType.Release:
+if not lm.Release:
     lm.parallel.init('parallel::openmp', {'numThreads': 1})
 lm.log.init('logger::jupyter', {})
 lm.progress.init('progress::jupyter', {})
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_embree'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 
 lmscene.load(env.scene_path, 'fireplace_room')
 lm.asset('film1', 'film::bitmap', {

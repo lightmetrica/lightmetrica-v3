@@ -40,8 +40,8 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_nanort'))
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_nanort'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
 
 
 def build_and_render(scene):

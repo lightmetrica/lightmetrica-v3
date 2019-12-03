@@ -50,7 +50,7 @@ def run_worker_process():
     try:
         lm.init()
         lm.info()
-        lm.log.setSeverity(1000)
+        lm.log.set_severity(1000)
         lm.log.log(lm.log.LogLevel.Err, lm.log.LogLevel.Info, '', 0, 'pid={}'.format(os.getpid()))
         lm.distributed.worker.init({
             'name': uuid.uuid4().hex,
@@ -81,7 +81,7 @@ lm.distributed.master.init({
     'port': 5000
 })
 
-lm.distributed.master.printWorkerInfo()
+lm.distributed.master.print_worker_info()
 
 lmscene.load(env.scene_path, 'fireplace_room')
 lm.build('accel::sahbvh', {})
@@ -90,11 +90,11 @@ lm.renderer('renderer::raycast', {
     'output': lm.asset('film_output')
 })
 
-lm.distributed.master.allowWorkerConnection(False)
+lm.distributed.master.allow_worker_connection(False)
 lm.distributed.master.sync()
 lm.render()
-lm.distributed.master.gatherFilm(lm.asset('film_output'))
-lm.distributed.master.allowWorkerConnection(True)
+lm.distributed.master.gather_film(lm.asset('film_output'))
+lm.distributed.master.allow_worker_connection(True)
 
 img = np.copy(lm.buffer(lm.asset('film_output')))
 f = plt.figure(figsize=(15,15))
