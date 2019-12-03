@@ -84,7 +84,7 @@ public:
 
         \rst
         The function of this type is used to be a callback function of
-        :cpp:func:`lm::Component::foreachUnderlying` function.
+        :cpp:func:`lm::Component::foreach_underlying` function.
         \endrst
     */
     using ComponentVisitor = std::function<void(Component*& p, bool weak)>;

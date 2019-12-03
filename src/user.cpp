@@ -89,7 +89,7 @@ public:
     }
 
 public:
-    Component* underlying(const std::string& name) const {
+    Component* underlying(const std::string& name) const override {
         if (name == "scene") {
             return scene_.get();
         }
@@ -99,7 +99,7 @@ public:
         return nullptr;
     }
 
-    void foreachUnderlying(const ComponentVisitor& visit) {
+    void foreach_underlying(const ComponentVisitor& visit) override {
         lm::comp::visit(visit, scene_);
         lm::comp::visit(visit, renderer_);
     }

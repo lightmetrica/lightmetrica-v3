@@ -46,7 +46,7 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Constructor and destructor") {
-        const auto out = captureStdout([]() {
+        const auto out = capture_stdout([]() {
             const auto p = lm::comp::create<C>("test::comp::c1", "");
             REQUIRE(p);
         });
@@ -62,7 +62,7 @@ TEST_CASE("Component") {
             CHECK(p->f() == 42);
         }
         SUBCASE("Plugin constructor and destructor") {
-            const auto out = captureStdout([]() {
+            const auto out = capture_stdout([]() {
                 const auto p = lm::comp::create<TestPluginWithCtorAndDtor>("testpluginxtor::default", "");
                 REQUIRE(p);
             });

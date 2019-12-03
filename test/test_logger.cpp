@@ -16,7 +16,7 @@ TEST_CASE("Logger") {
 
     // --------------------------------------------------------------------------------------------
 
-    const auto extractMessage = [](const std::string& out) -> std::string {
+    const auto extract_message = [](const std::string& out) -> std::string {
         std::regex re(R"x(^\[.*\] +(.*)\n?)x");
         std::smatch match;
         if (!std::regex_match(out, match, re)) {
@@ -25,11 +25,11 @@ TEST_CASE("Logger") {
         return std::string(match[1]);
     };
 
-    const auto nextMessage = [&](std::stringstream& ss) -> std::string
+    const auto next_message = [&](std::stringstream& ss) -> std::string
     {
         std::string line;
         std::getline(ss, line, '\n');
-        return extractMessage(line);
+        return extract_message(line);
     };
 
     // --------------------------------------------------------------------------------------------
@@ -39,11 +39,11 @@ TEST_CASE("Logger") {
         // We provide several macros to output the messages of the correspoinding severity.
 
         std::string out;
-        out = extractMessage(captureStdout([]() { LM_INFO("Info"); }));
+        out = extract_message(capture_stdout([]() { LM_INFO("Info"); }));
         CHECK(out == "Info");
-        out = extractMessage(captureStdout([]() { LM_WARN("Warning"); }));
+        out = extract_message(capture_stdout([]() { LM_WARN("Warning"); }));
         CHECK(out == "Warning");
-        out = extractMessage(captureStdout([]() { LM_ERROR("Error"); }));
+        out = extract_message(capture_stdout([]() { LM_ERROR("Error"); }));
         CHECK(out == "Error");
     }
 
@@ -51,7 +51,7 @@ TEST_CASE("Logger") {
         // Some loggers supports indentation of log message so that we can organize the messages.
         // LM_INDENT() macro automatically increase and decrease indentation inside a space.
 
-        const auto out = captureStdout([]() {
+        const auto out = capture_stdout([]() {
             LM_INFO("Indent 0");
             LM_INDENT();
             LM_INFO("Indent 1");
@@ -63,15 +63,15 @@ TEST_CASE("Logger") {
         });
         
         std::stringstream ss(out);
-        CHECK(nextMessage(ss) == "Indent 0");
-        CHECK(nextMessage(ss) == ".. Indent 1");
-        CHECK(nextMessage(ss) == ".... Indent 2");
-        CHECK(nextMessage(ss) == ".. Indent 1");
+        CHECK(next_message(ss) == "Indent 0");
+        CHECK(next_message(ss) == ".. Indent 1");
+        CHECK(next_message(ss) == ".... Indent 2");
+        CHECK(next_message(ss) == ".. Indent 1");
     }
 
     SUBCASE("Multiline") {
         // Multiline string is also supported.
-        const auto out = captureStdout([]() {
+        const auto out = capture_stdout([]() {
             lm::Json json{
                 {"a", 1},
                 {"b", 2},
@@ -83,62 +83,62 @@ TEST_CASE("Logger") {
             LM_INFO(json.dump(2));
         });
         std::stringstream ss(out);
-        CHECK(nextMessage(ss) == R"({)");
-        CHECK(nextMessage(ss) == R"("a": 1,)");
-        CHECK(nextMessage(ss) == R"("b": 2,)");
-        CHECK(nextMessage(ss) == R"("c": {)");
-        CHECK(nextMessage(ss) == R"("c1": 3)");
-        CHECK(nextMessage(ss) == R"(})");
-        CHECK(nextMessage(ss) == R"(})");
+        CHECK(next_message(ss) == R"({)");
+        CHECK(next_message(ss) == R"("a": 1,)");
+        CHECK(next_message(ss) == R"("b": 2,)");
+        CHECK(next_message(ss) == R"("c": {)");
+        CHECK(next_message(ss) == R"("c1": 3)");
+        CHECK(next_message(ss) == R"(})");
+        CHECK(next_message(ss) == R"(})");
     }
 
     SUBCASE("Controlling severity") {
         {
-            const auto out = captureStdout([]() {
+            const auto out = capture_stdout([]() {
                 lm::log::set_severity(lm::log::LogLevel::Warn);
                 LM_INFO("Info");
                 LM_WARN("Warning");
                 LM_ERROR("Error");
             });
             std::stringstream ss(out);
-            CHECK(nextMessage(ss) == "Warning");
-            CHECK(nextMessage(ss) == "Error");
+            CHECK(next_message(ss) == "Warning");
+            CHECK(next_message(ss) == "Error");
         }
         {
-            const auto out = captureStdout([]() {
+            const auto out = capture_stdout([]() {
                 lm::log::set_severity(lm::log::LogLevel::Err);
                 LM_INFO("Info");
                 LM_WARN("Warning");
                 LM_ERROR("Error");
             });
             std::stringstream ss(out);
-            CHECK(nextMessage(ss) == "Error");
+            CHECK(next_message(ss) == "Error");
         }
     }
 
     SUBCASE("User-defined severity") {
         {
-            const auto out = captureStdout([]() {
+            const auto out = capture_stdout([]() {
                 lm::log::set_severity(10);
                 LM_LOG(10, "Severity 10");
                 LM_LOG(20, "Severity 20");
                 LM_LOG(30, "Severity 30");
             });
             std::stringstream ss(out);
-            CHECK(nextMessage(ss) == "Severity 10");
-            CHECK(nextMessage(ss) == "Severity 20");
-            CHECK(nextMessage(ss) == "Severity 30");
+            CHECK(next_message(ss) == "Severity 10");
+            CHECK(next_message(ss) == "Severity 20");
+            CHECK(next_message(ss) == "Severity 30");
         }
         {
-            const auto out = captureStdout([]() {
+            const auto out = capture_stdout([]() {
                 lm::log::set_severity(20);
                 LM_LOG(10, "Severity 10");
                 LM_LOG(20, "Severity 20");
                 LM_LOG(30, "Severity 30");
             });
             std::stringstream ss(out);
-            CHECK(nextMessage(ss) == "Severity 20");
-            CHECK(nextMessage(ss) == "Severity 30");
+            CHECK(next_message(ss) == "Severity 20");
+            CHECK(next_message(ss) == "Severity 30");
         }
     }
 }
@@ -156,11 +156,11 @@ LM_COMP_REG_IMPL(LoggerContext_User, "logger::user");
 TEST_CASE("User-defined logger") {
     lm::log::ScopedInit log_("logger::user");
     std::string out;
-    out = captureStdout([]() { LM_INFO("Info"); });
+    out = capture_stdout([]() { LM_INFO("Info"); });
     CHECK(out == "[user] Info\n");
-    out = captureStdout([]() { LM_WARN("Warning"); });
+    out = capture_stdout([]() { LM_WARN("Warning"); });
     CHECK(out == "[user] Warning\n");
-    out = captureStdout([]() { LM_ERROR("Error"); });
+    out = capture_stdout([]() { LM_ERROR("Error"); });
     CHECK(out == "[user] Error\n");
 }
 

@@ -10,7 +10,7 @@
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
-std::string captureStdout(const std::function<void()>& testFunc) {
+std::string capture_stdout(const std::function<void()>& testFunc) {
     std::stringstream ss;
     auto* old = std::cout.rdbuf(ss.rdbuf());
     testFunc();

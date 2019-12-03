@@ -20,17 +20,17 @@ def lm_logger_scope():
 def lm_plugin_scope(name):
     """Enables plugin in the context"""
     try:
-        lm.comp.loadPlugin(os.path.join(pytest.lmenv.bin_path, name))
+        lm.comp.load_plugin(os.path.join(pytest.lmenv.bin_path, name))
         yield
     finally:
-        lm.comp.unloadPlugins()
+        lm.comp.unload_plugins()
 
 def test_construction():
     """Construction of instances"""
     with lm_logger_scope():
         # Create and use component inside python script
         # without using factory function
-        p = m.createA1()
+        p = m.create_A1()
         assert p.f1() == 42
         assert p.f2(1, 2) == 3
 
@@ -38,7 +38,7 @@ def test_construction():
 
         # Use component inside native plugin
         with lm_plugin_scope('lm_test_plugin'):
-            p = m.createTestPlugin()
+            p = m.create_test_plugin()
             assert p.f() == 42
             # Free p before unloading the plugin
             del p
@@ -59,13 +59,13 @@ def test_construction():
         assert p.f2(2, 3) == 6
 
         # Instantiate inside python script and use it in C++
-        assert m.useA(p) == 86
+        assert m.use_A(p) == 86
 
         # -----------------------------------------------------------------------------------------
 
         # Native embeded plugin
         # w/o property
-        p = m.A.createWithoutConstruct('test::comp::a1', '')
+        p = m.A.create_without_construct('test::comp::a1', '')
         assert p.f1() == 42
         assert p.f2(2, 3) == 5
         # w/ property
@@ -77,7 +77,7 @@ def test_construction():
         # Native external plugin
         with lm_plugin_scope('lm_test_plugin'):
             # w/o property
-            p = m.TestPlugin.createWithoutConstruct('testplugin::default', '')
+            p = m.TestPlugin.create_without_construct('testplugin::default', '')
             assert p.f() == 42
             # w/ property
             p = m.TestPlugin.create('testplugin::construct', '', {'v1':42, 'v2':43})
@@ -109,13 +109,13 @@ def test_construction():
         m.A.reg(A5, 'test::comp::a5')
 
         # Python plugin
-        p = m.A.createWithoutConstruct('test::comp::a4', '')
+        p = m.A.create_without_construct('test::comp::a4', '')
         assert p.f1() == 44
         assert p.f2(2, 3) == -1
 
         # Python plugin instantiate from C++
-        assert m.createA4AndCallFuncs() == (44, -1)
-        assert m.createA5AndCallFuncs() == (7, 10)
+        assert m.create_A4_and_call_funcs() == (44, -1)
+        assert m.create_A5_and_call_funcs() == (7, 10)
 
 def test_serialization():
     """Serialization of component instances"""
@@ -141,15 +141,15 @@ def test_serialization():
         serialized = p.save()
         
         # Create another instance, deserialize it
-        p2 = m.A.createWithoutConstruct('test::comp::serializable', '')
+        p2 = m.A.create_without_construct('test::comp::serializable', '')
         p2.load(serialized)
         assert p2.f1() == 22
 
         # Same test with the instance created in C++
-        assert m.roundTripSerializedA() == 23
+        assert m.round_trip_serialized_A() == 23
 
         # Same test with lm.serial.save / load functions in C++
-        assert m.roundTripSerializedA_UseSerial() == 23
+        assert m.round_trip_serialized_A_use_serial() == 23
 
         # -----------------------------------------------------------------------------------------
 
@@ -175,9 +175,9 @@ def test_serialization():
         serialized = p.save()
         
         # Create another instance, deserialize it
-        p2 = m.A.createWithoutConstruct('test::comp::serializable_with_pickle', '')
+        p2 = m.A.create_without_construct('test::comp::serializable_with_pickle', '')
         p2.load(serialized)
         assert p2.f1() == 17
 
         # Same test with the instance created in C++
-        assert m.roundTripSerializedA_WithPickle() == 48
+        assert m.round_trip_serialized_A_with_pickle() == 48

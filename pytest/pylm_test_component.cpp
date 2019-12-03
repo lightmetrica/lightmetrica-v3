@@ -70,21 +70,21 @@ public:
 
         // ----------------------------------------------------------------------------------------
 
-        m.def("createA1", []() {
+        m.def("create_A1", []() {
             return dynamic_cast<A*>(
                 lm::comp::detail::create_comp("test::comp::a1"));
         });
 
-        m.def("createTestPlugin", []() {
+        m.def("create_test_plugin", []() {
             // Use .release() as pybind11 does not support direct conversion of Ptr<T> types
             return lm::comp::create<TestPlugin>("testplugin::default", "").release();
         });
 
-        m.def("useA", [](A* a) -> int {
+        m.def("use_A", [](A* a) -> int {
             return a->f1() * 2;
         });
 
-        m.def("createA4AndCallFuncs", []() -> std::tuple<int, int> {
+        m.def("create_A4_and_call_funcs", []() -> std::tuple<int, int> {
             // test::comp::a4 should be defined inside Python script
             int v1, v2;
             {
@@ -95,7 +95,7 @@ public:
             return { v1, v2 };
         });
 
-        m.def("createA5AndCallFuncs", []() -> std::tuple<int, int> {
+        m.def("create_A5_and_call_funcs", []() -> std::tuple<int, int> {
             int v1, v2;
             {
                 auto p = lm::comp::create<A>("test::comp::a5", "", {{"v", 7}});
@@ -107,7 +107,7 @@ public:
 
         // ----------------------------------------------------------------------------------------
 
-        m.def("roundTripSerializedA", []() -> int {
+        m.def("round_trip_serialized_A", []() -> int {
             // Create instance registered in Python side
             auto p = lm::comp::create<A>("test::comp::serializable", "", {{"v",23}});
 
@@ -130,7 +130,7 @@ public:
             return p2->f1();
         });
 
-        m.def("roundTripSerializedA_UseSerial", []() -> int {
+        m.def("round_trip_serialized_A_use_serial", []() -> int {
             auto p = lm::comp::create<A>("test::comp::serializable", "", {{"v",23}});
             std::stringstream ss;
             lm::serial::save(ss, p);
@@ -139,7 +139,7 @@ public:
             return p2->f1();
         });
 
-        m.def("roundTripSerializedA_WithPickle", []() -> int {
+        m.def("round_trip_serialized_A_with_pickle", []() -> int {
             auto p = lm::comp::create<A>("test::comp::serializable_with_pickle", "", {
                 {"v1",5}, {"v2",43}
             });

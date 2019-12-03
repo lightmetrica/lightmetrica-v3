@@ -15,6 +15,6 @@
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
 // Captures outputs from std::cout
-std::string captureStdout(const std::function<void()>& testFunc);
+std::string capture_stdout(const std::function<void()>& testFunc);
 
 LM_NAMESPACE_END(LM_TEST_NAMESPACE)
