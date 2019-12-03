@@ -63,7 +63,7 @@ LM_PUBLIC_API void info();
 /*!
     \brief Create an asset.
     \param name Identifier of the asset.
-    \param implKey Name of the asset to create.
+    \param impl_key Name of the asset to create.
     \param prop Properties for configuration.
     \return Locator of the asset.
     \see `example/blank.cpp`
@@ -73,13 +73,13 @@ LM_PUBLIC_API void info();
     We use assets as building blocks to construct the scene of the framework.
     This function creates an instance of an asset and register it to the framework
     by a given identifier. ``name`` is used as a reference by other APIs.
-    ``implKey`` has a format of ``<asset type>::<implementation>``.
-    If ``name`` is already registered or ``implKey`` is missing,
+    ``impl_key`` has a format of ``<asset type>::<implementation>``.
+    If ``name`` is already registered or ``impl_key`` is missing,
     the framework will generate corresponding error messages
     through logger system as well as runtime error exception.
     \endrst
 */
-LM_PUBLIC_API std::string asset(const std::string& name, const std::string& implKey, const Json& prop);
+LM_PUBLIC_API std::string asset(const std::string& name, const std::string& impl_key, const Json& prop);
 
 /*!
     \brief Get the locator of an asset.
@@ -92,7 +92,7 @@ LM_PUBLIC_API std::string asset(const std::string& name);
 
 /*!
     \brief Build acceleration structure.
-    \param accelName Type of acceleration structure.
+    \param accel_name Type of acceleration structure.
     \param prop Property for configuration.
     \see `example/raycast.cpp`
     
@@ -103,14 +103,14 @@ LM_PUBLIC_API std::string asset(const std::string& name);
     You may specify the acceleration structure type by ``accel::<type>`` format.
     \endrst
 */
-LM_PUBLIC_API void build(const std::string& accelName, const Json& prop = {});
+LM_PUBLIC_API void build(const std::string& accel_name, const Json& prop = {});
 
 /*!
     \brief Initialize renderer.
     \param renderer_name Type of renderer.
     \param prop Property for configuration.
 */
-LM_PUBLIC_API void renderer(const std::string& rendererName, const Json& prop = {});
+LM_PUBLIC_API void renderer(const std::string& renderer_name, const Json& prop = {});
 
 /*!
     \brief Render image based on current configuration.
@@ -279,7 +279,7 @@ LM_PUBLIC_API void add_child_from_model(int parent, const std::string& model_loc
     \param model_loc Locator of the model asset.
     \return Index of the created node.
 */
-LM_PUBLIC_API int create_group_from_model(const std::string& modelLoc);
+LM_PUBLIC_API int create_group_from_model(const std::string& model_loc);
 
 /*!
     \brief Create primitive(s) and add to the scene.

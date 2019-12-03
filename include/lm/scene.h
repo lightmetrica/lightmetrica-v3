@@ -199,7 +199,7 @@ public:
     virtual const SceneNode& node_at(int node_index) const = 0;
 
 	/*!
-		\brierf Get number of nodes.
+		\brief Get number of nodes.
 
 		\rst
 		Note that the scene contains at least one node (root node).
@@ -362,6 +362,7 @@ public:
     /*!
         \brief Check if given surface point is specular.
         \param sp Scene intersection.
+		\param comp Component index.
         \return True if scene interaction is specular.
 
         \rst
@@ -441,6 +442,7 @@ public:
     /*!
         \brief Evaluate pdf for direction sampling.
         \param sp Scene interaction.
+		\param comp Component index.
         \param wi Incident ray direction.
         \param wo Sampled outgoing ray direction.
         \return Evaluated pdf.
@@ -456,6 +458,7 @@ public:
     /*!
         \brief Evaluate pdf for component selection.
         \param sp Scene interaction.
+		\param comp Component index.
         \param wi Incident ray direction.
     */
     virtual Float pdf_comp(const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
@@ -464,6 +467,7 @@ public:
         \brief Evaluate pdf for light sampling given a scene interaction.
         \param sp Scene interaction.
         \param spL Sampled scene interaction of the light.
+		\param compL Component index of the light.
         \param wo Sampled outgoing ray directiom *from* the light.
 
         \rst
@@ -510,6 +514,7 @@ public:
     /*!
         \brief Evaluate contribution.
         \param sp Scene interaction.
+		\param comp Component index.
         \param wi Incident ray direction.
         \param wo Outgoing ray direction.
         \return Evaluated contribution.
@@ -540,6 +545,8 @@ public:
 
     /*!
         \brief Evaluate endpoint contribution.
+		\param sp Surface interaction.
+		\param wo Outgoing ray direction.
 
         \rst
         This function evaluates
@@ -559,6 +566,7 @@ public:
     /*!
         \brief Evaluate reflectance (if available).
         \param sp Surface interaction.
+		\param comp Component index.
 
         \rst
         This function evaluate reflectance if ``sp`` is on a surface

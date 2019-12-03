@@ -103,7 +103,7 @@ public:
     /*!
         \brief Evaluate pdf for direction sampling.
         \param wo Outgoing direction.
-        \param aspectRatio Aspect ratio of the film.
+        \param aspect_ratio Aspect ratio of the film.
 		\return Evaluated pdf.
     */
     virtual Float pdf(Vec3 wo, Float aspect_ratio) const = 0;

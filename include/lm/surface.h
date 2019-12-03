@@ -221,7 +221,6 @@ struct SceneInteraction {
     /*!
         \brief Make surface interaction.
         \param primitive Primitive index.
-        \param comp Component index.
         \param geom Point geometry.
         \return Created scene interaction.
     */
@@ -238,7 +237,6 @@ struct SceneInteraction {
     /*!
         \brief Make medium interaction.
         \param primitive Primitive index.
-        \param comp Component index.
         \param geom Point geometry.
         \return Created scene interaction.
     */
@@ -255,10 +253,9 @@ struct SceneInteraction {
     /*!
         \brief Make camera endpoint.
         \param primitive Primitive index.
-        \param comp Component index.
         \param geom Point geometry.
         \param window Window in raster coordinates.
-        \param aspectRatio Aspect ratio.
+        \param aspect_ratio Aspect ratio.
         \return Created scene interaction.
     */
     static SceneInteraction make_camera_endpoint(int primitive, const PointGeometry& geom, Vec4 window, Float aspect_ratio) {
@@ -276,7 +273,6 @@ struct SceneInteraction {
     /*!
         \brief Make light endpoint.
         \param primitive Primiive index.
-        \param comp Compnent index.
         \param geom Point geometry.
     */
     static SceneInteraction make_light_endpoint(int primitive, const PointGeometry& geom) {
@@ -292,7 +288,7 @@ struct SceneInteraction {
     /*!
         \brief Make camera terminator.
         \param window Window in raster coordinates.
-        \param aspectRatio Aspect ratio.
+        \param aspect_ratio Aspect ratio.
     */
     static SceneInteraction make_camera_terminator(Vec4 window, Float aspect_ratio) {
         SceneInteraction si;
