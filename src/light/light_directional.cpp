@@ -36,7 +36,7 @@ public:
     }
 
     virtual std::optional<LightRaySample> sample(Rng&, const PointGeometry& geom, const Transform&) const override {
-        const auto geomL = PointGeometry::makeInfinite(direction_);
+        const auto geomL = PointGeometry::make_infinite(direction_);
         const auto pL = pdf(geom, geomL, 0, {}, direction_);
         if (pL == 0_f) {
             return {};
@@ -51,14 +51,14 @@ public:
 
     virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
         const auto d = -geomL.wo;
-        return surface::convertSAToProjSA(1_f, geom, d);
+        return surface::convert_SA_to_projSA(1_f, geom, d);
     }
 
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return true;
     }
 
-    virtual bool isInfinite() const override {
+    virtual bool is_infinite() const override {
         return false;
     }
 

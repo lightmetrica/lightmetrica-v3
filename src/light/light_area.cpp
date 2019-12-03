@@ -32,7 +32,7 @@ public:
         ar(Ke_, dist_, invA_, mesh_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
         comp::visit(visit, mesh_);
     }
 
@@ -47,30 +47,30 @@ private:
 public:
     virtual void construct(const Json& prop) override {
         Ke_ = json::value<Vec3>(prop, "Ke");
-        mesh_ = json::compRef<Mesh>(prop, "mesh");
+        mesh_ = json::comp_ref<Mesh>(prop, "mesh");
         
         // Construct CDF for surface sampling
         // Note we construct the CDF before transformation
-        mesh_->foreachTriangle([&](int, const Mesh::Tri& tri) {
+        mesh_->foreach_triangle([&](int, const Mesh::Tri& tri) {
             const auto cr = cross(tri.p2.p - tri.p1.p, tri.p3.p - tri.p1.p);
-            dist_.add(math::safeSqrt(glm::dot(cr, cr)) * .5_f);
+            dist_.add(math::safe_sqrt(glm::dot(cr, cr)) * .5_f);
         });
         invA_ = 1_f / dist_.c.back();
         dist_.norm();
     }
 
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
-        const int i = dist_.samp(rng);
-        const auto s = math::safeSqrt(rng.u());
-        const auto tri = mesh_->triangleAt(i);
+        const int i = dist_.sample(rng);
+        const auto s = math::safe_sqrt(rng.u());
+        const auto tri = mesh_->triangle_at(i);
         const auto a = tri.p1.p;
         const auto b = tri.p2.p;
         const auto c = tri.p3.p;
-        const auto p = math::mixBarycentric(a, b, c, Vec2(1_f-s, rng.u()*s));
+        const auto p = math::mix_barycentric(a, b, c, Vec2(1_f-s, rng.u()*s));
         const auto n = glm::normalize(glm::cross(b - a, c - a));
-        const auto geomL = PointGeometry::makeOnSurface(
+        const auto geomL = PointGeometry::make_on_surface(
             transform.M * Vec4(p, 1_f),
-            glm::normalize(transform.normalM * n));
+            glm::normalize(transform.normal_M * n));
         const auto ppL = geomL.p - geom.p;
         const auto wo = glm::normalize(ppL);
         const auto pL = pdf(geom, geomL, 0, transform, -wo);
@@ -87,15 +87,15 @@ public:
     }
 
     virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform& transform, Vec3) const override {
-        const auto G = surface::geometryTerm(geom, geomL);
+        const auto G = surface::geometry_term(geom, geomL);
         return G == 0_f ? 0_f : tranformedInvA(transform) / G;
     }
 
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return false;
     }
 
-    virtual bool isInfinite() const override {
+    virtual bool is_infinite() const override {
         return false;
     }
 

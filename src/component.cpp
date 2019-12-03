@@ -35,7 +35,7 @@ public:
         if (!handle) {
             LM_ERROR("Failed to load library or its dependencies [path='{}']", p);
             LM_INDENT();
-            LM_ERROR(getLastErrorAsString());
+            LM_ERROR(get_last_error_as_string());
             return false;
         }
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
@@ -57,7 +57,7 @@ public:
         if (!FreeLibrary(handle)) {
             LM_ERROR("Failed to free library");
             LM_INDENT();
-            LM_ERROR(getLastErrorAsString());
+            LM_ERROR(get_last_error_as_string());
             return false;
         }
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
@@ -79,7 +79,7 @@ public:
         if (address == nullptr) {
             LM_ERROR("Failed to get address of '{}'", symbol);
             LM_INDENT();
-            LM_ERROR(getLastErrorAsString());
+            LM_ERROR(get_last_error_as_string());
             return nullptr;
         }
         #elif LM_PLATFORM_LINUX || LM_PLATFORM_APPLE
@@ -98,7 +98,7 @@ public:
 private:
 
     #if LM_PLATFORM_WINDOWS
-    auto getLastErrorAsString() const -> std::string {
+    auto get_last_error_as_string() const -> std::string {
         DWORD error = GetLastError();
         if (error == 0) {
             return std::string();
@@ -139,37 +139,37 @@ public:
     }
 
 public:
-    Component* createComp(const std::string& key) {
-        auto it = funcMap_.find(key);
-        if (it == funcMap_.end()) {
+    Component* create_comp(const std::string& key) {
+        auto it = func_map_.find(key);
+        if (it == func_map_.end()) {
             LM_ERROR("Missing component [key='{}']. Check if", key);
             LM_ERROR("- Key is wrong");
             LM_ERROR("- Component with the key is not registered");
             LM_ERROR("- Plugin containing the component is not loaded");
             return nullptr;
         }
-        auto* p = it->second.createFunc();
+        auto* p = it->second.create_func();
         Access::key(p) = key;
-        Access::createFunc(p) = it->second.createFunc;
-        Access::releaseFunc(p) = it->second.releaseFunc;
+        Access::create_func(p) = it->second.create_func;
+        Access::release_func(p) = it->second.release_func;
         return p;
     }
 
     void reg(
         const std::string& key,
-        const Component::CreateFunction& createFunc,
-        const Component::ReleaseFunction& releaseFunc) {
-        if (funcMap_.find(key) != funcMap_.end()) {
+        const Component::CreateFunction& create_func,
+        const Component::ReleaseFunction& release_func) {
+        if (func_map_.find(key) != func_map_.end()) {
             LM_WARN("Component is already registered [key='{}'], overriding", key);
         }
-        funcMap_[key] = CreateAndReleaseFunctions{ createFunc, releaseFunc };
+        func_map_[key] = CreateAndReleaseFunctions{ create_func, release_func };
     }
 
     void unreg(const std::string& key) {
-        funcMap_.erase(key);
+        func_map_.erase(key);
     }
 
-    bool loadPlugin(const std::string& p) {
+    bool load_plugin(const std::string& p) {
         #if LM_DEBUG_MODE
         fs::path path(p + "-debug");
         #else
@@ -198,7 +198,7 @@ public:
         return true;
     }
 
-    void loadPluginDirectory(const std::string& directory) {
+    void load_plugin_directory(const std::string& directory) {
         // Skip if directory does not exist
         if (!fs::is_directory(fs::path(directory))) {
             LM_WARN("Missing plugin directory [directory='{}']. Skipping.", directory);
@@ -225,24 +225,24 @@ public:
             if (!std::regex_match(filename.c_str(), match, pluginNameExp)) {
                 continue;
             }
-            if (!loadPlugin(it->path().stem().string().c_str())) {
+            if (!load_plugin(it->path().stem().string().c_str())) {
                 continue;
             }
         }
     }
 
-    void unloadPlugins() {
+    void unload_plugins() {
         for (auto& plugin : plugins_) { plugin->unload(); }
         plugins_.clear();
     }
 
-    void foreachRegistered(const std::function<void(const std::string& name)>& func) {
-        for (const auto& [k, v] : funcMap_) {
+    void foreach_registered(const std::function<void(const std::string& name)>& func) {
+        for (const auto& [k, v] : func_map_) {
             func(k);
         }
     }
 
-    void registerRootComp(Component* p) {
+    void register_root_comp(Component* p) {
         if (p->loc() != "$") {
             LM_THROW_EXCEPTION(Error::None, "Root locator must be '$'");
         }
@@ -294,10 +294,10 @@ private:
     // Registered implementations
     struct CreateAndReleaseFunctions
     {
-        Component::CreateFunction createFunc;
-        Component::ReleaseFunction releaseFunc;
+        Component::CreateFunction create_func;
+        Component::ReleaseFunction release_func;
     };
-    std::unordered_map<std::string, CreateAndReleaseFunctions> funcMap_;
+    std::unordered_map<std::string, CreateAndReleaseFunctions> func_map_;
 
     // Loaded plugins
     std::vector<std::unique_ptr<SharedLibrary>> plugins_;
@@ -308,36 +308,36 @@ private:
 
 // ------------------------------------------------------------------------------------------------
 
-LM_PUBLIC_API Component* createComp(const std::string& key) {
-    return ComponentContext::instance().createComp(key);
+LM_PUBLIC_API Component* create_comp(const std::string& key) {
+    return ComponentContext::instance().create_comp(key);
 }
 
-LM_PUBLIC_API void reg(const std::string& key, const Component::CreateFunction& createFunc, const Component::ReleaseFunction& releaseFunc) {
-    ComponentContext::instance().reg(key, createFunc, releaseFunc);
+LM_PUBLIC_API void reg(const std::string& key, const Component::CreateFunction& create_func, const Component::ReleaseFunction& release_func) {
+    ComponentContext::instance().reg(key, create_func, release_func);
 }
 
 LM_PUBLIC_API void unreg(const std::string& key) {
     ComponentContext::instance().unreg(key);
 }
 
-LM_PUBLIC_API bool loadPlugin(const std::string& path) {
-    return ComponentContext::instance().loadPlugin(path);
+LM_PUBLIC_API bool load_plugin(const std::string& path) {
+    return ComponentContext::instance().load_plugin(path);
 }
 
-LM_PUBLIC_API void loadPluginDirectory(const std::string& directory) {
-    ComponentContext::instance().loadPluginDirectory(directory);
+LM_PUBLIC_API void load_plugin_directory(const std::string& directory) {
+    ComponentContext::instance().load_plugin_directory(directory);
 }
 
-LM_PUBLIC_API void unloadPlugins() {
-    ComponentContext::instance().unloadPlugins();
+LM_PUBLIC_API void unload_plugins() {
+    ComponentContext::instance().unload_plugins();
 }
 
-LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func) {
-    ComponentContext::instance().foreachRegistered(func);
+LM_PUBLIC_API void foreach_registered(const std::function<void(const std::string& name)>& func) {
+    ComponentContext::instance().foreach_registered(func);
 }
 
-LM_PUBLIC_API void registerRootComp(Component* p) {
-    ComponentContext::instance().registerRootComp(p);
+LM_PUBLIC_API void register_root_comp(Component* p) {
+    ComponentContext::instance().register_root_comp(p);
 }
 
 LM_PUBLIC_API Component* get(const std::string& locator) {

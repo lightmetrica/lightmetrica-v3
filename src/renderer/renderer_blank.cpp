@@ -21,14 +21,14 @@ public:
         ar(color_, film_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
         comp::visit(visit, film_);
     }
 
 public:
     virtual void construct(const Json& prop) override {
         color_ = json::value<Vec3>(prop, "color");
-        film_ = json::compRef<Film>(prop, "output");
+        film_ = json::comp_ref<Film>(prop, "output");
     }
 
     virtual void render(const Scene*) const override {
@@ -36,7 +36,7 @@ public:
         const auto [w, h] = film_->size();
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                film_->setPixel(x, y, color_);
+                film_->set_pixel(x, y, color_);
             }
         }
     }

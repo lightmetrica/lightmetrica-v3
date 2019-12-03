@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
 
         // _begin_parse_command_line
         // Parse command line arguments
-        const auto opt = lm::json::parsePositionalArgs<3>(argc, argv, R"({{
+        const auto opt = lm::json::parse_positional_args<3>(argc, argv, R"({{
             "out": "{}",
             "w": {},
             "h": {}

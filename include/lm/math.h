@@ -74,13 +74,13 @@ struct Ray {
     \brief Axis-aligned bounding box
 */
 struct Bound {
-    Vec3 mi = Vec3(Inf);    //!< Minimum coordinates
-    Vec3 ma = Vec3(-Inf);   //!< Maximum coordinates
+    Vec3 min = Vec3(Inf);    //!< Minimum coordinates
+    Vec3 max = Vec3(-Inf);   //!< Maximum coordinates
     
     //! \cond
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(mi, ma);
+        ar(min, max);
     }
     //! \endcond
 
@@ -88,20 +88,20 @@ struct Bound {
         \brief Index operator.
         \return 0: minimum coordinates, 1: maximum coordinates.
     */
-    Vec3 operator[](int i) const { return (&mi)[i]; }
+    Vec3 operator[](int i) const { return (&min)[i]; }
 
     /*!
         \brief Return centroid of the bound.
         \return Centroid.
     */
-    Vec3 center() const { return (mi + ma) * .5_f; }
+    Vec3 center() const { return (min + max) * .5_f; }
 
     /*!
         \brief Surface area of the bound.
         \return Surface area.
     */
-    Float surfaceArea() const {
-        const auto d = ma - mi;
+    Float surface_area() const {
+        const auto d = max - min;
         return 2_f * (d.x * d.y + d.y * d.z + d.z * d.x);
     }
 
@@ -119,7 +119,7 @@ struct Bound {
         \endrst
     */
     bool isect(Ray r, Float tmin, Float tmax) const {
-        return isectRange(r, tmin, tmax);
+        return isect_range(r, tmin, tmax);
     }
 
     /*!
@@ -134,11 +134,11 @@ struct Bound {
         if the ray intersects the bound.
         \endrst
     */
-    bool isectRange(Ray r, Float& tmin, Float& tmax) const {
+    bool isect_range(Ray r, Float& tmin, Float& tmax) const {
         for (int i = 0; i < 3; i++) {
             const Float vd = 1_f / r.d[i];
-            auto t1 = (mi[i] - r.o[i]) * vd;
-            auto t2 = (ma[i] - r.o[i]) * vd;
+            auto t1 = (min[i] - r.o[i]) * vd;
+            auto t2 = (max[i] - r.o[i]) * vd;
             if (vd < 0) {
                 std::swap(t1, t2);
             }
@@ -158,7 +158,7 @@ struct Bound {
         \return Merged bound.
     */
     friend Bound merge(Bound b, Vec3 p) {
-        return { glm::min(b.mi, p), glm::max(b.ma, p) };
+        return { glm::min(b.min, p), glm::max(b.max, p) };
     }
 
     /*!
@@ -168,7 +168,7 @@ struct Bound {
         \return Merged bound.
     */
     friend Bound merge(Bound a, Bound b) {
-        return { glm::min(a.mi, b.mi), glm::max(a.ma, b.ma) };
+        return { glm::min(a.min, b.min), glm::max(a.max, b.max) };
     }
 };
 
@@ -182,18 +182,18 @@ LM_NAMESPACE_BEGIN(detail)
 
 class RngImplBase {
 private:
-    std::mt19937 eng;
-    std::uniform_real_distribution<double> dist;  // Always use double
+    std::mt19937 eng_;
+    std::uniform_real_distribution<double> dist_;  // Always use double
 
 protected:
     RngImplBase() {
-        // Initialize eng with random_device
-        eng.seed(std::random_device{}());
+        // Initialize eng_ with random_device
+        eng_.seed(std::random_device{}());
     }
     RngImplBase(int seed) {
-        eng.seed(seed);
+        eng_.seed(seed);
     }
-    double u() { return dist(eng); }
+    double u() { return dist_(eng_); }
 };
 
 template <typename F>
@@ -312,7 +312,7 @@ struct Dist {
         \param i Index.
         \return Evaluated pmf.
     */
-    Float p(int i) const {
+    Float pmf(int i) const {
         return (i < 0 || i + 1 >= int(c.size())) ? 0 : c[i + 1] - c[i];
     }
 
@@ -321,7 +321,7 @@ struct Dist {
         \param rn Random number generator.
         \return Sampled index.
     */
-    int samp(Rng& rn) const {
+    int sample(Rng& rn) const {
         const auto it = std::upper_bound(c.begin(), c.end(), rn.u());
         return std::clamp(int(std::distance(c.begin(), it)) - 1, 0, int(c.size()) - 2);
     }
@@ -371,9 +371,9 @@ struct Dist2 {
         \param v Index in row.
         \return Evaluated pmf.
     */
-    Float p(Float u, Float v) const {
+    Float pdf(Float u, Float v) const {
         const int y = std::min(int(v * h), h - 1);
-        return m.p(y) * ds[y].p(int(u * w)) * w * h;
+        return m.pmf(y) * ds[y].pmf(int(u * w)) * w * h;
     }
 
     /*!
@@ -381,9 +381,9 @@ struct Dist2 {
         \param rn Random number generator.
         \return Sampled position.
     */
-    Vec2 samp(Rng& rn) const {
-        const int y = m.samp(rn);
-        const int x = ds[y].samp(rn);
+    Vec2 sample(Rng& rn) const {
+        const int y = m.sample(rn);
+        const int x = ds[y].sample(rn);
         return Vec2((x + rn.u()) / w, (y + rn.u()) / h);
     }
 };
@@ -405,7 +405,7 @@ LM_NAMESPACE_BEGIN(math)
     \brief Generate random number for seed.
     \return Random seed.
 */
-static unsigned int rngSeed() {
+static unsigned int rng_seed() {
     return std::random_device{}();
 }
 
@@ -419,7 +419,7 @@ static unsigned int rngSeed() {
     .. [Duff2017] Duff et al., Building an Orthonormal Basis, Revisited., JCGT, 2017.
     \endrst
 */
-static std::tuple<Vec3, Vec3> orthonormalBasis(Vec3 n) {
+static std::tuple<Vec3, Vec3> orthonormal_basis(Vec3 n) {
     const auto s = copysign(1_f, n.z);
     const auto a = -1_f / (s + n.z);
     const auto b = n.x * n.y * a;
@@ -437,7 +437,7 @@ static std::tuple<Vec3, Vec3> orthonormalBasis(Vec3 n) {
     \return Interpolated value.
 */
 template <typename VecT>
-static VecT mixBarycentric(VecT a, VecT b, VecT c, Vec2 uv) {
+static VecT mix_barycentric(VecT a, VecT b, VecT c, Vec2 uv) {
     return a * (1_f - uv.x - uv.y) + b * uv.x + c * uv.y;
 }
 
@@ -447,7 +447,7 @@ static VecT mixBarycentric(VecT a, VecT b, VecT c, Vec2 uv) {
     \return ``true`` if components are all zeros, ``false`` otherwise.
 */
 template <typename VecT>
-static bool isZero(VecT v) {
+static bool is_zero(VecT v) {
     return glm::all(glm::equal(v, VecT(0_f)));
 }
 
@@ -456,7 +456,7 @@ static bool isZero(VecT v) {
     \param v Value.
     \return Square root of the input value.
 */
-static Float safeSqrt(Float v) {
+static Float safe_sqrt(Float v) {
     return std::sqrt(std::max(0_f, v));
 }
 
@@ -501,7 +501,7 @@ static RefractionResult refraction(Vec3 wi, Vec3 n, Float eta) {
     if (t2 <= 0_f) {
         return {{}, true};
     }
-    return {eta*(n*t-wi)-n*safeSqrt(t2), false};
+    return {eta*(n*t-wi)-n*safe_sqrt(t2), false};
 }
 
 /*!
@@ -509,12 +509,12 @@ static RefractionResult refraction(Vec3 wi, Vec3 n, Float eta) {
     \param rng Random number generator.
     \return Sampled value.
 */
-static Vec3 sampleCosineWeighted(Rng& rng) {
-    const auto r = safeSqrt(rng.u());
+static Vec3 sample_cosine_weighted(Rng& rng) {
+    const auto r = safe_sqrt(rng.u());
     const auto t = 2_f * Pi * rng.u();
     const auto x = r * std::cos(t);
     const auto y = r * std::sin(t);
-    return { x, y, safeSqrt(1_f - x*x - y*y) };
+    return { x, y, safe_sqrt(1_f - x*x - y*y) };
 }
 
 /*!
@@ -522,9 +522,9 @@ static Vec3 sampleCosineWeighted(Rng& rng) {
     \param rng Random number generator.
     \return Sampled value.
 */
-static Vec3 sampleUniformSphere(Rng& rng) {
+static Vec3 sample_uniform_sphere(Rng& rng) {
     const auto z = 1_f - 2_f*rng.u();
-    const auto r = safeSqrt(1_f - z*z);
+    const auto r = safe_sqrt(1_f - z*z);
     const auto t = 2_f * Pi * rng.u();
     const auto x = r * std::cos(t);
     const auto y = r * std::sin(t);
@@ -535,14 +535,14 @@ static Vec3 sampleUniformSphere(Rng& rng) {
     \brief Pdf of uniformly sampled directions from an sphere in solid angle measure.
     \return Evaluated density.
 */
-static constexpr Float pdfUniformSphere() {
+static constexpr Float pdf_uniform_sphere() {
     return 1_f / (4_f * Pi);
 }
 
 /*!
     \brief Balance heuristics.
 */
-static Float balanceHeuristic(Float p1, Float p2) {
+static Float balance_heuristic(Float p1, Float p2) {
     if (p1 == 0_f && p2 == 0_f) {
         return 0_f;
     }
@@ -552,7 +552,7 @@ static Float balanceHeuristic(Float p1, Float p2) {
 /*!
     \brief Convert spherical to cartesian coordinates.
 */
-static auto sphericalToCartesian(Float theta, Float phi) -> Vec3 {
+static Vec3 spherical_to_cartesian(Float theta, Float phi) {
     const auto sinTheta = glm::sin(theta);
     return Vec3(
         sinTheta * glm::cos(phi),
@@ -579,13 +579,13 @@ LM_NAMESPACE_END(math)
 */
 struct Transform {
     Mat4 M;             //!< Transform associated to the primitive
-    Mat3 normalM;       //!< Transform for normals
+    Mat3 normal_M;      //!< Transform for normals
     Float J;            //!< J := |det(M_lin)| where M_lin is linear component of M
 
     //! \cond
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(M, normalM, J);
+        ar(M, normal_M, J);
     }
     //! \endcond
 
@@ -596,7 +596,7 @@ struct Transform {
         \param M Transformation matrix.
     */
     Transform(const Mat4& M) : M(M) {
-        normalM = Mat3(glm::transpose(glm::inverse(M)));
+        normal_M = Mat3(glm::transpose(glm::inverse(M)));
         J = std::abs(glm::determinant(Mat3(M)));
     }
 };

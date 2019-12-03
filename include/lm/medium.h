@@ -43,7 +43,7 @@ public:
         If it does not sample a scattering event, this function returns ``nullopt``.
         \endrst
     */
-    virtual std::optional<MediumDistanceSample> sampleDistance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
+    virtual std::optional<MediumDistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
 
     /*!
         \brief Evaluate transmittance.
@@ -56,13 +56,13 @@ public:
         because heterogeneous media needs stochastic estimation.
         \endrst
     */
-    virtual Vec3 evalTransmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
+    virtual Vec3 eval_transmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
 
     /*!
         \brief Check if the medium has emissive component.
         \return True if the participating media contains emitter.
     */
-    virtual bool isEmitter() const = 0;
+    virtual bool is_emitter() const = 0;
 
     /*!
         \brief Get underlying phase function.

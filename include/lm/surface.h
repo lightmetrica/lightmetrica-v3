@@ -66,7 +66,7 @@ struct PointGeometry {
         from the specified position ``p``.
         \endrst
     */
-    static PointGeometry makeDegenerated(Vec3 p) {
+    static PointGeometry make_degenerated(Vec3 p) {
         PointGeometry geom;
         geom.degenerated = true;
         geom.infinite = false;
@@ -83,7 +83,7 @@ struct PointGeometry {
         from the specified direction from the point.
         \endrst
     */
-    static PointGeometry makeInfinite(Vec3 wo) {
+    static PointGeometry make_infinite(Vec3 wo) {
         PointGeometry geom;
         geom.degenerated = false;
         geom.infinite = true;
@@ -102,14 +102,14 @@ struct PointGeometry {
         from the specified surface geometry information.
         \endrst
     */
-    static PointGeometry makeOnSurface(Vec3 p, Vec3 n, Vec2 t) {
+    static PointGeometry make_on_surface(Vec3 p, Vec3 n, Vec2 t) {
         PointGeometry geom;
         geom.degenerated = false;
         geom.infinite = false;
         geom.p = p;
         geom.n = n;
         geom.t = t;
-        std::tie(geom.u, geom.v) = math::orthonormalBasis(n);
+        std::tie(geom.u, geom.v) = math::orthonormal_basis(n);
         return geom;
     }
 
@@ -123,8 +123,8 @@ struct PointGeometry {
         from the specified surface geometry information.
         \endrst
     */
-    static PointGeometry makeOnSurface(Vec3 p, Vec3 n) {
-        return makeOnSurface(p, n, {});
+    static PointGeometry make_on_surface(Vec3 p, Vec3 n) {
+        return make_on_surface(p, n, {});
     }
 
     /*!
@@ -152,7 +152,7 @@ struct PointGeometry {
         based on the negated normal vector. This function is useful to support two-sided materials.
         \endrst
     */
-    std::tuple<Vec3, Vec3, Vec3> orthonormalBasis(Vec3 wi) const {
+    std::tuple<Vec3, Vec3, Vec3> orthonormal_basis(Vec3 wi) const {
         const int i = glm::dot(wi, n) > 0;
         return { i ? n : -n, u, i ? v : -v };
     }
@@ -161,8 +161,8 @@ struct PointGeometry {
         \brief Compute a transformation matrix to change local shading coordinates to world coordinates.
         \return Transformation matrix.
     */
-    Mat3 getShadingLocalToWorld(Vec3 wi) const {
-        const auto [n_, u_, v_] = orthonormalBasis(wi);
+    Mat3 get_shading_local_to_world(Vec3 wi) const {
+        const auto [n_, u_, v_] = orthonormal_basis(wi);
         return Mat3(u_, v_, n_);
     }
 
@@ -170,8 +170,8 @@ struct PointGeometry {
         \brief Compute a transformation matrix to change world coordinates to local shading coordinates.
         \return Transformation matrix.
     */
-    Mat3 getWorldToShadingLocal(Vec3 wi) const {
-        return glm::transpose(getShadingLocalToWorld(wi));
+    Mat3 get_world_to_shading_local(Vec3 wi) const {
+        return glm::transpose(get_shading_local_to_world(wi));
     }
 };
 
@@ -215,17 +215,16 @@ struct SceneInteraction {
     // Information associated to terminator on camera
     struct {
         Vec4 window;
-        Float aspectRatio;
+        Float aspect_ratio;
     } cameraCond;
 
     /*!
         \brief Make surface interaction.
         \param primitive Primitive index.
-        \param comp Component index.
         \param geom Point geometry.
         \return Created scene interaction.
     */
-    static SceneInteraction makeSurfaceInteraction(int primitive, const PointGeometry& geom) {
+    static SceneInteraction make_surface_interaction(int primitive, const PointGeometry& geom) {
         SceneInteraction si;
         si.primitive = primitive;
         si.geom = geom;
@@ -238,11 +237,10 @@ struct SceneInteraction {
     /*!
         \brief Make medium interaction.
         \param primitive Primitive index.
-        \param comp Component index.
         \param geom Point geometry.
         \return Created scene interaction.
     */
-    static SceneInteraction makeMediumInteraction(int primitive, const PointGeometry& geom) {
+    static SceneInteraction make_medium_interaction(int primitive, const PointGeometry& geom) {
         SceneInteraction si;
         si.primitive = primitive;
         si.geom = geom;
@@ -255,13 +253,12 @@ struct SceneInteraction {
     /*!
         \brief Make camera endpoint.
         \param primitive Primitive index.
-        \param comp Component index.
         \param geom Point geometry.
         \param window Window in raster coordinates.
-        \param aspectRatio Aspect ratio.
+        \param aspect_ratio Aspect ratio.
         \return Created scene interaction.
     */
-    static SceneInteraction makeCameraEndpoint(int primitive, const PointGeometry& geom, Vec4 window, Float aspectRatio) {
+    static SceneInteraction make_camera_endpoint(int primitive, const PointGeometry& geom, Vec4 window, Float aspect_ratio) {
         SceneInteraction si;
         si.primitive = primitive;
         si.geom = geom;
@@ -269,17 +266,16 @@ struct SceneInteraction {
         si.medium = false;
         si.terminator = {};
         si.cameraCond.window = window;
-        si.cameraCond.aspectRatio = aspectRatio;
+        si.cameraCond.aspect_ratio = aspect_ratio;
         return si;
     }
 
     /*!
         \brief Make light endpoint.
         \param primitive Primiive index.
-        \param comp Compnent index.
         \param geom Point geometry.
     */
-    static SceneInteraction makeLightEndpoint(int primitive, const PointGeometry& geom) {
+    static SceneInteraction make_light_endpoint(int primitive, const PointGeometry& geom) {
         SceneInteraction si;
         si.primitive = primitive;
         si.geom = geom;
@@ -292,15 +288,15 @@ struct SceneInteraction {
     /*!
         \brief Make camera terminator.
         \param window Window in raster coordinates.
-        \param aspectRatio Aspect ratio.
+        \param aspect_ratio Aspect ratio.
     */
-    static SceneInteraction makeCameraTerminator(Vec4 window, Float aspectRatio) {
+    static SceneInteraction make_camera_terminator(Vec4 window, Float aspect_ratio) {
         SceneInteraction si;
         si.endpoint = false;
         si.medium = false;
         si.terminator = TerminatorType::Camera;
         si.cameraCond.window = window;
-        si.cameraCond.aspectRatio = aspectRatio;
+        si.cameraCond.aspect_ratio = aspect_ratio;
         return si;
     }
 };
@@ -327,7 +323,7 @@ LM_NAMESPACE_BEGIN(surface)
     This function can accepts extended points represented by :cpp:class:`lm::PointGeometry`.
     \endrst
 */
-static Float geometryTerm(const PointGeometry& s1, const PointGeometry& s2) {
+static Float geometry_term(const PointGeometry& s1, const PointGeometry& s2) {
     Vec3 d = s2.p - s1.p;
     const Float L2 = glm::dot(d, d);
     d = d / std::sqrt(L2);
@@ -359,10 +355,10 @@ static Float distance(const PointGeometry& s1, const PointGeometry& s2) {
     this function keeps the solid angle measure.
     \endrst
 */
-static Float convertSAToProjSA(Float pdfSA, const PointGeometry& geom, Vec3 d) {
+static Float convert_SA_to_projSA(Float pdf_SA, const PointGeometry& geom, Vec3 d) {
     if (geom.degenerated) {
         // When geom is degenerated, use pdf with solid angle measure.
-        return pdfSA;
+        return pdf_SA;
     }
     const auto J = glm::abs(glm::dot(geom.n, d));
     if (J == 0_f) {
@@ -371,7 +367,7 @@ static Float convertSAToProjSA(Float pdfSA, const PointGeometry& geom, Vec3 d) {
         // in this case the contriubtion function becomes always zero.
         return 0_f;
     }
-    return pdfSA / J;
+    return pdf_SA / J;
 }
 
 /*!

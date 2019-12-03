@@ -18,17 +18,17 @@ LM_NAMESPACE_BEGIN(version)
 /*!
     \brief Major version.
 */
-LM_PUBLIC_API int majorVersion();
+LM_PUBLIC_API int major_version();
 
 /*!
     \brief Minor version.
 */
-LM_PUBLIC_API int minorVersion();
+LM_PUBLIC_API int minor_version();
 
 /*!
     \brief Patch version.
 */
-LM_PUBLIC_API int patchVersion();
+LM_PUBLIC_API int patch_version();
 
 /*!
     \brief Revision string.
@@ -38,7 +38,7 @@ LM_PUBLIC_API std::string revision();
 /*!
     \brief Build timestamp.
 */
-LM_PUBLIC_API std::string buildTimestamp();
+LM_PUBLIC_API std::string build_timestamp();
 
 /*!
     \brief Platform.

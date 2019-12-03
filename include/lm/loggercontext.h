@@ -27,8 +27,8 @@ LM_NAMESPACE_BEGIN(log)
 class LoggerContext : public Component {
 public:
     virtual void log(LogLevel level, int severity, const char* filename, int line, const char* message) = 0;
-    virtual void updateIndentation(int n) = 0;
-    virtual void setSeverity(int severity) = 0;
+    virtual void update_indentation(int n) = 0;
+    virtual void set_severity(int severity) = 0;
 };
 
 /*!

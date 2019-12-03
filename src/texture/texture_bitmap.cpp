@@ -14,7 +14,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-std::string sanitizeDirectorySeparator(std::string p) {
+std::string sanitize_directory_separator(std::string p) {
     std::replace(p.begin(), p.end(), '\\', '/');
     return p;
 }
@@ -38,7 +38,7 @@ public:
 
     virtual void construct(const Json& prop) override {
         // Image path
-        const std::string path = sanitizeDirectorySeparator(json::value<std::string>(prop, "path"));
+        const std::string path = sanitize_directory_separator(json::value<std::string>(prop, "path"));
         LM_INFO("Loading texture [path='{}']", fs::path(path).filename().string());
 
         // Load as HDR image
@@ -64,12 +64,12 @@ public:
         return Vec3(data_[c_*i], data_[c_*i+1], data_[c_*i+2]);
     }
 
-    virtual Vec3 evalByPixelCoords(int x, int y) const override {
+    virtual Vec3 eval_by_pixel_coords(int x, int y) const override {
         const int i = w_*y + x;
         return Vec3(data_[c_*i], data_[c_*i+1], data_[c_*i+2]);
     }
 
-    virtual Float evalAlpha(Vec2 t) const override {
+    virtual Float eval_alpha(Vec2 t) const override {
         const auto u = t.x - floor(t.x);
         const auto v = t.y - floor(t.y);
         const int x = std::clamp(int(u * w_), 0, w_ - 1);
@@ -78,7 +78,7 @@ public:
         return data_[c_*i+3];
     }
 
-    virtual bool hasAlpha() const override {
+    virtual bool has_alpha() const override {
         return c_ == 4;
     }
 

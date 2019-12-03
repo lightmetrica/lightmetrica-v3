@@ -13,7 +13,7 @@ PYBIND11_MODULE(pylm_test, m) {
 
     // Initialize submodules
     std::regex reg(R"(pytestbinder::(\w+))");
-    lm::comp::detail::foreachRegistered([&](const std::string& name) {
+    lm::comp::detail::foreach_registered([&](const std::string& name) {
         // Find the name matched with 'pytestbinder::*'
         std::smatch match;
         if (std::regex_match(name, match, reg)) {

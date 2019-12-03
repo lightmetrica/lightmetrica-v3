@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
         lm::ScopedInit init;
 
         // Parse command line arguments
-        const auto opt = lm::json::parsePositionalArgs<11>(argc, argv, R"({{
+        const auto opt = lm::json::parse_positional_args<11>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
             "w": {},
@@ -66,14 +66,14 @@ int main(int argc, char** argv) {
 
         // Create OpenGL-ready assets and register primitives
         const auto* scene = lm::comp::get<lm::Scene>("$.scene");
-        scene->traversePrimitiveNodes([&](const lm::SceneNode& node, lm::Mat4 globalTransform) {
+        scene->traverse_primitive_nodes([&](const lm::SceneNode& node, lm::Mat4 global_transform) {
             if (node.type != lm::SceneNodeType::Primitive) {
                 return;
             }
             if (!node.primitive.mesh || !node.primitive.material) {
                 return;
             }
-            app.glscene.add(globalTransform, node.primitive.mesh, node.primitive.material);
+            app.glscene.add(global_transform, node.primitive.mesh, node.primitive.material);
         });
 
         // ----------------------------------------------------------------------------------------

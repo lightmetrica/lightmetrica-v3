@@ -21,7 +21,7 @@ LM_NAMESPACE_BEGIN(debug)
     \param name Query name.
     \param val Value.
 */
-LM_PUBLIC_API void pollFloat(const std::string& name, Float val);
+LM_PUBLIC_API void poll_float(const std::string& name, Float val);
 
 /*!
     \brief Function being called on polling floating-point values.
@@ -32,9 +32,9 @@ using OnPollFloatFunc = std::function<void(const std::string& name, Float val)>;
 
 /*!
     \brief Register polling function for floating-point values.
-    \param onPollFloat Callback function.
+    \param on_poll_float Callback function.
 */
-LM_PUBLIC_API void regOnPollFloat(const OnPollFloatFunc& onPollFloat);
+LM_PUBLIC_API void reg_on_poll_float(const OnPollFloatFunc& on_poll_float);
 
 /*!
     \brief Attach to debugger.
@@ -44,7 +44,7 @@ LM_PUBLIC_API void regOnPollFloat(const OnPollFloatFunc& onPollFloat);
     This function is only available in Windows environment.
     \endrst
 */
-LM_PUBLIC_API void attachToDebugger();
+LM_PUBLIC_API void attach_to_debugger();
 
 /*!
     @}

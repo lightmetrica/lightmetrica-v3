@@ -33,19 +33,19 @@ public:
         \brief Check if the volume has scalar component.
         \return True if the volume has scalar component.
     */
-    virtual bool hasScalar() const = 0;
+    virtual bool has_scalar() const = 0;
 
     /*!
         \brief Evaluate maximum scalar value.
     */
-    virtual Float maxScalar() const = 0;
+    virtual Float max_scalar() const = 0;
 
     /*!
         \brief Evaluate scalar value.
         \param p Position in volume coordinates.
         \return Evaluated scalar value.
     */
-    virtual Float evalScalar(Vec3 p) const {
+    virtual Float eval_scalar(Vec3 p) const {
         LM_UNUSED(p);
         LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
     }
@@ -56,14 +56,14 @@ public:
         \brief Check if the volume has color component.
         \return True if the volume has color component.
     */
-    virtual bool hasColor() const = 0;
+    virtual bool has_color() const = 0;
 
     /*!
         \brief Evaluate color.
         \param p Position in volume coordinates.
         \return Evaluated color value.
     */
-    virtual Vec3 evalColor(Vec3 p) const {
+    virtual Vec3 eval_color(Vec3 p) const {
         LM_UNUSED(p);
         LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
     }
@@ -83,15 +83,15 @@ public:
         \param ray Ray.
         \param tmin Lower bound of the valid range of the ray.
         \param tmax Upper bound of the valid range of the ray.
-        \param marchStep Ray marching step in world space.
-        \param raymarchFunc Raymarching function.
+        \param march_step Ray marching step in world space.
+        \param raymarch_func Raymarching function.
 
         \rst
         This function performs volume-specific raymarching operations.
         \endrst
     */
-    virtual void march(Ray ray, Float tmin, Float tmax, Float marchStep, const RaymarchFunc& raymarchFunc) const {
-        LM_UNUSED(ray, tmin, tmax, marchStep, raymarchFunc);
+    virtual void march(Ray ray, Float tmin, Float tmax, Float march_step, const RaymarchFunc& raymarch_func) const {
+        LM_UNUSED(ray, tmin, tmax, march_step, raymarch_func);
         LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
     }
 };

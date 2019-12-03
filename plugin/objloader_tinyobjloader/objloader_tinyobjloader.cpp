@@ -22,8 +22,8 @@ public:
     virtual bool load(
         const std::string& path,
         OBJSurfaceGeometry& geo,
-        const ProcessMeshFunc& processMesh,
-        const ProcessMaterialFunc& processMaterial) override
+        const ProcessMeshFunc& process_mesh,
+        const ProcessMaterialFunc& process_material) override
     {
         exception::ScopedDisableFPEx guard_;
 
@@ -66,7 +66,7 @@ public:
         }
 
         // Process materials
-        std::vector<MTLMatParams> ourMatParams;
+        std::vector<MTLMatParams> our_mat_params;
         for (const auto& mat : materials) {
             // Convert to our type
             MTLMatParams p;
@@ -81,12 +81,12 @@ public:
             p.an = mat.anisotropy;
 
             // Process material
-            if (!processMaterial(p)) {
+            if (!process_material(p)) {
                 return false;
             }
 
             // We need the converted parameters later
-            ourMatParams.push_back(std::move(p));
+            our_mat_params.push_back(std::move(p));
         }
 
         // Default material if OBJ has no corresponding MTL file
@@ -95,10 +95,10 @@ public:
             p.name = "default";
             p.illum = -1;
             p.Kd = Vec3(1);
-            if (!processMaterial(p)) {
+            if (!process_material(p)) {
                 return false;
             }
-            ourMatParams.push_back(std::move(p));
+            our_mat_params.push_back(std::move(p));
         }
 
         // Process shapes
@@ -107,9 +107,9 @@ public:
             // Separate the shape according to the materials,
             // because our framework doesn't support per-face material.
             fs.clear();
-            const int numFaces = int(shape.mesh.num_face_vertices.size());
-            int prevMaterialId = shape.mesh.material_ids[0];
-            for (int fi = 0; fi < numFaces; fi++) {
+            const int num_faces = int(shape.mesh.num_face_vertices.size());
+            int prev_material_id = shape.mesh.material_ids[0];
+            for (int fi = 0; fi < num_faces; fi++) {
                 // Assume the mesh is triangulated
                 if (shape.mesh.num_face_vertices[fi] != 3) {
                     LM_ERROR("A mesh must be triangulated");
@@ -118,13 +118,13 @@ public:
                 
                 // If the material changes, create a mesh
                 // with current indices and previous material
-                const int currMaterialId = shape.mesh.material_ids[fi];
-                if (currMaterialId != prevMaterialId) {
-                    if (!processMesh(fs, ourMatParams[prevMaterialId < 0 ? 0 : prevMaterialId])) {
+                const int curr_material_id = shape.mesh.material_ids[fi];
+                if (curr_material_id != prev_material_id) {
+                    if (!process_mesh(fs, our_mat_params[prev_material_id < 0 ? 0 : prev_material_id])) {
                         return false;
                     }
                     fs.clear();
-                    prevMaterialId = currMaterialId;
+                    prev_material_id = curr_material_id;
                 }
                 else {
                     const auto& i1 = shape.mesh.indices[fi*3];
@@ -136,7 +136,7 @@ public:
                 }
             }
             if (!fs.empty()) {
-                if (!processMesh(fs, ourMatParams[prevMaterialId < 0 ? 0 : prevMaterialId])) {
+                if (!process_mesh(fs, our_mat_params[prev_material_id < 0 ? 0 : prev_material_id])) {
                     return false;
                 }
             }

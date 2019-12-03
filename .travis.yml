@@ -44,7 +44,7 @@ jobs:
       - source activate lm3_dev
       script:
       - cd ${TRAVIS_BUILD_DIR}
-      - cmake -G "Visual Studio 15 2017 Win64" -H. -B_build -DCMAKE_BUILD_TYPE=Release
+      - cmake -G "Visual Studio 15 2017 Win64" -H. -B_build
       - cmake --build _build --config Release
       - |
         cat > .lmenv << EOF

@@ -25,7 +25,7 @@ private:
 
 public:
     void pollFloat(const std::string& name, Float val) {
-        if (!parallel::mainThread()) {
+        if (!parallel::main_thread()) {
             return;
         }
         if (!onPollFloat_) {
@@ -41,15 +41,15 @@ public:
 
 // ------------------------------------------------------------------------------------------------
 
-LM_PUBLIC_API void pollFloat(const std::string& name, Float val) {
+LM_PUBLIC_API void poll_float(const std::string& name, Float val) {
     Context::instance().pollFloat(name, val);
 }
 
-LM_PUBLIC_API void regOnPollFloat(const OnPollFloatFunc& onPollFloat) {
+LM_PUBLIC_API void reg_on_poll_float(const OnPollFloatFunc& onPollFloat) {
     Context::instance().regOnPollFloat(onPollFloat);
 }
 
-LM_PUBLIC_API void attachToDebugger() {
+LM_PUBLIC_API void attach_to_debugger() {
     #if LM_PLATFORM_WINDOWS
     // cf. https://stackoverflow.com/questions/20337870/what-is-the-equivalent-of-system-diagnostics-debugger-launch-in-unmanaged-code
 

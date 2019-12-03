@@ -43,7 +43,7 @@ class Renderer_AO(lm.Renderer):
     """Simple ambient occlusion renderer"""
     
     def construct(self, prop):
-        self.film = lm.Film.castFrom(lm.comp.get(prop['output']))
+        self.film = lm.Film.cast_from(lm.comp.get(prop['output']))
         if self.film is None:
             return False
         self.spp = prop['spp']
@@ -58,19 +58,19 @@ class Renderer_AO(lm.Renderer):
             x = index % w
             y = int(index / w)
             rp = np.array([(x+.5)/w, (y+.5)/h])
-            ray = scene.primaryRay(rp, self.film.aspectRatio())
+            ray = scene.primary_ray(rp, self.film.aspect_ratio())
             hit = scene.intersect(ray)
             if hit is None:
                 return
             V = 0
             for i in range(self.spp):
-                n, u, v = hit.geom.orthonormalBasis(-ray.d)
-                d = lm.math.sampleCosineWeighted(rng)
+                n, u, v = hit.geom.orthonormal_basis(-ray.d)
+                d = lm.math.sample_cosine_weighted(rng)
                 r = lm.Ray(hit.geom.p, np.dot(d, [u,v,n]))
                 if scene.intersect(r, lm.Eps, .2) is None:
                     V += 1
             V /= self.spp
-            self.film.setPixel(x, y, np.full(3, V))
+            self.film.set_pixel(x, y, np.full(3, V))
             lm.progress.update(y*w+x)
         for i in range(w*h):
             process(i)

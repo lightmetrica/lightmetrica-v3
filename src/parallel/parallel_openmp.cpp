@@ -16,24 +16,24 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::parallel)
 
 class ParallelContext_OpenMP final : public ParallelContext {
 private:
-    long long progressUpdateInterval_;	// Number of samples per progress update
-    int numThreads_;					// Number of threads
+    long long progress_update_interval_;	// Number of samples per progress update
+    int num_threads_;					// Number of threads
 
 public:
     virtual void construct(const Json& prop) override {
-        progressUpdateInterval_ = json::value<long long>(prop, "progress_update_interval", 100);
-        numThreads_ = json::value(prop, "numThreads", std::thread::hardware_concurrency());
-        if (numThreads_ <= 0) {
-            numThreads_ = std::thread::hardware_concurrency() + numThreads_;
+        progress_update_interval_ = json::value<long long>(prop, "progress_update_interval", 100);
+        num_threads_ = json::value(prop, "num_threads", std::thread::hardware_concurrency());
+        if (num_threads_ <= 0) {
+            num_threads_ = std::thread::hardware_concurrency() + num_threads_;
         }
-        omp_set_num_threads(numThreads_);
+        omp_set_num_threads(num_threads_);
     }
 
-    virtual int numThreads() const override {
-        return numThreads_;
+    virtual int num_threads() const override {
+        return num_threads_;
     }
 
-    virtual bool mainThread() const override {
+    virtual bool main_thread() const override {
         return omp_get_thread_num() == 0;
     }
 
@@ -60,27 +60,27 @@ public:
             // the dynamic extent of the same structured block, and it must be caught by the
             // same thread that threw the exception.
             try {
-                const int threadId = omp_get_thread_num();
+                const int thread_id = omp_get_thread_num();
 
                 #if LM_PLATFORM_WINDOWS
                 // Set process group
                 GROUP_AFFINITY mask;
-                if (GetNumaNodeProcessorMaskEx(threadId % 2, &mask)) {
+                if (GetNumaNodeProcessorMaskEx(thread_id % 2, &mask)) {
                     SetThreadGroupAffinity(GetCurrentThread(), &mask, nullptr);
                 }
                 #endif
 
                 // Dispatch user-defined process
-                processFunc(i, threadId);
+                processFunc(i, thread_id);
 
                 // Update processed number of samples
-                if (thread_local long long count = 0; ++count >= progressUpdateInterval_) {
+                if (thread_local long long count = 0; ++count >= progress_update_interval_) {
                     processed += count;
                     count = 0;
                 }
 
                 // Update progress
-                if (threadId == 0) {
+                if (thread_id == 0) {
                     progressUpdateFunc(processed);
                 }
             }

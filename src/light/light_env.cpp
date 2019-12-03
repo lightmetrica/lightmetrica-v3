@@ -32,7 +32,7 @@ public:
         ar(envmap_, rot_, dist_);
     }
 
-    virtual void foreachUnderlying(const ComponentVisitor& visitor) override {
+    virtual void foreach_underlying(const ComponentVisitor& visitor) override {
         comp::visit(visitor, envmap_);
     }
 
@@ -55,19 +55,19 @@ public:
         for (int i = 0; i < w*h; i++) {
             const int x = i % w;
             const int y = i / w;
-            const auto v = envmap_->evalByPixelCoords(x, y);
+            const auto v = envmap_->eval_by_pixel_coords(x, y);
             ls[i] = glm::compMax(v) * std::sin(Pi * (Float(i) / w + .5_f) / h);
         }
         dist_.init(ls, w, h);
     }
 
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {
-        const auto u = dist_.samp(rng);
+        const auto u = dist_.sample(rng);
         const auto t  = Pi * u[1];
         const auto st = sin(t);
         const auto p  = 2 * Pi * u[0] + rot_;
         const auto wo = -Vec3(st * sin(p), cos(t), st * cos(p));
-        const auto geomL = PointGeometry::makeInfinite(wo);
+        const auto geomL = PointGeometry::make_infinite(wo);
         const auto pL = pdf(geom, geomL, 0, {}, wo);
         if (pL == 0_f) {
             return {};
@@ -90,19 +90,19 @@ public:
         const auto t = (at - rot_) * .5_f / Pi;
         const auto u = t - std::floor(t);
         const auto v = std::acos(d.y) / Pi;
-        const auto st = math::safeSqrt(1 - d.y * d.y);
+        const auto st = math::safe_sqrt(1 - d.y * d.y);
         if (st == 0_f) {
             return 0_f;
         }
-        const auto pdfSA = dist_.p(u, v) / (2_f*Pi*Pi*st);
-        return surface::convertSAToProjSA(pdfSA, geom, d);
+        const auto pdfSA = dist_.pdf(u, v) / (2_f*Pi*Pi*st);
+        return surface::convert_SA_to_projSA(pdfSA, geom, d);
     }
 
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return false;
     }
 
-    virtual bool isInfinite() const override {
+    virtual bool is_infinite() const override {
         return true;
     }
 

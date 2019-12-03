@@ -14,23 +14,23 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // 2D bound
 struct Bound2 {
-    Vec2 mi = Vec2(Inf);
-    Vec2 ma = Vec2(-Inf);
+    Vec2 min = Vec2(Inf);
+    Vec2 max = Vec2(-Inf);
 
     Float area() const {
-        return (ma.x-mi.x)*(ma.y-mi.y);
+        return (max.x-min.x)*(max.y-min.y);
     }
 
     bool contains(Vec2 p) const {
-        return mi.x <= p.x && p.x <= ma.x && mi.y <= p.y && p.y <= ma.y;
+        return min.x <= p.x && p.x <= max.x && min.y <= p.y && p.y <= max.y;
     }
 
     friend Bound2 merge(Bound2 b, Vec2 p) {
-        return { glm::min(b.mi, p), glm::max(b.ma, p) };
+        return { glm::min(b.min, p), glm::max(b.max, p) };
     }
 
     friend Bound2 merge(Bound2 a, Bound2 b) {
-        return { glm::min(a.mi, b.mi), glm::max(a.ma, b.ma) };
+        return { glm::min(a.min, b.min), glm::max(a.max, b.max) };
     }
 };
 
@@ -48,8 +48,8 @@ namespace FaceIndex {
 struct Portal {
     std::vector<Vec3> ps;
     Vec3 ex, ey, ez;
-    Mat3 toWorld;
-    Mat3 toLocal;
+    Mat3 to_world;
+    Mat3 to_local;
 
     Portal() = default;
     Portal(const std::vector<Vec3>& ps) : ps(ps) {
@@ -57,36 +57,36 @@ struct Portal {
         ex = glm::normalize(ps[1] - ps[0]);
         ey = glm::normalize(ps[3] - ps[0]);
         ez = glm::normalize(glm::cross(ex, ey));
-        toWorld = Mat3(ex, ey, ez);
-        toLocal = glm::transpose(toWorld);
+        to_world = Mat3(ex, ey, ez);
+        to_local = glm::transpose(to_world);
     }
 
     // Check how the portal is seen from the shading point
     // Front: Portal is facing toward the shading point
     // Back : Portal is facing opposite to the shading point
-    int checkFrontOrBackFace(Vec3 shadingPoint) const {
+    int check_front_or_back_face(Vec3 shadingPoint) const {
         return glm::dot(ez, shadingPoint - ps[0]) > 0 ? FaceIndex::Front : FaceIndex::Back;
     }
 
     // Convert a direction in world coordinates to canonical coordinates
-    Vec3 rectifiedToCanonical(Vec2 p_rect, int face) const {
+    Vec3 rectified_to_canonical(Vec2 p_rect, int face) const {
         const lm::Vec2 p_cano(std::tan(p_rect.x), std::tan(p_rect.y));
         const auto d_cano = glm::normalize(lm::Vec3(p_cano, face == FaceIndex::Front ? -1_f : 1_f));
         return d_cano;
     }
 
     // Convert rectified coordinates to the direction in world coordinates
-    Vec3 rectifiedtoWorldDir(Vec2 p_rect, int face) const {
-        const auto d_cano = rectifiedToCanonical(p_rect, face);
-        const auto d_world = toWorld * d_cano;
+    Vec3 rectified_to_world_dir(Vec2 p_rect, int face) const {
+        const auto d_cano = rectified_to_canonical(p_rect, face);
+        const auto d_world = to_world * d_cano;
         return d_world;
     }
 
     // Convert a direction in world coordinates to rectified coordinates 
     // d_world doesn't need to be normalized
-    Vec2 worldDirToRectified(Vec3 d_world, int face) const {
+    Vec2 world_dir_to_rectified(Vec3 d_world, int face) const {
         // To local
-        const auto p_local = toLocal * d_world;
+        const auto p_local = to_local * d_world;
 
         // To canonical coordinates
         Vec3 p_cano = face == FaceIndex::Front
@@ -98,10 +98,10 @@ struct Portal {
     }
 
     // Compute the extent of the portal in rectified coordinates
-    Bound2 rectifiedPortalBound(Vec3 shadingPoint, int face) const {
+    Bound2 rectified_portal_bound(Vec3 shadingPoint, int face) const {
         Bound2 b_rect;
         for (int i = 0; i < 4; i++) {
-            const auto p = worldDirToRectified(ps[i] - shadingPoint, face);
+            const auto p = world_dir_to_rectified(ps[i] - shadingPoint, face);
             b_rect = merge(b_rect, p);
         }
         return b_rect;
@@ -127,45 +127,45 @@ struct Dist2Sub {
         }
     }
 
-    Float R(Vec2 mi, Vec2 ma) const {
-        return S(ma.x, ma.y) - S(mi.x, ma.y) - S(ma.x, mi.y) + S(mi.x, mi.y);
+    Float R(Vec2 min, Vec2 max) const {
+        return S(max.x, max.y) - S(min.x, max.y) - S(max.x, min.y) + S(min.x, min.y);
     }
 
     // x \in [0,w], y \in [0,h]
-    Float cdfX(Float x, const Bound2& b) const {
-        const auto R1 = R(b.mi, Vec2(x, b.ma.y));
-        const auto R2 = R(b.mi, b.ma);
+    Float cdf_X(Float x, const Bound2& b) const {
+        const auto R1 = R(b.min, Vec2(x, b.max.y));
+        const auto R2 = R(b.min, b.max);
         return R1 / R2;
     }
 
-    Float cdfYGivenX(Float y, Float x, const Bound2& b) const {
+    Float cdf_Y_given_X(Float y, Float x, const Bound2& b) const {
         const int xl = glm::clamp(int(x), 0, w-1);
         const int xu = xl+1;
-        const auto R1 = R(Vec2(xl, b.mi.y), Vec2(xu, y));
-        const auto R2 = R(Vec2(xl, b.mi.y), Vec2(xu, b.ma.y));
+        const auto R1 = R(Vec2(xl, b.min.y), Vec2(xu, y));
+        const auto R2 = R(Vec2(xl, b.min.y), Vec2(xu, b.max.y));
         return R1 / R2;
     }
 
     Float pdf(Float u1, Float u2, const Bound2& b) const {
-        const auto x = b.mi.x+(b.ma.x-b.mi.x)*u1;
-        const auto y = b.mi.y+(b.ma.y-b.mi.y)*u2;
+        const auto x = b.min.x+(b.max.x-b.min.x)*u1;
+        const auto y = b.min.y+(b.max.y-b.min.y)*u2;
         const int xl = glm::clamp(int(x), 0, w-1);
         const int yl = glm::clamp(int(y), 0, h-1);
         const int xu = xl+1;
         const int yu = yl+1;
-        const auto pX = cdfX(xu,b)-cdfX(xl,b);
-        const auto pYGivenX = cdfYGivenX(yu,x,b)-cdfYGivenX(yl,x,b);
+        const auto pX = cdf_X(xu,b)-cdf_X(xl,b);
+        const auto pYGivenX = cdf_Y_given_X(yu,x,b)-cdf_Y_given_X(yl,x,b);
         return pX * pYGivenX * b.area();
     }
 
     Vec2 sample(Rng& rng, const Bound2& b) const {
-        const auto x = sample1D(rng, b, b.mi.x, b.ma.x, [&](Float v, const Bound2& b) {
-            return cdfX(v, b);
+        const auto x = sample_1D(rng, b, b.min.x, b.max.x, [&](Float v, const Bound2& b) {
+            return cdf_X(v, b);
         });
-        const auto y = sample1D(rng, b, b.mi.y, b.ma.y, [&](Float v, const Bound2& b) {
-            return cdfYGivenX(v, x, b);
+        const auto y = sample_1D(rng, b, b.min.y, b.max.y, [&](Float v, const Bound2& b) {
+            return cdf_Y_given_X(v, x, b);
         });
-        return Vec2((x - b.mi.x) / (b.ma.x-b.mi.x), (y - b.mi.y) / (b.ma.y-b.mi.y));
+        return Vec2((x - b.min.x) / (b.max.x-b.min.x), (y - b.min.y) / (b.max.y-b.min.y));
     }
 
 public:
@@ -191,7 +191,7 @@ public:
     }
 
     using CDFFunc = std::function<Float(Float v, const Bound2&)>;
-    Float sample1D(Rng& rng, const Bound2& b, Float lb_, Float ub_, const CDFFunc& cdf) const {
+    Float sample_1D(Rng& rng, const Bound2& b, Float lb_, Float ub_, const CDFFunc& cdf) const {
         int lb = int(lb_);
         int ub = int(ub_)+1;
         const auto u = rng.u();
@@ -221,7 +221,7 @@ constexpr int DistSize = 4096;
 struct PortalContext {
     Portal portal;                      // Portal
     Dist2Sub dist[2];                   // SATs for front and back faces
-    std::vector<Vec3> rectEnvmap[2];    // Rectified envmap for front and back faces
+    std::vector<Vec3> rect_envmap[2];   // Rectified envmap for front and back faces
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -233,39 +233,39 @@ private:
     std::vector<PortalContext> portals_;
 
 public:
-    virtual void foreachUnderlying(const ComponentVisitor& visitor) override {
+    virtual void foreach_underlying(const ComponentVisitor& visitor) override {
         comp::visit(visitor, envmap_);
     }
 
 private:
     // Convert rectified coodinates to the coodinates used in precomputed distribution
-    Bound2 rectifiedToDist(Bound2 p_rect) const {
+    Bound2 rectified_to_dist(Bound2 p_rect) const {
         const auto piover2 = Pi * .5_f;
         return {
-            (p_rect.mi/piover2+1_f)*.5_f*Float(DistSize),
-            (p_rect.ma/piover2+1_f)*.5_f*Float(DistSize)
+            (p_rect.min/piover2+1_f)*.5_f*Float(DistSize),
+            (p_rect.max/piover2+1_f)*.5_f*Float(DistSize)
         };
     }
 
     // Create a distribution to select a portal
-    Dist selectionDist(const PointGeometry& geom) const {
-        Dist selectionDist;
+    Dist selection_dist(const PointGeometry& geom) const {
+        Dist selection_dist;
         for (int i = 0; i < (int)(portals_.size()); i++) {
             const auto& portal = portals_[i];
-            const int face = portal.portal.checkFrontOrBackFace(geom.p);
+            const int face = portal.portal.check_front_or_back_face(geom.p);
             const auto& dist = portal.dist[face];
-            const auto b_rect = portal.portal.rectifiedPortalBound(geom.p, face);
-            const auto I = dist.R(b_rect.mi, b_rect.ma);
-            selectionDist.add(I);
+            const auto b_rect = portal.portal.rectified_portal_bound(geom.p, face);
+            const auto I = dist.R(b_rect.min, b_rect.max);
+            selection_dist.add(I);
         }
-        selectionDist.norm();
-        return selectionDist;
+        selection_dist.norm();
+        return selection_dist;
     }
 
 public:
     virtual void construct(const Json& prop) override {
         // Load environment map
-        envmap_ = comp::create<Texture>("texture::bitmap", makeLoc("envmap"), prop);
+        envmap_ = comp::create<Texture>("texture::bitmap", make_loc("envmap"), prop);
         if (!envmap_) {
             LM_THROW_EXCEPTION_DEFAULT(Error::InvalidArgument);
         }
@@ -282,8 +282,8 @@ public:
         // in rectified coordinates seen from the front and the back respectively.
         for (auto& portal : portals_) {
             for (int face = 0; face <= 1; face++) {
-                auto& rectEnvmap = portal.rectEnvmap[face];
-                rectEnvmap.assign(DistSize*DistSize, Vec3());
+                auto& rect_envmap = portal.rect_envmap[face];
+                rect_envmap.assign(DistSize*DistSize, Vec3());
 
                 // Compute environment map in rectified coordinates
                 std::vector<Float> ls(DistSize*DistSize);
@@ -295,13 +295,13 @@ public:
                             (2_f*(y + .5_f) / DistSize - 1_f)*Pi*.5_f);
 
                         // To world
-                        const auto d_world = portal.portal.rectifiedtoWorldDir(p_rect, face);
+                        const auto d_world = portal.portal.rectified_to_world_dir(p_rect, face);
 
                         // Query environment map
-                        const auto C = eval(PointGeometry::makeInfinite(-d_world), 0, -d_world);
+                        const auto C = eval(PointGeometry::make_infinite(-d_world), 0, -d_world);
 
                         // Record contribution
-                        rectEnvmap[y*DistSize + x] = C;
+                        rect_envmap[y*DistSize + x] = C;
                         ls[y*DistSize + x] = glm::compMax(C);
                     }
                 }
@@ -314,32 +314,32 @@ public:
 
     virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {
         // Create a distribution to select a portal
-        const auto sdist = selectionDist(geom);
+        const auto sdist = selection_dist(geom);
         
         // Randomly select a portal
-        const int portalIndex = sdist.samp(rng);
-        const auto& portal = portals_[portalIndex];
+        const int portal_index = sdist.sample(rng);
+        const auto& portal = portals_[portal_index];
 
         // Check how the portal is seen from the shading point
-        const int face = portal.portal.checkFrontOrBackFace(geom.p);
+        const int face = portal.portal.check_front_or_back_face(geom.p);
         const auto& dist = portal.dist[face];
 
         // Compute the extent of the portal in rectified coordinates
-        const auto b_rect = portal.portal.rectifiedPortalBound(geom.p, face);
+        const auto b_rect = portal.portal.rectified_portal_bound(geom.p, face);
 
         // Sample a position on the portal in rectified coordinates
-        const auto b_dist = rectifiedToDist(b_rect);
-        const auto p_rect = b_rect.mi + dist.sample(rng, b_dist) * (b_rect.ma - b_rect.mi);
+        const auto b_dist = rectified_to_dist(b_rect);
+        const auto p_rect = b_rect.min + dist.sample(rng, b_dist) * (b_rect.max - b_rect.min);
 
         // Convert the point back to the world coordinates
-        const auto d_world = portal.portal.rectifiedtoWorldDir(p_rect, face);
+        const auto d_world = portal.portal.rectified_to_world_dir(p_rect, face);
 
         // Direction from the environment light and point geometry
         const auto wo = -d_world;
-        const auto geomL = PointGeometry::makeInfinite(wo);
+        const auto geomL = PointGeometry::make_infinite(wo);
 
         // Evaluate pdf
-        const auto pL = pdf(geom, geomL, portalIndex, {}, wo);
+        const auto pL = pdf(geom, geomL, portal_index, {}, wo);
         if (pL == 0_f) {
             return {};
         }
@@ -360,34 +360,34 @@ public:
             const auto t = (p_rect/piover2+1_f)*.5_f*Float(DistSize);
             const int x = glm::clamp(int(t.x), 0, dist.w-1);
             const int y = glm::clamp(int(t.y), 0, dist.h-1);
-            return portal.rectEnvmap[face][y*DistSize+x];
+            return portal.rect_envmap[face][y*DistSize+x];
         }();
         #endif
         return LightRaySample{
             geomL,
             wo,
-            portalIndex,
+            portal_index,
             Le / pL
         };
     }
 
     virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int comp, const Transform&, Vec3) const override {
         // Component index represents portal index
-        const int portalIndex = comp;
+        const int portal_index = comp;
 
         // PDF of sampling the direction with the selected portal
         const auto p_portal = [&]() -> Float {
-            const auto& portal = portals_[portalIndex];
+            const auto& portal = portals_[portal_index];
 
             // Portal face orientation
-            const int face = portal.portal.checkFrontOrBackFace(geom.p);
+            const int face = portal.portal.check_front_or_back_face(geom.p);
 
             // Direction in world coordinates to rectified coordinates
             const auto d_world = -geomL.wo;
-            const auto p_rect = portal.portal.worldDirToRectified(d_world, face);
+            const auto p_rect = portal.portal.world_dir_to_rectified(d_world, face);
         
             // Compute the extent of the portal in rectified coordinates
-            const auto b_rect = portal.portal.rectifiedPortalBound(geom.p, face);
+            const auto b_rect = portal.portal.rectified_portal_bound(geom.p, face);
 
             // Check if p_rect is inside the portal
             if (!b_rect.contains(p_rect)) {
@@ -396,49 +396,49 @@ public:
 
             // Compute pdf
             const auto piover2 = Pi * .5_f;
-            const auto p_dist = (p_rect-b_rect.mi)/(b_rect.ma-b_rect.mi);  // Be careful of the range
-            const auto b_dist = rectifiedToDist(b_rect);
+            const auto p_dist = (p_rect-b_rect.min)/(b_rect.max-b_rect.min);  // Be careful of the range
+            const auto b_dist = rectified_to_dist(b_rect);
             const auto p = portal.dist[face].pdf(p_dist.x, p_dist.y, b_dist) / b_rect.area();
         
             // Jacobian
-            const auto d_cano = portal.portal.rectifiedToCanonical(p_rect, face);
+            const auto d_cano = portal.portal.rectified_to_canonical(p_rect, face);
             const auto J = std::abs(d_cano.z) / ((1_f - d_cano.x*d_cano.x) * (1_f - d_cano.y*d_cano.y));
 
             return p * J / glm::abs(glm::dot(d_world, geom.n));
         }();
         
         // Selection probability of the portal
-        const auto sdist = selectionDist(geom);
-        const auto p_sel = sdist.p(portalIndex);
+        const auto sdist = selection_dist(geom);
+        const auto p_sel = sdist.pmf(portal_index);
 
         // Count the number of overlapping portals
-        int overlappingPortals = 1;
+        int overlapping_portals = 1;
         for (int i = 0; i < (int)(portals_.size()); i++) {
-            if (i == portalIndex) {
+            if (i == portal_index) {
                 continue;
             }
             const auto& portal = portals_[i];
-            const int face = portal.portal.checkFrontOrBackFace(geom.p);
+            const int face = portal.portal.check_front_or_back_face(geom.p);
             const auto d_world = -geomL.wo;
-            const auto p_rect = portal.portal.worldDirToRectified(d_world, face);
-            const auto b_rect = portal.portal.rectifiedPortalBound(geom.p, face);
+            const auto p_rect = portal.portal.world_dir_to_rectified(d_world, face);
+            const auto b_rect = portal.portal.rectified_portal_bound(geom.p, face);
             if (b_rect.contains(p_rect)) {
-                overlappingPortals++;
+                overlapping_portals++;
             }
         }
 
         // MIS weight
-        const auto inv_misw = (Float)(overlappingPortals);
+        const auto inv_misw = (Float)(overlapping_portals);
 
         // Solid angle measure to projected solid anglme measure
         return p_portal * p_sel * inv_misw;
     }
 
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return false;
     }
 
-    virtual bool isInfinite() const override {
+    virtual bool is_infinite() const override {
         return true;
     }
 

@@ -37,7 +37,7 @@ public:
 
         \rst
         The function of this type is used as an argument of
-        :cpp:func:`lm::Model::createPrimitives` function.
+        :cpp:func:`lm::Model::create_primitives` function.
         \endrst
     */
     using CreatePrimitiveFunc = std::function<void(Component* mesh, Component* material, Component* light)>;
@@ -53,12 +53,31 @@ public:
         so the users do not want to used it directly.
         \endrst
     */
-    virtual void createPrimitives(const CreatePrimitiveFunc& createPrimitive) const = 0;
+    virtual void create_primitives(const CreatePrimitiveFunc& createPrimitive) const = 0;
+
+	/*!
+		\brief Callback function to process a scene node in the model.
+		\param node Scene node.
+
+		\rst
+		This function is called for each visit of the scene node in the model,
+		used as a callback function for :cpp:func:`lm::Model::foreach_node`.
+		\endrst
+	*/
+	using VisitNodeFuncType = std::function<void(const SceneNode& node)>;
 
     /*!
+		\brief Traverses scene nodes in the model.
+		\param visit Callback function to be called for each visit of the scene node.
+
+		\rst
+		A model can have its own scene graph to represent a scene.
+		This function can be used to traverse scene nodes in that scene graph.
+		For instance, this function is used by :cpp:class:`lm::Scene` to copy
+		the underlying scene graph to the main scene graph.
+		\endrst
     */
-    using VisitNodeFuncType = std::function<void(const SceneNode&)>;
-    virtual void foreachNode(const VisitNodeFuncType& visit) const = 0;
+    virtual void foreach_node(const VisitNodeFuncType& visit) const = 0;
 };
 
 /*!

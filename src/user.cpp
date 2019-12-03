@@ -25,6 +25,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class UserContext : public Component {
 private:
+	bool initialized_ = false;
     Component::Ptr<Scene> scene_;
     Component::Ptr<Renderer> renderer_;
 
@@ -33,7 +34,7 @@ public:
         // User context is the root of the object tree.
         // Root locator is '$'.
         comp::detail::Access::loc(this) = "$";
-        comp::detail::registerRootComp(this);
+        comp::detail::register_root_comp(this);
     }
 
 public:
@@ -41,6 +42,18 @@ public:
         static UserContext instance;
         return instance;
     }
+
+
+private:
+	// Check if the user context is initialized.
+	// If not initialize, this function throws an exception.
+	void check_initialized() const {
+		if (initialized_) {
+			return;
+		}
+		LM_THROW_EXCEPTION(Error::Uninitialized,
+			"Lightmetrica is not initialize. Call lm::init() function.");
+	}
 
 public:
     void init(const Json& prop) {
@@ -76,9 +89,13 @@ public:
 
         // Create assets and scene
         reset();
+
+		// Initialized
+		initialized_ = true;
     }
 
     void shutdown() {
+		check_initialized();
         objloader::shutdown();
         debugio::shutdown();
         debugio::server::shutdown();
@@ -86,10 +103,11 @@ public:
         parallel::shutdown();
         log::shutdown();
         exception::shutdown();
+		initialized_ = false;
     }
 
 public:
-    Component* underlying(const std::string& name) const {
+    Component* underlying(const std::string& name) const override {
         if (name == "scene") {
             return scene_.get();
         }
@@ -99,13 +117,14 @@ public:
         return nullptr;
     }
 
-    void foreachUnderlying(const ComponentVisitor& visit) {
+    void foreach_underlying(const ComponentVisitor& visit) override {
         lm::comp::visit(visit, scene_);
         lm::comp::visit(visit, renderer_);
     }
 
 public:
     void info() {
+		check_initialized();
         // Print information of Lightmetrica
         LM_INFO("Lightmetrica -- Version {} {} {}",
             version::formatted(),
@@ -114,13 +133,14 @@ public:
     }
 
     void reset() {
-        scene_ = comp::create<Scene>("scene::default", makeLoc("scene"));
+        scene_ = comp::create<Scene>("scene::default", make_loc("scene"));
         assert(scene_);
         renderer_.reset();
     }
 
-    std::string asset(const std::string& name, const std::string& implKey, const Json& prop) {
-        const auto loc = scene_->loadAsset(name, implKey, prop);
+    std::string asset(const std::string& name, const std::string& impl_key, const Json& prop) {
+		check_initialized();
+        const auto loc = scene_->load_asset(name, impl_key, prop);
         if (!loc) {
             LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
@@ -128,22 +148,26 @@ public:
     }
 
     std::string asset(const std::string& name) {
+		check_initialized();
         return "$.scene.assets." + name;
     }
 
-    void build(const std::string& accelName, const Json& prop) {
-        scene_->build(accelName, prop);
+    void build(const std::string& accel_name, const Json& prop) {
+		check_initialized();
+        scene_->build(accel_name, prop);
     }
 
-    void renderer(const std::string& rendererName, const Json& prop) {
-        LM_INFO("Creating renderer [renderer='{}']", rendererName);
-        renderer_ = lm::comp::create<Renderer>(rendererName, makeLoc("renderer"), prop);
+    void renderer(const std::string& renderer_name, const Json& prop) {
+		check_initialized();
+        LM_INFO("Creating renderer [renderer='{}']", renderer_name);
+        renderer_ = lm::comp::create<Renderer>(renderer_name, make_loc("renderer"), prop);
         if (!renderer_) {
             LM_THROW_EXCEPTION_DEFAULT(Error::FailedToRender);
         }
     }
 
     void render(bool verbose) {
+		check_initialized();
         if (verbose) {
             LM_INFO("Starting render [name='{}']", renderer_->key());
             LM_INDENT();
@@ -151,8 +175,9 @@ public:
         renderer_->render(scene_.get());
     }
 
-    void save(const std::string& filmName, const std::string& outpath) {
-        const auto* film = comp::get<Film>(filmName);
+    void save(const std::string& film_name, const std::string& outpath) {
+		check_initialized();
+        const auto* film = comp::get<Film>(film_name);
         if (!film) {
             LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
@@ -161,8 +186,9 @@ public:
         }
     }
 
-    FilmBuffer buffer(const std::string& filmName) {
-        auto* film = comp::get<Film>(filmName);
+    FilmBuffer buffer(const std::string& film_name) {
+		check_initialized();
+        auto* film = comp::get<Film>(film_name);
         if (!film) {
             LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
@@ -170,56 +196,65 @@ public:
     }
 
     void serialize(std::ostream& os) {
+		check_initialized();
         LM_INFO("Saving state to stream");
         serial::save(os, scene_);
         serial::save(os, renderer_);
     }
 
     void deserialize(std::istream& is) {
+		check_initialized();
         LM_INFO("Loading state from stream");
         serial::load(is, scene_);
         serial::load(is, renderer_);
     }
 
-    int rootNode() {
-        return scene_->rootNode();
+    int root_node() {
+		check_initialized();
+        return scene_->root_node();
     }
 
-    int primitiveNode(const Json& prop) {
-        return scene_->createNode(SceneNodeType::Primitive, prop);
+    int primitive_node(const Json& prop) {
+		check_initialized();
+        return scene_->create_node(SceneNodeType::Primitive, prop);
     }
 
-    int groupNode() {
-        return scene_->createNode(SceneNodeType::Group, {});
+    int group_node() {
+		check_initialized();
+        return scene_->create_node(SceneNodeType::Group, {});
     }
 
-    int instanceGroupNode() {
-        return scene_->createNode(SceneNodeType::Group, {
+    int instance_group_node() {
+		check_initialized();
+        return scene_->create_node(SceneNodeType::Group, {
             {"instanced", true}
         });
     }
 
-    int transformNode(Mat4 transform) {
-        return scene_->createNode(SceneNodeType::Group, {
+    int transform_node(Mat4 transform) {
+		check_initialized();
+        return scene_->create_node(SceneNodeType::Group, {
             {"transform", transform}
         });
     }
 
-    void addChild(int parent, int child) {
-        scene_->addChild(parent, child);
+    void add_child(int parent, int child) {
+		check_initialized();
+        scene_->add_child(parent, child);
     }
 
-    void addChildFromModel(int parent, const std::string& modelLoc) {
-        scene_->addChildFromModel(parent, modelLoc);
+    void add_child_from_model(int parent, const std::string& model_loc) {
+		check_initialized();
+        scene_->add_child_from_model(parent, model_loc);
     }
 
-    int createGroupFromModel(const std::string& modelLoc) {
-        return scene_->createGroupFromModel(modelLoc);
+    int create_group_from_model(const std::string& model_loc) {
+		check_initialized();
+        return scene_->create_group_from_model(model_loc);
     }
 };
 
 // ------------------------------------------------------------------------------------------------
-
 
 LM_PUBLIC_API void init(const Json& prop) {
     UserContext::instance().init(prop);
@@ -237,20 +272,20 @@ LM_PUBLIC_API void info() {
     UserContext::instance().info();
 }
 
-LM_PUBLIC_API std::string asset(const std::string& name, const std::string& implKey, const Json& prop) {
-    return UserContext::instance().asset(name, implKey, prop);
+LM_PUBLIC_API std::string asset(const std::string& name, const std::string& impl_key, const Json& prop) {
+    return UserContext::instance().asset(name, impl_key, prop);
 }
 
 LM_PUBLIC_API std::string asset(const std::string& name) {
     return UserContext::instance().asset(name);
 }
 
-LM_PUBLIC_API void build(const std::string& accelName, const Json& prop) {
-    UserContext::instance().build(accelName, prop);
+LM_PUBLIC_API void build(const std::string& accel_name, const Json& prop) {
+    UserContext::instance().build(accel_name, prop);
 }
 
-LM_PUBLIC_API void renderer(const std::string& rendererName, const Json& prop) {
-    UserContext::instance().renderer(rendererName, prop);
+LM_PUBLIC_API void renderer(const std::string& renderer_name, const Json& prop) {
+    UserContext::instance().renderer(renderer_name, prop);
 }
 
 LM_PUBLIC_API void render(bool verbose) {
@@ -273,47 +308,47 @@ LM_PUBLIC_API void deserialize(std::istream& is) {
     UserContext::instance().deserialize(is);
 }
 
-LM_PUBLIC_API int rootNode() {
-    return UserContext::instance().rootNode();
+LM_PUBLIC_API int root_node() {
+    return UserContext::instance().root_node();
 }
 
-LM_PUBLIC_API int primitiveNode(const Json& prop) {
-    return UserContext::instance().primitiveNode(prop);
+LM_PUBLIC_API int primitive_node(const Json& prop) {
+    return UserContext::instance().primitive_node(prop);
 }
 
-LM_PUBLIC_API int groupNode() {
-    return UserContext::instance().groupNode();
+LM_PUBLIC_API int group_node() {
+    return UserContext::instance().group_node();
 }
 
-LM_PUBLIC_API int instanceGroupNode() {
-    return UserContext::instance().instanceGroupNode();
+LM_PUBLIC_API int instance_group_node() {
+    return UserContext::instance().instance_group_node();
 }
 
-LM_PUBLIC_API int transformNode(Mat4 transform) {
-    return UserContext::instance().transformNode(transform);
+LM_PUBLIC_API int transform_node(Mat4 transform) {
+    return UserContext::instance().transform_node(transform);
 }
 
-LM_PUBLIC_API void addChild(int parent, int child) {
-    UserContext::instance().addChild(parent, child);
+LM_PUBLIC_API void add_child(int parent, int child) {
+    UserContext::instance().add_child(parent, child);
 }
 
-LM_PUBLIC_API void addChildFromModel(int parent, const std::string& modelLoc) {
-    UserContext::instance().addChildFromModel(parent, modelLoc);
+LM_PUBLIC_API void add_child_from_model(int parent, const std::string& model_loc) {
+    UserContext::instance().add_child_from_model(parent, model_loc);
 }
 
-LM_PUBLIC_API int createGroupFromModel(const std::string& modelLoc) {
-    return UserContext::instance().createGroupFromModel(modelLoc);
+LM_PUBLIC_API int create_group_from_model(const std::string& model_loc) {
+    return UserContext::instance().create_group_from_model(model_loc);
 }
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
-    auto t = transformNode(transform);
+    auto t = transform_node(transform);
     if (prop.find("model") != prop.end()) {
-        addChildFromModel(t, prop["model"]);
+        add_child_from_model(t, prop["model"]);
     }
     else {
-        addChild(t, primitiveNode(prop));
+        add_child(t, primitive_node(prop));
     }
-    addChild(rootNode(), t);
+    add_child(root_node(), t);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

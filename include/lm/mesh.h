@@ -59,35 +59,35 @@ public:
 
         \rst
         The function of this type is used as a callback function to process a single triangle,
-        used as an argument of :cpp:func:`lm::Mesh::foreachTriangle` function.
+        used as an argument of :cpp:func:`lm::Mesh::foreach_triangle` function.
         \endrst
     */
     using ProcessTriangleFunc = std::function<void(int face, const Tri& tri)>;
 
     /*!
         \brief Iterate triangles in the mesh.
-        \param processTriangle Callback function to process a triangle.
+        \param process_triangle Callback function to process a triangle.
 
         \rst
         This function enumerates all triangles inside the mesh.
         A specified callback function is called for each triangle.
         \endrst
     */
-    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const = 0;
+    virtual void foreach_triangle(const ProcessTriangleFunc& process_triangle) const = 0;
 
     /*!
         \brief Get triangle by face index.
     */
-    virtual Tri triangleAt(int face) const = 0;
+    virtual Tri triangle_at(int face) const = 0;
 
     /*!
         \brief Compute surface geometry information at a point.
     */
-    virtual Point surfacePoint(int face, Vec2 uv) const = 0;
+    virtual Point surface_point(int face, Vec2 uv) const = 0;
 
     /*!
     */
-    virtual int numTriangles() const = 0;
+    virtual int num_triangles() const = 0;
 };
 
 /*!

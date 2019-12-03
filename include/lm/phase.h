@@ -36,7 +36,7 @@ public:
         This function checks if the phase function contains delta component.
         \endrst
     */
-    virtual bool isSpecular(const PointGeometry& geom) const = 0;
+    virtual bool is_specular(const PointGeometry& geom) const = 0;
 
     /*!
         \brief Sample a direction.

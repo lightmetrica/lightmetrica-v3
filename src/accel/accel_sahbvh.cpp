@@ -14,12 +14,12 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 namespace {
 
 struct FlattenedPrimitiveNode {
-    Transform globalTransform;  // Global transform of the primitive
+    Transform global_transform;	// Global transform of the primitive
     int primitive;              // Primitive node index
 
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(globalTransform, primitive);
+        ar(global_transform, primitive);
     }
 };
 
@@ -28,18 +28,18 @@ struct Tri {
     Vec3 e1, e2;        // Two edges incident to p1
     Bound b;            // Bound of the triangle
     Vec3 c;             // Center of the bound
-    int flattenedNode;  // Index of flattened primitive associated to the triangle
+    int flattened_node; // Index of flattened primitive associated to the triangle
     int face;           // Face index of the mesh associated to the triangle
 
     template <typename Archive>
     void serialize(Archive& ar) {
-        ar(p1, e1, e2, b, c, flattenedNode, face);
+        ar(p1, e1, e2, b, c, flattened_node, face);
     }
 
     Tri() {}
 
-    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int flattenedNode, int face)
-        : p1(p1), flattenedNode(flattenedNode), face(face) {
+    Tri(Vec3 p1, Vec3 p2, Vec3 p3, int flattened_node, int face)
+        : p1(p1), flattened_node(flattened_node), face(face) {
         e1 = p2 - p1;
         e2 = p3 - p1;
         b = merge(b, p1);
@@ -55,7 +55,7 @@ struct Tri {
     };
 
     // Checks intersection with a ray [Möller & Trumbore 1997]
-    std::optional<Hit> isect(Ray r, Float tl, Float th) const {
+    std::optional<Hit> intersect(Ray r, Float tl, Float th) const {
         auto p = glm::cross(r.d, e2);
         auto tv = r.o - p1;
         auto q = glm::cross(tv, e1);
@@ -116,11 +116,11 @@ private:
     std::vector<Node> nodes_;                             // Nodes
     std::vector<Tri> trs_;                                // Triangles
     std::vector<int> indices_;                            // Triangle indices
-    std::vector<FlattenedPrimitiveNode> flattenedNodes_;  // Flattened scene graph
+    std::vector<FlattenedPrimitiveNode> flattened_nodes_; // Flattened scene graph
     
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(nodes_, trs_, indices_, flattenedNodes_);
+        ar(nodes_, trs_, indices_, flattened_nodes_);
     }
 
 public:
@@ -128,8 +128,8 @@ public:
         // Flatten the scene graph and setup triangle list
         LM_INFO("Flattening scene");
         trs_.clear();
-        flattenedNodes_.clear();
-        scene.traversePrimitiveNodes([&](const SceneNode& node, Mat4 globalTransform) {
+        flattened_nodes_.clear();
+        scene.traverse_primitive_nodes([&](const SceneNode& node, Mat4 global_transform) {
             if (node.type != SceneNodeType::Primitive) {
                 return;
             }
@@ -138,15 +138,15 @@ public:
             }
 
             // Record flattened primitive
-            const int flattenNodeIndex = int(flattenedNodes_.size());
-            flattenedNodes_.push_back({ Transform(globalTransform), node.index });
+            const int flattened_node_index = int(flattened_nodes_.size());
+            flattened_nodes_.push_back({ Transform(global_transform), node.index });
 
             // Record triangles
-            node.primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
-                const auto p1 = globalTransform * Vec4(tri.p1.p, 1_f);
-                const auto p2 = globalTransform * Vec4(tri.p2.p, 1_f);
-                const auto p3 = globalTransform * Vec4(tri.p3.p, 1_f);
-                trs_.emplace_back(p1, p2, p3, flattenNodeIndex, face);
+            node.primitive.mesh->foreach_triangle([&](int face, const Mesh::Tri& tri) {
+                const auto p1 = global_transform * Vec4(tri.p1.p, 1_f);
+                const auto p2 = global_transform * Vec4(tri.p2.p, 1_f);
+                const auto p3 = global_transform * Vec4(tri.p3.p, 1_f);
+                trs_.emplace_back(p1, p2, p3, flattened_node_index, face);
             });
         });
 
@@ -203,7 +203,7 @@ public:
                 };
 
                 // Function to create a leaf node
-                auto makeLeaf = [&, s = s, e = e]() {
+                auto make_leaf = [&, s = s, e = e]() {
                     n.leaf = 1;
                     n.s = s;
                     n.e = e;
@@ -217,7 +217,7 @@ public:
 
                 // Create a leaf node if the number of triangle is 1
                 if (e - s < 2) {
-                    makeLeaf();
+                    make_leaf();
                     continue;
                 }
 
@@ -230,13 +230,13 @@ public:
                     Bound bl, br;
                     for (int i = 0; i <= e - s; i++) {
                         int j = e - s - i;
-                        l[i] = bl.surfaceArea() * i;
-                        r[j] = br.surfaceArea() * i;
+                        l[i] = bl.surface_area() * i;
+                        r[j] = br.surface_area() * i;
                         bl = i < e - s ? merge(bl, trs_[indices_[s+i]].b) : bl;
                         br = j > 0 ? merge(br, trs_[indices_[s+j-1]].b) : br;
                     }
                     for (int i = 1; i < e - s; i++) {
-                        const auto c = 1_f + (l[i]+r[i])/n.b.surfaceArea();
+                        const auto c = 1_f + (l[i]+r[i])/n.b.surface_area();
                         if (c < b) {
                             b = c;
                             bi = i;
@@ -245,7 +245,7 @@ public:
                     }
                 }
                 if (b > e - s) {
-                    makeLeaf();
+                    make_leaf();
                     continue;
                 }
                 st(ba);
@@ -283,7 +283,7 @@ public:
                 continue;
             }
             for (int i = n.s; i < n.e; i++) {
-                if (h = trs_[indices_[i]].isect(ray, tmin, tmax)) {
+                if (h = trs_[indices_[i]].intersect(ray, tmin, tmax)) {
                     mh = h;
                     tmax = h->t;
                     mi = i;
@@ -294,8 +294,8 @@ public:
             return {};
         }
         const auto& tr = trs_.at(indices_.at(mi));
-        const auto& fn = flattenedNodes_.at(tr.flattenedNode);
-        return Hit{ tmax, Vec2(mh->u, mh->v), fn.globalTransform, fn.primitive, tr.face };
+        const auto& fn = flattened_nodes_.at(tr.flattened_node);
+        return Hit{ tmax, Vec2(mh->u, mh->v), fn.global_transform, fn.primitive, tr.face };
     }
 };
 

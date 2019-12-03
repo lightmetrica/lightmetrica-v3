@@ -29,7 +29,7 @@ class ProgressContext : public Component {
 public:
     virtual void start(ProgressMode mode, long long total, double totalTime) = 0;
     virtual void update(long long processed) = 0;
-    virtual void updateTime(Float elapsed) = 0;
+    virtual void update_time(Float elapsed) = 0;
     virtual void end() = 0;
 };
 

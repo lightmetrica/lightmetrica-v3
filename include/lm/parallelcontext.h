@@ -27,8 +27,8 @@ LM_NAMESPACE_BEGIN(parallel)
 */
 class ParallelContext : public Component {
 public:
-    virtual int numThreads() const = 0;
-    virtual bool mainThread() const = 0;
+    virtual int num_threads() const = 0;
+    virtual bool main_thread() const = 0;
     virtual void foreach(long long numSamples, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc& progressFunc) const = 0;
 };
 

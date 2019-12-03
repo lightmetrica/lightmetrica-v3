@@ -57,7 +57,7 @@ lm.info()
 # -
 
 # Load plugin
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'functest_material_visualize_normal'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'functest_material_visualize_normal'))
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # We can use the loaded extension in the same way as build-in assets using :cpp:func:`lm::asset` function. We feed the material to the obj model to apply the loaded material to the mesh.

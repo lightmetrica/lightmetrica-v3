@@ -53,7 +53,7 @@ class Renderer_AO(lm.Renderer):
     """Simple ambient occlusion renderer"""
 
     def construct(self, prop):
-        self.film = lm.Film.castFrom(lm.comp.get(prop['output']))
+        self.film = lm.Film.cast_from(lm.comp.get(prop['output']))
         if self.film is None:
             return False
         self.spp = prop['spp']
@@ -64,7 +64,7 @@ class Renderer_AO(lm.Renderer):
     
     def load(self, s):
         loc, self.spp = pickle.loads(s)
-        self.film = lm.Film.castFrom(lm.comp.get(loc))
+        self.film = lm.Film.cast_from(lm.comp.get(loc))
 
     def render(self, scene):
         w = self.film.size().w
@@ -74,19 +74,19 @@ class Renderer_AO(lm.Renderer):
             x = index % w
             y = int(index / w)
             rp = np.array([(x+.5)/w, (y+.5)/h])
-            ray = scene.primaryRay(rp, self.film.aspectRatio())
+            ray = scene.primary_ray(rp, self.film.aspect_ratio())
             hit = scene.intersect(ray)
             if hit is None:
                 return
             V = 0
             for i in range(self.spp):
-                n, u, v = hit.geom.orthonormalBasis(-ray.d)
-                d = lm.math.sampleCosineWeighted(rng)
+                n, u, v = hit.geom.orthonormal_basis(-ray.d)
+                d = lm.math.sample_cosine_weighted(rng)
                 r = lm.Ray(hit.geom.p, np.dot(d, [u,v,n]))
                 if scene.intersect(r, lm.Eps, .2) is None:
                     V += 1
             V /= self.spp
-            self.film.setPixel(x, y, np.full(3, V))
+            self.film.set_pixel(x, y, np.full(3, V))
         lm.parallel.foreach(w*h, process)
 
 
@@ -101,7 +101,7 @@ def run_worker_process():
     try:
         lm.init()
         lm.info()
-        lm.log.setSeverity(1000)
+        lm.log.set_severity(1000)
         lm.log.log(lm.log.LogLevel.Err, lm.log.LogLevel.Info, '', 0, 'pid={}'.format(os.getpid()))
         lm.distributed.worker.init({
             'name': uuid.uuid4().hex,
@@ -133,7 +133,7 @@ lm.progress.init('progress::jupyter', {})
 lm.distributed.master.init({
     'port': 5000
 })
-lm.distributed.master.printWorkerInfo()
+lm.distributed.master.print_worker_info()
 
 lmscene.load(env.scene_path, 'fireplace_room')
 lm.build('accel::sahbvh', {})
@@ -143,11 +143,11 @@ lm.renderer('renderer::ao', {
     'spp': 3
 })
 
-lm.distributed.master.allowWorkerConnection(False)
+lm.distributed.master.allow_worker_connection(False)
 lm.distributed.master.sync()
 lm.render()
-lm.distributed.master.gatherFilm(lm.asset('film_output'))
-lm.distributed.master.allowWorkerConnection(True)
+lm.distributed.master.gather_film(lm.asset('film_output'))
+lm.distributed.master.allow_worker_connection(True)
 
 img = np.copy(lm.buffer(lm.asset('film_output')))
 f = plt.figure(figsize=(15,15))
@@ -160,3 +160,5 @@ plt.show()
 # cf. https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
 pool.terminate()
 pool.join()
+
+

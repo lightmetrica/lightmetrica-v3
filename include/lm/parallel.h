@@ -47,18 +47,18 @@ LM_PUBLIC_API void shutdown();
     \brief Get number of threads configured for the subsystem.
     \return Number of threads.
 */
-LM_PUBLIC_API int numThreads();
+LM_PUBLIC_API int num_threads();
 
 /*!
     \brief Check if current thread is the main thread.
     \return `true` if the current thread is the main thread, `false` otherwise.
 */
-LM_PUBLIC_API bool mainThread();
+LM_PUBLIC_API bool main_thread();
 
 /*!
     \brief Callback function for parallel process.
     \param index Index of iteration.
-    \param threadId Thread identifier in `0 ... numThreads()-1`.
+    \param threadId Thread identifier in `0 ... num_threads()-1`.
 */
 using ParallelProcessFunc = std::function<void(long long index, int threadid)>;
 
@@ -70,23 +70,23 @@ using ProgressUpdateFunc = std::function<void(long long processed)>;
 
 /*!
     \brief Parallel for loop.
-    \param numSamples Total number of samples.
-    \param processFunc Callback function called for each iteration.
-    \param progressFunc Callback function called for each progress update.
+    \param num_samples Total number of samples.
+    \param process_func Callback function called for each iteration.
+    \param progress_func Callback function called for each progress update.
 
     \rst
     We provide an abstraction for the parallel loop specifialized for rendering purpose.
     \endrst
 */
-LM_PUBLIC_API void foreach(long long numSamples, const ParallelProcessFunc& processFunc, const ProgressUpdateFunc& progressFunc);
+LM_PUBLIC_API void foreach(long long num_samples, const ParallelProcessFunc& process_func, const ProgressUpdateFunc& progress_func);
 
 /*!
     \brief Parallel for loop.
-    \param numSamples Total number of samples.
-    \param processFunc Callback function called for each iteration.
+    \param num_samples Total number of samples.
+    \param process_func Callback function called for each iteration.
 */
-LM_INLINE void foreach(long long numSamples, const ParallelProcessFunc& processFunc) {
-    foreach(numSamples, processFunc, [](long long) {});
+LM_INLINE void foreach(long long num_samples, const ParallelProcessFunc& process_func) {
+    foreach(num_samples, process_func, [](long long) {});
 }
 
 /*!

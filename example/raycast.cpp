@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 
         // _begin_parse_args
         // Parse command line arguments
-        const auto opt = lm::json::parsePositionalArgs<11>(argc, argv, R"({{
+        const auto opt = lm::json::parse_positional_args<11>(argc, argv, R"({{
             "obj": "{}",
             "out": "{}",
             "w": {},

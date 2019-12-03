@@ -49,7 +49,7 @@ public:
         with :c:func:`LM_COMP_REG_IMPL` macro.
         \endrst
     */
-    using CreateFunction  = std::function<Component*()>;
+    using CreateFunction = std::function<Component*()>;
 
     /*!
         \brief Release function type.
@@ -84,7 +84,7 @@ public:
 
         \rst
         The function of this type is used to be a callback function of
-        :cpp:func:`lm::Component::foreachUnderlying` function.
+        :cpp:func:`lm::Component::foreach_underlying` function.
         \endrst
     */
     using ComponentVisitor = std::function<void(Component*& p, bool weak)>;
@@ -97,13 +97,13 @@ private:
     std::string loc_;
 
     //! Factory function of the component instance.
-    CreateFunction createFunc_ = nullptr;
+    CreateFunction create_func_ = nullptr;
 
     //! Release function of the component instance.
-    ReleaseFunction releaseFunc_ = nullptr;
+    ReleaseFunction release_func_ = nullptr;
 
     //! Underlying reference to owner object (if any)
-    std::any ownerRef_;
+    std::any owner_ref_;
 
 public:
     Component() = default;
@@ -145,7 +145,7 @@ public:
         If the current locator is ``aaa``, this function returns empty string.
         \endrst
     */
-    const std::string parentLoc() const {
+    const std::string parent_loc() const {
         const auto i = loc().find_last_of('.');
         if (i == std::string::npos) {
             return "";
@@ -177,7 +177,7 @@ public:
         into the back of ``base`` locator.
         \endrst
     */
-    const std::string makeLoc(const std::string& base, const std::string& child) const {
+    const std::string make_loc(const std::string& base, const std::string& child) const {
         assert(!base.empty());
         assert(!child.empty());
         return base + "." + child;
@@ -192,8 +192,8 @@ public:
         the locator of the current instance.
         \endrst
     */
-    const std::string makeLoc(const std::string& child) const {
-        return makeLoc(loc(), child);
+    const std::string make_loc(const std::string& child) const {
+        return make_loc(loc(), child);
     }
 
 public:
@@ -263,7 +263,7 @@ public:
         Use :cpp:func:`lm::comp::visit` function to automatically determine either of them.
         \endrst
     */
-    virtual void foreachUnderlying(const ComponentVisitor& visitor) { LM_UNUSED(visitor); }
+    virtual void foreach_underlying(const ComponentVisitor& visitor) { LM_UNUSED(visitor); }
 
     /*!
         \brief Get underlying value.
@@ -275,7 +275,7 @@ public:
         The return type must be serialized to Json type.
         \endrst
     */
-    virtual Json underlyingValue(const std::string& query = "") const { LM_UNUSED(query); return {}; }
+    virtual Json underlying_value(const std::string& query = "") const { LM_UNUSED(query); return {}; }
 
     /*!
         \brief Get underlying raw pointer.
@@ -286,7 +286,7 @@ public:
         We want to use this function for debugging purposes.
         \endrst
     */
-    virtual void* underlyingRawPointer(const std::string& query = "") const { LM_UNUSED(query); return nullptr; }
+    virtual void* underlying_raw_pointer(const std::string& query = "") const { LM_UNUSED(query); return nullptr; }
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -302,10 +302,10 @@ public:
 struct ComponentDeleter {
     ComponentDeleter() = default;
     void operator()(Component* p) const noexcept {
-        if (auto releaseFunc = p->releaseFunc_; releaseFunc) {
+        if (auto release_func = p->release_func_; release_func) {
             // If the instance is directly created inside Python script
-            // and managed by Python interpreter, releaseFunc can be nullptr. 
-            releaseFunc(p);
+            // and managed by Python interpreter, release_func can be nullptr. 
+            release_func(p);
         }
     }
 };
@@ -328,12 +328,12 @@ struct Access {
     static const std::string& key(const Component* p) { return p->key_; }
     static std::string& loc(Component* p) { return p->loc_; }
     static const std::string& loc(const Component* p) { return p->loc_; }
-    static Component::CreateFunction& createFunc(Component* p) { return p->createFunc_; }
-    static const Component::CreateFunction& createFunc(const Component* p) { return p->createFunc_; }
-    static Component::ReleaseFunction& releaseFunc(Component* p) { return p->releaseFunc_; }
-    static const Component::ReleaseFunction& releaseFunc(const Component* p) { return p->releaseFunc_; }
-    static std::any& ownerRef(Component* p) { return p->ownerRef_; }
-    static const std::any& ownerRef(const Component* p) { return p->ownerRef_; }
+    static Component::CreateFunction& create_func(Component* p) { return p->create_func_; }
+    static const Component::CreateFunction& create_func(const Component* p) { return p->create_func_; }
+    static Component::ReleaseFunction& release_func(Component* p) { return p->release_func_; }
+    static const Component::ReleaseFunction& release_func(const Component* p) { return p->release_func_; }
+    static std::any& ownerRef(Component* p) { return p->owner_ref_; }
+    static const std::any& ownerRef(const Component* p) { return p->owner_ref_; }
 };
 
 // Type holder
@@ -368,18 +368,18 @@ struct KeyGen<T<Ts...>> {
     \rst
     This function creates a component instance from the key.
     The component implementation with the key must be registered beforehand
-    with :c:func:`LM_COMP_REG_IMPL` macro and loaded with :cpp:func:`loadPlugin` function
+    with :c:func:`LM_COMP_REG_IMPL` macro and loaded with :cpp:func:`load_plugin` function
     if the component is defined inside a plugin.
     Otherwise the function returns nullptr with error message.
     \endrst
 */
-LM_PUBLIC_API Component* createComp(const std::string& key);
+LM_PUBLIC_API Component* create_comp(const std::string& key);
 
 /*!
     \brief Register a component.
     \param key Implementation key.
-    \param createFunc Create function.
-    \param releaseFunc Release function.
+    \param create_func Create function.
+    \param release_func Release function.
 
     \rst
     This function registers a component implementation into the framework.
@@ -389,8 +389,8 @@ LM_PUBLIC_API Component* createComp(const std::string& key);
 */
 LM_PUBLIC_API void reg(
     const std::string& key,
-    const Component::CreateFunction& createFunc,
-    const Component::ReleaseFunction& releaseFunc);
+    const Component::CreateFunction& create_func,
+    const Component::ReleaseFunction& release_func);
 
 /*!
     \brief Unregister a component.
@@ -414,7 +414,7 @@ LM_PUBLIC_API void unreg(const std::string& key);
     If the loading fails, the function returns false.
     \endrst
 */
-LM_PUBLIC_API bool loadPlugin(const std::string& path);
+LM_PUBLIC_API bool load_plugin(const std::string& path);
 
 /*!
     \brief Load plugins inside a given directory.
@@ -425,7 +425,7 @@ LM_PUBLIC_API bool loadPlugin(const std::string& path);
     If the loading fails, it generates an error message but ignored.
     \endrst
 */
-LM_PUBLIC_API void loadPluginDirectory(const std::string& directory);
+LM_PUBLIC_API void load_plugin_directory(const std::string& directory);
 
 /*!
     \brief Unload loaded plugins.
@@ -434,7 +434,7 @@ LM_PUBLIC_API void loadPluginDirectory(const std::string& directory);
     This functions unloads all the plugins loaded so far.
     \endrst
 */
-LM_PUBLIC_API void unloadPlugins();
+LM_PUBLIC_API void unload_plugins();
 
 /*!
     \brief Iterate registered component names.
@@ -445,7 +445,7 @@ LM_PUBLIC_API void unloadPlugins();
     The specified callback function is called for each registered component.
     \endrst
 */
-LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string& name)>& func);
+LM_PUBLIC_API void foreach_registered(const std::function<void(const std::string& name)>& func);
 
 /*!
     \brief Register root component.
@@ -458,7 +458,7 @@ LM_PUBLIC_API void foreachRegistered(const std::function<void(const std::string&
     The function is called internaly so the user do not want to use it directly.
     \endrst
 */
-LM_PUBLIC_API void registerRootComp(Component* p);
+LM_PUBLIC_API void register_root_comp(Component* p);
 
 //! \cond
 LM_PUBLIC_API Component* get(const std::string& locator);
@@ -477,10 +477,10 @@ LM_NAMESPACE_END(detail)
     @{
 */
 
-using detail::loadPlugin;
-using detail::loadPluginDirectory;
-using detail::unloadPlugins;
-using detail::foreachRegistered;
+using detail::load_plugin;
+using detail::load_plugin_directory;
+using detail::unload_plugins;
+using detail::foreach_registered;
 
 /*!
     \brief Get component by locator.
@@ -509,7 +509,7 @@ T* get(const std::string& locator) {
 */
 template <typename T>
 std::enable_if_t<std::is_base_of_v<lm::Component, T>, void>
-updateWeakRef(T*& p) {
+update_weak_ref(T*& p) {
     if (!p) {
         return;
     }
@@ -552,8 +552,8 @@ visit(const Component::ComponentVisitor& visitor, Component::Ptr<T>& p) {
     \param loc Component locator of the instance.
 */
 template <typename InterfaceT>
-Component::Ptr<InterfaceT> createWithoutConstruct(const std::string& key, const std::string& loc) {
-    auto* inst = detail::createComp(
+Component::Ptr<InterfaceT> create_without_construct(const std::string& key, const std::string& loc) {
+    auto* inst = detail::create_comp(
         detail::KeyGen<InterfaceT>::gen(std::move(key)).c_str());
     if (!inst) {
         return {};
@@ -571,7 +571,7 @@ Component::Ptr<InterfaceT> createWithoutConstruct(const std::string& key, const 
 */
 template <typename InterfaceT>
 Component::Ptr<InterfaceT> create(const std::string& key, const std::string& loc, const Json& prop = {}) {
-    auto inst = createWithoutConstruct<InterfaceT>(key, loc);
+    auto inst = create_without_construct<InterfaceT>(key, loc);
     if (!inst) {
         return {};
     }
@@ -688,11 +688,11 @@ public:
     ScopedLoadPlugin(const std::string& path) : ScopedLoadPlugin({ path }) {}
     ScopedLoadPlugin(std::initializer_list<std::string> paths) {
         for (auto path : paths) {
-            valid_ |= loadPlugin(path);
+            valid_ |= load_plugin(path);
             if (!valid_) { break; }
         }
     }
-    ~ScopedLoadPlugin() { unloadPlugins(); }
+    ~ScopedLoadPlugin() { unload_plugins(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedLoadPlugin)
 
 public:

@@ -48,7 +48,7 @@ struct AtomicWrapper {
         while (!v_.compare_exchange_weak(expected, expected + v));
     }
 
-    void updateWithFunc(const std::function<T(T curr)>& updateFunc) {
+    void update_with_func(const std::function<T(T curr)>& updateFunc) {
         auto expected = v_.load();
         while (!v_.compare_exchange_weak(expected, updateFunc(expected)));
     }
@@ -83,25 +83,25 @@ namespace image {
     // this function returns false.
     bool sanityCheck(int w, int h, const std::vector<float>& d) {
         constexpr int MaxInvalidPixels = 10;
-        int invalidPixels = 0;
+        int invalid_pixels = 0;
         for (int i = 0; i < w * h; i++) {
             const int x = i % w;
             const int y = i / w;
             const auto v = d[i];
             if (std::isnan(v)) {
                 LM_WARN("Found an invalid pixel [type='NaN', x={}, y={}]", x, y);
-                invalidPixels++;
+                invalid_pixels++;
             }
             else if (std::isinf(v)) {
                 LM_WARN("Found an invalid pixel [type='Inf', x={}, y={}]", x, y);
-                invalidPixels++;
+                invalid_pixels++;
             }
-            if (invalidPixels >= MaxInvalidPixels) {
+            if (invalid_pixels >= MaxInvalidPixels) {
                 LM_WARN("Outputs more than >{} entries are omitted.", MaxInvalidPixels);
                 break;
             }
         }
-        return invalidPixels > 0;
+        return invalid_pixels > 0;
     }
 }
 
@@ -126,7 +126,7 @@ private:
     int h_;
     int quality_;
     std::vector<AtomicWrapper<Vec3>> data_;
-    std::vector<Vec3> dataTemp_;  // Temporary buffer for external reference
+    std::vector<Vec3> data_temp_;  // Temporary buffer for external reference
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -145,17 +145,17 @@ public:
         return { w_, h_ };
     }
 
-    virtual long long numPixels() const override {
+    virtual long long num_pixels() const override {
         return w_ * h_;
     }
 
-    virtual void setPixel(int x, int y, Vec3 v) override {
+    virtual void set_pixel(int x, int y, Vec3 v) override {
         data_[y*w_ + x].update(v);
     }
 
     virtual bool save(const std::string& outpath) const override {
         // Disable floating-point exception for stb_image
-        exception::ScopedDisableFPEx disableFp_;
+        exception::ScopedDisableFPEx disable_fpex_;
 
         LM_INFO("Saving image [file='{}']", outpath);
         LM_INDENT();
@@ -210,11 +210,11 @@ public:
     }
 
     virtual FilmBuffer buffer() override {
-        dataTemp_.clear();
+        data_temp_.clear();
         for (const auto& v : data_) {
-            dataTemp_.push_back(v.v_);
+            data_temp_.push_back(v.v_);
         }
-        return FilmBuffer{ w_, h_, &dataTemp_[0].x };
+        return FilmBuffer{ w_, h_, &data_temp_[0].x };
     }
 
     virtual void accum(const Film* film_) override {
@@ -233,12 +233,12 @@ public:
         }
     }
 
-    virtual void splatPixel(int x, int y, Vec3 v) override {
+    virtual void splat_pixel(int x, int y, Vec3 v) override {
         data_[y*w_+x].add(v);
     }
 
-    virtual void updatePixel(int x, int y, const PixelUpdateFunc& updateFunc) override {
-        data_[y*w_+x].updateWithFunc(updateFunc);
+    virtual void update_pixel(int x, int y, const PixelUpdateFunc& update_func) override {
+        data_[y*w_+x].update_with_func(update_func);
     }
 
     virtual void rescale(Float s) override {

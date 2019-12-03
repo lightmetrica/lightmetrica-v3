@@ -44,7 +44,7 @@ lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'functest_renderer_ao'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'functest_renderer_ao'))
 
 # +
 # Film for the rendered image

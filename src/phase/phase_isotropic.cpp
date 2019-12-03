@@ -12,7 +12,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Phase_Isotropic final : public Phase {
 public:
-    virtual bool isSpecular(const PointGeometry&) const override {
+    virtual bool is_specular(const PointGeometry&) const override {
         return false;
     }
 
@@ -20,7 +20,7 @@ public:
         LM_UNUSED(geom);
         assert(geom.degenerated);
         return PhaseDirectionSample{
-            math::sampleUniformSphere(rng),
+            math::sample_uniform_sphere(rng),
             Vec3(1_f)
         };
     }
@@ -28,12 +28,12 @@ public:
     virtual Float pdf(const PointGeometry& geom, Vec3, Vec3) const override {
         LM_UNUSED(geom);
         assert(geom.degenerated);
-        return math::pdfUniformSphere();
+        return math::pdf_uniform_sphere();
     }
 
     virtual Vec3 eval(const PointGeometry&, Vec3, Vec3) const override {
         // Normalization constant = 1/(4*pi)
-        return Vec3(math::pdfUniformSphere());
+        return Vec3(math::pdf_uniform_sphere());
     }
 };
 

@@ -44,8 +44,8 @@ lm.parallel.init('parallel::openmp', {
 lm.log.init('logger::jupyter', {})
 lm.info()
 
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_embree'))
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
 
 lm.objloader.init('objloader::tinyobjloader', {})
 

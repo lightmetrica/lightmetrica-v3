@@ -18,6 +18,8 @@
 
 // ------------------------------------------------------------------------------------------------
 
+//! \cond
+
 LM_NAMESPACE_BEGIN(cereal)
 
 /*
@@ -99,7 +101,7 @@ void load(Archive& ar, std::atomic<T>& v) {
     Save owned pointer.
 */
 template <typename Archive, typename T>
-void saveOwned(Archive& ar, T* p) {
+void save_owned(Archive& ar, T* p) {
     using Access = lm::comp::detail::Access;
 
     // Save an additional information if the pointer is nullptr
@@ -139,7 +141,7 @@ void saveOwned(Archive& ar, T* p) {
 */
 template <typename Archive, typename T>
 void save(Archive& ar, const lm::Component::Ptr<T>& p) {
-    saveOwned(ar, p.get());
+    save_owned(ar, p.get());
 }
 
 /*
@@ -161,7 +163,7 @@ void load(Archive& ar, lm::Component::Ptr<T>& p) {
 
         // Create component instance
         // Be careful not to call construct() function here
-        p = lm::comp::createWithoutConstruct<T>(key, loc);
+        p = lm::comp::create_without_construct<T>(key, loc);
         if (!p) {
             return;
         }
@@ -229,6 +231,8 @@ serialize(lm::InputArchive& ar, T*& p) {
 
 LM_NAMESPACE_END(cereal)
 
+//! \endcond
+
 // ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -251,9 +255,9 @@ void save(std::ostream& os, Ts&&... v) {
 /*!
     \brief Serialize a component as owned pointer.
 */
-LM_INLINE void saveOwned(std::ostream& os, Component* v) {
+LM_INLINE void save_owned(std::ostream& os, Component* v) {
     OutputArchive ar(os);
-    cereal::saveOwned(ar, v);
+    cereal::save_owned(ar, v);
 }
 
 /*!

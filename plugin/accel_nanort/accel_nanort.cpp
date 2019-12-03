@@ -13,7 +13,7 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct FlattenedPrimitiveNode {
-    Transform globalTransform;  // Global transform of the primitive
+    Transform global_transform;  // Global transform of the primitive
     int primitive;              // Primitive node index
 };
 
@@ -29,8 +29,8 @@ private:
     std::vector<Float> vs_;
     std::vector<unsigned int> fs_;
     nanort::BVHAccel<Float> accel_;
-    std::vector<std::tuple<int, int>> flattenNodeAndFacePerTriangle_;
-    std::vector<FlattenedPrimitiveNode> flattenedNodes_;
+    std::vector<std::tuple<int, int>> flatten_node_and_face_per_triangle_;
+    std::vector<FlattenedPrimitiveNode> flattened_nodes_;
 
 public:
     virtual void build(const Scene& scene) override {
@@ -38,9 +38,9 @@ public:
         LM_INFO("Flattening scene");
         vs_.clear();
         fs_.clear();
-        flattenNodeAndFacePerTriangle_.clear();
-        flattenedNodes_.clear();
-        scene.traversePrimitiveNodes([&](const SceneNode& node, Mat4 globalTransform) {
+        flatten_node_and_face_per_triangle_.clear();
+        flattened_nodes_.clear();
+        scene.traverse_primitive_nodes([&](const SceneNode& node, Mat4 global_transform) {
             if (node.type != SceneNodeType::Primitive) {
                 return;
             }
@@ -49,18 +49,18 @@ public:
             }
 
             // Record flattened primitive
-            const int flattenNodeIndex = int(flattenedNodes_.size());
-            flattenedNodes_.push_back({ Transform(globalTransform), node.index });
+            const int flatten_node_index = int(flattened_nodes_.size());
+            flattened_nodes_.push_back({ Transform(global_transform), node.index });
 
             // Triangles
-            node.primitive.mesh->foreachTriangle([&](int face, const Mesh::Tri& tri) {
-                const auto p1 = globalTransform * Vec4(tri.p1.p, 1_f);
-                const auto p2 = globalTransform * Vec4(tri.p2.p, 1_f);
-                const auto p3 = globalTransform * Vec4(tri.p3.p, 1_f);
+            node.primitive.mesh->foreach_triangle([&](int face, const Mesh::Tri& tri) {
+                const auto p1 = global_transform * Vec4(tri.p1.p, 1_f);
+                const auto p2 = global_transform * Vec4(tri.p2.p, 1_f);
+                const auto p3 = global_transform * Vec4(tri.p3.p, 1_f);
                 vs_.insert(vs_.end(), { p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z });
                 auto s = (unsigned int)(fs_.size());
                 fs_.insert(fs_.end(), { s, s+1, s+2 });
-                flattenNodeAndFacePerTriangle_.push_back({ flattenNodeIndex, face });
+                flatten_node_and_face_per_triangle_.push_back({ flatten_node_index, face });
             });
         });
 
@@ -91,9 +91,9 @@ public:
             return {};
         }
         
-        const auto [node, face] = flattenNodeAndFacePerTriangle_.at(isect.prim_id);
-        const auto& fn = flattenedNodes_.at(node);
-        return Hit{ isect.t, Vec2(isect.u, isect.v), fn.globalTransform, fn.primitive, face };
+        const auto [node, face] = flatten_node_and_face_per_triangle_.at(isect.prim_id);
+        const auto& fn = flattened_nodes_.at(node);
+        return Hit{ isect.t, Vec2(isect.u, isect.v), fn.global_transform, fn.primitive, face };
     }
 };
 

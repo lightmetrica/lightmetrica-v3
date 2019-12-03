@@ -48,8 +48,8 @@ lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
 # -
 
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_embree'))
-lm.comp.loadPlugin(os.path.join(env.bin_path, 'accel_nanort'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_nanort'))
 
 # + {"code_folding": []}
 # Create a sphere geometry with triangle mesh
@@ -138,13 +138,13 @@ def render_and_visualize():
 scene_setup()
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
-        p = lm.primitiveNode({
+        p = lm.primitive_node({
             'mesh': lm.asset('mesh_sphere'),
             'material': lm.asset('material_white')
         })
-        t = lm.transformNode(lm.translate(np.array([x,y,0])))
-        lm.addChild(t, p)
-        lm.addChild(lm.rootNode(), t)
+        t = lm.transform_node(lm.translate(np.array([x,y,0])))
+        lm.add_child(t, p)
+        lm.add_child(lm.root_node(), t)
 
 render_and_visualize()
 
@@ -154,8 +154,8 @@ render_and_visualize()
 scene_setup()
 
 # Instance group
-g = lm.instanceGroupNode()
-lm.addChild(g, lm.primitiveNode({
+g = lm.instance_group_node()
+lm.add_child(g, lm.primitive_node({
     'mesh': lm.asset('mesh_sphere'),
     'material': lm.asset('material_white')
 }))
@@ -163,9 +163,9 @@ lm.addChild(g, lm.primitiveNode({
 # Transformed instanced group
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
-        t = lm.transformNode(lm.translate(np.array([x,y,0])))
-        lm.addChild(t, g)
-        lm.addChild(lm.rootNode(), t)
+        t = lm.transform_node(lm.translate(np.array([x,y,0])))
+        lm.add_child(t, g)
+        lm.add_child(lm.root_node(), t)
 # -
 
 render_and_visualize()
@@ -176,24 +176,24 @@ render_and_visualize()
 scene_setup()
 
 # Initial group
-g1 = lm.instanceGroupNode()
-lm.addChild(g1, lm.primitiveNode({
+g1 = lm.instance_group_node()
+lm.add_child(g1, lm.primitive_node({
     'mesh': lm.asset('mesh_sphere'),
     'material': lm.asset('material_white')
 }))
 
 # Second group using initial group as chilren
-g2 = lm.instanceGroupNode()
+g2 = lm.instance_group_node()
 for y in np.linspace(-10,10,10):
-    t = lm.transformNode(lm.translate(np.array([0,y,0])))
-    lm.addChild(t, g1)
-    lm.addChild(g2, t)
+    t = lm.transform_node(lm.translate(np.array([0,y,0])))
+    lm.add_child(t, g1)
+    lm.add_child(g2, t)
     
 # Add transformed second group to the root node
 for x in np.linspace(-10,10,10):
-    t = lm.transformNode(lm.translate(np.array([x,0,0])))
-    lm.addChild(t, g2)
-    lm.addChild(lm.rootNode(), t)
+    t = lm.transform_node(lm.translate(np.array([x,0,0])))
+    lm.add_child(t, g2)
+    lm.add_child(lm.root_node(), t)
 # -
 
 render_and_visualize()

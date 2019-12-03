@@ -75,7 +75,7 @@ public:
         Ni_ = json::value<Float>(prop, "Ni");
     }
 
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return true;
     }
 
@@ -101,7 +101,7 @@ public:
         };
     }
 
-    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng&, const PointGeometry& geom, int comp, Vec3 wi) const override {
+    virtual std::optional<Vec3> sample_direction_given_comp(Rng&, const PointGeometry& geom, int comp, Vec3 wi) const override {
         if (comp == 0) {
             return math::reflection(wi, geom.n);
         }
@@ -116,7 +116,7 @@ public:
         LM_UNREACHABLE_RETURN();
     }
 
-    virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const override {
+    virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3 wi) const override {
         const bool in = glm::dot(wi, geom.n) > 0_f;
         const auto n = in ? geom.n : -geom.n;
         const auto eta = in ? 1_f / Ni_ : Ni_;

@@ -52,13 +52,14 @@ public:
         This function checks if the BSDF of the material contains delta component.
         \endrst
     */
-    virtual bool isSpecular(const PointGeometry& geom, int comp) const = 0;
+    virtual bool is_specular(const PointGeometry& geom, int comp) const = 0;
 
     /*!
         \brief Sample a ray given surface point and incident direction.
         \param rng Random number generator.
         \param geom Point geometry.
         \param wi Incident ray direction.
+		\return Sampled direction with associated information. nullopt for invalid sample.
         
         \rst
         This function samples direction based on the probability distribution associated to the material.
@@ -75,8 +76,13 @@ public:
 
     /*!
         \brief Sample a ray direction given a component.
+		\param rng Random number generator.
+        \param geom Point geometry.
+        \param comp Component index.
+		\param wi Incident ray direction.
+		\return Sampled direction. nullopt for invalid sample.
     */
-    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const {
+    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const {
         LM_UNUSED(rng, geom, comp, wi);
         LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
     }
@@ -115,7 +121,7 @@ public:
         \param comp Component index.
         \param wi Incident ray direction.
     */
-    virtual Float pdfComp(const PointGeometry& geom, int comp, Vec3 wi) const = 0;
+    virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate BSDF.

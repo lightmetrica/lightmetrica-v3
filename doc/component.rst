@@ -62,8 +62,8 @@ Creating plugins of the framework is straightforward.
 A plugin is just an component implementation placed in the dynamically loadable context.
 This is flexible because the user do not need to care about the change of the syntax to create an plugin.
 An dynamic libraries can contain as many component implementation as you want.
-A plugin can be loaded by :cpp:func:`lm::comp::loadPlugin` function
-and unloaded by :cpp:func:`lm::comp::unloadPlugins` function.
+A plugin can be loaded by :cpp:func:`lm::comp::load_plugin` function
+and unloaded by :cpp:func:`lm::comp::unload_plugins` function.
 
 Creating instance
 ===========================
@@ -234,10 +234,10 @@ Querying information
 
 A component provides a way to query underlying components.
 The framework utilizes this feature to implement some advanced features.
-To support querying of the underlying components, a component must implement both :cpp:func:`lm::Component::underlying` and :cpp:func:`lm::Component::foreachUnderlying` functions.
+To support querying of the underlying components, a component must implement both :cpp:func:`lm::Component::underlying` and :cpp:func:`lm::Component::foreach_underlying` functions.
 
 :cpp:func:`lm::Component::underlying` function return the component with a query by name.
-:cpp:func:`lm::Component::foreachUnderlying` function on the other hands enumerates all the underlying components.
+:cpp:func:`lm::Component::foreach_underlying` function on the other hands enumerates all the underlying components.
 ``visit`` function needs to distinguish both unique_ptr (owned pointer) and raw pointer (weak reference) in the second argument. Yet :cpp:func:`lm::comp::visit` function will call them automatically according to the types for you.
 For instance, the component containing ``unique_ptr`` is like
 
@@ -249,7 +249,7 @@ For instance, the component containing ``unique_ptr`` is like
         virtual Component* underlying(const std::string& name) const override {
             return comp.at(compMap.at(name)).get();
         }
-        virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        virtual void foreach_underlying(const ComponentVisitor& visit) override {
             for (auto& comp : comps) {
                 lm::comp::visit(visit, comp);
             }
@@ -268,7 +268,7 @@ Similary, for the component containing weak references is like
             if (name == "ref2") { return ref2; }
             return nullptr;
         }
-        virtual void foreachUnderlying(const ComponentVisitor& visit) override {
+        virtual void foreach_underlying(const ComponentVisitor& visit) override {
             lm::comp::visit(visit, ref1);
             lm::comp::visit(visit, ref2);
         }

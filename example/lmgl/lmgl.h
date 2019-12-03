@@ -186,7 +186,7 @@ public:
         std::vector<lm::Vec2> ts;
         std::vector<GLuint> is;
         GLuint count = 0;
-        mesh->foreachTriangle([&](int, const lm::Mesh::Tri& tri) {
+        mesh->foreach_triangle([&](int, const lm::Mesh::Tri& tri) {
             vs.insert(vs.end(), { tri.p1.p, tri.p2.p, tri.p3.p });
             ns.insert(ns.end(), { tri.p1.n, tri.p2.n, tri.p3.n });
             ts.insert(ts.end(), { tri.p1.t, tri.p2.t, tri.p3.t });

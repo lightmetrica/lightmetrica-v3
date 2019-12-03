@@ -9,7 +9,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Material_VisualizeNormal final : public Material {
 public:
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return false;
     }
 
@@ -25,7 +25,7 @@ public:
         LM_UNREACHABLE_RETURN();
     }
 
-    virtual Float pdfComp(const PointGeometry&, int, Vec3) const override {
+    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
         LM_UNREACHABLE_RETURN();
     }
 

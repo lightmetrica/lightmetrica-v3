@@ -13,7 +13,7 @@ LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 // ------------------------------------------------------------------------------------------------
 
 TEST_CASE("Component") {
-    lm::log::ScopedInit init;
+    lm::log::ScopedInit init_;
 
     SUBCASE("Simple interface") {
         // _begin_snippet: A_impl
@@ -46,7 +46,7 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Constructor and destructor") {
-        const auto out = captureStdout([]() {
+        const auto out = capture_stdout([]() {
             const auto p = lm::comp::create<C>("test::comp::c1", "");
             REQUIRE(p);
         });
@@ -54,15 +54,15 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Plugin") {
-        lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
-        REQUIRE(pluginGuard.valid());
+        lm::comp::detail::ScopedLoadPlugin plugin_guard_("lm_test_plugin");
+        REQUIRE(plugin_guard_.valid());
         SUBCASE("Simple") {
             auto p = lm::comp::create<TestPlugin>("testplugin::default", "");
             REQUIRE(p);
             CHECK(p->f() == 42);
         }
         SUBCASE("Plugin constructor and destructor") {
-            const auto out = captureStdout([]() {
+            const auto out = capture_stdout([]() {
                 const auto p = lm::comp::create<TestPluginWithCtorAndDtor>("testpluginxtor::default", "");
                 REQUIRE(p);
             });
@@ -71,14 +71,14 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Failed to load plugin") {
-        REQUIRE(!lm::comp::detail::loadPlugin("__missing_plugin__"));
+        REQUIRE(!lm::comp::detail::load_plugin("__missing_plugin__"));
     }
 }
 
 // ------------------------------------------------------------------------------------------------
 
 TEST_CASE("Construction") {
-    lm::log::ScopedInit init;
+    lm::log::ScopedInit init_;
 
     SUBCASE("Simple") {
         auto p = lm::comp::create<D>("test::comp::d1", "", { {"v1", 42}, {"v2", 43} });
@@ -87,8 +87,8 @@ TEST_CASE("Construction") {
     }
 
     SUBCASE("Construction (native plugin)") {
-        lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
-        REQUIRE(pluginGuard.valid());
+        lm::comp::detail::ScopedLoadPlugin plugin_guard_("lm_test_plugin");
+        REQUIRE(plugin_guard_.valid());
         auto p = lm::comp::create<TestPlugin>("testplugin::construct", "", { {"v1", 42}, {"v2", 43} });
         REQUIRE(p);
         CHECK(p->f() == -1);
@@ -98,7 +98,7 @@ TEST_CASE("Construction") {
 // ------------------------------------------------------------------------------------------------
 
 TEST_CASE_TEMPLATE("Templated component", T, int, double) {
-    lm::log::ScopedInit init;
+    lm::log::ScopedInit init_;
 
     SUBCASE("Simple") {
         const auto p = lm::comp::create<G<T>>("test::comp::g1", "");
@@ -111,8 +111,8 @@ TEST_CASE_TEMPLATE("Templated component", T, int, double) {
         }
     }
     SUBCASE("Plugin") {
-        lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
-        REQUIRE(pluginGuard.valid());
+        lm::comp::detail::ScopedLoadPlugin plugin_guard_("lm_test_plugin");
+        REQUIRE(plugin_guard_.valid());
         const auto p = lm::comp::create<TestPluginWithTemplate<T>>("testplugin::template", "");
         if constexpr (std::is_same_v<T, int>) {
             CHECK(p->f() == 1);
@@ -139,7 +139,7 @@ struct H_Root_ : public H {
     }
 
     virtual void construct(const lm::Json&) override {
-        p1 = lm::comp::create<H>("test::comp::h_p1_", makeLoc("p1"), {});
+        p1 = lm::comp::create<H>("test::comp::h_p1_", make_loc("p1"), {});
     }
 
     virtual Component* underlying(const std::string& name) const {
@@ -158,7 +158,7 @@ struct H_P1_ : public H {
     }
 
     virtual void construct(const lm::Json&) override {
-        p2 = lm::comp::create<H>("test::comp::h_p2_", makeLoc("p2"), {});
+        p2 = lm::comp::create<H>("test::comp::h_p2_", make_loc("p2"), {});
     }
 
     virtual Component* underlying(const std::string& name) const {
@@ -186,7 +186,7 @@ TEST_CASE("Component query") {
     
     // Create a component and register it as a root component
     const auto root = lm::comp::create<lm::Component>("test::comp::h_root_", "$", {});
-    lm::comp::detail::registerRootComp(root.get());
+    lm::comp::detail::register_root_comp(root.get());
 
     // Our hierarchy
     // - $

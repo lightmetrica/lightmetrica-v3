@@ -32,13 +32,13 @@ import matplotlib.pyplot as plt
 import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
-if lm.BuildConfig != lm.ConfigType.Release:
+if not lm.Release:
     lm.debug.attachToDebugger()
 
 lm.init()
 lm.log.init('logger::jupyter')
 lm.progress.init('progress::jupyter')
-if lm.BuildConfig != lm.ConfigType.Release:
+if not lm.Release:
     lm.parallel.init('parallel::openmp', {
         'numThread': 1
     })

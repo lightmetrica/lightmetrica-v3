@@ -97,9 +97,9 @@ def load_ipython_extension(ip):
             spaces = ('.' * (self.n * 2)) + (' ' if self.n > 0 else '')
             s = header + spaces + message
             print(s, file=out)
-        def updateIndentation(self, n):
+        def update_indentation(self, n):
             self.n += n
-        def setSeverity(self, severity):
+        def set_severity(self, severity):
             self.severity = severity
         
     @lm.pylm_component('progress::jupyter')
@@ -115,7 +115,7 @@ def load_ipython_extension(ip):
                 self.pbar = tqdm_notebook(total=totalTime)
         def update(self, processed):
             self.pbar.update(max(0, processed - self.pbar.n))
-        def updateTime(self, elapsed):
+        def update_time(self, elapsed):
             self.pbar.update(max(0, elapsed - self.pbar.n))
         def end(self):
             self.pbar.update(max(0, self.pbar.total - self.pbar.n))
@@ -141,7 +141,7 @@ def load_ipython_extension(ip):
             img = np.flip(lm.buffer(self.film), axis=0)
             self.ax.imshow(np.clip(np.power(img,1/2.2),0,1))
             self.fig.canvas.draw()
-        def updateTime(self, elapsed):
+        def update_time(self, elapsed):
             self.update(-1)
         def end(self):
             self.update(self.total)

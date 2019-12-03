@@ -87,17 +87,17 @@ public:
                 return none().release();
             }
             case value_t::boolean: {
-                return castToPythonObject<bool>(src, policy, std::move(parent));
+                return cast_to_python_object<bool>(src, policy, std::move(parent));
             }
             case value_t::number_float: {
-                return castToPythonObject<double>(src, policy, std::move(parent));
+                return cast_to_python_object<double>(src, policy, std::move(parent));
             }
             case value_t::number_integer: { [[fallthrough]]; }
             case value_t::number_unsigned: {
-                return castToPythonObject<int>(src, policy, std::move(parent));
+                return cast_to_python_object<int>(src, policy, std::move(parent));
             }
             case value_t::string: {
-                return castToPythonObject<std::string>(src, policy, std::move(parent));
+                return cast_to_python_object<std::string>(src, policy, std::move(parent));
             }
             case value_t::object: {
                 auto policy_key = return_value_policy_override<std::string>::policy(policy);
@@ -140,7 +140,7 @@ public:
 
 private:
     template <typename U>
-    static handle castToPythonObject(const lm::Json& src, return_value_policy policy, handle&& parent) {
+    static handle cast_to_python_object(const lm::Json& src, return_value_policy policy, handle&& parent) {
         auto p = return_value_policy_override<U>::policy(policy);
         auto v = reinterpret_steal<object>(make_caster<U>::cast(src.get<U>(), p, parent));
         if (!v) {
@@ -290,13 +290,13 @@ LM_NAMESPACE_BEGIN(detail)
     \brief Wraps registration of component instance.
 */
 template <typename InterfaceT>
-static void regCompWrap(pybind11::object implClass, const char* name) {
+static void reg_comp_wrap(pybind11::object impl_class, const char* name) {
     lm::comp::detail::reg(name,
-        [implClass = implClass]() -> lm::Component* {
+        [impl_class = impl_class]() -> lm::Component* {
             pybind11::gil_scoped_acquire gil;
 
             // Create instance of python class
-            auto instPy = implClass();
+            auto instPy = impl_class();
             // We need to keep track of the python object
             // to manage lifetime of the instance
             auto instCpp = instPy.cast<InterfaceT*>();
@@ -315,7 +315,7 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
             auto instPy = std::any_cast<pybind11::object>(comp::detail::Access::ownerRef(p));
             instPy.dec_ref();
             // Prevent further invocation of release function
-            comp::detail::Access::releaseFunc(p) = nullptr;
+            comp::detail::Access::release_func(p) = nullptr;
         });
 }
 
@@ -323,7 +323,7 @@ static void regCompWrap(pybind11::object implClass, const char* name) {
     \brief Cast lm::Component to Python object.
 */
 template <typename InterfaceT>
-static pybind11::object castToPythonObject(Component* inst) {
+static pybind11::object cast_to_python_object(Component* inst) {
     // We cannot bind lm::comp::create directly because pybind does not support
     // instantiation of unique_ptr with custom deleter. Internally, pybind requires
     // construction of holder_type (e.g., std::unique_ptr) from T*.
@@ -348,27 +348,27 @@ static pybind11::object castToPythonObject(Component* inst) {
     \brief Wraps creation of component instance.
 */
 template <typename InterfaceT>
-static pybind11::object createWithoutConstructWrap(const char* name, const char* loc) {
-    auto inst = lm::comp::detail::createComp(name);
+static pybind11::object create_without_construct_wrap(const char* name, const char* loc) {
+    auto inst = lm::comp::detail::create_comp(name);
     if (!inst) {
         return pybind11::object();
     }
     lm::comp::detail::Access::loc(inst) = loc;
-    return castToPythonObject<InterfaceT>(inst);
+    return cast_to_python_object<InterfaceT>(inst);
 }
 
 /*!
     \brief Creation of component instance with construction.
 */
 template <typename InterfaceT>
-static pybind11::object createCompWrap(const char* name, const char* loc, const Json& prop) {
-    auto inst = lm::comp::detail::createComp(name);
+static pybind11::object create_comp_wrap(const char* name, const char* loc, const Json& prop) {
+    auto inst = lm::comp::detail::create_comp(name);
     if (!inst) {
         return pybind11::object();
     }
     lm::comp::detail::Access::loc(inst) = loc;
     inst->construct(prop);
-    return castToPythonObject<InterfaceT>(inst);
+    return cast_to_python_object<InterfaceT>(inst);
 }
 
 /*!
@@ -383,13 +383,13 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
     \brief Adds component-related functions to the binding of a component interface.
 */
 #define PYLM_DEF_COMP_BIND(InterfaceT) \
-     def_static("reg", &LM_NAMESPACE::detail::regCompWrap<InterfaceT>) \
+     def_static("reg", &LM_NAMESPACE::detail::reg_comp_wrap<InterfaceT>) \
     .def_static("unreg", &LM_NAMESPACE::comp::detail::unreg) \
-    .def_static("createWithoutConstruct", \
-        &LM_NAMESPACE::detail::createWithoutConstructWrap<InterfaceT>) \
+    .def_static("create_without_construct", \
+        &LM_NAMESPACE::detail::create_without_construct_wrap<InterfaceT>) \
     .def_static("create", \
-        &LM_NAMESPACE::detail::createCompWrap<InterfaceT>) \
-    .def_static("castFrom", \
+        &LM_NAMESPACE::detail::create_comp_wrap<InterfaceT>) \
+    .def_static("cast_from", \
         &LM_NAMESPACE::detail::castFrom<InterfaceT>, \
         pybind11::return_value_policy::reference);
 

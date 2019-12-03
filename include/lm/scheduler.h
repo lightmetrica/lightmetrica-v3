@@ -27,11 +27,11 @@ class Scheduler : public Component {
 public:
     /*!
         \brief Callback function for parallel loop.
-        \param pixelIndex Pixel index.
-        \param sampleIndex Pixel sample index.
+        \param pixel_index Pixel index.
+        \param sample_index Pixel sample index.
         \param threadid Thread index.
     */
-    using ProcessFunc = std::function<void(long long pixelIndex, long long sampleIndex, int threadid)>;
+    using ProcessFunc = std::function<void(long long pixel_index, long long sample_index, int threadid)>;
 
     /*!
         \brief Dispatch scheduler.

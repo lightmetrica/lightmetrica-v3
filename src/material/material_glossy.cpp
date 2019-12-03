@@ -28,15 +28,15 @@ public:
     }
 
 public:
-    virtual bool isSpecular(const PointGeometry&, int) const override {
+    virtual bool is_specular(const PointGeometry&, int) const override {
         return false;
     }
 
     virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-        const auto [n, u, v] = geom.orthonormalBasis(wi);
+        const auto [n, u, v] = geom.orthonormal_basis(wi);
         const auto u1 = rng.u() * 2_f * Pi;
         const auto u2 = rng.u();
-        const auto wh = glm::normalize(math::safeSqrt(u2/(1_f-u2))*(ax_*glm::cos(u1)*u+ay_*glm::sin(u1)*v)+n);
+        const auto wh = glm::normalize(math::safe_sqrt(u2/(1_f-u2))*(ax_*glm::cos(u1)*u+ay_*glm::sin(u1)*v)+n);
         const auto wo = math::reflection(wi, wh);
         if (geom.opposite(wi, wo)) {
             return {};
@@ -48,7 +48,7 @@ public:
         };
     }
 
-    virtual std::optional<Vec3> sampleDirectionGivenComp(Rng& rng, const PointGeometry& geom, int, Vec3 wi) const override {
+    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int, Vec3 wi) const override {
         return sample(rng, geom, wi)->wo;
     }
 
@@ -61,11 +61,11 @@ public:
             return 0_f;
         }
         const auto wh = glm::normalize(wi + wo);
-        const auto [n, u, v] = geom.orthonormalBasis(wi);
-        return normalDist(wh,u,v,n)*glm::dot(wh,n)/(4_f*glm::dot(wo, wh)*glm::dot(wo, n));
+        const auto [n, u, v] = geom.orthonormal_basis(wi);
+        return normal_dist(wh,u,v,n)*glm::dot(wh,n)/(4_f*glm::dot(wo, wh)*glm::dot(wo, n));
     }
 
-    virtual Float pdfComp(const PointGeometry&, int, Vec3) const override {
+    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
         return 1_f;
     }
 
@@ -74,14 +74,14 @@ public:
             return {};
         }
         const auto wh = glm::normalize(wi + wo);
-        const auto [n, u, v] = geom.orthonormalBasis(wi);
+        const auto [n, u, v] = geom.orthonormal_basis(wi);
         const auto Fr = Ks_+(1_f-Ks_)*std::pow(1_f-dot(wo, wh),5_f);
-        return Ks_*Fr*(normalDist(wh,u,v,n)*shadowG(wi,wo,u,v,n)/(4_f*dot(wi,n)*dot(wo,n)));
+        return Ks_*Fr*(normal_dist(wh,u,v,n)*shadowG(wi,wo,u,v,n)/(4_f*dot(wi,n)*dot(wo,n)));
     }
 
 private:
     // Normal distribution of anisotropic GGX
-    Float normalDist(Vec3 wh, Vec3 u, Vec3 v, Vec3 n) const {
+    Float normal_dist(Vec3 wh, Vec3 u, Vec3 v, Vec3 n) const {
         return 1_f / (Pi*ax_*ay_*math::sq(math::sq(glm::dot(wh, u)/ax_) +
             math::sq(glm::dot(wh, v)/ay_) + math::sq(glm::dot(wh, n))));
     }
@@ -90,11 +90,11 @@ private:
     Float shadowG(Vec3 wi, Vec3 wo, Vec3 u, Vec3 v, Vec3 n) const {
         const auto G1 = [&](Vec3 w) {
             const auto c = glm::dot(w, n);
-            const auto s = std::max(Eps, math::safeSqrt(1_f - c * c));
+            const auto s = std::max(Eps, math::safe_sqrt(1_f - c * c));
             const auto cp = glm::dot(w, u) / s;
             const auto cs = glm::dot(w, v) / s;
             const auto a2 = math::sq(cp * ax_) + math::sq(cs * ay_);
-            return c == 0_f ? 0_f : 2_f / (1_f + math::safeSqrt(1_f + a2 * math::sq(s / c)));
+            return c == 0_f ? 0_f : 2_f / (1_f + math::safe_sqrt(1_f + a2 * math::sq(s / c)));
         };
         return G1(wi) * G1(wo);
     }

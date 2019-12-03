@@ -117,10 +117,10 @@ LM_PUBLIC_API void shutdown();
     The log messages with severity value larger or equal to the given value will be rendered.
     \endrst
 */
-LM_PUBLIC_API void setSeverity(int severity);
+LM_PUBLIC_API void set_severity(int severity);
 
-inline void setSeverity(LogLevel severity) {
-    return setSeverity(int(severity));
+inline void set_severity(LogLevel severity) {
+    return set_severity(int(severity));
 }
 
 /*!
@@ -177,7 +177,7 @@ void log(LogLevel level, int severity, const char* filename, int line, const std
     of the indentation by an integer. For instance, ``-1`` subtracts one indentation level.
     \endrst
 */
-LM_PUBLIC_API void updateIndentation(int n);
+LM_PUBLIC_API void update_indentation(int n);
 
 /*!
     \brief Log indent contol.
@@ -188,8 +188,8 @@ LM_PUBLIC_API void updateIndentation(int n);
     \endrst
 */
 struct LogIndenter {
-    LogIndenter()  { updateIndentation(1); }
-    ~LogIndenter() { updateIndentation(-1); }
+    LogIndenter()  { update_indentation(1); }
+    ~LogIndenter() { update_indentation(-1); }
 };
 
 /*!

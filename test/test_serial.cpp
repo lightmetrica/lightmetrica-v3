@@ -33,7 +33,7 @@ struct is_equality_comparable<
     the type of orig or loaded might not have operator==().
 */
 template <typename T>
-void checkSaveAndLoadRoundTripCompareValues(T&& orig) {
+void check_save_and_load_round_trip_compare_values(T&& orig) {
     // Serialize the input value
     std::stringstream ss1;
     lm::serial::save(ss1, std::forward<T>(orig));
@@ -49,7 +49,7 @@ void checkSaveAndLoadRoundTripCompareValues(T&& orig) {
 }
 
 template <typename T>
-void checkSaveAndLoadRoundTripCompareLoaded(T&& orig) {
+void check_save_and_load_round_trip_compare_loaded(T&& orig) {
     // Serialize the input value
     std::stringstream ss1;
     lm::serial::save(ss1, std::forward<T>(orig));
@@ -74,9 +74,9 @@ void checkSaveAndLoadRoundTripCompareLoaded(T&& orig) {
 }
 
 template <typename T>
-void checkSaveAndLoadRoundTrip(T&& orig) {
-    checkSaveAndLoadRoundTripCompareValues(std::forward<T>(orig));
-    checkSaveAndLoadRoundTripCompareLoaded(std::forward<T>(orig));
+void check_save_and_load_round_trip(T&& orig) {
+    check_save_and_load_round_trip_compare_values(std::forward<T>(orig));
+    check_save_and_load_round_trip_compare_loaded(std::forward<T>(orig));
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -145,7 +145,7 @@ struct TestSerial_Container final : public lm::Component {
 
     // Add a component to the container
     void add(const std::string& name, const std::string& key, const lm::Json& prop) {
-        auto p = lm::comp::create<lm::Component>(key, makeLoc(loc(), name), prop);
+        auto p = lm::comp::create<lm::Component>(key, make_loc(loc(), name), prop);
         CHECK(p);
         m[name] = int(v.size());
         v.push_back(std::move(p));
@@ -171,7 +171,7 @@ struct TestSerial_Root final : public lm::Component {
     TestSerial_Root() {
         // Register this component as root
         lm::comp::detail::Access::loc(this) = "$";
-        lm::comp::detail::registerRootComp(this);
+        lm::comp::detail::register_root_comp(this);
     }
 
     virtual Component* underlying(const std::string& name) const {
@@ -206,24 +206,24 @@ TEST_CASE("Serialization") {
     lm::log::ScopedInit init;
     
     SUBCASE("Primitive types") {
-        checkSaveAndLoadRoundTrip<bool>(true);
-        checkSaveAndLoadRoundTrip<int>(42);
-        checkSaveAndLoadRoundTrip<double>(42.0);
-        checkSaveAndLoadRoundTrip<float>(42.f);
-        checkSaveAndLoadRoundTrip<std::string>("hai domo");
+        check_save_and_load_round_trip<bool>(true);
+        check_save_and_load_round_trip<int>(42);
+        check_save_and_load_round_trip<double>(42.0);
+        check_save_and_load_round_trip<float>(42.f);
+        check_save_and_load_round_trip<std::string>("hai domo");
     }
 
     SUBCASE("Vector and matrix") {
-        checkSaveAndLoadRoundTrip<lm::Vec2>(lm::Vec2(1,2));
-        checkSaveAndLoadRoundTrip<lm::Vec3>(lm::Vec3(1,2,3));
-        checkSaveAndLoadRoundTrip<lm::Vec4>(lm::Vec4(1,2,3,4));
-        checkSaveAndLoadRoundTrip<lm::Mat3>(lm::Mat3(1,2,3,4,5,6,7,8,9));
-        checkSaveAndLoadRoundTrip<lm::Mat4>(lm::Mat4(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16));
+        check_save_and_load_round_trip<lm::Vec2>(lm::Vec2(1,2));
+        check_save_and_load_round_trip<lm::Vec3>(lm::Vec3(1,2,3));
+        check_save_and_load_round_trip<lm::Vec4>(lm::Vec4(1,2,3,4));
+        check_save_and_load_round_trip<lm::Mat3>(lm::Mat3(1,2,3,4,5,6,7,8,9));
+        check_save_and_load_round_trip<lm::Mat4>(lm::Mat4(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16));
     }
 
     SUBCASE("STL containers") {
-        checkSaveAndLoadRoundTrip<std::vector<int>>({ 1,2,3,4,5 });
-        checkSaveAndLoadRoundTrip<std::unordered_map<std::string, int>>({
+        check_save_and_load_round_trip<std::vector<int>>({ 1,2,3,4,5 });
+        check_save_and_load_round_trip<std::unordered_map<std::string, int>>({
             { "A", 1 },
             { "B", 2 },
             { "C", 3 },
@@ -234,13 +234,13 @@ TEST_CASE("Serialization") {
     SUBCASE("Simple struct") {
         SUBCASE("Simple") {
             TestSerial_SimpleStruct orig{ 42, 43 };
-            checkSaveAndLoadRoundTrip(orig);
+            check_save_and_load_round_trip(orig);
         }
         SUBCASE("Nested") {
             TestSerial_SimpleNestedStruct orig;
             orig.vs.push_back({ 42, 43 });
             orig.vs.push_back({ 1, 2 });
-            checkSaveAndLoadRoundTrip(orig);
+            check_save_and_load_round_trip(orig);
         }
     }
 
@@ -250,7 +250,7 @@ TEST_CASE("Serialization") {
                 { "v1", 42 },
                 { "v2", 32 }
             });
-            checkSaveAndLoadRoundTripCompareLoaded(orig);
+            check_save_and_load_round_trip_compare_loaded(orig);
         }
 
         SUBCASE("Vector of unique pointer") {
@@ -265,12 +265,12 @@ TEST_CASE("Serialization") {
             std::vector<lm::Component::Ptr<lm::Component>> orig;
             orig.push_back(std::move(v1));
             orig.push_back(std::move(v2));
-            checkSaveAndLoadRoundTripCompareLoaded(orig);
+            check_save_and_load_round_trip_compare_loaded(orig);
         }
 
         SUBCASE("Nested component") {
             auto orig = lm::comp::create<lm::Component>("testserial_nested", "");
-            checkSaveAndLoadRoundTripCompareLoaded(orig);
+            check_save_and_load_round_trip_compare_loaded(orig);
         }
 
         SUBCASE("Weak reference to another component instance") {
@@ -278,14 +278,14 @@ TEST_CASE("Serialization") {
             TestSerial_Container container;
             lm::comp::detail::Access::loc(&container) = "$";
             container.add("p1", "testserial_simple", { { "v1", 1 }, { "v2", 2 } });
-            lm::comp::detail::registerRootComp(&container);
+            lm::comp::detail::register_root_comp(&container);
             
             // Check serialization of Component*
             auto* orig = lm::comp::get<lm::Component>("$.p1");
             CHECK(orig);
                         
             // Round-trip test
-            checkSaveAndLoadRoundTripCompareLoaded(orig);
+            check_save_and_load_round_trip_compare_loaded(orig);
 
             // Check values
             std::stringstream ss;
@@ -351,7 +351,7 @@ TEST_CASE("Serialization") {
         SUBCASE("Assets") {
             // Round-trip tests for various assets
             SUBCASE("Film") {
-                checkSaveAndLoadRoundTripCompareLoaded(
+                check_save_and_load_round_trip_compare_loaded(
                     lm::comp::create<lm::Component>("film::bitmap", {}, {
                         {"w", 200}, {"h", 100}
                     })
@@ -359,7 +359,7 @@ TEST_CASE("Serialization") {
             }
 
             SUBCASE("Mesh") {
-                checkSaveAndLoadRoundTripCompareLoaded(
+                check_save_and_load_round_trip_compare_loaded(
                     lm::comp::create<lm::Component>("mesh::raw", {}, {
                         {"ps", {-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1}},
                         {"ns", {0,0,1}},
@@ -374,27 +374,27 @@ TEST_CASE("Serialization") {
             }
 
             SUBCASE("Material") {
-                checkSaveAndLoadRoundTripCompareLoaded(
+                check_save_and_load_round_trip_compare_loaded(
                     lm::comp::create<lm::Component>("material::diffuse", {}, {
                         {"Kd", {.5,1,.2}}
                     })
                 );
-                checkSaveAndLoadRoundTripCompareLoaded(
+                check_save_and_load_round_trip_compare_loaded(
                     lm::comp::create<lm::Component>("material::glass", {}, {
                         {"Ni", .5}
                     })
                 );
-                checkSaveAndLoadRoundTripCompareLoaded(
+                check_save_and_load_round_trip_compare_loaded(
                     lm::comp::create<lm::Component>("material::glossy", {}, {
                         {"Ks", {1,0,.5}},
                         {"ax", .5},
                         {"ay", .2}
                     })
                 );
-                checkSaveAndLoadRoundTripCompareLoaded(
+                check_save_and_load_round_trip_compare_loaded(
                     lm::comp::create<lm::Component>("material::mask", {}, {})
                 );
-                checkSaveAndLoadRoundTripCompareLoaded(
+                check_save_and_load_round_trip_compare_loaded(
                     lm::comp::create<lm::Component>("material::mirror", {}, {})
                 );
             }

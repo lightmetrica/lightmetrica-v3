@@ -9,15 +9,15 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::version)
 
-LM_PUBLIC_API int majorVersion() {
+LM_PUBLIC_API int major_version() {
     return LM_VERSION_MAJOR;
 }
 
-LM_PUBLIC_API int minorVersion() {
+LM_PUBLIC_API int minor_version() {
     return LM_VERSION_MINOR;
 }
 
-LM_PUBLIC_API int patchVersion() {
+LM_PUBLIC_API int patch_version() {
     return LM_VERSION_PATCH;
 }
 
@@ -25,7 +25,7 @@ LM_PUBLIC_API std::string revision() {
     return LM_VERSION_REVISION;
 }
 
-LM_PUBLIC_API std::string buildTimestamp() {
+LM_PUBLIC_API std::string build_timestamp() {
     return LM_BUILD_TIMESTAMP;
 }
 
@@ -49,7 +49,7 @@ LM_PUBLIC_API std::string architecture() {
 
 LM_PUBLIC_API std::string formatted() {
     return fmt::format("{}.{}.{} (rev. {})",
-        majorVersion(), minorVersion(), patchVersion(), revision());
+        major_version(), minor_version(), patch_version(), revision());
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::version)

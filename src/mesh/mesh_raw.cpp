@@ -53,13 +53,13 @@ public:
         }
     }
 
-    virtual void foreachTriangle(const ProcessTriangleFunc& processTriangle) const override {
+    virtual void foreach_triangle(const ProcessTriangleFunc& processTriangle) const override {
         for (int fi = 0; fi < int(fs_.size())/3; fi++) {
-            processTriangle(fi, triangleAt(fi));
+            processTriangle(fi, triangle_at(fi));
         }
     }
 
-    virtual Tri triangleAt(int face) const override {
+    virtual Tri triangle_at(int face) const override {
         const auto f1 = fs_[3*face];
         const auto f2 = fs_[3*face+1];
         const auto f3 = fs_[3*face+2];
@@ -70,21 +70,21 @@ public:
         };
     }
 
-    virtual Point surfacePoint(int face, Vec2 uv) const override {
+    virtual Point surface_point(int face, Vec2 uv) const override {
         const auto i1 = fs_[3*face];
         const auto i2 = fs_[3*face+1];
         const auto i3 = fs_[3*face+2];
         return {
-            math::mixBarycentric(
+            math::mix_barycentric(
                 ps_[i1.p], ps_[i2.p], ps_[i3.p], uv),
-            glm::normalize(math::mixBarycentric(
+            glm::normalize(math::mix_barycentric(
                 ns_[i1.n], ns_[i2.n], ns_[i3.n], uv)),
-            math::mixBarycentric(
+            math::mix_barycentric(
                 ts_[i1.t], ts_[i2.t], ts_[i3.t], uv)
         };
     }
 
-    virtual int numTriangles() const override {
+    virtual int num_triangles() const override {
         return int(fs_.size()) / 3;
     }
 };

@@ -30,8 +30,8 @@ struct imemstream : virtual membuf, std::istream {
 
 // Shared command between server and client
 enum class Command {
-    handleMessage,
-    syncUserContext,
+    handle_message,
+    sync_user_context,
     draw
 };
 
@@ -74,17 +74,17 @@ private:
     }
 
 public:
-    virtual void handleMessage(const std::string& message) override {
+    virtual void handle_message(const std::string& message) override {
         std::stringstream ss;
         serial::save(ss, message);
-        call(Command::handleMessage, ss.str());
+        call(Command::handle_message, ss.str());
     }
 
-    virtual void syncUserContext() override {
+    virtual void sync_user_context() override {
         LM_INFO("Syncing user context");
         std::stringstream ss;
         lm::serialize(ss);
-        call(Command::syncUserContext, ss.str());
+        call(Command::sync_user_context, ss.str());
     }
 
     virtual void draw(int type, Vec3 color, const std::vector<Vec3>& vs) override {
@@ -104,8 +104,8 @@ class DebugioContext_Server final : public DebugioServerContext {
 private:
     zmq::context_t context_;
     zmq::socket_t socket_;
-    HandleMessageFunc on_handleMessage_;
-    SyncUserContextFunc on_syncUserContext_;
+    HandleMessageFunc on_handle_message_;
+    SyncUserContextFunc on_sync_user_context_;
     DrawFunc on_draw_;
 
 public:
@@ -115,8 +115,8 @@ public:
     {}
 
 public:
-    virtual void on_handleMessage(const HandleMessageFunc& process) override { on_handleMessage_ = process; }
-    virtual void on_syncUserContext(const SyncUserContextFunc& process) override { on_syncUserContext_ = process; }
+    virtual void on_handle_message(const HandleMessageFunc& process) override { on_handle_message_ = process; }
+    virtual void on_sync_user_context(const SyncUserContextFunc& process) override { on_sync_user_context_ = process; }
     virtual void on_draw(const DrawFunc& process) override { on_draw_ = process; }
 
 public:
@@ -134,18 +134,18 @@ public:
         zmq::pollitem_t item{ socket_, 0, ZMQ_POLLIN, 0 };
         zmq::poll(&item, 1, 0);
         if (item.revents & ZMQ_POLLIN) {
-            processMessages();
+            process_messages();
         }
     }
 
     virtual void run() override {
         while (true) {
-            processMessages();
+            process_messages();
         }
     }
 
 private:
-    void processMessages() {
+    void process_messages() {
         zmq::message_t ok;
 
         // Receive command
@@ -163,15 +163,15 @@ private:
         imemstream is(req_args.data<char>(), req_args.size());
 #endif
         switch (command) {
-            case Command::handleMessage: {
+            case Command::handle_message: {
                 std::string message;
                 serial::load(is, message);
-                on_handleMessage_(message);
+                on_handle_message_(message);
                 break;
             }
-            case Command::syncUserContext: {
+            case Command::sync_user_context: {
                 lm::deserialize(is);
-                on_syncUserContext_();
+                on_sync_user_context_();
                 break;
             }
             case Command::draw: {
@@ -203,15 +203,15 @@ LM_PUBLIC_API void shutdown() {
     ClientInstance::shutdown();
 }
 
-LM_PUBLIC_API void handleMessage(const std::string& message) {
+LM_PUBLIC_API void handle_message(const std::string& message) {
     if (ClientInstance::initialized()) {
-        ClientInstance::get().handleMessage(message);
+        ClientInstance::get().handle_message(message);
     }
 }
 
-LM_PUBLIC_API void syncUserContext() {
+LM_PUBLIC_API void sync_user_context() {
     if (ClientInstance::initialized()) {
-        ClientInstance::get().syncUserContext();
+        ClientInstance::get().sync_user_context();
     }
 }
 
@@ -241,12 +241,12 @@ LM_PUBLIC_API void run() {
     ServerInstance::get().run();
 }
 
-LM_PUBLIC_API void on_handleMessage(const HandleMessageFunc& process) {
-    ServerInstance::get().on_handleMessage(process);
+LM_PUBLIC_API void on_handle_message(const HandleMessageFunc& process) {
+    ServerInstance::get().on_handle_message(process);
 }
 
-LM_PUBLIC_API void on_syncUserContext(const SyncUserContextFunc& process) {
-    ServerInstance::get().on_syncUserContext(process);
+LM_PUBLIC_API void on_sync_user_context(const SyncUserContextFunc& process) {
+    ServerInstance::get().on_sync_user_context(process);
 }
 
 LM_PUBLIC_API void on_draw(const DrawFunc& process) {
