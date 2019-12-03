@@ -13,7 +13,7 @@ LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 // ------------------------------------------------------------------------------------------------
 
 TEST_CASE("Component") {
-    lm::log::ScopedInit init;
+    lm::log::ScopedInit init_;
 
     SUBCASE("Simple interface") {
         // _begin_snippet: A_impl
@@ -54,8 +54,8 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Plugin") {
-        lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
-        REQUIRE(pluginGuard.valid());
+        lm::comp::detail::ScopedLoadPlugin plugin_guard_("lm_test_plugin");
+        REQUIRE(plugin_guard_.valid());
         SUBCASE("Simple") {
             auto p = lm::comp::create<TestPlugin>("testplugin::default", "");
             REQUIRE(p);
@@ -78,7 +78,7 @@ TEST_CASE("Component") {
 // ------------------------------------------------------------------------------------------------
 
 TEST_CASE("Construction") {
-    lm::log::ScopedInit init;
+    lm::log::ScopedInit init_;
 
     SUBCASE("Simple") {
         auto p = lm::comp::create<D>("test::comp::d1", "", { {"v1", 42}, {"v2", 43} });
@@ -87,8 +87,8 @@ TEST_CASE("Construction") {
     }
 
     SUBCASE("Construction (native plugin)") {
-        lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
-        REQUIRE(pluginGuard.valid());
+        lm::comp::detail::ScopedLoadPlugin plugin_guard_("lm_test_plugin");
+        REQUIRE(plugin_guard_.valid());
         auto p = lm::comp::create<TestPlugin>("testplugin::construct", "", { {"v1", 42}, {"v2", 43} });
         REQUIRE(p);
         CHECK(p->f() == -1);
@@ -98,7 +98,7 @@ TEST_CASE("Construction") {
 // ------------------------------------------------------------------------------------------------
 
 TEST_CASE_TEMPLATE("Templated component", T, int, double) {
-    lm::log::ScopedInit init;
+    lm::log::ScopedInit init_;
 
     SUBCASE("Simple") {
         const auto p = lm::comp::create<G<T>>("test::comp::g1", "");
@@ -111,8 +111,8 @@ TEST_CASE_TEMPLATE("Templated component", T, int, double) {
         }
     }
     SUBCASE("Plugin") {
-        lm::comp::detail::ScopedLoadPlugin pluginGuard("lm_test_plugin");
-        REQUIRE(pluginGuard.valid());
+        lm::comp::detail::ScopedLoadPlugin plugin_guard_("lm_test_plugin");
+        REQUIRE(plugin_guard_.valid());
         const auto p = lm::comp::create<TestPluginWithTemplate<T>>("testplugin::template", "");
         if constexpr (std::is_same_v<T, int>) {
             CHECK(p->f() == 1);
