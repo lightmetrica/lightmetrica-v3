@@ -13,15 +13,7 @@
 #include <lm/progress.h>
 #include <lm/debugio.h>
 #include <lm/objloader.h>
-
-#include <lm/mesh.h>
-#include <lm/material.h>
-#include <lm/light.h>
-#include <lm/camera.h>
-#include <lm/medium.h>
-#include <lm/phase.h>
 #include <lm/film.h>
-#include <lm/model.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
