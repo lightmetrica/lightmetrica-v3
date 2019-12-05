@@ -198,11 +198,6 @@ LM_INLINE void deserialize(const std::string& path) {
 // ------------------------------------------------------------------------------------------------
 
 /*!
-    \brief Validate consistency of the component instances.
-*/
-LM_PUBLIC_API void validate();
-
-/*!
     \brief Scoped guard of `init` and `shutdown` functions.
     \rst
     Example:
