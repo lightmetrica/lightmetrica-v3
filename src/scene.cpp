@@ -52,14 +52,14 @@ private:
     }
 
 public:
-    std::optional<std::string> load_asset(const std::string& name, const std::string& implKey, const Json& prop) {
+    Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) {
         LM_INFO("Loading asset [name='{}']", name);
         LM_INDENT();
 
         // Check if asset name is valid
         if (!valid_asset_name(name)) {
             LM_ERROR("Invalid asset name [name='{}']", name);
-            return {};
+            return nullptr;
         }
 
         // Check if the asset with given name has been already loaded
@@ -73,7 +73,7 @@ public:
         auto p = comp::create_without_construct<Component>(implKey, make_loc(loc(), name));
         if (!p) {
             LM_ERROR("Failed to create an asset [name='{}', key='{}']", name, implKey);
-            return {};
+            return nullptr;
         }
 
         // Register created asset
@@ -122,7 +122,7 @@ public:
             asset->construct(prop);
         }
 
-        return asset->loc();
+        return asset;
     }
 };
 
@@ -191,7 +191,7 @@ public:
     }
 
 public:
-    virtual std::optional<std::string> load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
+    virtual Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
         return assets_->load_asset(name, implKey, prop);
     }
 

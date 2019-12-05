@@ -375,7 +375,7 @@ static pybind11::object create_comp_wrap(const char* name, const char* loc, cons
     \brief Cast from component type.
 */
 template <typename InterfaceT>
-static std::optional<InterfaceT*> castFrom(Component* p) {
+static std::optional<InterfaceT*> cast_from(Component* p) {
     return dynamic_cast<InterfaceT*>(p);
 }
 
@@ -389,8 +389,8 @@ static std::optional<InterfaceT*> castFrom(Component* p) {
         &LM_NAMESPACE::detail::create_without_construct_wrap<InterfaceT>) \
     .def_static("create", \
         &LM_NAMESPACE::detail::create_comp_wrap<InterfaceT>) \
-    .def_static("cast_from", \
-        &LM_NAMESPACE::detail::castFrom<InterfaceT>, \
+    .def_static("cast", \
+        &LM_NAMESPACE::detail::cast_from<InterfaceT>, \
         pybind11::return_value_policy::reference);
 
 /*!

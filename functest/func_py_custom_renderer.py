@@ -43,7 +43,7 @@ class Renderer_AO(lm.Renderer):
     """Simple ambient occlusion renderer"""
     
     def construct(self, prop):
-        self.film = lm.Film.cast_from(lm.comp.get(prop['output']))
+        self.film = lm.Film.cast(lm.comp.get(prop['output']))
         if self.film is None:
             return False
         self.spp = prop['spp']

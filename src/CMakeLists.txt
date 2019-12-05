@@ -78,6 +78,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/light/light_envconst.cpp"
     "${_SOURCE_DIR}/light/light_envportal.cpp"
     "${_SOURCE_DIR}/texture/texture_bitmap.cpp"
+    "${_SOURCE_DIR}/texture/texture_constant.cpp"
     "${_SOURCE_DIR}/material/material_diffuse.cpp"
     "${_SOURCE_DIR}/material/material_glass.cpp"
     "${_SOURCE_DIR}/material/material_glossy.cpp"

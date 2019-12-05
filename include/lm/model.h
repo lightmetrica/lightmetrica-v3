@@ -44,7 +44,7 @@ public:
 
     /*!
         \brief Create primitives from underlying components.
-        \param createPrimitive Callback function to be called for each primitive.
+        \param create_primitive Callback function to be called for each primitive.
 
         \rst
         This function enumerates a set of primitives generated from the model.
@@ -53,7 +53,7 @@ public:
         so the users do not want to used it directly.
         \endrst
     */
-    virtual void create_primitives(const CreatePrimitiveFunc& createPrimitive) const = 0;
+    virtual void create_primitives(const CreatePrimitiveFunc& create_primitive) const = 0;
 
 	/*!
 		\brief Callback function to process a scene node in the model.
