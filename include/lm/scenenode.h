@@ -52,20 +52,20 @@ struct SceneNode {
     // --------------------------------------------------------------------------------------------
     
     //! Variables available for Primitive type.
-    struct {
-        Mesh* mesh = nullptr;               //!< Underlying mesh.
-        Material* material = nullptr;       //!< Underlying material.
-        Light* light = nullptr;             //!< Underlying light.
-        Camera* camera = nullptr;           //!< Underlying camera.
-        Medium* medium = nullptr;           //!< Underlying medium.
+	struct {
+		Mesh* mesh = nullptr;               //!< Underlying mesh.
+		Material* material = nullptr;       //!< Underlying material.
+		Light* light = nullptr;             //!< Underlying light.
+		Camera* camera = nullptr;           //!< Underlying camera.
+		Medium* medium = nullptr;           //!< Underlying medium.
 
-        //! \cond
-        template <typename Archive>
-        void serialize(Archive& ar) {
-            ar(mesh, material, light, camera, medium);
-        }
-        //! \endcond
-    } primitive;
+		//! \cond
+		template <typename Archive>
+		void serialize(Archive& ar) {
+			ar(mesh, material, light, camera, medium);
+		}
+		//! \endcond
+	} primitive;
 
     // --------------------------------------------------------------------------------------------
 

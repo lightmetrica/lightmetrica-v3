@@ -486,6 +486,19 @@ static void bind_surface(pybind11::module& m) {
 
 // ------------------------------------------------------------------------------------------------
 
+// Bind scenenode.h
+static void bind_scenenode(pybind11::module& m) {
+	pybind11::enum_<SceneNodeType>(m, "SceneNodeType")
+		.value("Primitive", SceneNodeType::Primitive)
+		.value("Group", SceneNodeType::Group);
+
+	pybind11::class_<SceneNode>(m, "SceneNode")
+		.def_readwrite("type", &SceneNode::type)
+		.def_readwrite("index", &SceneNode::index);
+}
+
+// ------------------------------------------------------------------------------------------------
+
 // Bind scene.h
 static void bind_scene(pybind11::module& m) {
     pybind11::class_<RaySample>(m, "RaySample")
@@ -494,9 +507,9 @@ static void bind_scene(pybind11::module& m) {
         .def_readwrite("weight", &RaySample::weight)
         .def("ray", &RaySample::ray);
 
-    pybind11::enum_<SceneNodeType>(m, "SceneNodeType")
-        .value("Primitive", SceneNodeType::Primitive)
-        .value("Group", SceneNodeType::Group);
+	pybind11::class_<DistanceSample>(m, "DistanceSample")
+		.def_readwrite("sp", &DistanceSample::sp)
+		.def_readwrite("weight", &DistanceSample::weight);
 
 	class Scene_Py final : public Scene {
 		virtual void construct(const Json& prop) override {
@@ -596,6 +609,7 @@ static void bind_scene(pybind11::module& m) {
 
     pybind11::class_<Scene, Scene_Py, Component, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
+		.def("load_asset", &Scene::load_asset, pybind11::return_value_policy::reference)
         .def("root_node", &Scene::root_node)
         .def("create_node", &Scene::create_node)
         .def("add_child", &Scene::add_child)
@@ -606,12 +620,22 @@ static void bind_scene(pybind11::module& m) {
 		.def("env_light_node", &Scene::env_light_node)
         .def("traverse_primitive_nodes", &Scene::traverse_primitive_nodes)
 		.def("visit_node", &Scene::visit_node)
+		.def("node_at", &Scene::node_at, pybind11::return_value_policy::reference)
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
         .def("is_light", &Scene::is_light)
         .def("is_specular", &Scene::is_specular)
         .def("primary_ray", &Scene::primary_ray)
+		.def("raster_position", &Scene::raster_position)
         .def("sample_ray", &Scene::sample_ray)
+		.def("sample_direction_given_comp", &Scene::sample_direction_given_comp)
+		.def("sample_direct_light", &Scene::sample_direct_light)
+		.def("pdf", &Scene::pdf)
+		.def("pdf_comp", &Scene::pdf_comp)
+		.def("pdf_direct_light", &Scene::pdf_direct_light)
+		.def("sample_distance", &Scene::sample_distance)
+		.def("eval_transmittance", &Scene::eval_transmittance)
+		.def("eval_contrb", &Scene::eval_contrb)
         .def("eval_contrb_endpoint", &Scene::eval_contrb_endpoint)
         .def("reflectance", &Scene::reflectance)
         .PYLM_DEF_COMP_BIND(Scene);
@@ -819,6 +843,7 @@ PYBIND11_MODULE(pylm, m) {
     bind_debug(m);
     bind_film(m);
     bind_surface(m);
+	bind_scenenode(m);
     bind_scene(m);
     bind_renderer(m);
     bind_texture(m);
