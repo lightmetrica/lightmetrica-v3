@@ -136,15 +136,16 @@ def render_and_visualize():
 # ### Without instancing
 
 scene_setup()
+scene = lm.scene()
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
-        p = lm.primitive_node({
+        p = scene.create_primitive_node({
             'mesh': lm.asset('mesh_sphere'),
             'material': lm.asset('material_white')
         })
-        t = lm.transform_node(lm.translate(np.array([x,y,0])))
-        lm.add_child(t, p)
-        lm.add_child(lm.root_node(), t)
+        t = scene.create_group_node(lm.translate(np.array([x,y,0])))
+        scene.add_child(t, p)
+        scene.add_child(scene.root_node(), t)
 
 render_and_visualize()
 
@@ -152,10 +153,11 @@ render_and_visualize()
 
 # +
 scene_setup()
+scene = lm.scene()
 
 # Instance group
-g = lm.instance_group_node()
-lm.add_child(g, lm.primitive_node({
+g = scene.create_instance_group_node()
+scene.add_child(g, scene.create_primitive_node({
     'mesh': lm.asset('mesh_sphere'),
     'material': lm.asset('material_white')
 }))
@@ -163,9 +165,9 @@ lm.add_child(g, lm.primitive_node({
 # Transformed instanced group
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
-        t = lm.transform_node(lm.translate(np.array([x,y,0])))
-        lm.add_child(t, g)
-        lm.add_child(lm.root_node(), t)
+        t = scene.create_group_node(lm.translate(np.array([x,y,0])))
+        scene.add_child(t, g)
+        scene.add_child(scene.root_node(), t)
 # -
 
 render_and_visualize()
@@ -174,26 +176,27 @@ render_and_visualize()
 
 # +
 scene_setup()
+scene = lm.scene()
 
 # Initial group
-g1 = lm.instance_group_node()
-lm.add_child(g1, lm.primitive_node({
+g1 = scene.create_instance_group_node()
+scene.add_child(g1, scene.create_primitive_node({
     'mesh': lm.asset('mesh_sphere'),
     'material': lm.asset('material_white')
 }))
 
 # Second group using initial group as chilren
-g2 = lm.instance_group_node()
+g2 = scene.create_instance_group_node()
 for y in np.linspace(-10,10,10):
-    t = lm.transform_node(lm.translate(np.array([0,y,0])))
-    lm.add_child(t, g1)
-    lm.add_child(g2, t)
+    t = scene.create_group_node(lm.translate(np.array([0,y,0])))
+    scene.add_child(t, g1)
+    scene.add_child(g2, t)
     
 # Add transformed second group to the root node
 for x in np.linspace(-10,10,10):
-    t = lm.transform_node(lm.translate(np.array([x,0,0])))
-    lm.add_child(t, g2)
-    lm.add_child(lm.root_node(), t)
+    t = scene.create_group_node(lm.translate(np.array([x,0,0])))
+    scene.add_child(t, g2)
+    scene.add_child(scene.root_node(), t)
 # -
 
 render_and_visualize()

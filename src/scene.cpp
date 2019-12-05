@@ -201,80 +201,74 @@ public:
         return 0;
     }
 
-    virtual int create_node(SceneNodeType type, const Json& prop) override {
-        if (type == SceneNodeType::Primitive) {
-            // Find an asset by property name
-            const auto get_asset_ref_by = [&](const std::string& propName) -> Component* {
-                const auto it = prop.find(propName);
-                if (it == prop.end()) {
-                    return nullptr;
-                }
-                return comp::get<Component>(it.value().get<std::string>());
-            };
+	virtual int create_primitive_node(const Json& prop) override {
+		// Find an asset by property name
+		const auto get_asset_ref_by = [&](const std::string& propName) -> Component * {
+			const auto it = prop.find(propName);
+			if (it == prop.end()) {
+				return nullptr;
+			}
+			return comp::get<Component>(it.value().get<std::string>());
+		};
 
-            // Node index
-            const int index = int(nodes_.size());
+		// Node index
+		const int index = int(nodes_.size());
 
-            // Get asset references
-            auto* mesh = dynamic_cast<Mesh*>(get_asset_ref_by("mesh"));
-            auto* material = dynamic_cast<Material*>(get_asset_ref_by("material"));
-            auto* light = dynamic_cast<Light*>(get_asset_ref_by("light"));
-            auto* camera = dynamic_cast<Camera*>(get_asset_ref_by("camera"));
-            auto* medium = dynamic_cast<Medium*>(get_asset_ref_by("medium"));
+		// Get asset references
+		auto* mesh = dynamic_cast<Mesh*>(get_asset_ref_by("mesh"));
+		auto* material = dynamic_cast<Material*>(get_asset_ref_by("material"));
+		auto* light = dynamic_cast<Light*>(get_asset_ref_by("light"));
+		auto* camera = dynamic_cast<Camera*>(get_asset_ref_by("camera"));
+		auto* medium = dynamic_cast<Medium*>(get_asset_ref_by("medium"));
 
-            // Check validity
-            if (!mesh && !material && !light && !camera && !medium) {
-                LM_ERROR("Invalid primitive node. Given assets are invalid.");
-                return false;
-            }
-            if (camera && light) {
-                LM_ERROR("Primitive cannot be both camera and light");
-                return false;
-            }
+		// Check validity
+		if (!mesh && !material && !light && !camera && !medium) {
+			LM_ERROR("Invalid primitive node. Given assets are invalid.");
+			return false;
+		}
+		if (camera && light) {
+			LM_ERROR("Primitive cannot be both camera and light");
+			return false;
+		}
 
-            // Camera
-            if (camera) {
-                camera_ = index;
-            }
+		// Camera
+		if (camera) {
+			camera_ = index;
+		}
 
-            // Envlight
-            if (light && light->is_infinite()) {
-                if (env_light_) {
-                    LM_ERROR("Environment light is already registered. "
-                             "You can register only one environment light in the scene.");
-                    return false;
-                }
-                env_light_ = index;
-            }
+		// Envlight
+		if (light && light->is_infinite()) {
+			if (env_light_) {
+				LM_ERROR("Environment light is already registered. "
+					"You can register only one environment light in the scene.");
+				return false;
+			}
+			env_light_ = index;
+		}
 
-            // Medium
-            if (medium) {
-                // For now, consider the medium as global asset.
-                medium_ = index;
-            }
+		// Medium
+		if (medium) {
+			// For now, consider the medium as global asset.
+			medium_ = index;
+		}
 
-            // Create primitive node
-            nodes_.push_back(SceneNode::make_primitive(index, mesh, material, light, camera, medium));
+		// Create primitive node
+		nodes_.push_back(SceneNode::make_primitive(index, mesh, material, light, camera, medium));
 
-            return index;
-        }
-            
-        // ----------------------------------------------------------------------------------------
-        
-        if (type == SceneNodeType::Group) {
-            const int index = int(nodes_.size());
-            nodes_.push_back(SceneNode::make_group(
-                index,
-                json::value<bool>(prop, "instanced", false),
-                json::value_or_none<Mat4>(prop, "transform")
-            ));
-            return index;
-        }
+		return index;
+	}
 
-        // ----------------------------------------------------------------------------------------
+	virtual int create_group_node(Mat4 transform) override {
+		const int index = int(nodes_.size());
+		nodes_.push_back(SceneNode::make_group(index, false, transform));
+		return index;
+	}
 
-        LM_UNREACHABLE_RETURN();
-    }
+	virtual int create_instance_group_node() override {
+		const int index = int(nodes_.size());
+		nodes_.push_back(SceneNode::make_group(index, true, {}));
+		return index;
+	}
 
     virtual void add_child(int parent, int child) override {
         if (parent < 0 || parent >= int(nodes_.size())) {

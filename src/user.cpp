@@ -217,49 +217,21 @@ public:
         serial::load(is, renderer_);
     }
 
-    int root_node() {
-		check_initialized();
-        return scene_->root_node();
-    }
+	Scene* scene() {
+		return scene_.get();
+	}
 
-    int primitive_node(const Json& prop) {
+	void primitive(Mat4 transform, const Json& prop) {
 		check_initialized();
-        return scene_->create_node(SceneNodeType::Primitive, prop);
-    }
-
-    int group_node() {
-		check_initialized();
-        return scene_->create_node(SceneNodeType::Group, {});
-    }
-
-    int instance_group_node() {
-		check_initialized();
-        return scene_->create_node(SceneNodeType::Group, {
-            {"instanced", true}
-        });
-    }
-
-    int transform_node(Mat4 transform) {
-		check_initialized();
-        return scene_->create_node(SceneNodeType::Group, {
-            {"transform", transform}
-        });
-    }
-
-    void add_child(int parent, int child) {
-		check_initialized();
-        scene_->add_child(parent, child);
-    }
-
-    void add_child_from_model(int parent, const std::string& model_loc) {
-		check_initialized();
-        scene_->add_child_from_model(parent, model_loc);
-    }
-
-    int create_group_from_model(const std::string& model_loc) {
-		check_initialized();
-        return scene_->create_group_from_model(model_loc);
-    }
+		auto t = scene_->create_group_node(transform);
+		if (prop.find("model") != prop.end()) {
+			scene_->add_child_from_model(t, prop["model"]);
+		}
+		else {
+			scene_->add_child(t, scene_->create_primitive_node(prop));
+		}
+		scene_->add_child(scene_->root_node(), t);
+	}
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -316,47 +288,12 @@ LM_PUBLIC_API void deserialize(std::istream& is) {
     UserContext::instance().deserialize(is);
 }
 
-LM_PUBLIC_API int root_node() {
-    return UserContext::instance().root_node();
-}
-
-LM_PUBLIC_API int primitive_node(const Json& prop) {
-    return UserContext::instance().primitive_node(prop);
-}
-
-LM_PUBLIC_API int group_node() {
-    return UserContext::instance().group_node();
-}
-
-LM_PUBLIC_API int instance_group_node() {
-    return UserContext::instance().instance_group_node();
-}
-
-LM_PUBLIC_API int transform_node(Mat4 transform) {
-    return UserContext::instance().transform_node(transform);
-}
-
-LM_PUBLIC_API void add_child(int parent, int child) {
-    UserContext::instance().add_child(parent, child);
-}
-
-LM_PUBLIC_API void add_child_from_model(int parent, const std::string& model_loc) {
-    UserContext::instance().add_child_from_model(parent, model_loc);
-}
-
-LM_PUBLIC_API int create_group_from_model(const std::string& model_loc) {
-    return UserContext::instance().create_group_from_model(model_loc);
+LM_PUBLIC_API Scene* scene() {
+	return UserContext::instance().scene();
 }
 
 LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
-    auto t = transform_node(transform);
-    if (prop.find("model") != prop.end()) {
-        add_child_from_model(t, prop["model"]);
-    }
-    else {
-        add_child(t, primitive_node(prop));
-    }
-    add_child(root_node(), t);
+	UserContext::instance().primitive(transform, prop);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

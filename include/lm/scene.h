@@ -106,21 +106,42 @@ public:
     */
     virtual int root_node() = 0;
 
-    /*!
-        \brief Load scene node(s).
-        \param type Scene node type.
+	/*!
+		\brief Create primitive node.
         \param prop Property containing references to the scene components.
         \return Index of the created node.
 
-        \rst
-        This function construct a primitive and add it to the scene
-        given the transformation and the references specified in ``prop``.
-        The type of the primitive created by this function changes according to
-        the properties in ``prop``.
-        The function returns true if the loading is a success.
-        \endrst
-    */
-    virtual int create_node(SceneNodeType type, const Json& prop) = 0;
+		\rst
+		This function create a primitive scene node and add it to the scene.
+		The references to the assets are specified in ``prop``.
+		The accepted assets types are ``mesh``, ``material``, ``light``, ``camera``, and ``medium``.
+		This function returns node index if succedded.
+		\endrst
+	*/
+	virtual int create_primitive_node(const Json& prop) = 0;
+
+	/*!
+		\brief Create group node.
+		\param transform Local transoform of the node.
+
+		\rst
+		This function creates a group scen node and add it to the scene.
+		''transform'' specifies the transformation of the node to be applied to the child nodes.
+		This function returns node index if succedded.
+		\endrst
+	*/
+	virtual int create_group_node(Mat4 transform) = 0;
+
+	/*!
+		\brief Create instance group node.
+
+		\rst
+		This function creates a special group node for instance group.
+		The child nodes of this node are considered as an instance group.
+		This function returns node index if succedded.
+		\endrst
+	*/
+	virtual int create_instance_group_node() = 0;
 
     /*!
         \brief Add primitive group.

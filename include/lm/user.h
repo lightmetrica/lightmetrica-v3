@@ -223,60 +223,10 @@ public:
 // ------------------------------------------------------------------------------------------------
 
 /*!
-    \brief Get index of the root node.
-    \return Node index.
+	\brief Get underlying scene instance.
+	\brief Scene.
 */
-LM_PUBLIC_API int root_node();
-
-/*!
-    \brief Create primitive node.
-    \param prop Properties.
-    \return Index of the created node.
-
-    \rst
-    TODO: Describe about properties.
-    \endrst
-*/
-LM_PUBLIC_API int primitive_node(const Json& prop);
-
-/*!
-    \brief Create group node.
-    \return Index of the created node.
-*/
-LM_PUBLIC_API int group_node();
-
-/*!
-    \brief Create instanece group node.
-    \return Index of the created node.
-*/
-LM_PUBLIC_API int instance_group_node();
-
-/*!
-    \brief Create transform node.
-    \return Index of the created node.
-*/
-LM_PUBLIC_API int transform_node(Mat4 transform);
-
-/*!
-    \brief Add child node.
-    \param parent Index of the parent node.
-    \param child Index of the node being added to the parent.
-*/
-LM_PUBLIC_API void add_child(int parent, int child);
-
-/*!
-    \brief Add child node from model asset.
-    \param parent Index of the parent node.
-    \param model_loc Locator of the model asset.
-*/
-LM_PUBLIC_API void add_child_from_model(int parent, const std::string& model_loc);
-
-/*!
-    \brief Create group node from model asset.
-    \param model_loc Locator of the model asset.
-    \return Index of the created node.
-*/
-LM_PUBLIC_API int create_group_from_model(const std::string& model_loc);
+LM_PUBLIC_API Scene* scene();
 
 /*!
     \brief Create primitive(s) and add to the scene.

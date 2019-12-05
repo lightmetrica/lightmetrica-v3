@@ -183,13 +183,7 @@ static void bind_user(pybind11::module& m) {
     m.def("buffer", &buffer);
     m.def("serialize", (void(*)(const std::string&)) & serialize);
     m.def("deserialize", (void(*)(const std::string&)) & deserialize);
-    m.def("root_node", &root_node);
-    m.def("primitive_node", &primitive_node);
-    m.def("group_node", &group_node);
-    m.def("instance_group_node", &instance_group_node);
-    m.def("transform_node", &transform_node);
-    m.def("add_child", &add_child);
-    m.def("create_group_from_model", &create_group_from_model);
+	m.def("scene", &scene, pybind11::return_value_policy::reference);
     m.def("primitive", &primitive);
 	PYLM_DEF_ASSET_CREATE_FUNC(m, Mesh, mesh);
 	PYLM_DEF_ASSET_CREATE_FUNC(m, Texture, texture);
@@ -521,8 +515,14 @@ static void bind_scene(pybind11::module& m) {
 		virtual int root_node() override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, root_node);
 		}
-		virtual int create_node(SceneNodeType type, const Json& prop) override {
-			PYBIND11_OVERLOAD_PURE(int, Scene, loadPrimitive, type, prop);
+		virtual int create_primitive_node(const Json& prop) override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, create_primitive_node, prop);
+		}
+		virtual int create_group_node(Mat4 transform) override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, create_group_node, transform);
+		}
+		virtual int create_instance_group_node() override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, create_instance_group_node);
 		}
 		virtual void add_child(int parent, int child) override {
 			PYBIND11_OVERLOAD_PURE(void, Scene, add_child, parent, child);
@@ -611,7 +611,9 @@ static void bind_scene(pybind11::module& m) {
         .def(pybind11::init<>())
 		.def("load_asset", &Scene::load_asset, pybind11::return_value_policy::reference)
         .def("root_node", &Scene::root_node)
-        .def("create_node", &Scene::create_node)
+        .def("create_primitive_node", &Scene::create_primitive_node)
+		.def("create_group_node", &Scene::create_group_node)
+		.def("create_instance_group_node", &Scene::create_instance_group_node)
         .def("add_child", &Scene::add_child)
         .def("add_child_from_model", &Scene::add_child_from_model)
 		.def("num_nodes", &Scene::num_nodes)
