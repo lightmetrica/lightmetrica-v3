@@ -17,9 +17,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// ------------------------------------------------------------------------------------------------
-
-class Assets final : public Component {
+class Assets_ final : public Assets {
 private:
     std::vector<Component::Ptr<Component>> assets_;
     std::unordered_map<std::string, int> asset_index_map_;
@@ -52,7 +50,7 @@ private:
     }
 
 public:
-    Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) {
+    virtual Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
         LM_INFO("Loading asset [name='{}']", name);
         LM_INDENT();
 
@@ -95,7 +93,7 @@ public:
             asset->construct(prop);
 
             // Notify to update the weak references in the object tree
-            const lm::Component::ComponentVisitor visitor = [&](lm::Component*& comp, bool weak) {
+            const Component::ComponentVisitor visitor = [&](Component*& comp, bool weak) {
                 if (!comp) {
                     return;
                 }
@@ -110,7 +108,7 @@ public:
                     comp::update_weak_ref(comp);
                 }
             };
-            comp::get<lm::Component>("$")->foreach_underlying(visitor);
+            comp::get<Component>("$")->foreach_underlying(visitor);
         }
         else {
             // Register as a new asset
@@ -126,7 +124,7 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Assets, "assets::default");
+LM_COMP_REG_IMPL(Assets_, "assets::default");
 
 // ------------------------------------------------------------------------------------------------
 
@@ -142,7 +140,6 @@ struct LightPrimitiveIndex {
 
 class Scene_ final : public Scene {
 private:
-    Ptr<Assets> assets_;                             // Underlying assets
     std::vector<SceneNode> nodes_;                   // Scene nodes
     Ptr<Accel> accel_;                               // Acceleration structure
     std::optional<int> camera_;                      // Camera index
@@ -153,11 +150,10 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(assets_, nodes_, accel_, camera_, lights_, light_indices_map_, env_light_);
+        ar(nodes_, accel_, camera_, lights_, light_indices_map_, env_light_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
-        comp::visit(visit, assets_);
         comp::visit(visit, accel_);
         for (auto& node : nodes_) {
             if (node.type == SceneNodeType::Primitive) {
@@ -170,10 +166,7 @@ public:
     }
 
     virtual Component* underlying(const std::string& name) const override {
-        if (name == "assets") {
-            return assets_.get();
-        }
-        else if (name == "accel") {
+        if (name == "accel") {
             return accel_.get();
         }
         else if (name == "camera") {
@@ -184,19 +177,11 @@ public:
 
 public:
     virtual void construct(const Json&) override {
-        // Assets
-        assets_ = comp::create<Assets>("assets::default", make_loc("assets"));
         // Index 0 is fixed to the scene group
         nodes_.push_back(SceneNode::make_group(0, false, {}));
     }
 
 public:
-    virtual Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
-        return assets_->load_asset(name, implKey, prop);
-    }
-
-    // --------------------------------------------------------------------------------------------
-
     virtual int root_node() override {
         return 0;
     }

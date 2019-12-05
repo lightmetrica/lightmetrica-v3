@@ -17,17 +17,16 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// ------------------------------------------------------------------------------------------------
-
 /*
-    \brief User API context.
+    User API context.
     Manages all global states manipulated by user apis.
 */
 class UserContext : public Component {
 private:
 	bool initialized_ = false;
-    Component::Ptr<Scene> scene_;
-    Component::Ptr<Renderer> renderer_;
+	Ptr<Assets> assets_;        // Underlying assets
+    Ptr<Scene> scene_;          // Underlying scene
+    Ptr<Renderer> renderer_;    // Underlying renderer
 
 public:
     UserContext() {
@@ -42,7 +41,6 @@ public:
         static UserContext instance;
         return instance;
     }
-
 
 private:
 	// Check if the user context is initialized.
@@ -108,7 +106,10 @@ public:
 
 public:
     Component* underlying(const std::string& name) const override {
-        if (name == "scene") {
+        if (name == "assets") {
+            return assets_.get();
+        }
+        else if (name == "scene") {
             return scene_.get();
         }
         else if (name == "renderer") {
@@ -118,8 +119,9 @@ public:
     }
 
     void foreach_underlying(const ComponentVisitor& visit) override {
-        lm::comp::visit(visit, scene_);
-        lm::comp::visit(visit, renderer_);
+        comp::visit(visit, assets_);
+        comp::visit(visit, scene_);
+        comp::visit(visit, renderer_);
     }
 
 public:
@@ -133,6 +135,7 @@ public:
     }
 
     void reset() {
+        assets_ = comp::create<Assets>("assets::default", make_loc("assets"));
         scene_ = comp::create<Scene>("scene::default", make_loc("scene"));
         assert(scene_);
         renderer_.reset();
@@ -140,7 +143,7 @@ public:
 
     Component* asset(const std::string& name, const std::string& impl_key, const Json& prop) {
 		check_initialized();
-        const auto p = scene_->load_asset(name, impl_key, prop);
+        const auto p = assets_->load_asset(name, impl_key, prop);
         if (!p) {
             LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
@@ -149,7 +152,7 @@ public:
 
     std::string asset(const std::string& name) {
 		check_initialized();
-        return "$.scene.assets." + name;
+        return "$.assets." + name;
     }
 
     void build(const std::string& accel_name, const Json& prop) {
@@ -160,7 +163,7 @@ public:
     void renderer(const std::string& renderer_name, const Json& prop) {
 		check_initialized();
         LM_INFO("Creating renderer [renderer='{}']", renderer_name);
-        renderer_ = lm::comp::create<Renderer>(renderer_name, make_loc("renderer"), prop);
+        renderer_ = comp::create<Renderer>(renderer_name, make_loc("renderer"), prop);
         if (!renderer_) {
             LM_THROW_EXCEPTION_DEFAULT(Error::FailedToRender);
         }
@@ -198,6 +201,7 @@ public:
     void serialize(std::ostream& os) {
 		check_initialized();
         LM_INFO("Saving state to stream");
+        serial::save(os, assets_);
         serial::save(os, scene_);
         serial::save(os, renderer_);
     }
@@ -205,6 +209,7 @@ public:
     void deserialize(std::istream& is) {
 		check_initialized();
         LM_INFO("Loading state from stream");
+        serial::load(is, assets_);
         serial::load(is, scene_);
         serial::load(is, renderer_);
     }

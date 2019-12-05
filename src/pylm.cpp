@@ -509,9 +509,6 @@ static void bind_scene(pybind11::module& m) {
 		virtual void construct(const Json& prop) override {
 			PYBIND11_OVERLOAD(void, Scene, construct, prop);
 		}
-		virtual Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
-			PYBIND11_OVERLOAD_PURE(Component*, Scene, load_asset, name, implKey, prop);
-		}
 		virtual int root_node() override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, root_node);
 		}
@@ -609,7 +606,6 @@ static void bind_scene(pybind11::module& m) {
 
     pybind11::class_<Scene, Scene_Py, Component, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
-		.def("load_asset", &Scene::load_asset, pybind11::return_value_policy::reference)
         .def("root_node", &Scene::root_node)
         .def("create_primitive_node", &Scene::create_primitive_node)
 		.def("create_group_node", &Scene::create_group_node)
