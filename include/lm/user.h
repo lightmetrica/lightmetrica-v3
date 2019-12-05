@@ -61,11 +61,11 @@ LM_PUBLIC_API void info();
 // ------------------------------------------------------------------------------------------------
 
 /*!
-    \brief Create an asset.
+    \brief Create asset.
     \param name Identifier of the asset.
     \param impl_key Name of the asset to create.
     \param prop Properties for configuration.
-    \return Locator of the asset.
+    \return A pointer to the asset.
     \see `example/blank.cpp`
 
     \rst
@@ -77,14 +77,16 @@ LM_PUBLIC_API void info();
     If ``name`` is already registered or ``impl_key`` is missing,
     the framework will generate corresponding error messages
     through logger system as well as runtime error exception.
+	This function returns a pointer to the instance,
+	which is managed internally in the framework.
     \endrst
 */
-LM_PUBLIC_API std::string asset(const std::string& name, const std::string& impl_key, const Json& prop);
+LM_PUBLIC_API Component* asset(const std::string& name, const std::string& impl_key, const Json& prop);
 
 /*!
-    \brief Get the locator of an asset.
-    \param name Identifier of the asset.
-    \return Locator of the asset.
+	\brief Get the locator of an asset.
+	\param name Identifier of the asset.
+	\return Locator of the asset.
 */
 LM_PUBLIC_API std::string asset(const std::string& name);
 

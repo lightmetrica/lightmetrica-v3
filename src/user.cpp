@@ -9,11 +9,19 @@
 #include <lm/user.h>
 #include <lm/scene.h>
 #include <lm/renderer.h>
-#include <lm/film.h>
 #include <lm/parallel.h>
 #include <lm/progress.h>
 #include <lm/debugio.h>
 #include <lm/objloader.h>
+
+#include <lm/mesh.h>
+#include <lm/material.h>
+#include <lm/light.h>
+#include <lm/camera.h>
+#include <lm/medium.h>
+#include <lm/phase.h>
+#include <lm/film.h>
+#include <lm/model.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -138,13 +146,13 @@ public:
         renderer_.reset();
     }
 
-    std::string asset(const std::string& name, const std::string& impl_key, const Json& prop) {
+    Component* asset(const std::string& name, const std::string& impl_key, const Json& prop) {
 		check_initialized();
-        const auto loc = scene_->load_asset(name, impl_key, prop);
-        if (!loc) {
+        const auto p = scene_->load_asset(name, impl_key, prop);
+        if (!p) {
             LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
         }
-        return *loc;
+        return p;
     }
 
     std::string asset(const std::string& name) {
@@ -272,12 +280,12 @@ LM_PUBLIC_API void info() {
     UserContext::instance().info();
 }
 
-LM_PUBLIC_API std::string asset(const std::string& name, const std::string& impl_key, const Json& prop) {
+LM_PUBLIC_API Component* asset(const std::string& name, const std::string& impl_key, const Json& prop) {
     return UserContext::instance().asset(name, impl_key, prop);
 }
 
 LM_PUBLIC_API std::string asset(const std::string& name) {
-    return UserContext::instance().asset(name);
+	return UserContext::instance().asset(name);
 }
 
 LM_PUBLIC_API void build(const std::string& accel_name, const Json& prop) {

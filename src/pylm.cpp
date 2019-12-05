@@ -119,7 +119,7 @@ static void bind_math(pybind11::module& m) {
 static void bind_component(pybind11::module& m) {
     class Component_Py final : public Component {
     public:
-        PYLM_SERIALIZE_IMPL(Component)
+		PYLM_SERIALIZE_IMPL(Component);
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Component, construct, prop);
         }
@@ -159,13 +159,21 @@ static void bind_component(pybind11::module& m) {
 
 // ------------------------------------------------------------------------------------------------
 
+// Generate a function for the built-in interface
+#define PYLM_DEF_ASSET_CREATE_FUNC(m, InterfaceType, interface_name) \
+	m.def(fmt::format("load_{}", #interface_name).c_str(), \
+		[](const std::string& name, const std::string& impl_key, const Json& prop) -> InterfaceType* { \
+			auto* p = asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+			return dynamic_cast<InterfaceType*>(p); \
+		})
+
 // Bind user.h
 static void bind_user(pybind11::module& m) {
     m.def("init", &init, "prop"_a = Json{});
     m.def("shutdown", &shutdown);
     m.def("info", &info);
     m.def("reset", &reset);
-    m.def("asset", (std::string(*)(const std::string&, const std::string&, const Json&)) & asset);
+    m.def("asset", (Component*(*)(const std::string&, const std::string&, const Json&)) & asset, pybind11::return_value_policy::reference);
     m.def("asset", (std::string(*)(const std::string&)) & asset);
     m.def("build", &build);
     m.def("renderer", &renderer, pybind11::call_guard<pybind11::gil_scoped_release>());
@@ -183,6 +191,14 @@ static void bind_user(pybind11::module& m) {
     m.def("add_child", &add_child);
     m.def("create_group_from_model", &create_group_from_model);
     m.def("primitive", &primitive);
+	PYLM_DEF_ASSET_CREATE_FUNC(m, Mesh, mesh);
+	PYLM_DEF_ASSET_CREATE_FUNC(m, Texture, texture);
+	PYLM_DEF_ASSET_CREATE_FUNC(m, Material, material);
+	PYLM_DEF_ASSET_CREATE_FUNC(m, Camera, camera);
+	PYLM_DEF_ASSET_CREATE_FUNC(m, Medium, medium);
+	PYLM_DEF_ASSET_CREATE_FUNC(m, Phase, phase);
+	PYLM_DEF_ASSET_CREATE_FUNC(m, Film, film);
+	PYLM_DEF_ASSET_CREATE_FUNC(m, Model, model);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -226,7 +242,7 @@ static void bind_logger(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(void, LoggerContext, set_severity, severity);
         }
     };
-    pybind11::class_<LoggerContext, LoggerContext_Py, Component::Ptr<LoggerContext>>(sm, "LoggerContext")
+    pybind11::class_<LoggerContext, LoggerContext_Py, Component, Component::Ptr<LoggerContext>>(sm, "LoggerContext")
         .def(pybind11::init<>())
         .def("log", &LoggerContext::log)
         .def("update_indentation", &LoggerContext::update_indentation)
@@ -300,7 +316,7 @@ static void bind_progress(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(void, ProgressContext, update_time, elapsed);
         }
     };
-    pybind11::class_<ProgressContext, ProgressContext_Py, Component::Ptr<ProgressContext>>(sm, "ProgressContext")
+    pybind11::class_<ProgressContext, ProgressContext_Py, Component, Component::Ptr<ProgressContext>>(sm, "ProgressContext")
         .def(pybind11::init<>())
         .def("start", &ProgressContext::start)
         .def("end", &ProgressContext::end)
@@ -424,7 +440,7 @@ static void bind_film(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(void, Film, clear);
         }
     };
-    pybind11::class_<Film, Film_Py, Component::Ptr<Film>>(m, "Film")
+    pybind11::class_<Film, Film_Py, Component, Component::Ptr<Film>>(m, "Film")
         .def(pybind11::init<>())
         .def("loc", &Film::loc)
         .def("size", &Film::size)
@@ -482,108 +498,114 @@ static void bind_scene(pybind11::module& m) {
         .value("Primitive", SceneNodeType::Primitive)
         .value("Group", SceneNodeType::Group);
 
-    class Scene_Py final : public Scene {
-        virtual void construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(void, Scene, construct, prop);
-        }
-        virtual std::optional<std::string> load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
-            PYBIND11_OVERLOAD_PURE(std::optional<std::string>, Scene, load_asset, name, implKey, prop);
-        }
-        virtual int root_node() override {
-            PYBIND11_OVERLOAD_PURE(int, Scene, root_node);
-        }
-        virtual int create_node(SceneNodeType type, const Json& prop) override {
-            PYBIND11_OVERLOAD_PURE(int, Scene, loadPrimitive, type, prop);
-        }
-        virtual void add_child(int parent, int child) override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, add_child, parent, child);
-        }
-        virtual void add_child_from_model(int parent, const std::string& modelLoc) override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, add_child_from_model, parent, modelLoc);
-        }
+	class Scene_Py final : public Scene {
+		virtual void construct(const Json& prop) override {
+			PYBIND11_OVERLOAD(void, Scene, construct, prop);
+		}
+		virtual Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
+			PYBIND11_OVERLOAD_PURE(Component*, Scene, load_asset, name, implKey, prop);
+		}
+		virtual int root_node() override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, root_node);
+		}
+		virtual int create_node(SceneNodeType type, const Json& prop) override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, loadPrimitive, type, prop);
+		}
+		virtual void add_child(int parent, int child) override {
+			PYBIND11_OVERLOAD_PURE(void, Scene, add_child, parent, child);
+		}
+		virtual void add_child_from_model(int parent, const std::string& modelLoc) override {
+			PYBIND11_OVERLOAD_PURE(void, Scene, add_child_from_model, parent, modelLoc);
+		}
 		virtual int create_group_from_model(const std::string& modelLoc) override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, create_group_from_model, modelLoc);
 		}
 		virtual int num_nodes() const override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, num_nodes);
 		}
-        virtual int num_lights() const override {
-            PYBIND11_OVERLOAD_PURE(int, Scene, num_lights);
-        }
+		virtual int num_lights() const override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, num_lights);
+		}
 		virtual int camera_node() const override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, camera_node);
 		}
 		virtual int env_light_node() const override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, env_light_node);
 		}
-        virtual void traverse_primitive_nodes(const NodeTraverseFunc& traverseFunc) const override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, traverse_primitive_nodes, traverseFunc);
-        }
-        virtual void visit_node(int node_index, const VisitNodeFunc& visit) const override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, visit_node, node_index, visit);
-        }
-        virtual const SceneNode& node_at(int node_index) const override {
-            PYBIND11_OVERLOAD_PURE(const SceneNode&, Scene, node_at, node_index);
-        }
-        virtual void build(const std::string& name, const Json& prop) override {
-            PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
-        }
-        virtual std::optional<SceneInteraction> intersect(Ray ray, Float tmin, Float tmax) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<SceneInteraction>, Scene, intersect, ray, tmin, tmax);
-        }
-        virtual bool is_light(const SceneInteraction& sp) const override {
-            PYBIND11_OVERLOAD_PURE(bool, Scene, is_light, sp);
-        }
-        virtual bool is_specular(const SceneInteraction& sp, int comp) const override {
-            PYBIND11_OVERLOAD_PURE(bool, Scene, is_specular, sp, comp);
-        }
-        virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const override {
-            PYBIND11_OVERLOAD_PURE(Ray, Scene, primary_ray, rp, aspect_ratio);
-        }
-        virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, raster_position, wo, aspect_ratio);
-        }
-        virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_ray, rng, sp, wi);
-        }
-        virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, sample_direction_given_comp, rng, sp, comp, wi);
-        }
-        virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_direct_light, rng, sp);
-        }
-        virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, comp, wi, wo);
-        }
-        virtual Float pdf_comp(const SceneInteraction& sp, int comp, Vec3 wi) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_comp, sp, comp, wi);
-        }
-        virtual Float pdf_direct_light(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direct_light, sp, spL, compL, wo);
-        }
-        virtual std::optional<DistanceSample> sample_distance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Scene, sample_distance, rng, sp, wo);
-        }
-        virtual Vec3 eval_transmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_transmittance, rng, sp1, sp2);
-        }
-        virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb, sp, comp, wi, wo);
-        }
-        virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb_endpoint, sp, wo);
-        }
-        virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp, comp);
-        }
-    };
-    pybind11::class_<Scene, Scene_Py, Component::Ptr<Scene>>(m, "Scene")
+		virtual void traverse_primitive_nodes(const NodeTraverseFunc& traverseFunc) const override {
+			PYBIND11_OVERLOAD_PURE(void, Scene, traverse_primitive_nodes, traverseFunc);
+		}
+		virtual void visit_node(int node_index, const VisitNodeFunc& visit) const override {
+			PYBIND11_OVERLOAD_PURE(void, Scene, visit_node, node_index, visit);
+		}
+		virtual const SceneNode& node_at(int node_index) const override {
+			PYBIND11_OVERLOAD_PURE(const SceneNode&, Scene, node_at, node_index);
+		}
+		virtual void build(const std::string& name, const Json& prop) override {
+			PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
+		}
+		virtual std::optional<SceneInteraction> intersect(Ray ray, Float tmin, Float tmax) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<SceneInteraction>, Scene, intersect, ray, tmin, tmax);
+		}
+		virtual bool is_light(const SceneInteraction& sp) const override {
+			PYBIND11_OVERLOAD_PURE(bool, Scene, is_light, sp);
+		}
+		virtual bool is_specular(const SceneInteraction& sp, int comp) const override {
+			PYBIND11_OVERLOAD_PURE(bool, Scene, is_specular, sp, comp);
+		}
+		virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const override {
+			PYBIND11_OVERLOAD_PURE(Ray, Scene, primary_ray, rp, aspect_ratio);
+		}
+		virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, raster_position, wo, aspect_ratio);
+		}
+		virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_ray, rng, sp, wi);
+		}
+		virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const {
+			PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, sample_direction_given_comp, rng, sp, comp, wi);
+		}
+		virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_direct_light, rng, sp);
+		}
+		virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
+			PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, comp, wi, wo);
+		}
+		virtual Float pdf_comp(const SceneInteraction& sp, int comp, Vec3 wi) const override {
+			PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_comp, sp, comp, wi);
+		}
+		virtual Float pdf_direct_light(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const override {
+			PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direct_light, sp, spL, compL, wo);
+		}
+		virtual std::optional<DistanceSample> sample_distance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Scene, sample_distance, rng, sp, wo);
+		}
+		virtual Vec3 eval_transmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
+			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_transmittance, rng, sp1, sp2);
+		}
+		virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
+			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb, sp, comp, wi, wo);
+		}
+		virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const override {
+			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb_endpoint, sp, wo);
+		}
+		virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp, comp);
+		}
+	};
+
+    pybind11::class_<Scene, Scene_Py, Component, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
         .def("root_node", &Scene::root_node)
         .def("create_node", &Scene::create_node)
         .def("add_child", &Scene::add_child)
         .def("add_child_from_model", &Scene::add_child_from_model)
+		.def("num_nodes", &Scene::num_nodes)
+		.def("num_lights", &Scene::num_lights)
+		.def("camera_node", &Scene::camera_node)
+		.def("env_light_node", &Scene::env_light_node)
         .def("traverse_primitive_nodes", &Scene::traverse_primitive_nodes)
+		.def("visit_node", &Scene::visit_node)
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
         .def("is_light", &Scene::is_light)
@@ -600,15 +622,15 @@ static void bind_scene(pybind11::module& m) {
 // Bind renderer.h
 static void bind_renderer(pybind11::module& m) {
     class Renderer_Py final : public Renderer {
-        PYLM_SERIALIZE_IMPL(Renderer)
-            virtual void construct(const Json& prop) override {
+		PYLM_SERIALIZE_IMPL(Renderer);
+        virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Renderer, construct, prop);
         }
         virtual void render(const Scene* scene) const override {
             PYBIND11_OVERLOAD_PURE(void, Renderer, render, scene);
         }
     };
-    pybind11::class_<Renderer, Renderer_Py, Component::Ptr<Renderer>>(m, "Renderer")
+    pybind11::class_<Renderer, Renderer_Py, Component, Component::Ptr<Renderer>>(m, "Renderer")
         .def(pybind11::init<>())
         .def("render", &Renderer::render)
         .PYLM_DEF_COMP_BIND(Renderer);
@@ -632,7 +654,7 @@ static void bind_texture(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Vec3, Texture, eval_by_pixel_coords, x, y);
         }
     };
-    pybind11::class_<Texture, Texture_Py, Component::Ptr<Texture>>(m, "Texture")
+    pybind11::class_<Texture, Texture_Py, Component, Component::Ptr<Texture>>(m, "Texture")
         .def(pybind11::init<>())
         .def("size", &Texture::size)
         .def("eval", &Texture::eval)
@@ -673,7 +695,7 @@ static void bind_material(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, comp, wi, wo);
         }
     };
-    pybind11::class_<Material, Material_Py, Component::Ptr<Material>>(m, "Material")
+    pybind11::class_<Material, Material_Py, Component, Component::Ptr<Material>>(m, "Material")
         .def(pybind11::init<>())
         .def("is_specular", &Material::is_specular)
         .def("sample", &Material::sample)
@@ -681,6 +703,97 @@ static void bind_material(pybind11::module& m) {
         .def("pdf", &Material::pdf)
         .def("eval", &Material::eval)
         .PYLM_DEF_COMP_BIND(Material);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind phase.h
+static void bind_phase(pybind11::module& m) {
+	pybind11::class_<PhaseDirectionSample>(m, "PhaseDirectionSample")
+		.def(pybind11::init<>())
+		.def_readwrite("wo", &PhaseDirectionSample::wo)
+		.def_readwrite("weight", &PhaseDirectionSample::weight);
+
+	class Phase_Py final : public Phase {
+		virtual void construct(const Json& prop) override {
+			PYBIND11_OVERLOAD(void, Phase, construct, prop);
+		}
+		virtual bool is_specular(const PointGeometry& geom) const override {
+			PYBIND11_OVERLOAD_PURE(bool, Phase, is_specular, geom);
+		}
+		virtual std::optional<PhaseDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<PhaseDirectionSample>, Phase, sample, rng, geom, wi);
+		}
+		virtual Float pdf(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
+			PYBIND11_OVERLOAD_PURE(Float, Phase, pdf, geom, wi, wo);
+		}
+		virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
+			PYBIND11_OVERLOAD_PURE(Vec3, Phase, eval, geom, wi, wo);
+		}
+	};
+	pybind11::class_<Phase, Phase_Py, Component, Component::Ptr<Phase>>(m, "Phase")
+		.def(pybind11::init<>())
+		.def("is_specular", &Phase::is_specular)
+		.def("sample", &Phase::sample)
+		.def("pdf", &Phase::pdf)
+		.def("eval", &Phase::eval)
+		.PYLM_DEF_COMP_BIND(Phase);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind medium.h
+static void bind_medium(pybind11::module& m) {
+	pybind11::class_<MediumDistanceSample>(m, "MediumDistanceSample")
+		.def(pybind11::init<>())
+		.def_readwrite("p", &MediumDistanceSample::p)
+		.def_readwrite("weight", &MediumDistanceSample::weight)
+		.def_readwrite("medium", &MediumDistanceSample::medium);
+
+	class Medium_Py final : public Medium {
+		virtual void construct(const Json& prop) override {
+			PYBIND11_OVERLOAD(void, Medium, construct, prop);
+		}
+		virtual std::optional<MediumDistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<MediumDistanceSample>, Medium, sample_distance, rng, ray, tmin, tmax);
+		}
+		virtual Vec3 eval_transmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+			PYBIND11_OVERLOAD_PURE(Vec3, Medium, eval_transmittance, rng, ray, tmin, tmax);
+		}
+		virtual bool is_emitter() const override {
+			PYBIND11_OVERLOAD_PURE(bool, Medium, is_emitter);
+		}
+		virtual const Phase* phase() const override {
+			PYBIND11_OVERLOAD_PURE(const Phase*, Medium, phase);
+		}
+	};
+	pybind11::class_<Medium, Medium_Py, Component, Component::Ptr<Medium>>(m, "Medium")
+		.def(pybind11::init<>())
+		.def("sample_distance", &Medium::sample_distance)
+		.def("eval_transmittance", &Medium::eval_transmittance)
+		.def("is_emitter", &Medium::is_emitter)
+		.def("phase", &Medium::phase, pybind11::return_value_policy::reference);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind model.h
+static void bind_model(pybind11::module& m) {
+	class Model_Py final : public Model {
+		virtual void construct(const Json& prop) override {
+			PYBIND11_OVERLOAD(void, Model, construct, prop);
+		}
+		virtual void create_primitives(const CreatePrimitiveFunc& create_primitive) const override {
+			PYBIND11_OVERLOAD_PURE(void, Model, create_primitives, create_primitive)
+		}
+		virtual void foreach_node(const VisitNodeFuncType& visit) const override {
+			PYBIND11_OVERLOAD_PURE(void, Model, foreach_node, visit);
+		}
+	};
+	pybind11::class_<Model, Model_Py, Component, Component::Ptr<Model>>(m, "Model")
+		.def(pybind11::init<>())
+		.def("create_primitives", &Model::create_primitives)
+		.def("foreach_node", &Model::foreach_node);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -697,20 +810,23 @@ PYBIND11_MODULE(pylm, m) {
     bind_version(m);
     bind_math(m);
     bind_component(m);
-    bind_user(m);
     bind_logger(m);
     bind_parallel(m);
+	bind_distributed(m);
     bind_objloader(m);
     bind_progress(m);
     bind_debugio(m);
     bind_debug(m);
-    bind_distributed(m);
     bind_film(m);
     bind_surface(m);
     bind_scene(m);
     bind_renderer(m);
     bind_texture(m);
     bind_material(m);
+	bind_medium(m);
+	bind_phase(m);
+	bind_model(m);
+	bind_user(m);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

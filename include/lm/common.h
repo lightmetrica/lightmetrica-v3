@@ -247,6 +247,7 @@ struct ComponentDeleter;  // component.h
 class Component;
 class Assets;             // assets.h
 class Mesh;               // mesh.h
+class Texture;            // texture.h
 class Material;           // material.h
 class Light;              // light.h
 class Camera;             // camera.h
@@ -254,6 +255,7 @@ class Medium;             // medium.h
 class Phase;              // phase.h
 struct FilmBuffer;        // film.h
 class Film;
+class Model;              // model.h
 struct PointGeometry;     // surface.h
 struct SceneInteraction;  // scene.h
 struct RaySample;
