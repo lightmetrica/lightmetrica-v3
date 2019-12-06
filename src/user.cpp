@@ -23,7 +23,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class UserContext : public Component {
 private:
-	bool initialized_ = false;
+	bool initialized_ = false;  // True if initialized
 	Ptr<Assets> assets_;        // Underlying assets
 
 public:
@@ -52,49 +52,19 @@ private:
 	}
 
 public:
-    void init(const Json& prop) {
-        // Exception subsystem
+    void init(const Json&) {
         exception::init();
-
-        // Logger subsystem
-        log::init(json::value<std::string>(prop, "logger", log::DefaultType));
-
-        // Parallel subsystem
-        parallel::init("parallel::openmp", prop);
-        if (auto it = prop.find("progress");  it != prop.end()) {
-            it = it->begin();
-            progress::init(it.key(), it.value());
-        }
-        else {
-            progress::init(progress::DefaultType);
-        }
-
-        // Debugio subsystem
-        // This subsystem is initialized only if the parameter is given
-        if (auto it = prop.find("debugio"); it != prop.end()) {
-            it = it->begin();
-            debugio::init(it.key(), it.value());
-        }
-        if (auto it = prop.find("debugio_server"); it != prop.end()) {
-            it = it->begin();
-            debugio::server::init(it.key(), it.value());
-        }
-
-        // OBJ loader
+        log::init();
+        parallel::init();
+        progress::init();
         objloader::init();
-
-        // Create assets and scene
         reset();
-
-		// Initialized
 		initialized_ = true;
     }
 
     void shutdown() {
 		check_initialized();
         objloader::shutdown();
-        debugio::shutdown();
-        debugio::server::shutdown();
         progress::shutdown();
         parallel::shutdown();
         log::shutdown();
@@ -117,7 +87,6 @@ public:
 public:
     void info() {
 		check_initialized();
-        // Print information of Lightmetrica
         LM_INFO("Lightmetrica -- Version {} {} {}",
             version::formatted(),
             version::platform(),

@@ -11,7 +11,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE::objloader)
 using Instance = comp::detail::ContextInstance<OBJLoaderContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
-    Instance::init(type, prop);
+    Instance::init("objloader::" + type, prop);
 }
 
 LM_PUBLIC_API void shutdown() {

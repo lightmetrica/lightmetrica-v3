@@ -17,7 +17,7 @@ TEST_CASE("Debugio") {
 
     // Server
     std::thread thread_server([]() {
-        lm::debugio::server::ScopedInit init("debugio::server", {
+        lm::debugio::server::ScopedInit init(lm::Json{
             {"address", "tcp://*:5555"}
         });
         std::atomic<bool> done = false;
@@ -32,12 +32,12 @@ TEST_CASE("Debugio") {
 
     // Client
     std::thread thread_client([]() {
-        lm::debugio::ScopedInit init("debugio::client", {
+        lm::debugio::client::ScopedInit init(lm::Json{
             {"address", "tcp://localhost:5555"}
         });
 
         // Send a message to the server
-        lm::debugio::handle_message("hai domo");
+        lm::debugio::client::handle_message("hai domo");
     });
 
     thread_client.join();

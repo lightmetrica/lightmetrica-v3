@@ -172,7 +172,7 @@ LM_COMP_REG_IMPL(LoggerContext_Default, "logger::default");
 using Instance = comp::detail::ContextInstance<LoggerContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
-    Instance::init(type, prop);
+    Instance::init("logger::" + type, prop);
 }
 
 LM_PUBLIC_API void shutdown() {

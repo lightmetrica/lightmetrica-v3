@@ -10,6 +10,7 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(debugio)
+LM_NAMESPACE_BEGIN(client)
 
 /*!
     \addtogroup debugio
@@ -18,14 +19,13 @@ LM_NAMESPACE_BEGIN(debugio)
 
 /*!
     \brief Initialize debugio context.
-    \param type Type of debugio subsystem.
     \param prop Configuration properties.
 
     \rst
     This function initializes debugio subsystem with specified type and properties.
     \endrst
 */
-LM_PUBLIC_API void init(const std::string& type, const Json& prop);
+LM_PUBLIC_API void init(const Json& prop);
 
 /*!
     \brief Shutdown debugio context.
@@ -82,24 +82,16 @@ LM_PUBLIC_API void draw(int type, Vec3 color, const std::vector<Vec3>& vs);
 */
 class ScopedInit {
 public:
-    ScopedInit(const std::string& type, const Json& prop) { init(type, prop); }
+    ScopedInit(const Json& prop) { init(prop); }
     ~ScopedInit() { shutdown(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
 
 /*!
-    \brief Debugio context.
-*/
-class DebugioContext : public Component {
-public:
-    virtual void handle_message(const std::string& message) { LM_UNUSED(message); }
-    virtual void sync_user_context() {}
-    virtual void draw(int type, Vec3 color, const std::vector<Vec3>& vs) { LM_UNUSED(type, color, vs); }
-};
-
-/*!
     @}
 */
+
+LM_NAMESPACE_END(client)
 
 // ----------------------------------------------------------------------------
 
@@ -112,14 +104,13 @@ LM_NAMESPACE_BEGIN(server)
 
 /*!
     \brief Initialize debugio server context.
-    \param type Type of debugio server subsystem.
     \param prop Configuration properties.
 
     \rst
     This function initializes debugio server subsystem with specified type and properties.
     \endrst
 */
-LM_PUBLIC_API void init(const std::string& type, const Json& prop);
+LM_PUBLIC_API void init(const Json& prop);
 
 /*!
     \brief Shutdown debugio server context.
@@ -184,21 +175,9 @@ LM_PUBLIC_API void on_draw(const DrawFunc& process);
 */
 class ScopedInit {
 public:
-    ScopedInit(const std::string& type, const Json& prop) { init(type, prop); }
+    ScopedInit(const Json& prop) { init(prop); }
     ~ScopedInit() { shutdown(); }
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
-};
-
-/*!
-    \brief Debugio server context.
-*/
-class DebugioServerContext : public Component {
-public:
-    virtual void poll() = 0;
-    virtual void run() = 0;
-    virtual void on_handle_message(const HandleMessageFunc& process) = 0;
-    virtual void on_sync_user_context(const SyncUserContextFunc& process) = 0;
-    virtual void on_draw(const DrawFunc& process) = 0;
 };
 
 /*!

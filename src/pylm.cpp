@@ -322,11 +322,12 @@ static void bind_progress(pybind11::module& m) {
 // Bind debugio.h
 static void bind_debugio(pybind11::module& m) {
     auto sm = m.def_submodule("debugio");
-    sm.def("init", &debugio::init);
-    sm.def("shutdown", &debugio::shutdown);
-    sm.def("handle_message", &debugio::handle_message);
-    sm.def("sync_user_context", &debugio::sync_user_context);
-    sm.def("draw", &debugio::draw);
+    auto sm_client = sm.def_submodule("client");
+    sm_client.def("init", &debugio::client::init);
+    sm_client.def("shutdown", &debugio::client::shutdown);
+    sm_client.def("handle_message", &debugio::client::handle_message);
+    sm_client.def("sync_user_context", &debugio::client::sync_user_context);
+    sm_client.def("draw", &debugio::client::draw);
 }
 
 // ------------------------------------------------------------------------------------------------

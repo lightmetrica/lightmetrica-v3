@@ -17,7 +17,7 @@ LM_NAMESPACE_BEGIN(parallel)
 */
 
 //! Default parallel context type
-constexpr const char* DefaultType = "parallel::openmp";
+constexpr const char* DefaultType = "openmp";
 
 /*!
     \brief Initialize parallel context.

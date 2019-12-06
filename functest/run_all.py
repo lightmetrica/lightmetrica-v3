@@ -29,7 +29,6 @@ def run_functests(output_dir, lmenv_path):
         'example_pt',
         'example_custom_material',
         'example_custom_renderer',
-        'example_cpp',
         'func_render_all',
         'func_render_instancing',
         'func_accel_consistency',

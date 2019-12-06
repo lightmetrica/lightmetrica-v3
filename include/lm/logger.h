@@ -18,7 +18,7 @@ LM_NAMESPACE_BEGIN(log)
 */
 
 //! Default logger type
-constexpr const char* DefaultType = "logger::default";
+constexpr const char* DefaultType = "default";
 
 /*!
     \brief Log level.

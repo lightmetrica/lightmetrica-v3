@@ -82,7 +82,7 @@ using ProcessMaterialFunc = std::function<bool(const MTLMatParams& m)>;
 // ------------------------------------------------------------------------------------------------
 
 //! Default parallel context type
-constexpr const char* DefaultType = "objloader::simple";
+constexpr const char* DefaultType = "simple";
 
 /*!
     \brief Initialize objloader context.

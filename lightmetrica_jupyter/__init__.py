@@ -12,36 +12,6 @@ import time
 from IPython import get_ipython
 from IPython.display import display, Markdown
 
-def jupyter_init_config(outfilm):
-    """ init() configuration for jupyter notebook extension """
-    return {
-        # Configure logger for jupyter notebook
-        'logger': 'logger::jupyter',
-        
-        # Configure progress reporter for jupyter notebook
-        # We can utilize multiple instance of progress reporters.
-        # In this example, we used progress bar UI (progress::jupyter)
-        # and progress image reporter (progress::film_jupyter)
-        'progress': {
-            'progress::mux': [
-                {
-                    'progress::jupyter': {}
-                },
-                {
-                    'progress::delay': {
-                        'delay': 1000,
-                        'progress': {
-                            'progress::film_jupyter': {
-                                'film': outfilm,
-                                'size': [10,5]
-                            }
-                        }
-                    }
-                }
-            ]
-        }
-    }
-
 def widen(arg):
     from IPython.core.display import display, HTML
     display(HTML("<style>.container { width:100% !important; }</style>"))

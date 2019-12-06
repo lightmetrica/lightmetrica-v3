@@ -12,22 +12,6 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE::debugio)
 
-// https://stackoverflow.com/questions/7781898/get-an-istream-from-a-char
-struct membuf : std::streambuf {
-    membuf(char const* base, size_t size) {
-        char* p(const_cast<char*>(base));
-        this->setg(p, p, p + size);
-    }
-};
-struct imemstream : virtual membuf, std::istream {
-    imemstream(char const* base, size_t size)
-        : membuf(base, size)
-        , std::istream(static_cast<std::streambuf*>(this)) {
-    }
-};
-
-// ------------------------------------------------------------------------------------------------
-
 // Shared command between server and client
 enum class Command {
     handle_message,
@@ -37,10 +21,18 @@ enum class Command {
 
 // ------------------------------------------------------------------------------------------------
 
-class DebugioContext_Client final : public DebugioContext {
+LM_NAMESPACE_BEGIN(client)
+
+class DebugioContext_Client final {
 private:
     zmq::context_t context_;
     zmq::socket_t socket_;
+
+public:
+    static DebugioContext_Client& instance() {
+        static DebugioContext_Client instance;
+        return instance;
+    }
 
 public:
     DebugioContext_Client()
@@ -49,13 +41,24 @@ public:
     {}
 
 public:
-    virtual void construct(const Json& prop) override {
+    void init(const Json& prop) {
         try {
+            if (!context_) {
+                // Create a new context when context is invalid.
+                // context_ might be closed by shutdown() function.
+                zmq::context_t new_context(1);
+                context_.swap(new_context);
+            }
             socket_.connect(json::value<std::string>(prop, "address"));
         }
         catch (const zmq::error_t& e) {
             LM_THROW_EXCEPTION(Error::None, "ZMQ Error: {}", e.what());
         }
+    }
+
+    void shutdown() {
+        socket_.close();
+        context_.close();
     }
 
 private:
@@ -74,33 +77,55 @@ private:
     }
 
 public:
-    virtual void handle_message(const std::string& message) override {
+    void handle_message(const std::string& message) {
         std::stringstream ss;
         serial::save(ss, message);
         call(Command::handle_message, ss.str());
     }
 
-    virtual void sync_user_context() override {
+    void sync_user_context() {
         LM_INFO("Syncing user context");
         std::stringstream ss;
         lm::serialize(ss);
         call(Command::sync_user_context, ss.str());
     }
 
-    virtual void draw(int type, Vec3 color, const std::vector<Vec3>& vs) override {
+    void draw(int type, Vec3 color, const std::vector<Vec3>& vs) {
         std::stringstream ss;
         serial::save(ss, type, color, vs);
         call(Command::draw, ss.str());
     }
 };
 
-LM_COMP_REG_IMPL(DebugioContext_Client, "debugio::client");
+// ------------------------------------------------------------------------------------------------
+
+LM_PUBLIC_API void init(const Json& prop) {
+    DebugioContext_Client::instance().init(prop);
+}
+
+LM_PUBLIC_API void shutdown() {
+    DebugioContext_Client::instance().shutdown();
+}
+
+LM_PUBLIC_API void handle_message(const std::string& message) {
+    DebugioContext_Client::instance().handle_message(message);
+}
+
+LM_PUBLIC_API void sync_user_context() {
+    DebugioContext_Client::instance().sync_user_context();
+}
+
+LM_PUBLIC_API void draw(int type, Vec3 color, const std::vector<Vec3>& vs) {
+    DebugioContext_Client::instance().draw(type, color, vs);
+}
+
+LM_NAMESPACE_END(client)
 
 // ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(server)
 
-class DebugioContext_Server final : public DebugioServerContext {
+class DebugioContext_Server final {
 private:
     zmq::context_t context_;
     zmq::socket_t socket_;
@@ -109,20 +134,40 @@ private:
     DrawFunc on_draw_;
 
 public:
+    static DebugioContext_Server& instance() {
+        static std::unique_ptr<DebugioContext_Server> instance(new DebugioContext_Server);
+        return *instance;
+    }
+
+public:
     DebugioContext_Server()
         : context_(1)
         , socket_(context_, ZMQ_REP)
     {}
 
 public:
-    virtual void on_handle_message(const HandleMessageFunc& process) override { on_handle_message_ = process; }
-    virtual void on_sync_user_context(const SyncUserContextFunc& process) override { on_sync_user_context_ = process; }
-    virtual void on_draw(const DrawFunc& process) override { on_draw_ = process; }
+    void on_handle_message(const HandleMessageFunc& process) {
+        on_handle_message_ = process;
+    }
+
+    void on_sync_user_context(const SyncUserContextFunc& process) {
+        on_sync_user_context_ = process;
+    }
+
+    void on_draw(const DrawFunc& process) {
+        on_draw_ = process;
+    }
 
 public:
-    virtual void construct(const Json& prop) override {
+    void init(const Json& prop) {
         // Waiting for the connection of the client
         try {
+            if (!context_) {
+                // Create a new context when context is invalid.
+                // context_ might be closed by shutdown() function.
+                zmq::context_t new_context(1);
+                context_.swap(new_context);
+            }
             socket_.bind(json::value<std::string>(prop, "address"));
         }
         catch (const zmq::error_t& e) {
@@ -130,7 +175,14 @@ public:
         }
     }
 
-    virtual void poll() override {
+    void shutdown() {
+        socket_.close();
+        context_.close();
+        on_handle_message_ = {};
+        on_draw_ = {};
+    }
+
+    void poll() {
         zmq::pollitem_t item{ socket_, 0, ZMQ_POLLIN, 0 };
         zmq::poll(&item, 1, 0);
         if (item.revents & ZMQ_POLLIN) {
@@ -138,7 +190,7 @@ public:
         }
     }
 
-    virtual void run() override {
+    void run() {
         while (true) {
             process_messages();
         }
@@ -157,11 +209,7 @@ private:
         // Receive arguments and execute the function
         zmq::message_t req_args;
         socket_.recv(req_args);
-#if 0
         std::stringstream is(std::string(req_args.data<char>(), req_args.size()));
-#else
-        imemstream is(req_args.data<char>(), req_args.size());
-#endif
         switch (command) {
             case Command::handle_message: {
                 std::string message;
@@ -187,70 +235,34 @@ private:
     }
 };
 
-LM_COMP_REG_IMPL(DebugioContext_Server, "debugio::server");
-
-LM_NAMESPACE_END(server)
-
 // ------------------------------------------------------------------------------------------------
 
-using ClientInstance = comp::detail::ContextInstance<DebugioContext>;
-
-LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
-    ClientInstance::init(type, prop);
+LM_PUBLIC_API void init(const Json& prop) {
+    DebugioContext_Server::instance().init(prop);
 }
 
 LM_PUBLIC_API void shutdown() {
-    ClientInstance::shutdown();
-}
-
-LM_PUBLIC_API void handle_message(const std::string& message) {
-    if (ClientInstance::initialized()) {
-        ClientInstance::get().handle_message(message);
-    }
-}
-
-LM_PUBLIC_API void sync_user_context() {
-    if (ClientInstance::initialized()) {
-        ClientInstance::get().sync_user_context();
-    }
-}
-
-LM_PUBLIC_API void draw(int type, Vec3 color, const std::vector<Vec3>& vs) {
-    if (ClientInstance::initialized()) {
-        ClientInstance::get().draw(type, color, vs);
-    }
-}
-
-LM_NAMESPACE_BEGIN(server)
-
-using ServerInstance = comp::detail::ContextInstance<DebugioServerContext>;
-
-LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
-    ServerInstance::init(type, prop);
-}
-
-LM_PUBLIC_API void shutdown() {
-    ServerInstance::shutdown();
+    DebugioContext_Server::instance().shutdown();
 }
 
 LM_PUBLIC_API void poll() {
-    ServerInstance::get().poll();
+    DebugioContext_Server::instance().poll();
 }
 
 LM_PUBLIC_API void run() {
-    ServerInstance::get().run();
+    DebugioContext_Server::instance().run();
 }
 
 LM_PUBLIC_API void on_handle_message(const HandleMessageFunc& process) {
-    ServerInstance::get().on_handle_message(process);
+    DebugioContext_Server::instance().on_handle_message(process);
 }
 
 LM_PUBLIC_API void on_sync_user_context(const SyncUserContextFunc& process) {
-    ServerInstance::get().on_sync_user_context(process);
+    DebugioContext_Server::instance().on_sync_user_context(process);
 }
 
 LM_PUBLIC_API void on_draw(const DrawFunc& process) {
-    ServerInstance::get().on_draw(process);
+    DebugioContext_Server::instance().on_draw(process);
 }
 
 LM_NAMESPACE_END(server)

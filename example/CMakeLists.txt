@@ -19,11 +19,7 @@ endfunction()
 # -------------------------------------------------------------------------------------------------
 
 # Non-GUI examples
-lm_add_example(NAME blank SOURCES "blank.cpp")
-lm_add_example(NAME quad SOURCES "quad.cpp")
-lm_add_example(NAME raycast SOURCES "raycast.cpp")
 lm_add_example(NAME pt SOURCES "pt.cpp")
-lm_add_example(NAME custom_material SOURCES "custom_material.cpp")
 lm_add_example(NAME custom_renderer SOURCES "custom_renderer.cpp")
 
 # GUI examples
