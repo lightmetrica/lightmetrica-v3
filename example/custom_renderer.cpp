@@ -11,24 +11,26 @@ using namespace lm::literals;
 // Simple ambient occlusion renderer
 class Renderer_AO final : public lm::Renderer {
 private:
+    lm::Scene* scene_;
     lm::Film* film_;
     long long spp_;
     int rng_seed_ = 42;
 
 public:
     virtual void construct(const lm::Json& prop) override {
+        scene_ = lm::json::comp_ref<lm::Scene>(prop, "scene");
         film_ = lm::json::comp_ref<lm::Film>(prop, "output");
         spp_ = lm::json::value<long long>(prop, "spp");
     }
 
-    virtual void render(const lm::Scene* scene) const override {
+    virtual void render() const override {
         const auto [w, h] = film_->size();
         lm::parallel::foreach(w*h, [&](long long index, int threadId) -> void {
             thread_local lm::Rng rng(rng_seed_ + threadId);
             const int x = int(index % w);
             const int y = int(index / w);
-            const auto ray = scene->primary_ray({(x+.5_f)/w, (y+.5_f)/h}, film_->aspect_ratio());
-            const auto hit = scene->intersect(ray);
+            const auto ray = scene_->primary_ray({(x+.5_f)/w, (y+.5_f)/h}, film_->aspect_ratio());
+            const auto hit = scene_->intersect(ray);
             if (!hit) {
                 return;
             }
@@ -36,7 +38,7 @@ public:
             for (long long i = 0; i < spp_; i++) {
                 const auto [n, u, v] = hit->geom.orthonormal_basis(-ray.d);
                 const auto d = lm::math::sample_cosine_weighted(rng);
-                V += scene->intersect({hit->geom.p, u*d.x+v*d.y+n*d.z}, lm::Eps, .2_f) ? 0_f : 1_f;
+                V += scene_->intersect({hit->geom.p, u*d.x+v*d.y+n*d.z}, lm::Eps, .2_f) ? 0_f : 1_f;
             }
             V /= spp_;
             film_->set_pixel(x, y, lm::Vec3(V));

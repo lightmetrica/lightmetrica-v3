@@ -21,9 +21,8 @@ class Renderer : public Component {
 public:
     /*!
         \brief Process rendering.
-        \param scene Reference to the scene.
     */
-    virtual void render(const Scene* scene) const = 0;
+    virtual void render() const = 0;
 };
 
 /*!

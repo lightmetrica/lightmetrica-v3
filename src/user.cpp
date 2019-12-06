@@ -13,7 +13,7 @@
 #include <lm/progress.h>
 #include <lm/debugio.h>
 #include <lm/objloader.h>
-#include <lm/film.h>
+#include <lm/assets.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -25,8 +25,6 @@ class UserContext : public Component {
 private:
 	bool initialized_ = false;
 	Ptr<Assets> assets_;        // Underlying assets
-    Ptr<Scene> scene_;          // Underlying scene
-    Ptr<Renderer> renderer_;    // Underlying renderer
 
 public:
     UserContext() {
@@ -109,19 +107,11 @@ public:
         if (name == "assets") {
             return assets_.get();
         }
-        else if (name == "scene") {
-            return scene_.get();
-        }
-        else if (name == "renderer") {
-            return renderer_.get();
-        }
         return nullptr;
     }
 
     void foreach_underlying(const ComponentVisitor& visit) override {
         comp::visit(visit, assets_);
-        comp::visit(visit, scene_);
-        comp::visit(visit, renderer_);
     }
 
 public:
@@ -134,101 +124,25 @@ public:
             version::architecture());
     }
 
+    Assets* assets() {
+        return assets_.get();
+    }
+
     void reset() {
         assets_ = comp::create<Assets>("assets::default", make_loc("assets"));
-        scene_ = comp::create<Scene>("scene::default", make_loc("scene"));
-        assert(scene_);
-        renderer_.reset();
-    }
-
-    Component* asset(const std::string& name, const std::string& impl_key, const Json& prop) {
-		check_initialized();
-        const auto p = assets_->load_asset(name, impl_key, prop);
-        if (!p) {
-            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
-        }
-        return p;
-    }
-
-    std::string asset(const std::string& name) {
-		check_initialized();
-        return "$.assets." + name;
-    }
-
-    void build(const std::string& accel_name, const Json& prop) {
-		check_initialized();
-        scene_->build(accel_name, prop);
-    }
-
-    void renderer(const std::string& renderer_name, const Json& prop) {
-		check_initialized();
-        LM_INFO("Creating renderer [renderer='{}']", renderer_name);
-        renderer_ = comp::create<Renderer>(renderer_name, make_loc("renderer"), prop);
-        if (!renderer_) {
-            LM_THROW_EXCEPTION_DEFAULT(Error::FailedToRender);
-        }
-    }
-
-    void render(bool verbose) {
-		check_initialized();
-        if (verbose) {
-            LM_INFO("Starting render [name='{}']", renderer_->key());
-            LM_INDENT();
-        }
-        renderer_->render(scene_.get());
-    }
-
-    void save(const std::string& film_name, const std::string& outpath) {
-		check_initialized();
-        const auto* film = comp::get<Film>(film_name);
-        if (!film) {
-            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
-        }
-        if (!film->save(outpath)) {
-            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
-        }
-    }
-
-    FilmBuffer buffer(const std::string& film_name) {
-		check_initialized();
-        auto* film = comp::get<Film>(film_name);
-        if (!film) {
-            LM_THROW_EXCEPTION_DEFAULT(Error::IOError);
-        }
-        return film->buffer();
     }
 
     void serialize(std::ostream& os) {
 		check_initialized();
         LM_INFO("Saving state to stream");
         serial::save(os, assets_);
-        serial::save(os, scene_);
-        serial::save(os, renderer_);
     }
 
     void deserialize(std::istream& is) {
 		check_initialized();
         LM_INFO("Loading state from stream");
         serial::load(is, assets_);
-        serial::load(is, scene_);
-        serial::load(is, renderer_);
     }
-
-	Scene* scene() {
-		return scene_.get();
-	}
-
-	void primitive(Mat4 transform, const Json& prop) {
-		check_initialized();
-		auto t = scene_->create_group_node(transform);
-		if (prop.find("model") != prop.end()) {
-			scene_->add_child_from_model(t, prop["model"]);
-		}
-		else {
-			scene_->add_child(t, scene_->create_primitive_node(prop));
-		}
-		scene_->add_child(scene_->root_node(), t);
-	}
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -249,32 +163,8 @@ LM_PUBLIC_API void info() {
     UserContext::instance().info();
 }
 
-LM_PUBLIC_API Component* asset(const std::string& name, const std::string& impl_key, const Json& prop) {
-    return UserContext::instance().asset(name, impl_key, prop);
-}
-
-LM_PUBLIC_API std::string asset(const std::string& name) {
-	return UserContext::instance().asset(name);
-}
-
-LM_PUBLIC_API void build(const std::string& accel_name, const Json& prop) {
-    UserContext::instance().build(accel_name, prop);
-}
-
-LM_PUBLIC_API void renderer(const std::string& renderer_name, const Json& prop) {
-    UserContext::instance().renderer(renderer_name, prop);
-}
-
-LM_PUBLIC_API void render(bool verbose) {
-    UserContext::instance().render(verbose);
-}
-
-LM_PUBLIC_API void save(const std::string& filmName, const std::string& outpath) {
-    UserContext::instance().save(filmName, outpath);
-}
-
-LM_PUBLIC_API FilmBuffer buffer(const std::string& filmName) {
-    return UserContext::instance().buffer(filmName);
+LM_PUBLIC_API Assets* assets() {
+    return UserContext::instance().assets();
 }
 
 LM_PUBLIC_API void serialize(std::ostream& os) {
@@ -283,14 +173,6 @@ LM_PUBLIC_API void serialize(std::ostream& os) {
 
 LM_PUBLIC_API void deserialize(std::istream& is) {
     UserContext::instance().deserialize(is);
-}
-
-LM_PUBLIC_API Scene* scene() {
-	return UserContext::instance().scene();
-}
-
-LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop) {
-	UserContext::instance().primitive(transform, prop);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

@@ -27,6 +27,7 @@ enum class ImageSampleMode {
 
 class Renderer_PT : public Renderer {
 private:
+    Scene* scene_;
     Film* film_;
     int max_length_;
     std::optional<unsigned int> seed_;
@@ -36,16 +37,18 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, max_length_, pt_mode_, sched_);
+        ar(scene_, film_, max_length_, pt_mode_, sched_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, scene_);
         comp::visit(visit, film_);
         comp::visit(visit, sched_);
     }
 
 public:
     virtual void construct(const Json& prop) override {
+        scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
         max_length_ = json::value<int>(prop, "max_length");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
@@ -77,8 +80,8 @@ public:
         }
     }
 
-    virtual void render(const Scene* scene) const override {
-		scene->require_renderable();
+    virtual void render() const override {
+		scene_->require_renderable();
 
         // Clear film
         film_->clear();
@@ -120,13 +123,13 @@ public:
             // Perform random walk
             for (int length = 0; length < max_length_; length++) {
                 // Sample a ray
-                const auto s = scene->sample_ray(rng, sp, wi);
+                const auto s = scene_->sample_ray(rng, sp, wi);
                 if (!s || math::is_zero(s->weight)) {
                     break;
                 }
                 // Compute raster position for the primary ray
                 if (length == 0) {
-                    raster_pos = *scene->raster_position(s->wo, film_->aspect_ratio());
+                    raster_pos = *scene_->raster_position(s->wo, film_->aspect_ratio());
                 }
 
                 // --------------------------------------------------------------------------------
@@ -141,27 +144,27 @@ public:
                     // (according to BSDF / phase) doesn't contain delta component.
                     if (image_sample_mode_ == ImageSampleMode::Pixel) {
                         // Primary ray is not samplable via NEE in the pixel space sample mode
-                        return length > 0 && !scene->is_specular(s->sp, s->comp);
+                        return length > 0 && !scene_->is_specular(s->sp, s->comp);
                     }
                     else {
                         // Primary ray is samplable via NEE in the image space sample mode
-                        return !scene->is_specular(s->sp, s->comp);
+                        return !scene_->is_specular(s->sp, s->comp);
                     }
                 }();
                 if (nee) [&] {
                     // Sample a light
-                    const auto sL = scene->sample_direct_light(rng, s->sp);
+                    const auto sL = scene_->sample_direct_light(rng, s->sp);
                     if (!sL) {
                         return;
                     }
-                    if (!scene->visible(s->sp, sL->sp)) {
+                    if (!scene_->visible(s->sp, sL->sp)) {
                         return;
                     }
 
                     // Recompute raster position for the primary edge
                     const auto rp = [&]() -> std::optional<Vec2> {
                         if (length == 0)
-                            return scene->raster_position(-sL->wo, film_->aspect_ratio());
+                            return scene_->raster_position(-sL->wo, film_->aspect_ratio());
                         else
                             return raster_pos;
                     }();
@@ -171,12 +174,12 @@ public:
 
                     // This light is not samplable by direct strategy
                     // if the light contain delta component or degenerated.
-                    const bool directL = !scene->is_specular(sL->sp, sL->comp) && !sL->sp.geom.degenerated;
+                    const bool directL = !scene_->is_specular(sL->sp, sL->comp) && !sL->sp.geom.degenerated;
 
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
-                    const auto fs = scene->eval_contrb(s->sp, s->comp, wi, wo);
-                    const auto pdf_sel = scene->pdf_comp(s->sp, s->comp, wi);
+                    const auto fs = scene_->eval_contrb(s->sp, s->comp, wi, wo);
+                    const auto pdf_sel = scene_->pdf_comp(s->sp, s->comp, wi);
                     const auto misw = [&]() -> Float {
                         if (pt_mode_ == PTMode::NEE) {
                             return 1_f;
@@ -186,8 +189,8 @@ public:
                         }
                         // Compute MIS weight only when wo can be sampled with both strategies.
                         return math::balance_heuristic(
-                            scene->pdf_direct_light(s->sp, sL->sp, sL->comp, sL->wo), 
-                            scene->pdf(s->sp, s->comp, wi, wo));
+                            scene_->pdf_direct_light(s->sp, sL->sp, sL->comp, sL->wo), 
+                            scene_->pdf(s->sp, s->comp, wi, wo));
                     }();
                     const auto C = throughput / pdf_sel * fs * sL->weight * misw;
                     film_->splat(*rp, C);
@@ -196,7 +199,7 @@ public:
                 // --------------------------------------------------------------------------------
 
                 // Intersection to next surface
-                const auto hit = scene->intersect(s->ray());
+                const auto hit = scene_->intersect(s->ray());
                 if (!hit) {
                     break;
                 }
@@ -213,15 +216,15 @@ public:
                     // Direct strategy is samplable if the ray hit with light
                     if (pt_mode_ == PTMode::NEE) {
                         // In NEE mode, use direct strategy only when a NEE edge cannot be sampled.
-                        return !nee && scene->is_light(*hit);
+                        return !nee && scene_->is_light(*hit);
                     }
                     else {
-                        return scene->is_light(*hit);
+                        return scene_->is_light(*hit);
                     }
                 }();
                 if (direct) {
                     const auto woL = -s->wo;
-                    const auto fs = scene->eval_contrb_endpoint(*hit, woL);
+                    const auto fs = scene_->eval_contrb_endpoint(*hit, woL);
                     const auto misw = [&]() -> Float {
                         if (pt_mode_ == PTMode::Naive) {
                             return 1_f;
@@ -231,8 +234,8 @@ public:
                         }
                         // The continuation edge can be sampled via both direct and NEE
                         return math::balance_heuristic(
-                            scene->pdf(s->sp, s->comp, wi, s->wo),
-                            scene->pdf_direct_light(s->sp, *hit, -1, woL));
+                            scene_->pdf(s->sp, s->comp, wi, s->wo),
+                            scene_->pdf_direct_light(s->sp, *hit, -1, woL));
                     }();
                     const auto C = throughput * fs * misw;
                     film_->splat(raster_pos, C);

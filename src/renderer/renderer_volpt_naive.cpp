@@ -17,6 +17,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_VolPTNaive final : public Renderer {
 private:
+    Scene* scene_;
     Film* film_;
     int max_length_;
     Float rr_prob_;
@@ -25,16 +26,18 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, max_length_, rr_prob_, sched_);
+        ar(scene_, film_, max_length_, rr_prob_, sched_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, scene_);
         comp::visit(visit, film_);
         comp::visit(visit, sched_);
     }
 
 public:
     virtual void construct(const Json& prop) override {
+        scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
         max_length_ = json::value<int>(prop, "max_length");
         rr_prob_ = json::value<Float>(prop, "rr_prob", .2_f);
@@ -49,8 +52,8 @@ public:
 #endif
     }
 
-    virtual void render(const Scene* scene) const override {
-		scene->require_renderable();
+    virtual void render() const override {
+		scene_->require_renderable();
 
         film_->clear();
         const auto size = film_->size();
@@ -82,18 +85,18 @@ public:
             Vec2 rasterPos{};
             for (int length = 0; length < max_length_; length++) {
                 // Sample a ray
-                const auto s = scene->sample_ray(rng, sp, wi);
+                const auto s = scene_->sample_ray(rng, sp, wi);
                 if (!s || math::is_zero(s->weight)) {
                     break;
                 }
 
                 // Compute raster position for the primary ray
                 if (length == 0) {
-                    rasterPos = *scene->raster_position(s->wo, film_->aspect_ratio());
+                    rasterPos = *scene_->raster_position(s->wo, film_->aspect_ratio());
                 }
 
                 // Sample next scene interaction
-                const auto sd = scene->sample_distance(rng, s->sp, s->wo);
+                const auto sd = scene_->sample_distance(rng, s->sp, s->wo);
                 if (!sd) {
                     break;
                 }
@@ -106,8 +109,8 @@ public:
                 }
 
                 // Accumulate contribution from emissive interaction
-                if (scene->is_light(sd->sp)) {
-                    const auto C = throughput * scene->eval_contrb_endpoint(sd->sp, -s->wo);
+                if (scene_->is_light(sd->sp)) {
+                    const auto C = throughput * scene_->eval_contrb_endpoint(sd->sp, -s->wo);
                     L += C;
                 }
 

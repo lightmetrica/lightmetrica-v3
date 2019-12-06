@@ -16,6 +16,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // Renderer based on openvdb_render.cc in OpenVDB
 class Renderer_OpenVDBRenderExample final : public Renderer {
 private:
+    Scene* scene_;
     Film* film_;
     const Volume* volume_;
     Float march_step_;
@@ -30,6 +31,7 @@ private:
 
 public:
     virtual void construct(const Json& prop) override {
+        scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
         volume_ = json::comp_ref<Volume>(prop, "volume");
         march_step_ = json::value<Float>(prop, "march_step", .5_f);
@@ -49,7 +51,7 @@ public:
     
     // Assume volume stores density of the extinction coefficient and
     // densityScale_ is multipled to the evaluated density value.
-    virtual void render(const Scene* scene) const override {
+    virtual void render() const override {
         film_->clear();
         const auto size = film_->size();
 
@@ -59,7 +61,7 @@ public:
             const int y = int(pixelIndex / size.w);
 
             // Generate primary ray
-            const auto ray = scene->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
+            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
 
             // Ray marching
             Vec3 L(0_f);

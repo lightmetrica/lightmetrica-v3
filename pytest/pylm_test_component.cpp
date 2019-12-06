@@ -126,8 +126,9 @@ public:
                 lm::InputArchive ar(is);
                 p2->load(ar);
             }
-            
-            return p2->f1();
+
+            const auto v = p2->f1();
+            return v;
         });
 
         m.def("round_trip_serialized_A_use_serial", []() -> int {

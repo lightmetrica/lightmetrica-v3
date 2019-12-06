@@ -17,6 +17,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_VolPT final : public Renderer {
 private:
+    Scene* scene_;
     Film* film_;
     int max_length_;
     Float rr_prob_;
@@ -29,13 +30,14 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(film_, max_length_, rr_prob_, sched_);
+        ar(scene_, film_, max_length_, rr_prob_, sched_);
         #if VOLPT_DEBUG_VIS
         ar(sampledRays_);
         #endif
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, scene_);
         comp::visit(visit, film_);
         comp::visit(visit, sched_);
     }
@@ -51,6 +53,7 @@ public:
 
 public:
     virtual void construct(const Json& prop) override {
+        scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
         max_length_ = json::value<int>(prop, "max_length");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
@@ -65,8 +68,8 @@ public:
 #endif
     }
 
-    virtual void render(const Scene* scene) const override {
-		scene->require_renderable();
+    virtual void render() const override {
+		scene_->require_renderable();
 
         film_->clear();
         const auto size = film_->size();
@@ -99,25 +102,25 @@ public:
             Vec2 raster_pos{};
             for (int length = 0; length < max_length_; length++) {
                 // Sample a ray
-                const auto s = scene->sample_ray(rng, sp, wi);
+                const auto s = scene_->sample_ray(rng, sp, wi);
                 if (!s || math::is_zero(s->weight)) {
                     break;
                 }
 
                 // Compute raster position for the primary ray
                 if (length == 0) {
-                    raster_pos = *scene->raster_position(s->wo, film_->aspect_ratio());
+                    raster_pos = *scene_->raster_position(s->wo, film_->aspect_ratio());
                 }
 
                 // Sample a NEE edge
 #if VOLPT_IMAGE_SAMPLNG
                 const bool nee = !scene->is_specular(s->sp);
 #else
-                const bool nee = length > 0 && !scene->is_specular(s->sp, s->comp);
+                const bool nee = length > 0 && !scene_->is_specular(s->sp, s->comp);
 #endif
                 if (nee) [&] {
                     // Sample a light
-                    const auto sL = scene->sample_direct_light(rng, s->sp);
+                    const auto sL = scene_->sample_direct_light(rng, s->sp);
                     if (!sL) {
                         return;
                     }
@@ -125,7 +128,7 @@ public:
                     // Recompute raster position for the primary edge
                     const auto rp = [&]() -> std::optional<Vec2> {
                         if (length == 0)
-                            return scene->raster_position(-sL->wo, film_->aspect_ratio());
+                            return scene_->raster_position(-sL->wo, film_->aspect_ratio());
                         else
                             return raster_pos;
                     }();
@@ -134,21 +137,21 @@ public:
                     }
                     
                     // Transmittance
-                    const auto Tr = scene->eval_transmittance(rng, s->sp, sL->sp);
+                    const auto Tr = scene_->eval_transmittance(rng, s->sp, sL->sp);
                     if (math::is_zero(Tr)) {
                         return;
                     }
 
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
-                    const auto fs = scene->eval_contrb(s->sp, s->comp, wi, wo);
-                    const auto pdf_sel = scene->pdf_comp(s->sp, s->comp, wi);
+                    const auto fs = scene_->eval_contrb(s->sp, s->comp, wi, wo);
+                    const auto pdf_sel = scene_->pdf_comp(s->sp, s->comp, wi);
                     const auto C = throughput / pdf_sel * Tr * fs * sL->weight;
                     film_->splat(*rp, C);
                 }();
 
                 // Sample next scene interaction
-                const auto sd = scene->sample_distance(rng, s->sp, s->wo);
+                const auto sd = scene_->sample_distance(rng, s->sp, s->wo);
                 if (!sd) {
                     break;
                 }
@@ -157,8 +160,8 @@ public:
                 throughput *= s->weight * sd->weight;
 
                 // Accumulate contribution from emissive interaction
-                if (!nee && scene->is_light(sd->sp)) {
-                    const auto C = throughput * scene->eval_contrb_endpoint(sd->sp, -s->wo);
+                if (!nee && scene_->is_light(sd->sp)) {
+                    const auto C = throughput * scene_->eval_contrb_endpoint(sd->sp, -s->wo);
                     film_->splat(raster_pos, C);
                 }
 

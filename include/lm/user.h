@@ -58,110 +58,11 @@ LM_PUBLIC_API void reset();
 */
 LM_PUBLIC_API void info();
 
-// ------------------------------------------------------------------------------------------------
-
 /*!
-    \brief Create asset.
-    \param name Identifier of the asset.
-    \param impl_key Name of the asset to create.
-    \param prop Properties for configuration.
-    \return A pointer to the asset.
-    \see `example/blank.cpp`
-
-    \rst
-    Asset represents a basic component of the scene object such as meshes or materials.
-    We use assets as building blocks to construct the scene of the framework.
-    This function creates an instance of an asset and register it to the framework
-    by a given identifier. ``name`` is used as a reference by other APIs.
-    ``impl_key`` has a format of ``<asset type>::<implementation>``.
-    If ``name`` is already registered or ``impl_key`` is missing,
-    the framework will generate corresponding error messages
-    through logger system as well as runtime error exception.
-	This function returns a pointer to the instance,
-	which is managed internally in the framework.
-    \endrst
+    \brief Get underlying collection of assets.
+    \return Instance.
 */
-LM_PUBLIC_API Component* asset(const std::string& name, const std::string& impl_key, const Json& prop);
-
-/*!
-	\brief Get the locator of an asset.
-	\param name Identifier of the asset.
-	\return Locator of the asset.
-*/
-LM_PUBLIC_API std::string asset(const std::string& name);
-
-// ------------------------------------------------------------------------------------------------
-
-/*!
-    \brief Build acceleration structure.
-    \param accel_name Type of acceleration structure.
-    \param prop Property for configuration.
-    \see `example/raycast.cpp`
-    
-    \rst
-    Some renderers require acceleration structure for ray-scene intersections.
-    This function internally creates and registers an acceleration structure
-    used by other parts of the framework.
-    You may specify the acceleration structure type by ``accel::<type>`` format.
-    \endrst
-*/
-LM_PUBLIC_API void build(const std::string& accel_name, const Json& prop = {});
-
-/*!
-    \brief Initialize renderer.
-    \param renderer_name Type of renderer.
-    \param prop Property for configuration.
-*/
-LM_PUBLIC_API void renderer(const std::string& renderer_name, const Json& prop = {});
-
-/*!
-    \brief Render image based on current configuration.
-    \param verbose Supress outputs if false.
-    \see `example/raycast.cpp`
-
-    \rst
-    Once you have completed all configuration of the scene,
-    you may start rendering using this function.
-    You may specify the renderer type by ``renderer::<type>`` format.
-    \endrst
-*/
-LM_PUBLIC_API void render(bool verbose = true);
-
-/*!
-    \brief Initialize renderer and render.
-    \param renderer_name Type of renderer.
-    \param prop Property for configuration.
-*/
-static void render(const std::string& renderer_name, const Json& prop = {}) {
-    renderer(renderer_name, prop);
-    render();
-}
-
-// ------------------------------------------------------------------------------------------------
-
-/*!
-    \brief Save an image.
-    \param film_name Identifier of a film asset.
-    \param outpath Output path.
-    \see `example/blank.cpp`
-
-    \rst
-    This function saves the film to the specified output path.
-    The behavior of the save depends on the asset type specified in ``film_name``.
-    \endrst
-*/
-LM_PUBLIC_API void save(const std::string& film_name, const std::string& outpath);
-
-/*!
-    \brief Get buffer of an image.
-    \param film_name Identifier of a film asset.
-    \return Film buffer.
-
-    \rst
-    This function obtains the buffer to the film asset specified by ``film_name``.
-    \endrst
-*/
-LM_PUBLIC_API FilmBuffer buffer(const std::string& film_name);
+LM_PUBLIC_API Assets* assets();
 
 // ------------------------------------------------------------------------------------------------
 
@@ -220,40 +121,8 @@ public:
     LM_DISABLE_COPY_AND_MOVE(ScopedInit)
 };
 
-// ------------------------------------------------------------------------------------------------
-
-/*!
-	\brief Get underlying scene instance.
-	\brief Scene.
-*/
-LM_PUBLIC_API Scene* scene();
-
-/*!
-    \brief Create primitive(s) and add to the scene.
-    \param transform Transformation matrix.
-    \param prop Properties for configuration.
-    \see `example/quad.cpp`
-    \see `example/raycast.cpp`
-
-    \rst
-    This function creates primitive(s) and registers to the framework.
-    A primitive is a scene object associating the assets such as
-    meshes or materials. The coordinates of the object is
-    speficied by a 4x4 transformation matrix.
-    We can use the same assets to define different primitives
-    with different transformations.
-
-    If ``model`` parameter is specified,
-    the function will register primitives generated from the model.
-    In this case, the transformation is applied to all primitives to be generated.
-    \endrst
-*/
-LM_PUBLIC_API void primitive(Mat4 transform, const Json& prop);
-
 /*!
     @}
 */
-
-// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_END(LM_NAMESPACE)

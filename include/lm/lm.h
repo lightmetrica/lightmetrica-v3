@@ -37,3 +37,4 @@
 #include "model.h"
 #include "objloader.h"
 #include "renderer.h"
+#include "assets.h"

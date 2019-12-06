@@ -261,6 +261,7 @@ struct SceneInteraction;  // scene.h
 struct RaySample;
 struct LightSample;
 class Scene;
+class Accel;              // accel.h
 class Renderer;           // renderer.h
 LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, struct Access)
 

@@ -18,43 +18,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Assets.
-
-    \rst
-    This class represents a collection of the assets (e.g., materials, meshes, etc.).
-    The assets in the framework are stored in this class.
-    \endrst
-*/
-class Assets : public Component {
-public:
-    /*!
-        \brief Loads an asset.
-        \param name Name of the asset.
-        \param impl_key Key of component implementation in `interface::implementation` format.
-        \param prop Properties.
-        \return Pointer to the created. nullptr if failed.
-
-        \rst
-        Loads an asset from the given information and registers to the class.
-        ``impl_key`` is used to create an instance and ``prop`` is used to construct it.
-        ``prop`` is passed to :cpp:func:`lm::Component::construct` function of
-        the implementation of the asset.
-        This function returns a pointer to the created instance.
-        If failed, it returns nullptr.
-
-        If the asset with same name is already loaded, the function tries
-        to deregister the previously-loaded asset and reload an asset again.
-        If the global component hierarchy contains a reference to the original asset,
-        the function automatically resolves the reference to the new asset.
-        For usage, see ``functest/func_update_asset.py``.
-        \endrst
-    */
-    virtual Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) = 0;
-};
-
-// ------------------------------------------------------------------------------------------------
-
-/*!
     \brief Result of ray sampling.
 
     \rst
@@ -182,6 +145,45 @@ public:
     */
     virtual int create_group_from_model(const std::string& model_loc) = 0;
 
+    /*!
+        \brief Create primitive(s) and add to the scene.
+        \param prop Properties for configuration.
+        \see `example/quad.cpp`
+        \see `example/raycast.cpp`
+
+        \rst
+        This function creates primitive(s) and registers to the framework.
+        A primitive is a scene object associating the assets such as
+        meshes or materials. The coordinates of the object is
+        speficied by a 4x4 transformation matrix.
+        We can use the same assets to define different primitives
+        with different transformations.
+
+        If ``model`` parameter is specified,
+        the function will register primitives generated from the model.
+        In this case, the transformation is applied to all primitives to be generated.
+        \endrst
+    */
+    void add_primitive(const Json& prop) {
+        add_transformed_primitive(Mat4(1_f), prop);
+    }
+
+    /*!
+        \brief Create primitive(s) and add to the scene with transform.
+        \param transform Transformation matrix.
+        \param prop Properties for configuration.
+    */
+    void add_transformed_primitive(Mat4 transform, const Json& prop) {
+        auto t = create_group_node(transform);
+        if (prop.find("model") != prop.end()) {
+            add_child_from_model(t, prop["model"]);
+        }
+        else {
+            add_child(t, create_primitive_node(prop));
+        }
+        add_child(root_node(), t);
+    }
+
     // --------------------------------------------------------------------------------------------
 
     /*!
@@ -303,7 +305,7 @@ public:
 		\brief Throws an exception if there is no accel created for the scene.
 	*/
 	virtual void require_accel() const {
-		if (underlying("accel")) {
+		if (accel()) {
 			return;
 		}
 		LM_THROW_EXCEPTION(Error::Unsupported,
@@ -332,11 +334,15 @@ public:
     // --------------------------------------------------------------------------------------------
 
     /*!
-        \brief Build acceleration structure.
-        \param name Name of the acceleration structure.
-        \param prop Property for configuration.
+        \brief Get underlying accel.
+        \return Instance.
     */
-    virtual void build(const std::string& name, const Json& prop) = 0;
+    virtual Accel* accel() const = 0;
+
+    /*!
+        \brief Build acceleration structure.
+    */
+    virtual void build() = 0;
 
     /*!
         \brief Compute closest intersection point.
