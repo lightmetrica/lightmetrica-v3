@@ -27,7 +27,7 @@ def run_functests(output_dir, lmenv_path):
         # 'example_quad',
         # 'example_raycast',
         # 'example_pt',
-        'example_custom_material',
+        # 'example_custom_material',
         'example_custom_renderer',
         'func_render_all',
         'func_render_instancing',
