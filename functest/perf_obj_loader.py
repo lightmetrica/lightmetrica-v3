@@ -32,27 +32,29 @@ import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
 lm.init()
-lm.parallel.init('parallel::openmp', {
-    'num_threads': -1
-})
-lm.log.init('logger::jupyter', {})
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
 
 lm.comp.load_plugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
 
-objloaders = ['objloader::simple', 'objloader::tinyobjloader']
-scenes = lmscene.scenes_small()
+objloader_names = ['simple', 'tinyobjloader']
+scene_names = lmscene.scenes_small()
 
-loading_time_df = pd.DataFrame(columns=objloaders, index=scenes)
-for scene in scenes:
+loading_time_df = pd.DataFrame(columns=objloader_names, index=scene_names)
+for scene_name in scene_names:
     # Check consistency with other loaders
-    for objloader in objloaders:
+    for objloader_name in objloader_names:
         # Load the scene with selected obj loader
-        lm.objloader.init(objloader, {})
+        lm.objloader.init(objloader_name)
         lm.reset()
-        def load_scene():
-            lmscene.load(env.scene_path, scene)
-        loading_time = timeit.timeit(stmt=load_scene, number=1)
-        loading_time_df[objloader][scene] = loading_time
+        
+        def load_model():
+            lm.load_model('model_obj', 'wavefrontobj', {
+                'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj')
+            })
+            
+        loading_time = timeit.timeit(stmt=load_model, number=1)
+        loading_time_df[objloader_name][scene_name] = loading_time
 
 loading_time_df

@@ -34,38 +34,43 @@ import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
 lm.init()
-lm.parallel.init('parallel::openmp', {
-    'numThreads': -1
-})
-lm.log.init('logger::jupyter', {})
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
 
-lm.asset('camera_main', 'camera::pinhole', {
+camera = lm.load_camera('camera_main', 'pinhole', {
     'position': [5.101118, 1.083746, -2.756308],
     'center': [4.167568, 1.078925, -2.397892],
     'up': [0,1,0],
     'vfov': 43.001194
 })
-lm.asset('obj_base_mat', 'material::diffuse', {
+material = lm.load_material('obj_base_mat', 'diffuse', {
     'Kd': [.8,.2,.2]
 })
-lm.asset('model_obj', 'model::wavefrontobj', {
+model = lm.load_model('model_obj', 'wavefrontobj', {
     'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
-    'base_material': lm.asset('obj_base_mat')
+    'base_material': material.loc()
 })
-lm.primitive(lm.identity(), {
-    'camera': lm.asset('camera_main')
+accel = lm.load_accel('accel', 'sahbvh', {})
+scene = lm.load_scene('scene', 'default', {
+    'accel': accel.loc()
 })
-lm.primitive(lm.identity(), {
-    'model': lm.asset('model_obj')
+scene.add_primitive({
+    'camera': camera.loc()
 })
+scene.add_primitive({
+    'model': model.loc()
+})
+scene.build()
 
-lm.build('accel::sahbvh', {})
-lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
-lm.render('renderer::raycast', {
-    'output': lm.asset('film_output')
+film = lm.load_film('film_output', 'bitmap', {'w': 1920, 'h': 1080})
+renderer = lm.load_renderer('renderer', 'raycast', {
+    'scene': scene.loc(),
+    'output': film.loc()
 })
-img = lm.buffer(lm.asset('film_output'))
+renderer.render()
+
+img = np.copy(film.buffer())
 f = plt.figure(figsize=(10,10))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
@@ -74,15 +79,14 @@ ax.set_title('orig')
 # Replace `obj_base_mat` with different color
 # Note that this is not trivial, because `model::wavefrontobj`
 # already holds a reference to the original material.
-lm.asset('obj_base_mat', 'material::diffuse', {
+lm.load_material('obj_base_mat', 'diffuse', {
     'Kd': [.2,.8,.2]
 })
-lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
-lm.render('renderer::raycast', {
-    'output': lm.asset('film_output')
-})
-img = lm.buffer(lm.asset('film_output'))
+
+renderer.render()
+
+img = np.copy(film.buffer())
 f = plt.figure(figsize=(10,10))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
-ax.set_title('updated')
+ax.set_title('modified')

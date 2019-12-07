@@ -29,6 +29,8 @@ def run_functests(output_dir, lmenv_path):
         # 'example_pt',
         # 'example_custom_material',
         # 'example_custom_renderer',
+
+
         # 'func_render_all',
         # 'func_render_instancing',
         # 'func_accel_consistency',
@@ -40,12 +42,16 @@ def run_functests(output_dir, lmenv_path):
         # 'func_distributed_rendering_ext',
         
         # 'func_error_handling',
-        'func_obj_loader_consistency',
+        # 'func_obj_loader_consistency',
+        
+        # TODO
         'func_serial_consistency',
-        'func_update_asset',
-        'func_scheduler',
-        'perf_accel',
-        'perf_obj_loader',
+        
+        # 'func_update_asset',
+        # 'func_scheduler',
+        # 'perf_accel',
+        # 'perf_obj_loader',
+
         'perf_serial'
     ]
 
