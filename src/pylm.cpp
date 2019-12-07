@@ -153,7 +153,8 @@ static void bind_component(pybind11::module& m) {
     }, pybind11::return_value_policy::reference);
     sm.def("load_plugin", &comp::load_plugin);
     sm.def("load_plugin_directory", &comp::load_plugin_directory);
-    sm.def("unload_plugins", &comp::unload_plugins);
+    sm.def("unload_plugin", &comp::unload_plugin);
+    sm.def("unload_all_plugins", &comp::unload_all_plugins);
     sm.def("foreach_registered", &comp::foreach_registered);
 }
 
@@ -163,13 +164,13 @@ static void bind_component(pybind11::module& m) {
 #define PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, InterfaceType, interface_name) \
 	m.def(fmt::format("load_{}", #interface_name).c_str(), \
 		[](const std::string& name, const std::string& impl_key, const Json& prop) -> InterfaceType* { \
-			auto* p = lm::assets()->load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+			auto* p = assets()->load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
 			return dynamic_cast<InterfaceType*>(p); \
-		}); \
+		}, pybind11::return_value_policy::reference); \
     m.def(fmt::format("get_{}", #interface_name).c_str(), \
         [](const std::string& loc) -> InterfaceType* { \
-            return lm::comp::get<InterfaceType>(loc); \
-        })
+            return comp::get<InterfaceType>(loc); \
+        }, pybind11::return_value_policy::reference)
 
 // Bind user.h
 static void bind_user(pybind11::module& m) {
@@ -180,6 +181,16 @@ static void bind_user(pybind11::module& m) {
     m.def("assets", &assets, pybind11::return_value_policy::reference);
     m.def("serialize", (void(*)(const std::string&)) & serialize);
     m.def("deserialize", (void(*)(const std::string&)) & deserialize);
+    
+    // Expose some function in comp namespace to lm namespace
+    m.def("load", [](const std::string& name, const std::string& impl_key, const Json& prop) -> Component* {
+        return assets()->load_asset(name, impl_key, prop);
+    }, pybind11::return_value_policy::reference);
+    m.def("get", [](const std::string& loc) -> Component* {
+        return comp::detail::get(loc);
+    }, pybind11::return_value_policy::reference);
+
+    // Bind load and get functions for each asset interface
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Mesh, mesh);
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Texture, texture);
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Material, material);
@@ -346,7 +357,7 @@ static void bind_debug(pybind11::module& m) {
             }
         });
     });
-    sm.def("attachToDebugger", &debug::attach_to_debugger);
+    sm.def("attach_to_debugger", &debug::attach_to_debugger);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -700,6 +711,9 @@ static void bind_texture(pybind11::module& m) {
         .def_readwrite("w", &TextureSize::w)
         .def_readwrite("h", &TextureSize::h);
     class Texture_Py final : public Texture {
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Texture, construct, prop);
+        }
         virtual TextureSize size() const override {
             PYBIND11_OVERLOAD_PURE(TextureSize, Texture, size);
         }
@@ -716,6 +730,46 @@ static void bind_texture(pybind11::module& m) {
         .def("eval", &Texture::eval)
         .def("eval_by_pixel_coords", &Texture::eval_by_pixel_coords)
         .PYLM_DEF_COMP_BIND(Texture);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind mesh.h
+static void bind_mesh(pybind11::module& m) {
+    pybind11::class_<Mesh::Point>(m, "Mesh_Point")
+        .def_readwrite("p", &Mesh::Point::p)
+        .def_readwrite("n", &Mesh::Point::n)
+        .def_readwrite("t", &Mesh::Point::t);
+
+    pybind11::class_<Mesh::Tri>(m, "Mesh_Tri")
+        .def_readwrite("p1", &Mesh::Tri::p1)
+        .def_readwrite("p2", &Mesh::Tri::p2)
+        .def_readwrite("p3", &Mesh::Tri::p3);
+
+    class Mesh_Py final : public Mesh {
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Mesh, construct, prop);
+        }
+        virtual void foreach_triangle(const ProcessTriangleFunc& process_triangle) const override {
+            PYBIND11_OVERLOAD_PURE(void, Mesh, foreach_triangle, process_triangle);
+        }
+        virtual Tri triangle_at(int face) const override {
+            PYBIND11_OVERLOAD_PURE(Tri, Mesh, triangle_at, face);
+        }
+        virtual Point surface_point(int face, Vec2 uv) const override {
+            PYBIND11_OVERLOAD_PURE(Point, Mesh, surface_point, face, uv);
+        }
+        virtual int num_triangles() const override {
+            PYBIND11_OVERLOAD_PURE(int, Mesh, num_triangles);
+        }
+    };
+    pybind11::class_<Mesh, Mesh_Py, Component, Component::Ptr<Mesh>>(m, "Mesh")
+        .def(pybind11::init<>())
+        .def("foreach_triangle", &Mesh::foreach_triangle)
+        .def("triangle_at", &Mesh::triangle_at)
+        .def("surface_point", &Mesh::surface_point)
+        .def("num_triangles", &Mesh::num_triangles)
+        .PYLM_DEF_COMP_BIND(Mesh);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -992,6 +1046,7 @@ PYBIND11_MODULE(pylm, m) {
     bind_accel(m);
     bind_renderer(m);
     bind_texture(m);
+    bind_mesh(m);
     bind_material(m);
 	bind_medium(m);
 	bind_phase(m);

@@ -19,11 +19,12 @@ def lm_logger_scope():
 @contextmanager
 def lm_plugin_scope(name):
     """Enables plugin in the context"""
+    path = os.path.join(pytest.lmenv.bin_path, name)
     try:
-        lm.comp.load_plugin(os.path.join(pytest.lmenv.bin_path, name))
+        lm.comp.load_plugin(path)
         yield
     finally:
-        lm.comp.unload_plugins()
+        lm.comp.unload_plugin(path)
 
 def test_construction():
     """Construction of instances"""

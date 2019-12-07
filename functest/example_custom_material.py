@@ -25,7 +25,7 @@
 #     :language: cpp
 #     :lines: 6-
 #    
-# In the first line you want to include ``lm.h``. The header provides everything necessary to use Lightmetrica in C++. :cpp:class:`lm::Material` interface provides several virtual function to be implemented. In this example, we are only interested in :cpp:func:`lm::Material::reflectance` function being used to fetch colors in ``raycast`` renderer.
+# In the first line you want to include ``lm.h``. The header provides everything necessary to use Lightmetrica in C++. :cpp:class:`lm::Material` interface provides several virtual function to be implemented. In this example, we are only interested in :cpp:func:`lm::Material::reflectance` function being used to fetch colors in ``renderer::raycast`` renderer.
 #
 # To register the implementation to the framework, you want to use :cpp:func:`LM_COMP_REG_IMPL` macro in the global scope. The second argument describes the name of the implementation, which will be used to instantiate the class.
 #
@@ -53,7 +53,7 @@ lm.progress.init('progress::jupyter')
 lm.info()
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# A plugin can be loaded by :cpp:func:`lm::comp::loadPlugin` function where you specify the path to the plugin as an argument. You don't want to specify the extension of the dynamic library because it is inferred according to the platform.
+# A plugin can be loaded by :cpp:func:`lm::comp::load_plugin` function where you specify the path to the plugin as an argument. You don't want to specify the extension of the dynamic library because it is inferred according to the platform.
 # -
 
 # Load plugin
