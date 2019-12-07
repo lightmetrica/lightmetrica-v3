@@ -33,8 +33,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import lmscene
 import lightmetrica as lm
 
-os.getpid()
-
 
 # %load_ext lightmetrica_jupyter
 
@@ -43,13 +41,14 @@ class Renderer_AO(lm.Renderer):
     """Simple ambient occlusion renderer"""
     
     def construct(self, prop):
-        self.film = lm.Film.cast(lm.comp.get(prop['output']))
+        self.scene = lm.get_scene(prop['scene'])
+        self.film = lm.get_film(prop['output'])
         if self.film is None:
             return False
         self.spp = prop['spp']
         return True
     
-    def render(self, scene):
+    def render(self):
         w = self.film.size().w
         h = self.film.size().h
         rng = lm.Rng(42)
@@ -78,33 +77,31 @@ class Renderer_AO(lm.Renderer):
 
 
 lm.init()
-
-lm.parallel.init('parallel::openmp', {
-    'numThreads': 1
-})
-
-lm.log.init('logger::jupyter', {})
-
-lm.progress.init('progress::jupyter', {})
-
 lm.info()
+lm.log.init('jupyter', {})
+lm.progress.init('jupyter', {})
+lm.parallel.init('openmp', {'num_threads': 1})
 
 # Scene
-lm.asset('film_output', 'film::bitmap', {
+film = lm.load_film('film_output', 'bitmap', {
     'w': 640,
     'h': 360
 })
-lmscene.load(env.scene_path, 'fireplace_room')
+accel = lm.load_accel('accel', 'sahbvh', {})
+scene = lm.load_scene('scene', 'default', {
+    'accel': accel.loc()
+})
+lmscene.load(scene, env.scene_path, 'fireplace_room')
+scene.build()
 
-lm.build('accel::sahbvh', {})
-
-lm.render('renderer::ao', {
-    'output': lm.asset('film_output'),
+renderer = lm.load_renderer('renderer', 'ao', {
+    'scene': scene.loc(),
+    'output': film.loc(),
     'spp': 5
 })
+renderer.render()
 
-img = np.flip(np.copy(lm.buffer(lm.asset('film_output'))), axis=0)
-
+img = np.flip(np.copy(film.buffer()), axis=0)
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1))

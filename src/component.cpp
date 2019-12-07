@@ -201,8 +201,8 @@ public:
 
         // Check if the plugin had been loaded already
         if (plugins_.find(path.string()) != plugins_.end()) {
-            LM_THROW_EXCEPTION(Error::IOError,
-                "Plugin has been loaded already [name='{}']", filename);
+            LM_WARN("Plugin is already loaded [name='{}']", filename);
+            return;
         }
 
         LM_INFO("Loading plugin [name='{}']", filename);

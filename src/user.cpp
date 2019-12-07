@@ -98,6 +98,7 @@ public:
     }
 
     void reset() {
+        // Initialize asset
         assets_ = comp::create<Assets>("assets::default", make_loc("assets"));
     }
 

@@ -75,6 +75,25 @@ struct DistanceSample {
 class Scene : public Component {
 public:
     /*!
+        \brief Reset the scene.
+    */
+    virtual void reset() = 0;
+
+    /*!
+        \brief Get underlying acceleration structure.
+        \return Instance.
+    */
+    virtual Accel* accel() const = 0;
+
+    /*!
+        \brief Set underlying acceleration structure.
+        \param accel_loc Locator to the accel asset.
+    */
+    virtual void set_accel(const std::string& accel_loc) = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    /*!
         \brief Get index of the root node.
         \return Node index.
     */
@@ -332,12 +351,6 @@ public:
 	}
 
     // --------------------------------------------------------------------------------------------
-
-    /*!
-        \brief Get underlying accel.
-        \return Instance.
-    */
-    virtual Accel* accel() const = 0;
 
     /*!
         \brief Build acceleration structure.

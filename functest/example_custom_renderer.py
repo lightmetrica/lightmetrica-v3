@@ -44,6 +44,9 @@ lm.log.init('jupyter')
 lm.progress.init('jupyter')
 lm.info()
 
+if not lm.Release:
+    lm.debug.attach_to_debugger()
+
 lm.comp.load_plugin(os.path.join(env.bin_path, 'functest_renderer_ao'))
 
 # +

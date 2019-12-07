@@ -29,8 +29,8 @@ struct LightPrimitiveIndex {
 
 class Scene_ final : public Scene {
 private:
-    std::vector<SceneNode> nodes_;                   // Scene nodes (index 0: root node)
     Accel* accel_;                                   // Acceleration structure
+    std::vector<SceneNode> nodes_;                   // Scene nodes (index 0: root node)
     std::optional<int> camera_;                      // Camera index
     std::vector<LightPrimitiveIndex> lights_;        // Primitive node indices of lights and global transforms
     std::unordered_map<int, int> light_indices_map_; // Map from node indices to light indices.
@@ -39,7 +39,7 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(nodes_, accel_, camera_, lights_, light_indices_map_, env_light_);
+        ar(accel_, nodes_, camera_, lights_, light_indices_map_, env_light_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
@@ -56,11 +56,29 @@ public:
 
 public:
     virtual void construct(const Json& prop) override {
-        accel_ = json::comp_ref<Accel>(prop, "accel");
-        nodes_.push_back(SceneNode::make_group(0, false, {}));
+        accel_ = json::comp_ref_or_nullptr<Accel>(prop, "accel");
+        reset();
     }
 
 public:
+    virtual void reset() override {
+        nodes_.clear();
+        camera_ = {};
+        lights_.clear();
+        light_indices_map_.clear();
+        env_light_ = {};
+        medium_ = {};
+        nodes_.push_back(SceneNode::make_group(0, false, {}));
+    }
+
+    virtual Accel* accel() const override {
+        return accel_;
+    }
+
+    virtual void set_accel(const std::string& accel_loc) override {
+        accel_ = comp::get<Accel>(accel_loc);
+    }
+
     virtual int root_node() override {
         return 0;
     }
@@ -250,10 +268,6 @@ public:
     }
 
     // --------------------------------------------------------------------------------------------
-
-    virtual Accel* accel() const override {
-        return accel_;
-    }
 
     virtual void build() override {
         // Update light indices

@@ -33,8 +33,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import lmscene
 import lightmetrica as lm
 
-os.getpid()
-
 
 # %load_ext lightmetrica_jupyter
 
@@ -42,7 +40,7 @@ os.getpid()
 class Material_VisualizeNormal(lm.Material):
     def construct(self, prop):
         return True
-    def isSpecular(self, geom, comp):
+    def is_specular(self, geom, comp):
         return False
     def sample(self, geom, wi):
         return None
@@ -55,50 +53,52 @@ class Material_VisualizeNormal(lm.Material):
 
 
 lm.init()
-lm.parallel.init('parallel::openmp', {
-    'numThreads': 1
-})
-lm.log.init('logger::jupyter')
-lm.progress.init('progress::jupyter')
+lm.parallel.init('openmp', {'num_threads': 1})
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
 
 # +
 # Original material
-lm.asset('mat_vis_normal', 'material::visualize_normal', {})
+material = lm.load_material('mat_vis_normal', 'visualize_normal', {})
 
 # Scene
-lm.asset('camera_main', 'camera::pinhole', {
+camera = lm.load_camera('camera_main', 'pinhole', {
     'position': [5.101118, 1.083746, -2.756308],
     'center': [4.167568, 1.078925, -2.397892],
     'up': [0,1,0],
     'vfov': 43.001194
 })
-lm.asset('model_obj', 'model::wavefrontobj', {
+model = lm.load_model('model_obj', 'wavefrontobj', {
     'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
-    'base_material': lm.asset('mat_vis_normal')
+    'base_material': material.loc()
 })
-lm.primitive(lm.identity(), {
-    'camera': lm.asset('camera_main')
+accel = lm.load_accel('accel', 'sahbvh', {})
+scene = lm.load_scene('scene', 'default', {
+    'accel': accel.loc()
 })
-lm.primitive(lm.identity(), {
-    'model': lm.asset('model_obj')
+scene.add_primitive({
+    'camera': camera.loc()
 })
-# -
-
-lm.build('accel::sahbvh', {})
+scene.add_primitive({
+    'model': model.loc()
+})
+scene.build()
 
 # +
 # Render
-lm.asset('film_output', 'film::bitmap', {
+film = lm.load_film('film_output', 'bitmap', {
     'w': 640,
     'h': 360
 })
-lm.render('renderer::raycast', {
-    'output': lm.asset('film_output')
+renderer = lm.load_renderer('renderer', 'raycast', {
+    'scene': scene.loc(),
+    'output': film.loc()
 })
-img = np.copy(lm.buffer(lm.asset('film_output')))
+renderer.render()
 
 # Visualize
+img = np.copy(film.buffer())
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')

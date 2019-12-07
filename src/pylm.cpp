@@ -276,7 +276,7 @@ static void bind_parallel(pybind11::module& m) {
 // Bind objloader.h
 static void bind_objloader(pybind11::module& m) {
     auto sm = m.def_submodule("objloader");
-    sm.def("init", &objloader::init);
+    sm.def("init", &objloader::init, "type"_a = objloader::DefaultType, "prop"_a = Json{});
     sm.def("shutdown", &objloader::shutdown);
 }
 
@@ -519,6 +519,15 @@ static void bind_scene(pybind11::module& m) {
 		virtual void construct(const Json& prop) override {
 			PYBIND11_OVERLOAD(void, Scene, construct, prop);
 		}
+        virtual void reset() override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, reset);
+        }
+        virtual Accel* accel() const override {
+            PYBIND11_OVERLOAD_PURE(Accel*, Scene, accel);
+        }
+        virtual void set_accel(const std::string& accel_loc) override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, set_accel, accel_loc);
+        }
 		virtual int root_node() override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, root_node);
 		}
@@ -561,9 +570,6 @@ static void bind_scene(pybind11::module& m) {
 		virtual const SceneNode& node_at(int node_index) const override {
 			PYBIND11_OVERLOAD_PURE(const SceneNode&, Scene, node_at, node_index);
 		}
-        virtual Accel* accel() const override {
-            PYBIND11_OVERLOAD_PURE(Accel*, Scene, accel);
-        }
 		virtual void build() override {
 			PYBIND11_OVERLOAD_PURE(void, Scene, build);
 		}
@@ -619,6 +625,9 @@ static void bind_scene(pybind11::module& m) {
 
     pybind11::class_<Scene, Scene_Py, Component, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
+        .def("reset", &Scene::reset)
+        .def("accel", &Scene::accel)
+        .def("set_accel", &Scene::set_accel)
         .def("root_node", &Scene::root_node)
         .def("create_primitive_node", &Scene::create_primitive_node)
 		.def("create_group_node", &Scene::create_group_node)
@@ -634,7 +643,6 @@ static void bind_scene(pybind11::module& m) {
         .def("traverse_primitive_nodes", &Scene::traverse_primitive_nodes)
 		.def("visit_node", &Scene::visit_node)
 		.def("node_at", &Scene::node_at, pybind11::return_value_policy::reference)
-        .def("accel", &Scene::accel)
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
         .def("is_light", &Scene::is_light)

@@ -44,8 +44,8 @@ os.getpid()
 # + {"code_folding": []}
 # Initialize Lightmetrica
 lm.init()
-lm.log.init('logger::jupyter')
-lm.progress.init('progress::jupyter')
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 # -
 
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
@@ -86,80 +86,90 @@ for i in range(1,numTheta+1):
             fs[idx,:] = np.array([p11,p01,p10])
             idx += 1
 
-
 # + {"code_folding": []}
-# Scene setup
-def scene_setup():
-    lm.reset()
-    lm.asset('mesh_sphere', 'mesh::raw', {
-        'ps': vs.flatten().tolist(),
-        'ns': ns.flatten().tolist(),
-        'ts': ts.flatten().tolist(),
-        'fs': {
-            'p': fs.flatten().tolist(),
-            't': fs.flatten().tolist(),
-            'n': fs.flatten().tolist()
-        }
-    })
-    lm.asset('camera_main', 'camera::pinhole', {
-        'position': [0,0,50],
-        'center': [0,0,0],
-        'up': [0,1,0],
-        'vfov': 30
-    })
-    lm.asset('material_white', 'material::diffuse', {
-        'Kd': [1,1,1]
-    })
-    lm.primitive(lm.identity(), {
-        'camera': lm.asset('camera_main')
-    })
+mesh = lm.load_mesh('mesh_sphere', 'raw', {
+    'ps': vs.flatten().tolist(),
+    'ns': ns.flatten().tolist(),
+    'ts': ts.flatten().tolist(),
+    'fs': {
+        'p': fs.flatten().tolist(),
+        't': fs.flatten().tolist(),
+        'n': fs.flatten().tolist()
+    }
+})
 
+camera = lm.load_camera('camera_main', 'pinhole', {
+    'position': [0,0,50],
+    'center': [0,0,0],
+    'up': [0,1,0],
+    'vfov': 30
+})
 
+material = lm.load_material('material_white', 'diffuse', {
+    'Kd': [1,1,1]
+})
+
+film = lm.load_film('film_output', 'bitmap', {
+    'w': 1920,
+    'h': 1080
+})
+
+accel = lm.load_accel('accel', 'nanort', {})
+
+scene = lm.load_scene('scene', 'default', {
+    'accel': accel.loc()
+})
+
+renderer = lm.load_renderer('renderer', 'raycast', {
+    'scene': scene.loc(),
+    'output': film.loc(),
+    'visualize_normal': True,
+    'bg_color': [1,1,1]
+})
 # -
-
-# Rendering
-def render_and_visualize():
-    lm.build('accel::nanort', {})
-    lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
-    lm.render('renderer::raycast', {
-        'output': lm.asset('film_output'),
-        'visualize_normal': True,
-        'bg_color': [1,1,1]
-    })
-    img = np.copy(lm.buffer(lm.asset('film_output')))
-    f = plt.figure(figsize=(15,15))
-    ax = f.add_subplot(111)
-    ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
-    plt.show()
-
 
 # ### Without instancing
 
-scene_setup()
-scene = lm.scene()
+# +
+scene.reset()
+scene.add_primitive({
+    'camera': camera.loc()
+})
+
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
         p = scene.create_primitive_node({
-            'mesh': lm.asset('mesh_sphere'),
-            'material': lm.asset('material_white')
+            'mesh': mesh.loc(),
+            'material': material.loc()
         })
         t = scene.create_group_node(lm.translate(np.array([x,y,0])))
         scene.add_child(t, p)
         scene.add_child(scene.root_node(), t)
+        
+scene.build()
+renderer.render()
+# -
 
-render_and_visualize()
+img = np.copy(film.buffer())
+f = plt.figure(figsize=(15,15))
+ax = f.add_subplot(111)
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
+plt.show()
 
+#
 # ### Single-level
 
 # +
-scene_setup()
-scene = lm.scene()
+scene.reset()
+scene.add_primitive({
+    'camera': camera.loc()
+})
 
 # Instance group
 g = scene.create_instance_group_node()
 scene.add_child(g, scene.create_primitive_node({
-    'mesh': lm.asset('mesh_sphere'),
-    'material': lm.asset('material_white')
+    'mesh': mesh.loc(),
+    'material': material.loc()
 }))
 
 # Transformed instanced group
@@ -168,21 +178,30 @@ for y in np.linspace(-10,10,10):
         t = scene.create_group_node(lm.translate(np.array([x,y,0])))
         scene.add_child(t, g)
         scene.add_child(scene.root_node(), t)
+        
+scene.build()
+renderer.render()
 # -
 
-render_and_visualize()
+img = np.copy(film.buffer())
+f = plt.figure(figsize=(15,15))
+ax = f.add_subplot(111)
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
+plt.show()
 
 # ### Multi-level
 
 # +
-scene_setup()
-scene = lm.scene()
+scene.reset()
+scene.add_primitive({
+    'camera': camera.loc()
+})
 
 # Initial group
 g1 = scene.create_instance_group_node()
 scene.add_child(g1, scene.create_primitive_node({
-    'mesh': lm.asset('mesh_sphere'),
-    'material': lm.asset('material_white')
+    'mesh': mesh.loc(),
+    'material': material.loc()
 }))
 
 # Second group using initial group as chilren
@@ -196,7 +215,14 @@ for y in np.linspace(-10,10,10):
 for x in np.linspace(-10,10,10):
     t = scene.create_group_node(lm.translate(np.array([x,0,0])))
     scene.add_child(t, g2)
-    scene.add_child(scene.root_node(), t)
+    scene.add_child(scene.root_node(), t)   
+    
+scene.build()
+renderer.render()
 # -
 
-render_and_visualize()
+img = np.copy(film.buffer())
+f = plt.figure(figsize=(15,15))
+ax = f.add_subplot(111)
+ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
+plt.show()
