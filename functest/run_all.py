@@ -34,9 +34,12 @@ def run_functests(output_dir, lmenv_path):
         # 'func_accel_consistency',
         # 'func_py_custom_material',
         # 'func_py_custom_renderer',
-        'func_distributed_rendering',
-        'func_distributed_rendering_ext',
-        'func_error_handling',
+        
+        # TODO
+        # 'func_distributed_rendering',
+        # 'func_distributed_rendering_ext',
+        
+        # 'func_error_handling',
         'func_obj_loader_consistency',
         'func_serial_consistency',
         'func_update_asset',
