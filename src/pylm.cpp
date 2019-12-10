@@ -202,6 +202,33 @@ static void bind_user(pybind11::module& m) {
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Accel, accel);
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Scene, scene);
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Renderer, renderer);
+
+    // Helper function to visualize the asset tree
+    m.def("print_asset_tree", []() {
+        using namespace std::placeholders;
+
+        // Traverse the asset from the root
+        using Func = std::function<void(Component * &p, bool weak, std::string parent_loc)>;
+        const Func visitor = [&](Component*& comp, bool weak, std::string parent_loc) {
+            if (!comp || weak) {
+                return;
+            }
+
+            // Print information
+            const auto loc = comp->loc();
+            auto comp_id = loc;
+            comp_id.erase(0, parent_loc.size());
+            LM_INFO(comp_id);
+            LM_INDENT();
+            
+            // Traverse underlying components
+            comp->foreach_underlying(std::bind(visitor, _1, _2, loc));
+        };
+        
+        LM_INFO("$.assets");
+        LM_INDENT();
+        lm::assets()->foreach_underlying(std::bind(visitor, _1, _2, "$.assets"));
+    });
 }
 
 // ------------------------------------------------------------------------------------------------

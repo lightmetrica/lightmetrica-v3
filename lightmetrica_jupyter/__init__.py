@@ -43,6 +43,10 @@ def load_ipython_extension(ip):
             self.severity = 0
             self.n = 0
             self.start = time.time()
+            if (prop is not None) and ('show_line_and_filename' in prop):
+                self.show_line_and_filename = prop['show_line_and_filename']
+            else:
+                self.show_line_and_filename = False
             return True
         def log(self, level, severity, filename, line, message):
             if self.severity > severity:
@@ -62,8 +66,11 @@ def load_ipython_extension(ip):
                 name = 'I'
             elapsed = time.time() - self.start
             file_no_ext = os.path.splitext(os.path.basename(filename))[0]
-            line_and_file = '{}@{}'.format(line, file_no_ext)[:10]
-            header = '[{}|{:.3f}|{:<10}] '.format(name, elapsed, line_and_file)
+            if self.show_line_and_filename:
+                line_and_file = '{}@{}'.format(line, file_no_ext)[:10]
+                header = '[{}|{:.3f}|{:<10}] '.format(name, elapsed, line_and_file)
+            else:
+                header = '[{}|{:.3f}] '.format(name, elapsed)
             spaces = ('.' * (self.n * 2)) + (' ' if self.n > 0 else '')
             s = header + spaces + message
             print(s, file=out)
