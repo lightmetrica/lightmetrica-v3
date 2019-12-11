@@ -132,6 +132,7 @@ static void bind_component(pybind11::module& m) {
         .def("construct", &Component::construct)
         .def("underlying", &Component::underlying, pybind11::return_value_policy::reference)
         .def("underlying_value", &Component::underlying_value, "query"_a = "")
+#if 0
         .def("save", [](Component* self) -> pybind11::bytes {
             std::ostringstream os;
             {
@@ -145,31 +146,9 @@ static void bind_component(pybind11::module& m) {
             InputArchive ar(is);
             self->load(ar);
         })
+#endif
         .def("save_to_file", [](Component& self, const std::string& path) {
-            // Check if the child assets contains external reference out of the subtree.
-            // If the subtree contains the external reference, generate an error.
-            const auto root_loc = self.loc();
-            const Component::ComponentVisitor visitor = [&](Component*& comp, bool weak) {
-                if (!comp) {
-                    return;
-                }
-                if (weak) {
-                    // Check if the weak reference is referring to an asset in the subtree
-                    const auto loc = comp->loc();
-                    if (!loc._Starts_with(root_loc)) {
-                        LM_THROW_EXCEPTION(Error::Unsupported,
-                            "Unserializable asset. Subtree contains a reference to the outer asset. [loc='{}']", loc);
-                    }
-                    return;
-                }
-                comp->foreach_underlying(visitor);
-            };
-            self.foreach_underlying(visitor);
-
-            // Serialize the asset
-            std::ofstream os(path, std::ios::out | std::ios::binary);
-            OutputArchive ar(os, self.loc());
-            cereal::save_owned(ar, &self);
+            serial::save_comp_to_file(self, path);
         })
         .PYLM_DEF_COMP_BIND(Component);
 

@@ -15,6 +15,7 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <atomic>
+#include <fstream>
 
 // ------------------------------------------------------------------------------------------------
 
@@ -336,7 +337,7 @@ void save(std::ostream& os, Ts&&... v) {
 /*!
     \brief Serialize a component as owned pointer.
 */
-LM_INLINE void save_owned(std::ostream& os, Component* v) {
+static void save_owned(std::ostream& os, Component* v) {
     OutputArchive ar(os);
     cereal::save_owned(ar, v);
 }
@@ -360,12 +361,42 @@ void save(const std::string& path, T&& v) {
 }
 
 /*!
-    \brief Deserialize an object from an file.
+    \brief Deserialize an object from a file.
 */
 template <typename T>
 void load(const std::string& path, T& v) {
     std::ifstream is(path, std::ios::in | std::ios::binary);
     load(is, v);
+}
+
+/*!
+    \brief Save a coponent to a file.
+*/
+static void save_comp_to_file(Component& self, const std::string& path) {
+    // Check if the child assets contains external reference out of the subtree.
+    // If the subtree contains the external reference, generate an error.
+    const auto root_loc = self.loc();
+    const Component::ComponentVisitor visitor = [&](Component*& comp, bool weak) {
+        if (!comp) {
+            return;
+        }
+        if (weak) {
+            // Check if the weak reference is referring to an asset in the subtree
+            const auto loc = comp->loc();
+            if (!loc._Starts_with(root_loc)) {
+                LM_THROW_EXCEPTION(Error::Unsupported,
+                    "Unserializable asset. Subtree contains a reference to the outer asset. [loc='{}']", loc);
+            }
+            return;
+        }
+        comp->foreach_underlying(visitor);
+    };
+    self.foreach_underlying(visitor);
+
+    // Serialize the asset
+    std::ofstream os(path, std::ios::out | std::ios::binary);
+    OutputArchive ar(os, self.loc());
+    cereal::save_owned(ar, &self);
 }
 
 /*!
