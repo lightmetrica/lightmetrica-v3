@@ -204,8 +204,10 @@ static void bind_user(pybind11::module& m) {
     m.def("reset", &reset);
     m.def("info", &info);
     m.def("assets", &assets, pybind11::return_value_policy::reference);
+#if 0
     m.def("serialize", (void(*)(const std::string&)) & serialize);
     m.def("deserialize", (void(*)(const std::string&)) & deserialize);
+#endif
     
     // Expose some function in comp namespace to lm namespace
     m.def("load", [](const std::string& name, const std::string& impl_key, const Json& prop) -> Component* {
@@ -426,6 +428,7 @@ static void bind_progress(pybind11::module& m) {
 
 // ------------------------------------------------------------------------------------------------
 
+#if 0
 // Bind debugio.h
 static void bind_debugio(pybind11::module& m) {
     auto sm = m.def_submodule("debugio");
@@ -436,6 +439,7 @@ static void bind_debugio(pybind11::module& m) {
     sm_client.def("sync_user_context", &debugio::client::sync_user_context);
     sm_client.def("draw", &debugio::client::draw);
 }
+#endif
 
 // ------------------------------------------------------------------------------------------------
 
@@ -458,25 +462,27 @@ static void bind_debug(pybind11::module& m) {
 
 // ------------------------------------------------------------------------------------------------
 
+#if 0
 // Bind distributed.h
-//static void bind_distributed(pybind11::module& m) {
-//    auto sm = m.def_submodule("distributed");
-//    {
-//        auto sm2 = sm.def_submodule("master");
-//        sm2.def("init", &distributed::master::init);
-//        sm2.def("shutdown", &distributed::master::shutdown);
-//        sm2.def("print_worker_info", &distributed::master::print_worker_info);
-//        sm2.def("allow_worker_connection", &distributed::master::allow_worker_connection);
-//        sm2.def("sync", &distributed::master::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
-//        sm2.def("gather_film", &distributed::master::gather_film, pybind11::call_guard<pybind11::gil_scoped_release>());
-//    }
-//    {
-//        auto sm2 = sm.def_submodule("worker");
-//        sm2.def("init", &distributed::worker::init);
-//        sm2.def("shutdown", &distributed::worker::shutdown);
-//        sm2.def("run", &distributed::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
-//    }
-//}
+static void bind_distributed(pybind11::module& m) {
+    auto sm = m.def_submodule("distributed");
+    {
+        auto sm2 = sm.def_submodule("master");
+        sm2.def("init", &distributed::master::init);
+        sm2.def("shutdown", &distributed::master::shutdown);
+        sm2.def("print_worker_info", &distributed::master::print_worker_info);
+        sm2.def("allow_worker_connection", &distributed::master::allow_worker_connection);
+        sm2.def("sync", &distributed::master::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
+        sm2.def("gather_film", &distributed::master::gather_film, pybind11::call_guard<pybind11::gil_scoped_release>());
+    }
+    {
+        auto sm2 = sm.def_submodule("worker");
+        sm2.def("init", &distributed::worker::init);
+        sm2.def("shutdown", &distributed::worker::shutdown);
+        sm2.def("run", &distributed::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
+    }
+}
+#endif
 
 // ------------------------------------------------------------------------------------------------
 
@@ -1124,7 +1130,7 @@ PYBIND11_MODULE(pylm, m) {
 	//bind_distributed(m);
     bind_objloader(m);
     bind_progress(m);
-    bind_debugio(m);
+    //bind_debugio(m);
     bind_debug(m);
     bind_film(m);
     bind_surface(m);

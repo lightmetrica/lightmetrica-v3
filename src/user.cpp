@@ -102,6 +102,7 @@ public:
         root_assets_ = comp::create<AssetGroup>("asset_group::default", make_loc("assets"));
     }
 
+#if 0
     void serialize(std::ostream& os) {
 		check_initialized();
         LM_INFO("Saving state to stream");
@@ -113,6 +114,7 @@ public:
         LM_INFO("Loading state from stream");
         serial::load(is, root_assets_);
     }
+#endif
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -137,6 +139,8 @@ LM_PUBLIC_API AssetGroup* assets() {
     return UserContext::instance().assets();
 }
 
+#if 0
+
 LM_PUBLIC_API void serialize(std::ostream& os) {
     UserContext::instance().serialize(os);
 }
@@ -144,5 +148,7 @@ LM_PUBLIC_API void serialize(std::ostream& os) {
 LM_PUBLIC_API void deserialize(std::istream& is) {
     UserContext::instance().deserialize(is);
 }
+
+#endif
 
 LM_NAMESPACE_END(LM_NAMESPACE)

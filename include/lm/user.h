@@ -66,6 +66,8 @@ LM_PUBLIC_API AssetGroup* assets();
 
 // ------------------------------------------------------------------------------------------------
 
+#if 0
+
 /*!
     \brief Serialize the internal state of the framework to a stream.
     \param os Output stream.
@@ -95,6 +97,8 @@ LM_INLINE void deserialize(const std::string& path) {
     std::ifstream is(path, std::ios::in | std::ios::binary);
     deserialize(is);
 }
+
+#endif
 
 // ------------------------------------------------------------------------------------------------
 
