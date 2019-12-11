@@ -124,12 +124,17 @@ public:
                 "Asset [name='{}'] has been already loaded.", name);
         }
 
-        // Register
+        // Register the asset
+        // This must happen before deserialization because
+        // the loading process might refer to the underlying component via locator.
         asset_index_map_[name] = int(assets_.size());
         assets_.emplace_back();
+        const auto root_loc = make_loc(name);
 
         // Deserialize the asset
-        serial::load(path, assets_.back());
+        std::ifstream is(path, std::ios::in | std::ios::binary);
+        InputArchive ar(is, root_loc);
+        ar(assets_.back());
 
         return assets_.back().get();
     }

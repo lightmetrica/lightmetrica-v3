@@ -168,7 +168,8 @@ static void bind_component(pybind11::module& m) {
 
             // Serialize the asset
             std::ofstream os(path, std::ios::out | std::ios::binary);
-            serial::save_owned(os, &self);
+            OutputArchive ar(os, self.loc());
+            cereal::save_owned(ar, &self);
         })
         .PYLM_DEF_COMP_BIND(Component);
 
@@ -286,8 +287,8 @@ static void bind_asset_group(pybind11::module& m) {
     };
     pybind11::class_<AssetGroup, AssetGroup_Py, Component, Component::Ptr<AssetGroup>>(m, "AssetGroup")
         .def(pybind11::init<>())
-        .def("load_asset", &AssetGroup::load_asset)
-        .def("load_serialized", &AssetGroup::load_serialized)
+        .def("load_asset", &AssetGroup::load_asset, pybind11::return_value_policy::reference)
+        .def("load_serialized", &AssetGroup::load_serialized, pybind11::return_value_policy::reference)
         .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Mesh, mesh)
         .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Texture, texture)
         .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Material, material)

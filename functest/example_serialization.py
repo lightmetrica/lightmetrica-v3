@@ -34,6 +34,9 @@ lm.log.init('jupyter')
 lm.progress.init('jupyter')
 lm.info()
 
+if not lm.Release:
+    lm.debug.attach_to_debugger()
+
 # ### Visualizing asset tree
 #
 # An asset can hold another assets in the instance. As a result, a created set of asset can constitute of an *asset tree*. We can visualize the structure of the tree using ``lm.print_asset_tree()`` function.
@@ -120,6 +123,16 @@ lm.load_serialized('fireplace_room', 'fireplace_room.serialized')
 
 lm.print_asset_tree()
 
+# Reset the internal state
+lm.reset()
+lm.print_asset_tree()
+
+# Also note that the serialized asset can be loaded in a different location in the asset tree, for instance, as a child of the different asset group. 
+
+g = lm.load_asset_group('another_group', 'default', {})
+g.load_serialized('fireplace_room', 'fireplace_room.serialized')
+lm.print_asset_tree()
+
 # ### Rendering with serialized asset
 #
 # We can render the image using the serializaed asset. Here we are using a locator directly instead of ``.loc()`` function, since the previously obtained reference (``scene``) became invalid.
@@ -130,7 +143,7 @@ film = lm.load_film('film', 'bitmap', {
     'h': 1080
 })
 renderer = lm.load_renderer('renderer', 'pt', {
-    'scene': '$.assets.fireplace_room.scene',
+    'scene': '$.assets.another_group.fireplace_room.scene',
     'output': film.loc(),
     'scheduler': 'sample',
     'spp': 1,
@@ -143,3 +156,5 @@ f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()
+
+

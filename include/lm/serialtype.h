@@ -25,17 +25,28 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class OutputArchive final : public cereal::OutputArchive<OutputArchive, cereal::AllowEmptyClassElision> {
 private:
-    cereal::PortableBinaryOutputArchive archive_;
+    // Locator of the root component
+    std::string root_loc_;
+    cereal::PortableBinaryOutputArchive archive_; 
 
 public:
     OutputArchive(std::ostream& stream)
+        : OutputArchive(stream, "")
+    {}
+
+    OutputArchive(std::ostream& stream, const std::string& root_loc)
         : cereal::OutputArchive<OutputArchive, cereal::AllowEmptyClassElision>(this)
         , archive_(stream)
+        , root_loc_(root_loc)
     {}
 
     template <std::size_t DataSize> inline
     void saveBinary(const void* data, std::size_t size) {
         archive_.saveBinary<DataSize>(data, size);
+    }
+
+    std::string root_loc() const {
+        return root_loc_;
     }
 };
 
@@ -49,17 +60,28 @@ public:
 */
 class InputArchive final : public cereal::InputArchive<InputArchive, cereal::AllowEmptyClassElision> {
 private:
+    // Locator of the root component
+    std::string root_loc_;
     cereal::PortableBinaryInputArchive archive_;
 
 public:
     InputArchive(std::istream& stream)
+        : InputArchive(stream, "")
+    {}
+
+    InputArchive(std::istream& stream, const std::string& root_loc)
         : cereal::InputArchive<InputArchive, cereal::AllowEmptyClassElision>(this)
         , archive_(stream)
+        , root_loc_(root_loc)
     {}
 
     template <std::size_t DataSize> inline
     void loadBinary(void* const data, std::size_t size) {
         archive_.loadBinary<DataSize>(data, size);
+    }
+
+    std::string root_loc() const {
+        return root_loc_;
     }
 };
 

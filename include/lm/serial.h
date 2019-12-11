@@ -117,17 +117,38 @@ void save_owned(Archive& ar, T* p) {
         ar(CEREAL_NVP_("key", Access::key(p)));
 
         // Consistency testing checking if the locator is valid
-        const auto& loc = Access::loc(p);
+        const auto loc = Access::loc(p);
         if (!loc.empty()) {
             const auto* p_loc = lm::comp::get<T>(loc);
             if (!p_loc || p_loc != p) {
-                LM_ERROR("Invalid locator [loc='{}']", loc);
-                LM_ERROR("Loaded state might be broken. Check if");
-                LM_ERROR("  - locator is properly specified in lm::comp::create()");
-                LM_ERROR("  - underlying() function is properly implemented");
+                LM_THROW_EXCEPTION(lm::Error::IOError,
+                    "Invalid locator [loc='{}'] Serialized state will be broken. Check if "
+                    "(1) locator is properly specified in lm::comp::create(). "
+                    "(2) underlying() function is properly implemented.", loc);
             }
         }
-        ar(CEREAL_NVP_("loc", loc));
+
+        // Serialize locator
+        const auto root_loc = ar.root_loc();
+        if (!root_loc.empty()) {
+            // If the root locator is specified, serialize the locator relative to the root.
+
+            // Consistency testing
+            // Current locator must start with root_loc
+            if (!loc._Starts_with(root_loc)) {
+                LM_THROW_EXCEPTION(lm::Error::IOError,
+                    "Unserializable asset. Subtree contains a reference to the outer asset. [loc='{}']", loc);
+            }
+
+            // Obtain the relative locator to the root and serialize it
+            auto relative_loc = loc;
+            relative_loc.erase(0, root_loc.size());
+            ar(CEREAL_NVP_("loc", relative_loc));
+        }
+        else {
+            // Otherwise serialize absolute locator.
+            ar(CEREAL_NVP_("loc", loc));
+        }
 
         // Save the contants with Component::save() function.
         // We don't use cereal's polymorphinc class support
@@ -155,11 +176,29 @@ void load(Archive& ar, lm::Component::Ptr<T>& p) {
         p.reset();
     }
     else {
-        // Load key and locator
+        // Load key
         std::string key;
         ar(CEREAL_NVP_("key", key));
-        std::string loc;
-        ar(CEREAL_NVP_("loc", loc));
+
+        // Load locator
+        const auto loc = [&]() {
+            const auto root_loc = ar.root_loc();
+            if (!root_loc.empty()) {
+                // If the root locator is specified, the serialized locator
+                // is assumed to be a relative locator the root.
+                std::string relative_loc;
+                ar(CEREAL_NVP_("loc", relative_loc));
+
+                // Absolute locator
+                return root_loc + relative_loc;
+            }
+            else {
+                // Otherwise the serialized locator is assumed to be absolute
+                std::string loc;
+                ar(CEREAL_NVP_("loc", loc));
+                return loc;
+            }
+        }();
 
         // Create component instance
         // Be careful not to call construct() function here
@@ -199,9 +238,32 @@ serialize(lm::OutputArchive& ar, T*& p) {
     }
     else {
         ar(CEREAL_NVP_("valid", uint8_t(1)));
-        ar(CEREAL_NVP_("loc", Access::loc(p)));
-        if (Access::loc(p).empty()) {
-            LM_ERROR("Serializing weak reference requires global locator [key='{}']", Access::key(p));
+
+        const auto loc = Access::loc(p);
+        if (loc.empty()) {
+            LM_ERROR("Serializing weak reference requires locator [key='{}']", Access::key(p));
+        }
+
+        // Serializing locator
+        const auto root_loc = ar.root_loc();
+        if (!root_loc.empty()) {
+            // If the root locator is specified, serialize the locator relative to the root.
+
+            // Consistency testing
+            // Current locator must start with root_loc
+            if (!loc._Starts_with(root_loc)) {
+                LM_THROW_EXCEPTION(lm::Error::IOError,
+                    "Unserializable asset. Subtree contains a reference to the outer asset. [loc='{}']", loc);
+            }
+
+            // Obtain the relative locator to the root and serialize it
+            auto relative_loc = loc;
+            relative_loc.erase(0, root_loc.size());
+            ar(CEREAL_NVP_("loc", relative_loc));
+        }
+        else {
+            // Otherwise serialize absolute locator.
+            ar(CEREAL_NVP_("loc", loc));
         }
     }
 }
@@ -220,8 +282,27 @@ serialize(lm::InputArchive& ar, T*& p) {
         p = nullptr;
     }
     else {
-        std::string loc;
-        ar(CEREAL_NVP_("loc", loc));
+        // Load locator
+        const auto loc = [&]() {
+            const auto root_loc = ar.root_loc();
+            if (!root_loc.empty()) {
+                // If the root locator is specified, the serialized locator
+                // is assumed to be a relative locator the root.
+                std::string relative_loc;
+                ar(CEREAL_NVP_("loc", relative_loc));
+
+                // Absolute locator
+                return root_loc + relative_loc;
+            }
+            else {
+                // Otherwise the serialized locator is assumed to be absolute
+                std::string loc;
+                ar(CEREAL_NVP_("loc", loc));
+                return loc;
+            }
+        }();
+
+        // Get component
         p = lm::comp::get<T>(loc);
         if (!p) {
             LM_ERROR("Invalid global locator [locator='{}']", loc);
