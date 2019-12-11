@@ -199,6 +199,7 @@ static void bind_user(pybind11::module& m) {
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Phase, phase);
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Film, film);
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Model, model);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, AssetGroup, asset_group);
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Accel, accel);
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Scene, scene);
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Renderer, renderer);
@@ -218,7 +219,7 @@ static void bind_user(pybind11::module& m) {
             const auto loc = comp->loc();
             auto comp_id = loc;
             comp_id.erase(0, parent_loc.size());
-            LM_INFO(comp_id);
+            LM_INFO("{} [{}]", comp_id, comp->key());
             LM_INDENT();
             
             // Traverse underlying components
@@ -229,6 +230,42 @@ static void bind_user(pybind11::module& m) {
         LM_INDENT();
         lm::assets()->foreach_underlying(std::bind(visitor, _1, _2, "$.assets"));
     });
+}
+
+// ------------------------------------------------------------------------------------------------
+
+#define PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(InterfaceType, interface_name) \
+    def(fmt::format("load_{}", #interface_name).c_str(), \
+        [](AssetGroup& self, const std::string& name, const std::string& impl_key, const Json& prop) -> InterfaceType* { \
+            auto* p = self.load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+            return dynamic_cast<InterfaceType*>(p); \
+        }, pybind11::return_value_policy::reference)
+
+// Bind assetgroup.h
+static void bind_asset_group(pybind11::module& m) {
+    class AssetGroup_Py final : public AssetGroup {
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, AssetGroup, construct, prop);
+        }
+        virtual Component* load_asset(const std::string& name, const std::string& impl_key, const Json& prop) override {
+            PYBIND11_OVERLOAD_PURE(Component*, AssetGroup, load, name, impl_key, prop);
+        }
+    };
+    pybind11::class_<AssetGroup, AssetGroup_Py, Component, Component::Ptr<AssetGroup>>(m, "AssetGroup")
+        .def(pybind11::init<>())
+        .def("load_asset", &AssetGroup::load_asset)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Mesh, mesh)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Texture, texture)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Material, material)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Camera, camera)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Medium, medium)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Phase, phase)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Film, film)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Model, model)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(AssetGroup, asset_group)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Accel, accel)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Scene, scene)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Renderer, renderer);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1038,23 +1075,6 @@ static void bind_light(pybind11::module& m) {
 
 // ------------------------------------------------------------------------------------------------
 
-// Bind assets.h
-static void bind_assets(pybind11::module& m) {
-    class Assets_Py final : public Assets {
-        virtual void construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(void, Assets, construct, prop);
-        }
-        virtual Component* load_asset(const std::string& name, const std::string& impl_key, const Json& prop) override {
-            PYBIND11_OVERLOAD_PURE(Component*, Assets, load, name, impl_key, prop);
-        }
-    };
-    pybind11::class_<Assets, Assets_Py, Component, Component::Ptr<Assets>>(m, "Assets")
-        .def(pybind11::init<>())
-        .def("load_asset", &Assets::load_asset);
-}
-
-// ------------------------------------------------------------------------------------------------
-
 PYBIND11_MODULE(pylm, m) {
     m.doc() = R"x(
         pylm: Python binding of Lightmetrica.
@@ -1088,7 +1108,7 @@ PYBIND11_MODULE(pylm, m) {
 	bind_model(m);
     bind_camera(m);
     bind_light(m);
-    bind_assets(m);
+    bind_asset_group(m);
 	bind_user(m);
 }
 

@@ -62,7 +62,7 @@ LM_PUBLIC_API void info();
     \brief Get underlying collection of assets.
     \return Instance.
 */
-LM_PUBLIC_API Assets* assets();
+LM_PUBLIC_API AssetGroup* assets();
 
 // ------------------------------------------------------------------------------------------------
 

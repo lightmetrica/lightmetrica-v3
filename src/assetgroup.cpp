@@ -5,11 +5,11 @@
 
 #include <pch.h>
 #include <lm/core.h>
-#include <lm/assets.h>
+#include <lm/assetgroup.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-class Assets_ final : public Assets {
+class AssetGroup_ final : public AssetGroup {
 private:
     std::vector<Component::Ptr<Component>> assets_;
     std::unordered_map<std::string, int> asset_index_map_;
@@ -116,6 +116,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Assets_, "assets::default");
+LM_COMP_REG_IMPL(AssetGroup_, "asset_group::default");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

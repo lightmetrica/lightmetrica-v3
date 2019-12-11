@@ -13,7 +13,7 @@
 #include <lm/progress.h>
 #include <lm/debugio.h>
 #include <lm/objloader.h>
-#include <lm/assets.h>
+#include <lm/assetgroup.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -23,8 +23,8 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class UserContext : public Component {
 private:
-	bool initialized_ = false;  // True if initialized
-	Ptr<Assets> assets_;        // Underlying assets
+	bool initialized_ = false;      // True if initialized
+	Ptr<AssetGroup> root_assets_;   // Root asset group.
 
 public:
     UserContext() {
@@ -75,13 +75,13 @@ public:
 public:
     Component* underlying(const std::string& name) const override {
         if (name == "assets") {
-            return assets_.get();
+            return root_assets_.get();
         }
         return nullptr;
     }
 
     void foreach_underlying(const ComponentVisitor& visit) override {
-        comp::visit(visit, assets_);
+        comp::visit(visit, root_assets_);
     }
 
 public:
@@ -93,25 +93,25 @@ public:
             version::architecture());
     }
 
-    Assets* assets() {
-        return assets_.get();
+    AssetGroup* assets() {
+        return root_assets_.get();
     }
 
     void reset() {
         // Initialize asset
-        assets_ = comp::create<Assets>("assets::default", make_loc("assets"));
+        root_assets_ = comp::create<AssetGroup>("asset_group::default", make_loc("assets"));
     }
 
     void serialize(std::ostream& os) {
 		check_initialized();
         LM_INFO("Saving state to stream");
-        serial::save(os, assets_);
+        serial::save(os, root_assets_);
     }
 
     void deserialize(std::istream& is) {
 		check_initialized();
         LM_INFO("Loading state from stream");
-        serial::load(is, assets_);
+        serial::load(is, root_assets_);
     }
 };
 
@@ -133,7 +133,7 @@ LM_PUBLIC_API void info() {
     UserContext::instance().info();
 }
 
-LM_PUBLIC_API Assets* assets() {
+LM_PUBLIC_API AssetGroup* assets() {
     return UserContext::instance().assets();
 }
 

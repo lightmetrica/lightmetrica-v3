@@ -348,7 +348,7 @@ TEST_CASE("Serialization") {
             CHECK(s1 == s2);
         }
 
-        SUBCASE("Assets") {
+        SUBCASE("AssetGroup") {
             // Round-trip tests for various assets
             SUBCASE("Film") {
                 check_save_and_load_round_trip_compare_loaded(

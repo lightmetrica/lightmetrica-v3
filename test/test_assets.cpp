@@ -5,7 +5,7 @@
 
 #include <pch.h>
 #include "test_common.h"
-#include <lm/assets.h>
+#include <lm/assetgroup.h>
 
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
@@ -53,10 +53,10 @@ LM_COMP_REG_IMPL(TestAsset_Dependent, "testasset::dependent");
 
 // ------------------------------------------------------------------------------------------------
 
-TEST_CASE("Assets") {
+TEST_CASE("AssetGroup") {
     lm::log::ScopedInit init;
 
-    auto assets = lm::comp::create<lm::Assets>("assets::default", "$");
+    auto assets = lm::comp::create<lm::AssetGroup>("assets::default", "$");
     REQUIRE(assets);
 
     // Set assets as a root component

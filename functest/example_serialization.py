@@ -14,6 +14,8 @@
 # ---
 
 # ## Rendering with serialized assets
+#
+# This example explains advanced object manipulation.
 
 import lmenv
 env = lmenv.load('.lmenv')
@@ -31,11 +33,25 @@ lm.log.init('jupyter')
 lm.progress.init('jupyter')
 lm.info()
 
+# ### Visualizing asset tree
+#
+# An asset can hold another assets in the instance. As a result, a created set of asset can constitute of an *asset tree*. We can visualize the structure of the tree using ``lm.print_asset_tree()`` function.
+
+accel = lm.load_accel('accel', 'sahbvh', {})
+scene = lm.load_scene('scene', 'default', {
+    'accel': accel.loc()
+})
+
+lm.print_asset_tree()
+
+# Clear the internal state
+lm.reset()
+
 # ### Asset group
 #
 # *Asset group* is a special type of asset that can hold multiple instance of assets. By means of the asset group, we can hierarchcally manage the assets. Asset group can be created by ``lm.load_asset_group()`` function.
 
-g = lm.load_asset_group('fireplace_room', '', {})
+g = lm.load_asset_group('fireplace_room', 'default', {})
 
 # An another asset can be loaded as a child of the asset group by calling ``lm.AssetGroup.load_*()`` member functions. The arguments are same as ``lm.load_*()`` functions. Note that the locator of the asset includes the id of the group.
 
@@ -60,22 +76,21 @@ scene.add_primitive({
 })
 scene.build()
 
-print(scene.loc())
-
-# Display a tree structure of the assets
-
+lm.print_asset_tree()
 
 # ### Serialization of asset
 
 # An asset can be serialized into a disk as a binary stream. For instance, it is useful to accelerate the loading time of the assets in debug mode or in the repetitive experiments, since we can skip the precomputation along with loading of the asset.
 #
-# Serialization to a file can be done by ``lm.Component.serialize_to_file()`` function, where we give the path to the output file as an argument.
+# Serialization to a file can be done by ``lm.Component.serialize_to_file()`` function. We give the path to the output file as an argument.
 
 g.serialize_to_file('fireplace_room.serialized')
 
 # Reset the internal state
 lm.reset()
 
+# ### Loading serialized asset
+#
 # The serialized asset can be loaded by ``lm.load_serialized_asset()`` funcction, where the first argument specifies the id of the asset and the second argument specifies the path to the serialized asset. Note that the id of the asset can be not always the same from the original asset before serialization.
 
 lm.load_serialized_asset('fireplace_room', 'fireplace_room.serialized')

@@ -15,14 +15,14 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Assets.
+    \brief Asset group.
 
     \rst
     This class represents a collection of the assets (e.g., materials, meshes, etc.).
     The assets in the framework are stored in this class.
     \endrst
 */
-class Assets : public Component {
+class AssetGroup : public Component {
 public:
     /*!
         \brief Loads an asset.
