@@ -18,8 +18,6 @@ dependencies:
   - colorama
   - imageio
   - pytest
-  - zeromq
-  - cppzmq
   - pybind11
   - embree3
   - glfw

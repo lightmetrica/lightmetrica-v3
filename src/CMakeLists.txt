@@ -21,9 +21,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/progress.h"
     "${_INCLUDE_DIR}/progresscontext.h"
     "${_INCLUDE_DIR}/scheduler.h"
-    #"${_INCLUDE_DIR}/debugio.h"
     "${_INCLUDE_DIR}/debug.h"
-    "${_INCLUDE_DIR}/distributed.h"
     "${_INCLUDE_DIR}/exception.h"
     "${_INCLUDE_DIR}/parallel.h"
     "${_INCLUDE_DIR}/parallelcontext.h"
@@ -62,12 +60,9 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/logger.cpp"
     "${_SOURCE_DIR}/progress.cpp"
     "${_SOURCE_DIR}/scheduler.cpp"
-    #"${_SOURCE_DIR}/debugio.cpp"
     "${_SOURCE_DIR}/debug.cpp"
-    #"${_SOURCE_DIR}/distributed.cpp"
     "${_SOURCE_DIR}/parallel/parallel.cpp"
     "${_SOURCE_DIR}/parallel/parallel_openmp.cpp"
-    #"${_SOURCE_DIR}/parallel/parallel_distributed.cpp"
     "${_SOURCE_DIR}/model/model_wavefrontobj.cpp"
     "${_SOURCE_DIR}/model/objloader.cpp"
     "${_SOURCE_DIR}/model/objloader_simple.cpp"
@@ -124,7 +119,6 @@ target_link_libraries(${_PROJECT_NAME}
     PRIVATE lm_version
             stb::stb_image
             OpenMP::OpenMP_CXX
-            cppzmq
             $<$<CXX_COMPILER_ID:GNU>:stdc++fs>
             $<$<CXX_COMPILER_ID:GNU>:atomic>)
 # Include directories

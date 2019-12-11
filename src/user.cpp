@@ -11,7 +11,6 @@
 #include <lm/renderer.h>
 #include <lm/parallel.h>
 #include <lm/progress.h>
-#include <lm/debugio.h>
 #include <lm/objloader.h>
 #include <lm/assetgroup.h>
 
@@ -101,20 +100,6 @@ public:
         // Initialize asset
         root_assets_ = comp::create<AssetGroup>("asset_group::default", make_loc("assets"));
     }
-
-#if 0
-    void serialize(std::ostream& os) {
-		check_initialized();
-        LM_INFO("Saving state to stream");
-        serial::save(os, root_assets_);
-    }
-
-    void deserialize(std::istream& is) {
-		check_initialized();
-        LM_INFO("Loading state from stream");
-        serial::load(is, root_assets_);
-    }
-#endif
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -138,17 +123,5 @@ LM_PUBLIC_API void info() {
 LM_PUBLIC_API AssetGroup* assets() {
     return UserContext::instance().assets();
 }
-
-#if 0
-
-LM_PUBLIC_API void serialize(std::ostream& os) {
-    UserContext::instance().serialize(os);
-}
-
-LM_PUBLIC_API void deserialize(std::istream& is) {
-    UserContext::instance().deserialize(is);
-}
-
-#endif
 
 LM_NAMESPACE_END(LM_NAMESPACE)

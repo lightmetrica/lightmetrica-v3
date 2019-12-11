@@ -66,42 +66,6 @@ LM_PUBLIC_API AssetGroup* assets();
 
 // ------------------------------------------------------------------------------------------------
 
-#if 0
-
-/*!
-    \brief Serialize the internal state of the framework to a stream.
-    \param os Output stream.
-*/
-LM_PUBLIC_API void serialize(std::ostream& os);
-
-/*!
-    \brief Deserialize the internal state of the framework from a stream.
-    \param is Input stream.
-*/
-LM_PUBLIC_API void deserialize(std::istream& is);
-
-/*!
-    \brief Serialize the internal state to a file.
-    \param path Path to a file with serialized state.
-*/
-LM_INLINE void serialize(const std::string& path) {
-    std::ofstream os(path, std::ios::out | std::ios::binary);
-    serialize(os);
-}
-
-/*!
-    \brief Deserialize the internal state to a file.
-    \param path to a file with serialized state. 
-*/
-LM_INLINE void deserialize(const std::string& path) {
-    std::ifstream is(path, std::ios::in | std::ios::binary);
-    deserialize(is);
-}
-
-#endif
-
-// ------------------------------------------------------------------------------------------------
-
 /*!
     \brief Scoped guard of `init` and `shutdown` functions.
     \rst
