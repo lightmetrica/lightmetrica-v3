@@ -47,6 +47,13 @@ public:
         \endrst
     */
     virtual Component* load_asset(const std::string& name, const std::string& impl_key, const Json& prop) = 0;
+
+    /*!
+        \brief Load a serialized asset.
+        \param name Name of the asset.
+        \param path Path to the serialized asset.
+    */
+    virtual Component* load_serialized(const std::string& name, const std::string& path) = 0;
 };
 
 /*!

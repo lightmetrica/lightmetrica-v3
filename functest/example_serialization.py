@@ -46,6 +46,7 @@ lm.print_asset_tree()
 
 # Clear the internal state
 lm.reset()
+lm.print_asset_tree()
 
 # ### Asset group
 #
@@ -88,19 +89,22 @@ g.serialize_to_file('fireplace_room.serialized')
 
 # Reset the internal state
 lm.reset()
+lm.print_asset_tree()
 
 # ### Loading serialized asset
 #
-# The serialized asset can be loaded by ``lm.load_serialized_asset()`` funcction, where the first argument specifies the id of the asset and the second argument specifies the path to the serialized asset. Note that the id of the asset can be not always the same from the original asset before serialization.
+# The serialized asset can be loaded by ``lm.load_serialized()`` funcction, where the first argument specifies the id of the asset and the second argument specifies the path to the serialized asset. Note that the id of the asset can be not always the same from the original asset before serialization.
 
-lm.load_serialized_asset('fireplace_room', 'fireplace_room.serialized')
+lm.load_serialized('fireplace_room', 'fireplace_room.serialized')
+
+lm.print_asset_tree()
 
 # ### Rendering with serialized asset
 #
 # We can render the image using the serializaed asset. Here we are using a locator directly instead of ``.loc()`` function, since the previously obtained reference (``scene``) became invalid.
 
 # Rendering
-film = g.load_film('film', 'bitmap', {
+film = lm.load_film('film', 'bitmap', {
     'w': 1920,
     'h': 1080
 })

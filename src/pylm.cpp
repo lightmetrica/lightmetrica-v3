@@ -145,6 +145,10 @@ static void bind_component(pybind11::module& m) {
             InputArchive ar(is);
             self->load(ar);
         })
+        .def("serialize_to_file", [](Component& self, const std::string& path) {
+            std::ofstream os(path, std::ios::out | std::ios::binary);
+            serial::save_owned(os, &self);
+        })
         .PYLM_DEF_COMP_BIND(Component);
 
     auto sm = m.def_submodule("comp");
@@ -185,6 +189,9 @@ static void bind_user(pybind11::module& m) {
     // Expose some function in comp namespace to lm namespace
     m.def("load", [](const std::string& name, const std::string& impl_key, const Json& prop) -> Component* {
         return assets()->load_asset(name, impl_key, prop);
+    }, pybind11::return_value_policy::reference);
+    m.def("load_serialized", [](const std::string& name, const std::string& path) -> Component* {
+        return assets()->load_serialized(name, path);
     }, pybind11::return_value_policy::reference);
     m.def("get", [](const std::string& loc) -> Component* {
         return comp::detail::get(loc);
@@ -248,12 +255,16 @@ static void bind_asset_group(pybind11::module& m) {
             PYBIND11_OVERLOAD(void, AssetGroup, construct, prop);
         }
         virtual Component* load_asset(const std::string& name, const std::string& impl_key, const Json& prop) override {
-            PYBIND11_OVERLOAD_PURE(Component*, AssetGroup, load, name, impl_key, prop);
+            PYBIND11_OVERLOAD_PURE(Component*, AssetGroup, load_asset, name, impl_key, prop);
+        }
+        virtual Component* load_serialized(const std::string& name, const std::string& path) override {
+            PYBIND11_OVERLOAD_PURE(Component*, AssetGroup, load_serialized, name, path);
         }
     };
     pybind11::class_<AssetGroup, AssetGroup_Py, Component, Component::Ptr<AssetGroup>>(m, "AssetGroup")
         .def(pybind11::init<>())
         .def("load_asset", &AssetGroup::load_asset)
+        .def("load_serialized", &AssetGroup::load_serialized)
         .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Mesh, mesh)
         .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Texture, texture)
         .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Material, material)

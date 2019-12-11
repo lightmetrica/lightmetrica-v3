@@ -11,7 +11,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class AssetGroup_ final : public AssetGroup {
 private:
-    std::vector<Component::Ptr<Component>> assets_;
+    std::vector<Ptr<Component>> assets_;
     std::unordered_map<std::string, int> asset_index_map_;
 
 public:
@@ -113,6 +113,22 @@ public:
         }
 
         return asset;
+    }
+
+    virtual Component* load_serialized(const std::string& name, const std::string& path) override {
+        LM_INFO("Loading serialized asset [name='{}']", name);
+        LM_INDENT();
+
+        if (asset_index_map_.find(name) != asset_index_map_.end()) {
+            LM_THROW_EXCEPTION(Error::InvalidArgument,
+                "Asset [name='{}'] has been already loaded.", name);
+        }
+
+        Ptr<Component> p;
+        asset_index_map_[name] = int(assets_.size());
+        assets_.emplace_back();
+        serial::load(path, assets_.back());
+        return assets_.back().get();
     }
 };
 
