@@ -23,35 +23,23 @@ def run_functests(output_dir, lmenv_path):
 
     # Tests
     tests = [
-        #'example_blank',
-        # 'example_quad',
-        # 'example_raycast',
-        # 'example_pt',
-        # 'example_custom_material',
-        # 'example_custom_renderer',
-
-
-        # 'func_render_all',
-        # 'func_render_instancing',
-        # 'func_accel_consistency',
-        # 'func_py_custom_material',
-        # 'func_py_custom_renderer',
-        
-        # TODO
-        # 'func_distributed_rendering',
-        # 'func_distributed_rendering_ext',
-        
-        # 'func_error_handling',
-        # 'func_obj_loader_consistency',
-        
-        # TODO
+        'example_blank',
+        'example_quad',
+        'example_raycast',
+        'example_pt',
+        'example_custom_material',
+        'example_custom_renderer',
+        'example_serialization',
+        'func_render_all',
+        'func_render_instancing',
+        'func_accel_consistency',
+        'func_error_handling',
+        'func_obj_loader_consistency',
         'func_serial_consistency',
-        
-        # 'func_update_asset',
-        # 'func_scheduler',
-        # 'perf_accel',
-        # 'perf_obj_loader',
-
+        'func_update_asset',
+        'func_scheduler',
+        'perf_accel',
+        'perf_obj_loader',
         'perf_serial'
     ]
 

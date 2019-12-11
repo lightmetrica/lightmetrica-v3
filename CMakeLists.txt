@@ -55,18 +55,6 @@ find_package(stb REQUIRED)
 if (LM_BUILD_TESTS)
     find_package(doctest REQUIRED)
 endif()
-if (LM_BUILD_EXAMPLES AND LM_BUILD_GUI_EXAMPLES)
-    find_package(OpenGL)
-    if (OpenGL_FOUND)
-        find_package(GLEW REQUIRED)
-        find_package(glfw3 REQUIRED)
-    else()
-        # Disable GUI example if there's no OpenGL support
-        message(WARNING "OpenGL is not supported. Disabled GUI examples. \
-                         To supress this warning, set LM_BUILD_GUI_EXAMPLES=OFF.")
-        set(LM_BUILD_GUI_EXAMPLES OFF)
-    endif()
-endif()
 
 # -------------------------------------------------------------------------------------------------
 
