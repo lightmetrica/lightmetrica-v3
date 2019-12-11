@@ -235,11 +235,11 @@ public:
             LM_UNREACHABLE_RETURN();
         }();
         if (file_.empty()) {
-            return fmt::format("{} [type='{}']",
+            return fmt::format("{} [err='{}']",
                 message_, errorCodeStr).c_str();
         }
         else {
-            return fmt::format("{} [type='{}', file='{}', line='{}']",
+            return fmt::format("{} [err='{}', file='{}', line='{}']",
                 message_, errorCodeStr, file_, line_).c_str();
         }
     }

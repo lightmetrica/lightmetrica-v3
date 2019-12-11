@@ -21,6 +21,7 @@ import lmenv
 env = lmenv.load('.lmenv')
 
 import os
+import traceback
 import numpy as np
 import imageio
 # %matplotlib inline
@@ -83,9 +84,29 @@ lm.print_asset_tree()
 
 # An asset can be serialized into a disk as a binary stream. For instance, it is useful to accelerate the loading time of the assets in debug mode or in the repetitive experiments, since we can skip the precomputation along with loading of the asset.
 #
-# Serialization to a file can be done by ``lm.Component.serialize_to_file()`` function. We give the path to the output file as an argument.
+# Serialization to a file can be done by ``lm.Component.save_to_file()`` function. We give the path to the output file as an argument.
 
-g.serialize_to_file('fireplace_room.serialized')
+g.save_to_file('fireplace_room.serialized')
+
+# Reset the internal state
+lm.reset()
+lm.print_asset_tree()
+
+# Note that serializing aseet group means serializing a subtree of the entire asset tree. The serialization process can fail if an asset being serialized (incl. child assets) contains external reference out of the subtree. 
+
+accel = lm.load_accel('accel', 'sahbvh', {})
+g = lm.load_asset_group('fireplace_room', 'default', {})
+scene = g.load_scene('scene', 'default', {
+    'accel': accel.loc()
+})
+lm.print_asset_tree()
+
+# Serialization will fail because
+# accel is out of the subtree starting from g as a root.
+try:
+    g.save_to_file('failed.serialized')
+except Exception:
+    traceback.print_exc()
 
 # Reset the internal state
 lm.reset()

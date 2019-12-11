@@ -124,10 +124,13 @@ public:
                 "Asset [name='{}'] has been already loaded.", name);
         }
 
-        Ptr<Component> p;
+        // Register
         asset_index_map_[name] = int(assets_.size());
         assets_.emplace_back();
+
+        // Deserialize the asset
         serial::load(path, assets_.back());
+
         return assets_.back().get();
     }
 };

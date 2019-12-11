@@ -145,7 +145,28 @@ static void bind_component(pybind11::module& m) {
             InputArchive ar(is);
             self->load(ar);
         })
-        .def("serialize_to_file", [](Component& self, const std::string& path) {
+        .def("save_to_file", [](Component& self, const std::string& path) {
+            // Check if the child assets contains external reference out of the subtree.
+            // If the subtree contains the external reference, generate an error.
+            const auto root_loc = self.loc();
+            const Component::ComponentVisitor visitor = [&](Component*& comp, bool weak) {
+                if (!comp) {
+                    return;
+                }
+                if (weak) {
+                    // Check if the weak reference is referring to an asset in the subtree
+                    const auto loc = comp->loc();
+                    if (!loc._Starts_with(root_loc)) {
+                        LM_THROW_EXCEPTION(Error::Unsupported,
+                            "Unserializable asset. Subtree contains a reference to the outer asset. [loc='{}']", loc);
+                    }
+                    return;
+                }
+                comp->foreach_underlying(visitor);
+            };
+            self.foreach_underlying(visitor);
+
+            // Serialize the asset
             std::ofstream os(path, std::ios::out | std::ios::binary);
             serial::save_owned(os, &self);
         })
