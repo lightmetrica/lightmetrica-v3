@@ -132,7 +132,6 @@ static void bind_component(pybind11::module& m) {
         .def("construct", &Component::construct)
         .def("underlying", &Component::underlying, pybind11::return_value_policy::reference)
         .def("underlying_value", &Component::underlying_value, "query"_a = "")
-#if 0
         .def("save", [](Component* self) -> pybind11::bytes {
             std::ostringstream os;
             {
@@ -146,7 +145,6 @@ static void bind_component(pybind11::module& m) {
             InputArchive ar(is);
             self->load(ar);
         })
-#endif
         .def("save_to_file", [](Component& self, const std::string& path) {
             serial::save_comp_to_file(self, path);
         })
