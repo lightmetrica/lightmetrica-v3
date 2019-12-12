@@ -165,50 +165,11 @@ private:
     std::string file_;
     int line_;
     std::string message_;
+    std::string what_;
 
-public:
-    /*!
-        \brief Constructor.
-        \param error Error code.
-        \param file File name.
-        \param line Line of code.
-        \param message Error message.
-        \param ... Arguments to format the message.
-
-        \rst
-        Constructs the exception with error type and error message.
-        \endrst
-    */
-    template <typename... Args>
-    Exception(Error error, const std::string& file, int line, const std::string& message)
-        : error_(error)
-        , file_(file)
-        , line_(line)
-        , message_(message)
-    {}
-
-    /*!
-        \brief Constructor with arguments.
-        \param error Error code.
-        \param file File name.
-        \param line Line of code.
-        \param message Error message.
-        \param args Arguments to format the message.
-        
-        \rst
-        Constructs the exception with error type and error message.
-        The constructor also takes additional arguments to format the message.
-        \endrst
-    */
-    template <typename... Args>
-    Exception(Error error, const std::string& file, int line, const std::string& message, const Args& ... args) 
-        : error_(error)
-        , file_(file)
-        , line_(line)
-        , message_(fmt::format(message, args...))
-    {}
-
-    const char* what() const noexcept {
+private:
+    // Generate error string
+    void generante_error_message() {
         // Compose error message with error code
         const auto errorCodeStr = [this]() -> std::string {
             if (error_ == Error::None) {
@@ -235,13 +196,63 @@ public:
             LM_UNREACHABLE_RETURN();
         }();
         if (file_.empty()) {
-            return fmt::format("{} [err='{}']",
-                message_, errorCodeStr).c_str();
+            what_ = fmt::format("{} [err='{}']",
+                message_, errorCodeStr);
         }
         else {
-            return fmt::format("{} [err='{}', file='{}', line='{}']",
-                message_, errorCodeStr, file_, line_).c_str();
+            what_ = fmt::format("{} [err='{}', file='{}', line='{}']",
+                message_, errorCodeStr, file_, line_);
         }
+    }
+
+public:
+    /*!
+        \brief Constructor.
+        \param error Error code.
+        \param file File name.
+        \param line Line of code.
+        \param message Error message.
+        \param ... Arguments to format the message.
+
+        \rst
+        Constructs the exception with error type and error message.
+        \endrst
+    */
+    template <typename... Args>
+    Exception(Error error, const std::string& file, int line, const std::string& message)
+        : error_(error)
+        , file_(file)
+        , line_(line)
+        , message_(message)
+    {
+        generante_error_message();
+    }
+
+    /*!
+        \brief Constructor with arguments.
+        \param error Error code.
+        \param file File name.
+        \param line Line of code.
+        \param message Error message.
+        \param args Arguments to format the message.
+        
+        \rst
+        Constructs the exception with error type and error message.
+        The constructor also takes additional arguments to format the message.
+        \endrst
+    */
+    template <typename... Args>
+    Exception(Error error, const std::string& file, int line, const std::string& message, const Args& ... args) 
+        : error_(error)
+        , file_(file)
+        , line_(line)
+        , message_(fmt::format(message, args...))
+    {
+        generante_error_message();
+    }
+
+    const char* what() const noexcept {
+        return what_.c_str();
     }
 };
 

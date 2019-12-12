@@ -31,7 +31,7 @@ public:
 
 private:
     #if LM_PLATFORM_WINDOWS
-    unsigned int setFPExState(unsigned int state) const {
+    unsigned int set_fpex_state(unsigned int state) const {
         // Get current floating-point control word
         unsigned int old;
         _controlfp_s(&old, 0, 0);
@@ -92,31 +92,31 @@ public:
         _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
 
         // Enable floating point exceptions
-        enableFPEx();
+        enable_fpex();
         #endif
     }
 
     void shutdown() {
         #if LM_PLATFORM_WINDOWS
-        disableFPEx();
+        disable_fpex();
         _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_OFF);
         _set_se_translator(nullptr);
         #endif
     }
 
-    void enableFPEx() {
+    void enable_fpex() {
         #if LM_PLATFORM_WINDOWS
-        setFPExState((unsigned int)(~(_EM_INVALID | _EM_ZERODIVIDE)));
+        set_fpex_state((unsigned int)(~(_EM_INVALID | _EM_ZERODIVIDE)));
         #endif
     }
 
-    void disableFPEx() {
+    void disable_fpex() {
         #if LM_PLATFORM_WINDOWS
-        setFPExState(_CW_DEFAULT);
+        set_fpex_state(_CW_DEFAULT);
         #endif
     }
 
-    void stackTrace() const {
+    void stack_trace() const {
         if (stacks_ == 0) {
             return;
         }
@@ -162,15 +162,15 @@ LM_PUBLIC_API void shutdown() {
 }
 
 LM_PUBLIC_API void enable_fpex() {
-    ExceptionContext::instance().enableFPEx();
+    ExceptionContext::instance().enable_fpex();
 }
 
 LM_PUBLIC_API void disable_fpex() {
-    ExceptionContext::instance().disableFPEx();
+    ExceptionContext::instance().disable_fpex();
 }
 
 LM_PUBLIC_API void stack_trace() {
-    ExceptionContext::instance().stackTrace();
+    ExceptionContext::instance().stack_trace();
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE::exception)

@@ -56,7 +56,7 @@ LM_COMP_REG_IMPL(TestAsset_Dependent, "testasset::dependent");
 TEST_CASE("AssetGroup") {
     lm::log::ScopedInit init;
 
-    auto assets = lm::comp::create<lm::AssetGroup>("assets::default", "$");
+    auto assets = lm::comp::create<lm::AssetGroup>("asset_group::default", "$");
     REQUIRE(assets);
 
     // Set assets as a root component

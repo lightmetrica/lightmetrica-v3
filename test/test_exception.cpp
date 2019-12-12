@@ -20,7 +20,7 @@ TEST_CASE("Exception") {
 
     const auto Check = [](const std::function<void()>& func, const std::string& expected = "") -> bool {
         try { func(); }
-        catch (const std::exception& e) {
+        catch (const lm::Exception& e) {
             const std::string message = e.what();
             return message.find(expected) != std::string::npos;
         }
