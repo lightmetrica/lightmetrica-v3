@@ -111,7 +111,7 @@ for scene_name in scene_names:
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax)
-        ax.set_title('{}, sahbvh vs. {}'.format(scene_name, accel))
+        ax.set_title('{}, sahbvh vs. {}'.format(scene_name, accel_name))
         plt.show()
 
 # ### RMSE
