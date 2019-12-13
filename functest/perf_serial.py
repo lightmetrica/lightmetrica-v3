@@ -34,43 +34,44 @@ import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
 lm.init()
-lm.parallel.init('parallel::openmp', {
-    'num_threads': -1
-})
-lm.log.init('logger::jupyter', {})
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
 
-scenes = lmscene.scenes_small()
+scene_names = lmscene.scenes_small()
 
 scene_setup_time_df = pd.DataFrame(
     columns=['scene loading', 'serialization', 'deserialization'],
-    index=scenes)
-for scene in scenes:
+    index=scene_names)
+for scene_name in scene_names:
     lm.reset()
     
-    lm.asset('film_output', 'film::bitmap', {
+    lm.load_film('film_output', 'bitmap', {
         'w': 1920,
         'h': 1080
     })
     
     # Load the scene without serialization
     def load_scene():
-        lmscene.load(env.scene_path, scene)
-        lm.build('accel::sahbvh', {})
+        accel = lm.load_accel('accel', 'sahbvh', {})
+        scene = lm.load_scene('scene', 'default', {
+            'accel': accel.loc()
+        })
+        lmscene.load(scene, env.scene_path, scene_name)
     loading_time_without_serialization = timeit.timeit(stmt=load_scene, number=1)
-    scene_setup_time_df['scene loading'][scene] = loading_time_without_serialization
+    scene_setup_time_df['scene loading'][scene_name] = loading_time_without_serialization
     
     # Export the internal state to a file
     def serialize_scene():
-        lm.serialize('lm.serialized')
+        lm.save_state_to_file('lm.serialized')
     serialization_time = timeit.timeit(stmt=serialize_scene, number=1)
-    scene_setup_time_df['serialization'][scene] = serialization_time
+    scene_setup_time_df['serialization'][scene_name] = serialization_time
     
     # Import the internal state from the serialized file
     lm.reset()
     def deserialize_scene():
-        lm.deserialize('lm.serialized')
+        lm.load_state_from_file('lm.serialized')
     deserialization_time = timeit.timeit(stmt=deserialize_scene, number=1)
-    scene_setup_time_df['deserialization'][scene] = deserialization_time
+    scene_setup_time_df['deserialization'][scene_name] = deserialization_time
 
 scene_setup_time_df

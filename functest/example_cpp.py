@@ -54,54 +54,6 @@ def visualize(out):
 
 # -
 
-# ### blank.cpp
-
-# + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Corresponding Python example: :ref:`example_blank`
-# -
-
-out = os.path.join(outdir, 'blank.pfm')
-run_example('blank', [out, width, height])
-visualize(out)
-
-# ### quad.cpp
-
-# + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Corresponding Python example: :ref:`example_quad`
-# -
-
-out = os.path.join(outdir, 'quad.pfm')
-run_example('quad', [out, width, height])
-visualize(out)
-
-# ### raycast.cpp
-
-# + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Corresponding Python example: :ref:`example_raycast`
-# -
-
-out = os.path.join(outdir, 'raycast.pfm')
-run_example('raycast', [
-    os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
-    out,
-    width, height,
-    5.101118, 1.083746, -2.756308,
-    4.167568, 1.078925, -2.397892,
-    43.001194
-])
-visualize(out)
-
-out = os.path.join(outdir, 'pt2.pfm')
-run_example('raycast', [
-    os.path.join(env.scene_path, 'cornell_box/CornellBox-Sphere.obj'),
-    out,
-    width, height,
-    0, 1, 5,
-    0, 1, 0,
-    30
-])
-visualize(out)
-
 # ### pt.cpp
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
@@ -129,23 +81,6 @@ run_example('pt', [
     0, 1, 5,
     0, 1, 0,
     30
-])
-visualize(out)
-
-# ### custom_material.cpp
-
-# + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Corresponding Python example: :ref:`example_custom_material`
-# -
-
-out = os.path.join(outdir, 'custom_material.pfm')
-run_example('custom_material', [
-    os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
-    out,
-    width, height,
-    5.101118, 1.083746, -2.756308,
-    4.167568, 1.078925, -2.397892,
-    43.001194
 ])
 visualize(out)
 
