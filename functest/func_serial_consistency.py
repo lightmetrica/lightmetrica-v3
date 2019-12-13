@@ -18,7 +18,7 @@
 # This test checks the consistency of the internal states between before/after serialization. We render two images. One with normal configuration and the other with deserialized states.
 
 import lmenv
-env = lmenv.load('.lmenv_debug')
+env = lmenv.load('.lmenv')
 
 import os
 import imageio
@@ -76,6 +76,12 @@ for scene_name in scene_names:
     film = lm.get_film('$.assets.film_output')
     img_orig = np.copy(film.buffer())
     
+    # Visualize
+    f = plt.figure(figsize=(15,15))
+    ax = f.add_subplot(111)
+    ax.imshow(np.clip(np.power(img_orig,1/2.2),0,1), origin='lower')
+    plt.show()
+    
     # Serialize, reset, deserialize, and render
     print('w/ serialization')
     lm.save_state_to_file('lm.serialized')
@@ -87,8 +93,14 @@ for scene_name in scene_names:
     film = lm.get_film('$.assets.film_output')
     img_serial = np.copy(film.buffer())
     
+    # Visualize
+    f = plt.figure(figsize=(15,15))
+    ax = f.add_subplot(111)
+    ax.imshow(np.clip(np.power(img_serial,1/2.2),0,1), origin='lower')
+    plt.show()
+    
     # Compare two images
     e = rmse(img_orig, img_serial)
-    rmse_series[scene] = e
+    rmse_series[scene_name] = e
 
 rmse_series

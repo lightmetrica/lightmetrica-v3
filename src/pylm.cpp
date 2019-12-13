@@ -145,8 +145,9 @@ static void bind_component(pybind11::module& m) {
             InputArchive ar(is);
             self->load(ar);
         })
-        .def("save_to_file", [](Component& self, const std::string& path) {
-            serial::save_comp_to_file(self, path);
+        .def("save_to_file", [](Component* self, const std::string& path) {
+            std::ofstream os(path, std::ios::out | std::ios::binary);
+            serial::save_comp_owned(os, self, self->loc());
         })
         .PYLM_DEF_COMP_BIND(Component);
 

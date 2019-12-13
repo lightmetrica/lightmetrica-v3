@@ -64,6 +64,13 @@ private:
     std::string root_loc_;
     cereal::PortableBinaryInputArchive archive_;
 
+    // Pairs of weak pointer and locators to be recovered later
+    struct WeakptrAddressLocPair {
+        std::uintptr_t address;
+        std::string loc;
+    };
+    std::vector<WeakptrAddressLocPair> weakptr_loc_pairs_;
+
 public:
     InputArchive(std::istream& stream)
         : InputArchive(stream, "")
@@ -80,8 +87,23 @@ public:
         archive_.loadBinary<DataSize>(data, size);
     }
 
+public:
+    // Get root locator
     std::string root_loc() const {
         return root_loc_;
+    }
+
+    // Add a weak pointer entry to be updated later
+    void add_weakptr(std::uintptr_t address, const std::string loc) {
+        weakptr_loc_pairs_.push_back({ address, loc });
+    }
+
+    // Iterate over added weak pointers
+    using ForeachWeakptrFunc = std::function<void(std::uintptr_t address, const std::string& loc)>;
+    void foreach_weakptr(const ForeachWeakptrFunc& func) {
+        for (auto p : weakptr_loc_pairs_) {
+            func(p.address, p.loc);
+        }
     }
 };
 

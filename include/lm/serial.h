@@ -303,11 +303,10 @@ serialize(lm::InputArchive& ar, T*& p) {
             }
         }();
 
-        // Get component
-        p = lm::comp::get<T>(loc);
-        if (!p) {
-            LM_ERROR("Invalid global locator [locator='{}']", loc);
-        }
+        // Record the weak pointer to the archive.
+        // The recorded pointers are recovered using lm::comp::get function
+        // after all the (owned) instances are loaded.
+        ar.add_weakptr((std::uintptr_t) & p, loc);
     }
 }
 
@@ -326,77 +325,80 @@ LM_NAMESPACE_BEGIN(serial)
 */
 
 /*!
-    \brief Serialize an object with given type.
-*/
-template <typename... Ts>
-void save(std::ostream& os, Ts&&... v) {
-    OutputArchive ar(os);
-    ar(std::forward<Ts>(v)...);
-}
-
-/*!
-    \brief Serialize a component as owned pointer.
-*/
-static void save_owned(std::ostream& os, Component* v) {
-    OutputArchive ar(os);
-    cereal::save_owned(ar, v);
-}
-
-/*!
-    \brief Deserialize an object with given type.
-*/
-template <typename... Ts>
-void load(std::istream& is, Ts&... v) {
-    InputArchive ar(is);
-    ar(v...);
-}
-
-/*!
-    \brief Serialize an object to a file.
+    \brief Load a coponent from a file.
+    \tparam T Component type.
+    \param stream Input stream.
+    \param comp Component instance.
+    \param root_loc Locator of comp.
 */
 template <typename T>
-void save(const std::string& path, T&& v) {
-    std::ofstream os(path, std::ios::out | std::ios::binary);
-    save(os, std::forward<T>(v));
+std::enable_if_t<
+    std::is_base_of_v<Component, T>,
+    void
+>
+load_comp(std::istream& stream, Component::Ptr<T>& comp, const std::string& root_loc) {
+    // Deserialize the asset
+    InputArchive ar(stream, root_loc);
+    ar(comp);
+
+    // Recover all weak references (if any)
+    ar.foreach_weakptr([](std::uintptr_t address, const std::string& loc) {
+        Component** weakptr = (Component**)address;
+        *weakptr = lm::comp::get<Component>(loc);
+    });
 }
 
 /*!
-    \brief Deserialize an object from a file.
+    \brief Save a coponent to a file (using raw pointer).
+    \tparam T Component type.
+    \param stream Output stream.
+    \param comp Component instance.
+    \param root_loc Locator of comp. 
 */
 template <typename T>
-void load(const std::string& path, T& v) {
-    std::ifstream is(path, std::ios::in | std::ios::binary);
-    load(is, v);
-}
-
-/*!
-    \brief Save a coponent to a file.
-*/
-static void save_comp_to_file(Component& self, const std::string& path) {
+std::enable_if_t<
+    std::is_base_of_v<Component, T>,
+    void
+>
+save_comp_owned(std::ostream& stream, T* comp, const std::string& root_loc) {
     // Check if the child assets contains external reference out of the subtree.
     // If the subtree contains the external reference, generate an error.
-    const auto root_loc = self.loc();
-    const Component::ComponentVisitor visitor = [&](Component*& comp, bool weak) {
-        if (!comp) {
+    const Component::ComponentVisitor visitor = [&](Component*& visiting_comp, bool weak) {
+        if (!visiting_comp) {
             return;
         }
         if (weak) {
             // Check if the weak reference is referring to an asset in the subtree
-            const auto loc = comp->loc();
+            const auto loc = visiting_comp->loc();
             if (!loc._Starts_with(root_loc)) {
                 LM_THROW_EXCEPTION(Error::Unsupported,
                     "Unserializable asset. Subtree contains a reference to the outer asset. [loc='{}']", loc);
             }
             return;
         }
-        comp->foreach_underlying(visitor);
+        visiting_comp->foreach_underlying(visitor);
     };
-    self.foreach_underlying(visitor);
+    comp->foreach_underlying(visitor);
 
     // Serialize the asset
-    std::ofstream os(path, std::ios::out | std::ios::binary);
-    OutputArchive ar(os, self.loc());
-    cereal::save_owned(ar, &self);
+    OutputArchive ar(stream, comp->loc());
+    cereal::save_owned(ar, comp);
+}
+
+/*!
+    \brief Save a coponent to a file (using unique pointer).
+    \tparam T Component type.
+    \param stream Output stream.
+    \param comp Component instance.
+    \param root_loc Locator of comp.
+*/
+template <typename T>
+std::enable_if_t<
+    std::is_base_of_v<Component, T>,
+    void
+>
+save_comp(std::ostream& stream, Component::Ptr<T>& comp, const std::string& root_loc) {
+    save_comp_owned(stream, comp.get(), root_loc);
 }
 
 /*!

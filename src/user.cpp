@@ -102,11 +102,13 @@ public:
     }
 
     void save_state_to_file(const std::string& path) {
-        serial::save(path, root_assets_);
+        std::ofstream os(path, std::ios::out | std::ios::binary);
+        serial::save_comp(os, root_assets_, root_assets_->loc());
     }
 
     void load_state_from_file(const std::string& path) {
-        serial::load(path, root_assets_);
+        std::ifstream is(path, std::ios::in | std::ios::binary);
+        serial::load_comp(is, root_assets_, root_assets_->loc());
     }
 };
 

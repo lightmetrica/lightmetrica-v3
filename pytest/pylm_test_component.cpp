@@ -134,9 +134,9 @@ public:
         m.def("round_trip_serialized_A_use_serial", []() -> int {
             auto p = lm::comp::create<A>("test::comp::serializable", "", {{"v",23}});
             std::stringstream ss;
-            lm::serial::save(ss, p);
+            lm::serial::save_comp(ss, p, "");
             lm::Component::Ptr<A> p2;
-            lm::serial::load(ss, p2);
+            lm::serial::load_comp(ss, p2, "");
             return p2->f1();
         });
 
@@ -145,9 +145,9 @@ public:
                 {"v1",5}, {"v2",43}
             });
             std::stringstream ss;
-            lm::serial::save(ss, p);
+            lm::serial::save_comp(ss, p, "");
             lm::Component::Ptr<A> p2;
-            lm::serial::load(ss, p2);
+            lm::serial::load_comp(ss, p2, "");
             return p2->f1();
         });
     }

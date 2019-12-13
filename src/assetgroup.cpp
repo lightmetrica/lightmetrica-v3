@@ -129,12 +129,10 @@ public:
         // the loading process might refer to the underlying component via locator.
         asset_index_map_[name] = int(assets_.size());
         assets_.emplace_back();
-        const auto root_loc = make_loc(name);
-
+     
         // Deserialize the asset
         std::ifstream is(path, std::ios::in | std::ios::binary);
-        InputArchive ar(is, root_loc);
-        ar(assets_.back());
+        serial::load_comp(is, assets_.back(), make_loc(name));
 
         return assets_.back().get();
     }
