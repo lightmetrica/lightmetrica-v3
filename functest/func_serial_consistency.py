@@ -18,7 +18,7 @@
 # This test checks the consistency of the internal states between before/after serialization. We render two images. One with normal configuration and the other with deserialized states.
 
 import lmenv
-env = lmenv.load('.lmenv')
+env = lmenv.load('.lmenv_debug')
 
 import os
 import imageio
@@ -35,46 +35,57 @@ os.getpid()
 # %load_ext lightmetrica_jupyter
 
 lm.init()
-lm.parallel.init('parallel::openmp', {
-    'numThreads': -1
-})
-lm.log.init('logger::jupyter', {})
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
 
-scenes = lmscene.scenes_small()
+if not lm.Release:
+    lm.debug.attach_to_debugger()
+
+scene_names = lmscene.scenes_small()
 
 
 def rmse(img1, img2):
     return np.sqrt(np.mean((img1 - img2) ** 2))
 
 
-rmse_series = pd.Series(index=scenes)
-for scene in scenes:
-    print("Testing [scene='{}']".format(scene))
+rmse_series = pd.Series(index=scene_names)
+for scene_name in scene_names:
+    print("Testing [scene='{}']".format(scene_name))
     
+    # Load scene and render
+    print('w/o serialization')
     lm.reset()
-    
-    lm.asset('film_output', 'film::bitmap', {
+    lm.load_film('film_output', 'bitmap', {
         'w': 1920,
         'h': 1080
     })
-    
-    # Load scene and render
-    lmscene.load(env.scene_path, scene)
-    lm.build('accel::sahbvh', {})
-    lm.render('renderer::raycast', {
-        'output': lm.asset('film_output')
+    lm.load_accel('accel', 'sahbvh', {})
+    scene = lm.load_scene('scene', 'default', {
+        'accel': '$.assets.accel'
     })
-    img_orig = np.copy(lm.buffer(lm.asset('film_output')))
+    lmscene.load(scene, env.scene_path, scene_name)
+    scene.build()
+    lm.load_renderer('renderer', 'raycast', {
+        'scene': '$.assets.scene',
+        'output': '$.assets.film_output',
+    })
+    
+    renderer = lm.get_renderer('$.assets.renderer')
+    renderer.render()
+    film = lm.get_film('$.assets.film_output')
+    img_orig = np.copy(film.buffer())
     
     # Serialize, reset, deserialize, and render
-    lm.serialize('lm.serialized')
+    print('w/ serialization')
+    lm.save_state_to_file('lm.serialized')
     lm.reset()
-    lm.deserialize('lm.serialized')
-    lm.render('renderer::raycast', {
-        'output': lm.asset('film_output')
-    })
-    img_serial = np.copy(lm.buffer(lm.asset('film_output')))
+    lm.load_state_from_file('lm.serialized')
+    
+    renderer = lm.get_renderer('$.assets.renderer')
+    renderer.render()
+    film = lm.get_film('$.assets.film_output')
+    img_serial = np.copy(film.buffer())
     
     # Compare two images
     e = rmse(img_orig, img_serial)

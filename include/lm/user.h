@@ -62,6 +62,17 @@ LM_PUBLIC_API void info();
 */
 LM_PUBLIC_API AssetGroup* assets();
 
+/*!
+    \brief Save internal state to a file.
+    \param path Output path.
+*/
+LM_PUBLIC_API void save_state_to_file(const std::string& path);
+
+/*!
+    \brief Load internal state from a file.
+    \param path Input path.
+*/
+LM_PUBLIC_API void load_state_from_file(const std::string& path);
 
 /*!
     @}

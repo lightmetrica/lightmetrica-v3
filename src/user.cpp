@@ -100,6 +100,14 @@ public:
         // Initialize asset
         root_assets_ = comp::create<AssetGroup>("asset_group::default", make_loc("assets"));
     }
+
+    void save_state_to_file(const std::string& path) {
+        serial::save(path, root_assets_);
+    }
+
+    void load_state_from_file(const std::string& path) {
+        serial::load(path, root_assets_);
+    }
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -122,6 +130,14 @@ LM_PUBLIC_API void info() {
 
 LM_PUBLIC_API AssetGroup* assets() {
     return UserContext::instance().assets();
+}
+
+LM_PUBLIC_API void save_state_to_file(const std::string& path) {
+    UserContext::instance().save_state_to_file(path);
+}
+
+LM_PUBLIC_API void load_state_from_file(const std::string& path) {
+    UserContext::instance().load_state_from_file(path);
 }
 
 LM_NAMESPACE_END(LM_NAMESPACE)

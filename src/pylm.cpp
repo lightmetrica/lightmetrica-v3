@@ -182,7 +182,9 @@ static void bind_user(pybind11::module& m) {
     m.def("reset", &reset);
     m.def("info", &info);
     m.def("assets", &assets, pybind11::return_value_policy::reference);
-    
+    m.def("save_state_to_file", &save_state_to_file);
+    m.def("load_state_from_file", &load_state_from_file);
+
     // Expose some function in comp namespace to lm namespace
     m.def("load", [](const std::string& name, const std::string& impl_key, const Json& prop) -> Component* {
         return assets()->load_asset(name, impl_key, prop);
