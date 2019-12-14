@@ -136,7 +136,7 @@ void save_owned(Archive& ar, T* p) {
 
             // Consistency testing
             // Current locator must start with root_loc
-            if (!loc._Starts_with(root_loc)) {
+            if (loc.rfind(root_loc, 0) != 0) {
                 LM_THROW_EXCEPTION(lm::Error::IOError,
                     "Unserializable asset. Subtree contains a reference to the outer asset. [loc='{}']", loc);
             }
@@ -252,7 +252,7 @@ serialize(lm::OutputArchive& ar, T*& p) {
 
             // Consistency testing
             // Current locator must start with root_loc
-            if (!loc._Starts_with(root_loc)) {
+            if (loc.rfind(root_loc, 0) != 0) {
                 LM_THROW_EXCEPTION(lm::Error::IOError,
                     "Unserializable asset. Subtree contains a reference to the outer asset. [loc='{}']", loc);
             }
@@ -369,8 +369,9 @@ save_comp_owned(std::ostream& stream, T* comp, const std::string& root_loc) {
         }
         if (weak) {
             // Check if the weak reference is referring to an asset in the subtree
+            // by checking if the locator starts with root_loc.
             const auto loc = visiting_comp->loc();
-            if (!loc._Starts_with(root_loc)) {
+            if (loc.rfind(root_loc, 0) != 0) {
                 LM_THROW_EXCEPTION(Error::Unsupported,
                     "Unserializable asset. Subtree contains a reference to the outer asset. [loc='{}']", loc);
             }
