@@ -33,7 +33,7 @@ This documentation includes **guide**, **examples and tests**, and **references*
 
     build
     managing_experiment
-    user
+    basic_rendering
     
 .. toctree::
     :maxdepth: 2

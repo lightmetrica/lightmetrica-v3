@@ -12,4 +12,5 @@ Examples
     executed_functest/example_pt
     executed_functest/example_custom_material
     executed_functest/example_custom_renderer
+    executed_functest/example_serialization
     executed_functest/example_cpp

@@ -15,7 +15,7 @@
 
 # ## Rendering with serialized assets
 #
-# This example explains advanced object manipulation.
+# This example explains how to render images with the serialized assets.
 
 import lmenv
 env = lmenv.load('.lmenv')
@@ -156,5 +156,3 @@ f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
 plt.show()
-
-

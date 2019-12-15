@@ -92,7 +92,7 @@ scene = lm.load_scene('scene', 'default', {
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # The scene of Lightmetrica is defined by a set of ``primitives``. A primitive specifies an object inside the scene by associating geometries and materials. We can define a primitive by :cpp:func:`lm::Scene::add_primitive` function.
 #
-# .. node::
+# .. note::
 #     If you need transformation applied to the geometry, you can use :cpp:func:`lm::Scene::add_transformed_primitive` function. The transformation is given by 4x4 matrix. 
 #
 # In this example we define two pritimives; one for camera and the other for quad mesh with diffuse material. We don't apply any transformation to the geometry, so we use :cpp:func:`lm::Scene::add_primitive` function.
