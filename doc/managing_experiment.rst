@@ -1,3 +1,5 @@
+.. _managing_experimens:
+
 Managing experiments
 ######################
 

@@ -55,7 +55,6 @@ TEST_CASE("Component") {
 
     SUBCASE("Plugin") {
         lm::comp::detail::ScopedLoadPlugin plugin_guard_("lm_test_plugin");
-        REQUIRE(plugin_guard_.valid());
         SUBCASE("Simple") {
             auto p = lm::comp::create<TestPlugin>("testplugin::default", "");
             REQUIRE(p);
@@ -71,7 +70,7 @@ TEST_CASE("Component") {
     }
 
     SUBCASE("Failed to load plugin") {
-        REQUIRE(!lm::comp::detail::load_plugin("__missing_plugin__"));
+        REQUIRE_THROWS(lm::comp::detail::load_plugin("__missing_plugin__"));
     }
 }
 
@@ -88,7 +87,6 @@ TEST_CASE("Construction") {
 
     SUBCASE("Construction (native plugin)") {
         lm::comp::detail::ScopedLoadPlugin plugin_guard_("lm_test_plugin");
-        REQUIRE(plugin_guard_.valid());
         auto p = lm::comp::create<TestPlugin>("testplugin::construct", "", { {"v1", 42}, {"v2", 43} });
         REQUIRE(p);
         CHECK(p->f() == -1);
@@ -112,7 +110,6 @@ TEST_CASE_TEMPLATE("Templated component", T, int, double) {
     }
     SUBCASE("Plugin") {
         lm::comp::detail::ScopedLoadPlugin plugin_guard_("lm_test_plugin");
-        REQUIRE(plugin_guard_.valid());
         const auto p = lm::comp::create<TestPluginWithTemplate<T>>("testplugin::template", "");
         if constexpr (std::is_same_v<T, int>) {
             CHECK(p->f() == 1);

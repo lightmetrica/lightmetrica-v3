@@ -61,6 +61,8 @@ Additionally, you can execute the Python tests with the following commands.
     $ cd <source directory>
     $ python -m pytest --lm <lightmetrica binary dir> pytest
 
+.. _executing_functional_tests:
+
 Executing functional tests
 --------------------------
 

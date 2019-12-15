@@ -17,119 +17,6 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// ------------------------------------------------------------------------------------------------
-
-class Assets final : public Component {
-private:
-    std::vector<Component::Ptr<Component>> assets_;
-    std::unordered_map<std::string, int> asset_index_map_;
-
-public:
-    LM_SERIALIZE_IMPL(ar) {
-        ar(asset_index_map_, assets_);
-    }
-
-    virtual void foreach_underlying(const ComponentVisitor& visitor) override {
-        for (auto& asset : assets_) {
-            comp::visit(visitor, asset);
-        }
-    }
-
-    virtual Component* underlying(const std::string& name) const override {
-        auto it = asset_index_map_.find(name);
-        if (it == asset_index_map_.end()) {
-            LM_ERROR("Invalid asset name [name='{}']", name);
-            return nullptr;
-        }
-        return assets_.at(it->second).get();
-    }
-
-private:
-    bool valid_asset_name(const std::string& name) const {
-        std::regex regex(R"x([:\w_-]+)x");
-        std::smatch match;
-        return std::regex_match(name, match, regex);
-    }
-
-public:
-    Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) {
-        LM_INFO("Loading asset [name='{}']", name);
-        LM_INDENT();
-
-        // Check if asset name is valid
-        if (!valid_asset_name(name)) {
-            LM_ERROR("Invalid asset name [name='{}']", name);
-            return nullptr;
-        }
-
-        // Check if the asset with given name has been already loaded
-        const auto it = asset_index_map_.find(name);
-        const bool found = it != asset_index_map_.end();
-        if (found) {
-            LM_INFO("Asset [name='{}'] has been already loaded. Replacing..", name);
-        }
-
-        // Create an instance of the asset
-        auto p = comp::create_without_construct<Component>(implKey, make_loc(loc(), name));
-        if (!p) {
-            LM_ERROR("Failed to create an asset [name='{}', key='{}']", name, implKey);
-            return nullptr;
-        }
-
-        // Register created asset
-        // Note that the registration must happen before construct() because
-        // the instance could be accessed by underlying() while initialization.
-        Component* asset;
-        if (found) {
-            // Move existing instance
-            // This must not be released until the end of this scope
-            // because weak references needs to find locator in the existing instance.
-            auto old = std::move(assets_[it->second]);
-
-            // Replace the existing instance
-            assets_[it->second] = std::move(p);
-            asset = assets_[it->second].get();
-
-            // Initialize the asset
-            // This might cause an exception
-            asset->construct(prop);
-
-            // Notify to update the weak references in the object tree
-            const lm::Component::ComponentVisitor visitor = [&](lm::Component*& comp, bool weak) {
-                if (!comp) {
-                    return;
-                }
-                if (asset == comp) {
-                    // Ignore myself
-                    return;
-                }
-                if (!weak) {
-                    comp->foreach_underlying(visitor);
-                }
-                else {
-                    comp::update_weak_ref(comp);
-                }
-            };
-            comp::get<lm::Component>("$")->foreach_underlying(visitor);
-        }
-        else {
-            // Register as a new asset
-            asset_index_map_[name] = int(assets_.size());
-            assets_.push_back(std::move(p));
-            asset = assets_.back().get();
-
-            // Initialize the asset
-            asset->construct(prop);
-        }
-
-        return asset;
-    }
-};
-
-LM_COMP_REG_IMPL(Assets, "assets::default");
-
-// ------------------------------------------------------------------------------------------------
-
 struct LightPrimitiveIndex {
     Transform global_transform; // Global transform matrix
     int index;                 // Primitive node index
@@ -142,9 +29,8 @@ struct LightPrimitiveIndex {
 
 class Scene_ final : public Scene {
 private:
-    Ptr<Assets> assets_;                             // Underlying assets
-    std::vector<SceneNode> nodes_;                   // Scene nodes
-    Ptr<Accel> accel_;                               // Acceleration structure
+    Accel* accel_;                                   // Acceleration structure
+    std::vector<SceneNode> nodes_;                   // Scene nodes (index 0: root node)
     std::optional<int> camera_;                      // Camera index
     std::vector<LightPrimitiveIndex> lights_;        // Primitive node indices of lights and global transforms
     std::unordered_map<int, int> light_indices_map_; // Map from node indices to light indices.
@@ -153,11 +39,10 @@ private:
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(assets_, nodes_, accel_, camera_, lights_, light_indices_map_, env_light_);
+        ar(accel_, nodes_, camera_, lights_, light_indices_map_, env_light_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
-        comp::visit(visit, assets_);
         comp::visit(visit, accel_);
         for (auto& node : nodes_) {
             if (node.type == SceneNodeType::Primitive) {
@@ -169,112 +54,103 @@ public:
         }
     }
 
-    virtual Component* underlying(const std::string& name) const override {
-        if (name == "assets") {
-            return assets_.get();
-        }
-        else if (name == "accel") {
-            return accel_.get();
-        }
-        else if (name == "camera") {
-            return nodes_.at(*camera_).primitive.camera;
-        }
-        return nullptr;
+public:
+    virtual void construct(const Json& prop) override {
+        accel_ = json::comp_ref_or_nullptr<Accel>(prop, "accel");
+        reset();
     }
 
 public:
-    virtual void construct(const Json&) override {
-        // Assets
-        assets_ = comp::create<Assets>("assets::default", make_loc("assets"));
-        // Index 0 is fixed to the scene group
+    virtual void reset() override {
+        nodes_.clear();
+        camera_ = {};
+        lights_.clear();
+        light_indices_map_.clear();
+        env_light_ = {};
+        medium_ = {};
         nodes_.push_back(SceneNode::make_group(0, false, {}));
     }
 
-public:
-    virtual Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
-        return assets_->load_asset(name, implKey, prop);
+    virtual Accel* accel() const override {
+        return accel_;
     }
 
-    // --------------------------------------------------------------------------------------------
+    virtual void set_accel(const std::string& accel_loc) override {
+        accel_ = comp::get<Accel>(accel_loc);
+    }
 
     virtual int root_node() override {
         return 0;
     }
 
-    virtual int create_node(SceneNodeType type, const Json& prop) override {
-        if (type == SceneNodeType::Primitive) {
-            // Find an asset by property name
-            const auto get_asset_ref_by = [&](const std::string& propName) -> Component* {
-                const auto it = prop.find(propName);
-                if (it == prop.end()) {
-                    return nullptr;
-                }
-                return comp::get<Component>(it.value().get<std::string>());
-            };
+	virtual int create_primitive_node(const Json& prop) override {
+		// Find an asset by property name
+		const auto get_asset_ref_by = [&](const std::string& propName) -> Component * {
+			const auto it = prop.find(propName);
+			if (it == prop.end()) {
+				return nullptr;
+			}
+			return comp::get<Component>(it.value().get<std::string>());
+		};
 
-            // Node index
-            const int index = int(nodes_.size());
+		// Node index
+		const int index = int(nodes_.size());
 
-            // Get asset references
-            auto* mesh = dynamic_cast<Mesh*>(get_asset_ref_by("mesh"));
-            auto* material = dynamic_cast<Material*>(get_asset_ref_by("material"));
-            auto* light = dynamic_cast<Light*>(get_asset_ref_by("light"));
-            auto* camera = dynamic_cast<Camera*>(get_asset_ref_by("camera"));
-            auto* medium = dynamic_cast<Medium*>(get_asset_ref_by("medium"));
+		// Get asset references
+		auto* mesh = dynamic_cast<Mesh*>(get_asset_ref_by("mesh"));
+		auto* material = dynamic_cast<Material*>(get_asset_ref_by("material"));
+		auto* light = dynamic_cast<Light*>(get_asset_ref_by("light"));
+		auto* camera = dynamic_cast<Camera*>(get_asset_ref_by("camera"));
+		auto* medium = dynamic_cast<Medium*>(get_asset_ref_by("medium"));
 
-            // Check validity
-            if (!mesh && !material && !light && !camera && !medium) {
-                LM_ERROR("Invalid primitive node. Given assets are invalid.");
-                return false;
-            }
-            if (camera && light) {
-                LM_ERROR("Primitive cannot be both camera and light");
-                return false;
-            }
+		// Check validity
+		if (!mesh && !material && !light && !camera && !medium) {
+			LM_ERROR("Invalid primitive node. Given assets are invalid.");
+			return false;
+		}
+		if (camera && light) {
+			LM_ERROR("Primitive cannot be both camera and light");
+			return false;
+		}
 
-            // Camera
-            if (camera) {
-                camera_ = index;
-            }
+		// Camera
+		if (camera) {
+			camera_ = index;
+		}
 
-            // Envlight
-            if (light && light->is_infinite()) {
-                if (env_light_) {
-                    LM_ERROR("Environment light is already registered. "
-                             "You can register only one environment light in the scene.");
-                    return false;
-                }
-                env_light_ = index;
-            }
+		// Envlight
+		if (light && light->is_infinite()) {
+			if (env_light_) {
+				LM_ERROR("Environment light is already registered. "
+					"You can register only one environment light in the scene.");
+				return false;
+			}
+			env_light_ = index;
+		}
 
-            // Medium
-            if (medium) {
-                // For now, consider the medium as global asset.
-                medium_ = index;
-            }
+		// Medium
+		if (medium) {
+			// For now, consider the medium as global asset.
+			medium_ = index;
+		}
 
-            // Create primitive node
-            nodes_.push_back(SceneNode::make_primitive(index, mesh, material, light, camera, medium));
+		// Create primitive node
+		nodes_.push_back(SceneNode::make_primitive(index, mesh, material, light, camera, medium));
 
-            return index;
-        }
-            
-        // ----------------------------------------------------------------------------------------
-        
-        if (type == SceneNodeType::Group) {
-            const int index = int(nodes_.size());
-            nodes_.push_back(SceneNode::make_group(
-                index,
-                json::value<bool>(prop, "instanced", false),
-                json::value_or_none<Mat4>(prop, "transform")
-            ));
-            return index;
-        }
+		return index;
+	}
 
-        // ----------------------------------------------------------------------------------------
+	virtual int create_group_node(Mat4 transform) override {
+		const int index = int(nodes_.size());
+		nodes_.push_back(SceneNode::make_group(index, false, transform));
+		return index;
+	}
 
-        LM_UNREACHABLE_RETURN();
-    }
+	virtual int create_instance_group_node() override {
+		const int index = int(nodes_.size());
+		nodes_.push_back(SceneNode::make_group(index, true, {}));
+		return index;
+	}
 
     virtual void add_child(int parent, int child) override {
         if (parent < 0 || parent >= int(nodes_.size())) {
@@ -393,7 +269,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual void build(const std::string& name, const Json& prop) override {
+    virtual void build() override {
         // Update light indices
         // We keep the global transformation of the light primitive as well as the references.
         // We need to recompute the indices when an update of the scene happens,
@@ -408,11 +284,7 @@ public:
         });
 
         // Build acceleration structure
-        accel_ = comp::create<Accel>(name, make_loc(loc(), "accel"), prop);
-        if (!accel_) {
-            return;
-        }
-        LM_INFO("Building acceleration structure [name='{}']", name);
+        LM_INFO("Building acceleration structure [name='{}']", accel_->name());
         LM_INDENT();
         accel_->build(*this);
     }

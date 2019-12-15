@@ -145,6 +145,10 @@ static void bind_component(pybind11::module& m) {
             InputArchive ar(is);
             self->load(ar);
         })
+        .def("save_to_file", [](Component* self, const std::string& path) {
+            std::ofstream os(path, std::ios::out | std::ios::binary);
+            serial::save_comp_owned(os, self, self->loc());
+        })
         .PYLM_DEF_COMP_BIND(Component);
 
     auto sm = m.def_submodule("comp");
@@ -153,52 +157,126 @@ static void bind_component(pybind11::module& m) {
     }, pybind11::return_value_policy::reference);
     sm.def("load_plugin", &comp::load_plugin);
     sm.def("load_plugin_directory", &comp::load_plugin_directory);
-    sm.def("unload_plugins", &comp::unload_plugins);
+    sm.def("unload_plugin", &comp::unload_plugin);
+    sm.def("unload_all_plugins", &comp::unload_all_plugins);
     sm.def("foreach_registered", &comp::foreach_registered);
 }
 
 // ------------------------------------------------------------------------------------------------
 
 // Generate a function for the built-in interface
-#define PYLM_DEF_ASSET_CREATE_FUNC(m, InterfaceType, interface_name) \
+#define PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, InterfaceType, interface_name) \
 	m.def(fmt::format("load_{}", #interface_name).c_str(), \
 		[](const std::string& name, const std::string& impl_key, const Json& prop) -> InterfaceType* { \
-			auto* p = asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+			auto* p = assets()->load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
 			return dynamic_cast<InterfaceType*>(p); \
-		})
+		}, pybind11::return_value_policy::reference); \
+    m.def(fmt::format("get_{}", #interface_name).c_str(), \
+        [](const std::string& loc) -> InterfaceType* { \
+            return comp::get<InterfaceType>(loc); \
+        }, pybind11::return_value_policy::reference)
 
 // Bind user.h
 static void bind_user(pybind11::module& m) {
     m.def("init", &init, "prop"_a = Json{});
     m.def("shutdown", &shutdown);
-    m.def("info", &info);
     m.def("reset", &reset);
-    m.def("asset", (Component*(*)(const std::string&, const std::string&, const Json&)) & asset, pybind11::return_value_policy::reference);
-    m.def("asset", (std::string(*)(const std::string&)) & asset);
-    m.def("build", &build);
-    m.def("renderer", &renderer, pybind11::call_guard<pybind11::gil_scoped_release>());
-    m.def("render", (void(*)(bool)) & render, "verbose"_a = true, pybind11::call_guard<pybind11::gil_scoped_release>());
-    m.def("render", (void(*)(const std::string&, const Json&)) & render, pybind11::call_guard<pybind11::gil_scoped_release>());
-    m.def("save", &save);
-    m.def("buffer", &buffer);
-    m.def("serialize", (void(*)(const std::string&)) & serialize);
-    m.def("deserialize", (void(*)(const std::string&)) & deserialize);
-    m.def("root_node", &root_node);
-    m.def("primitive_node", &primitive_node);
-    m.def("group_node", &group_node);
-    m.def("instance_group_node", &instance_group_node);
-    m.def("transform_node", &transform_node);
-    m.def("add_child", &add_child);
-    m.def("create_group_from_model", &create_group_from_model);
-    m.def("primitive", &primitive);
-	PYLM_DEF_ASSET_CREATE_FUNC(m, Mesh, mesh);
-	PYLM_DEF_ASSET_CREATE_FUNC(m, Texture, texture);
-	PYLM_DEF_ASSET_CREATE_FUNC(m, Material, material);
-	PYLM_DEF_ASSET_CREATE_FUNC(m, Camera, camera);
-	PYLM_DEF_ASSET_CREATE_FUNC(m, Medium, medium);
-	PYLM_DEF_ASSET_CREATE_FUNC(m, Phase, phase);
-	PYLM_DEF_ASSET_CREATE_FUNC(m, Film, film);
-	PYLM_DEF_ASSET_CREATE_FUNC(m, Model, model);
+    m.def("info", &info);
+    m.def("assets", &assets, pybind11::return_value_policy::reference);
+    m.def("save_state_to_file", &save_state_to_file);
+    m.def("load_state_from_file", &load_state_from_file);
+
+    // Expose some function in comp namespace to lm namespace
+    m.def("load", [](const std::string& name, const std::string& impl_key, const Json& prop) -> Component* {
+        return assets()->load_asset(name, impl_key, prop);
+    }, pybind11::return_value_policy::reference);
+    m.def("load_serialized", [](const std::string& name, const std::string& path) -> Component* {
+        return assets()->load_serialized(name, path);
+    }, pybind11::return_value_policy::reference);
+    m.def("get", [](const std::string& loc) -> Component* {
+        return comp::detail::get(loc);
+    }, pybind11::return_value_policy::reference);
+
+    // Bind load and get functions for each asset interface
+	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Mesh, mesh);
+	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Texture, texture);
+	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Material, material);
+	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Camera, camera);
+	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Medium, medium);
+	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Phase, phase);
+	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Film, film);
+	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Model, model);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, AssetGroup, asset_group);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Accel, accel);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Scene, scene);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Renderer, renderer);
+
+    // Helper function to visualize the asset tree
+    m.def("print_asset_tree", []() {
+        using namespace std::placeholders;
+
+        // Traverse the asset from the root
+        using Func = std::function<void(Component * &p, bool weak, std::string parent_loc)>;
+        const Func visitor = [&](Component*& comp, bool weak, std::string parent_loc) {
+            if (!comp || weak) {
+                return;
+            }
+
+            // Print information
+            const auto loc = comp->loc();
+            auto comp_id = loc;
+            comp_id.erase(0, parent_loc.size());
+            LM_INFO("{} [{}]", comp_id, comp->key());
+            LM_INDENT();
+            
+            // Traverse underlying components
+            comp->foreach_underlying(std::bind(visitor, _1, _2, loc));
+        };
+        
+        LM_INFO("$.assets");
+        LM_INDENT();
+        lm::assets()->foreach_underlying(std::bind(visitor, _1, _2, "$.assets"));
+    });
+}
+
+// ------------------------------------------------------------------------------------------------
+
+#define PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(InterfaceType, interface_name) \
+    def(fmt::format("load_{}", #interface_name).c_str(), \
+        [](AssetGroup& self, const std::string& name, const std::string& impl_key, const Json& prop) -> InterfaceType* { \
+            auto* p = self.load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+            return dynamic_cast<InterfaceType*>(p); \
+        }, pybind11::return_value_policy::reference)
+
+// Bind assetgroup.h
+static void bind_asset_group(pybind11::module& m) {
+    class AssetGroup_Py final : public AssetGroup {
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, AssetGroup, construct, prop);
+        }
+        virtual Component* load_asset(const std::string& name, const std::string& impl_key, const Json& prop) override {
+            PYBIND11_OVERLOAD_PURE(Component*, AssetGroup, load_asset, name, impl_key, prop);
+        }
+        virtual Component* load_serialized(const std::string& name, const std::string& path) override {
+            PYBIND11_OVERLOAD_PURE(Component*, AssetGroup, load_serialized, name, path);
+        }
+    };
+    pybind11::class_<AssetGroup, AssetGroup_Py, Component, Component::Ptr<AssetGroup>>(m, "AssetGroup")
+        .def(pybind11::init<>())
+        .def("load_asset", &AssetGroup::load_asset, pybind11::return_value_policy::reference)
+        .def("load_serialized", &AssetGroup::load_serialized, pybind11::return_value_policy::reference)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Mesh, mesh)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Texture, texture)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Material, material)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Camera, camera)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Medium, medium)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Phase, phase)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Film, film)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Model, model)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(AssetGroup, asset_group)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Accel, accel)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Scene, scene)
+        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Renderer, renderer);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -273,7 +351,7 @@ static void bind_parallel(pybind11::module& m) {
 // Bind objloader.h
 static void bind_objloader(pybind11::module& m) {
     auto sm = m.def_submodule("objloader");
-    sm.def("init", &objloader::init);
+    sm.def("init", &objloader::init, "type"_a = objloader::DefaultType, "prop"_a = Json{});
     sm.def("shutdown", &objloader::shutdown);
 }
 
@@ -327,18 +405,6 @@ static void bind_progress(pybind11::module& m) {
 
 // ------------------------------------------------------------------------------------------------
 
-// Bind debugio.h
-static void bind_debugio(pybind11::module& m) {
-    auto sm = m.def_submodule("debugio");
-    sm.def("init", &debugio::init);
-    sm.def("shutdown", &debugio::shutdown);
-    sm.def("handle_message", &debugio::handle_message);
-    sm.def("sync_user_context", &debugio::sync_user_context);
-    sm.def("draw", &debugio::draw);
-}
-
-// ------------------------------------------------------------------------------------------------
-
 // Bind debug.h
 static void bind_debug(pybind11::module& m) {
     auto sm = m.def_submodule("debug");
@@ -353,29 +419,7 @@ static void bind_debug(pybind11::module& m) {
             }
         });
     });
-    sm.def("attachToDebugger", &debug::attach_to_debugger);
-}
-
-// ------------------------------------------------------------------------------------------------
-
-// Bind distributed.h
-static void bind_distributed(pybind11::module& m) {
-    auto sm = m.def_submodule("distributed");
-    {
-        auto sm2 = sm.def_submodule("master");
-        sm2.def("init", &distributed::master::init);
-        sm2.def("shutdown", &distributed::master::shutdown);
-        sm2.def("print_worker_info", &distributed::master::print_worker_info);
-        sm2.def("allow_worker_connection", &distributed::master::allow_worker_connection);
-        sm2.def("sync", &distributed::master::sync, pybind11::call_guard<pybind11::gil_scoped_release>());
-        sm2.def("gather_film", &distributed::master::gather_film, pybind11::call_guard<pybind11::gil_scoped_release>());
-    }
-    {
-        auto sm2 = sm.def_submodule("worker");
-        sm2.def("init", &distributed::worker::init);
-        sm2.def("shutdown", &distributed::worker::shutdown);
-        sm2.def("run", &distributed::worker::run, pybind11::call_guard<pybind11::gil_scoped_release>());
-    }
+    sm.def("attach_to_debugger", &debug::attach_to_debugger);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -486,6 +530,19 @@ static void bind_surface(pybind11::module& m) {
 
 // ------------------------------------------------------------------------------------------------
 
+// Bind scenenode.h
+static void bind_scenenode(pybind11::module& m) {
+	pybind11::enum_<SceneNodeType>(m, "SceneNodeType")
+		.value("Primitive", SceneNodeType::Primitive)
+		.value("Group", SceneNodeType::Group);
+
+	pybind11::class_<SceneNode>(m, "SceneNode")
+		.def_readwrite("type", &SceneNode::type)
+		.def_readwrite("index", &SceneNode::index);
+}
+
+// ------------------------------------------------------------------------------------------------
+
 // Bind scene.h
 static void bind_scene(pybind11::module& m) {
     pybind11::class_<RaySample>(m, "RaySample")
@@ -494,22 +551,34 @@ static void bind_scene(pybind11::module& m) {
         .def_readwrite("weight", &RaySample::weight)
         .def("ray", &RaySample::ray);
 
-    pybind11::enum_<SceneNodeType>(m, "SceneNodeType")
-        .value("Primitive", SceneNodeType::Primitive)
-        .value("Group", SceneNodeType::Group);
+	pybind11::class_<DistanceSample>(m, "DistanceSample")
+		.def_readwrite("sp", &DistanceSample::sp)
+		.def_readwrite("weight", &DistanceSample::weight);
 
 	class Scene_Py final : public Scene {
 		virtual void construct(const Json& prop) override {
 			PYBIND11_OVERLOAD(void, Scene, construct, prop);
 		}
-		virtual Component* load_asset(const std::string& name, const std::string& implKey, const Json& prop) override {
-			PYBIND11_OVERLOAD_PURE(Component*, Scene, load_asset, name, implKey, prop);
-		}
+        virtual void reset() override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, reset);
+        }
+        virtual Accel* accel() const override {
+            PYBIND11_OVERLOAD_PURE(Accel*, Scene, accel);
+        }
+        virtual void set_accel(const std::string& accel_loc) override {
+            PYBIND11_OVERLOAD_PURE(void, Scene, set_accel, accel_loc);
+        }
 		virtual int root_node() override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, root_node);
 		}
-		virtual int create_node(SceneNodeType type, const Json& prop) override {
-			PYBIND11_OVERLOAD_PURE(int, Scene, loadPrimitive, type, prop);
+		virtual int create_primitive_node(const Json& prop) override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, create_primitive_node, prop);
+		}
+		virtual int create_group_node(Mat4 transform) override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, create_group_node, transform);
+		}
+		virtual int create_instance_group_node() override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, create_instance_group_node);
 		}
 		virtual void add_child(int parent, int child) override {
 			PYBIND11_OVERLOAD_PURE(void, Scene, add_child, parent, child);
@@ -541,8 +610,8 @@ static void bind_scene(pybind11::module& m) {
 		virtual const SceneNode& node_at(int node_index) const override {
 			PYBIND11_OVERLOAD_PURE(const SceneNode&, Scene, node_at, node_index);
 		}
-		virtual void build(const std::string& name, const Json& prop) override {
-			PYBIND11_OVERLOAD_PURE(void, Scene, build, name, prop);
+		virtual void build() override {
+			PYBIND11_OVERLOAD_PURE(void, Scene, build);
 		}
 		virtual std::optional<SceneInteraction> intersect(Ray ray, Float tmin, Float tmax) const override {
 			PYBIND11_OVERLOAD_PURE(std::optional<SceneInteraction>, Scene, intersect, ray, tmin, tmax);
@@ -596,25 +665,71 @@ static void bind_scene(pybind11::module& m) {
 
     pybind11::class_<Scene, Scene_Py, Component, Component::Ptr<Scene>>(m, "Scene")
         .def(pybind11::init<>())
+        .def("reset", &Scene::reset)
+        .def("accel", &Scene::accel)
+        .def("set_accel", &Scene::set_accel)
         .def("root_node", &Scene::root_node)
-        .def("create_node", &Scene::create_node)
+        .def("create_primitive_node", &Scene::create_primitive_node)
+		.def("create_group_node", &Scene::create_group_node)
+		.def("create_instance_group_node", &Scene::create_instance_group_node)
         .def("add_child", &Scene::add_child)
         .def("add_child_from_model", &Scene::add_child_from_model)
+        .def("add_primitive", &Scene::add_primitive)
+        .def("add_transformed_primitive", &Scene::add_transformed_primitive)
 		.def("num_nodes", &Scene::num_nodes)
 		.def("num_lights", &Scene::num_lights)
 		.def("camera_node", &Scene::camera_node)
 		.def("env_light_node", &Scene::env_light_node)
         .def("traverse_primitive_nodes", &Scene::traverse_primitive_nodes)
 		.def("visit_node", &Scene::visit_node)
+		.def("node_at", &Scene::node_at, pybind11::return_value_policy::reference)
         .def("build", &Scene::build)
         .def("intersect", &Scene::intersect, "ray"_a = Ray{}, "tmin"_a = Eps, "tmax"_a = Inf)
         .def("is_light", &Scene::is_light)
         .def("is_specular", &Scene::is_specular)
         .def("primary_ray", &Scene::primary_ray)
+		.def("raster_position", &Scene::raster_position)
         .def("sample_ray", &Scene::sample_ray)
+		.def("sample_direction_given_comp", &Scene::sample_direction_given_comp)
+		.def("sample_direct_light", &Scene::sample_direct_light)
+		.def("pdf", &Scene::pdf)
+		.def("pdf_comp", &Scene::pdf_comp)
+		.def("pdf_direct_light", &Scene::pdf_direct_light)
+		.def("sample_distance", &Scene::sample_distance)
+		.def("eval_transmittance", &Scene::eval_transmittance)
+		.def("eval_contrb", &Scene::eval_contrb)
         .def("eval_contrb_endpoint", &Scene::eval_contrb_endpoint)
         .def("reflectance", &Scene::reflectance)
         .PYLM_DEF_COMP_BIND(Scene);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind accel.h
+static void bind_accel(pybind11::module& m) {
+    pybind11::class_<Accel::Hit>(m, "Accel_Hit")
+        .def_readwrite("t", &Accel::Hit::t)
+        .def_readwrite("uv", &Accel::Hit::uv)
+        .def_readwrite("global_transform", &Accel::Hit::global_transform)
+        .def_readwrite("primitive", &Accel::Hit::primitive)
+        .def_readwrite("face", &Accel::Hit::face);
+
+    class Accel_Py final : public Accel {
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Accel, construct, prop);
+        }
+        virtual void build(const Scene& scene) override {
+            PYBIND11_OVERLOAD_PURE(void, Accel, build, scene);
+        }
+        virtual std::optional<Hit> intersect(Ray ray, Float tmin, Float tmax) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Hit>, Accel, intersect, ray, tmin, tmax);
+        }
+    };
+    pybind11::class_<Accel, Accel_Py, Component, Component::Ptr<Accel>>(m, "Accel")
+        .def(pybind11::init<>())
+        .def("build", &Accel::build)
+        .def("intersect", &Accel::intersect)
+        .PYLM_DEF_COMP_BIND(Accel);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -626,8 +741,8 @@ static void bind_renderer(pybind11::module& m) {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Renderer, construct, prop);
         }
-        virtual void render(const Scene* scene) const override {
-            PYBIND11_OVERLOAD_PURE(void, Renderer, render, scene);
+        virtual void render() const override {
+            PYBIND11_OVERLOAD_PURE(void, Renderer, render);
         }
     };
     pybind11::class_<Renderer, Renderer_Py, Component, Component::Ptr<Renderer>>(m, "Renderer")
@@ -644,6 +759,9 @@ static void bind_texture(pybind11::module& m) {
         .def_readwrite("w", &TextureSize::w)
         .def_readwrite("h", &TextureSize::h);
     class Texture_Py final : public Texture {
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Texture, construct, prop);
+        }
         virtual TextureSize size() const override {
             PYBIND11_OVERLOAD_PURE(TextureSize, Texture, size);
         }
@@ -660,6 +778,46 @@ static void bind_texture(pybind11::module& m) {
         .def("eval", &Texture::eval)
         .def("eval_by_pixel_coords", &Texture::eval_by_pixel_coords)
         .PYLM_DEF_COMP_BIND(Texture);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind mesh.h
+static void bind_mesh(pybind11::module& m) {
+    pybind11::class_<Mesh::Point>(m, "Mesh_Point")
+        .def_readwrite("p", &Mesh::Point::p)
+        .def_readwrite("n", &Mesh::Point::n)
+        .def_readwrite("t", &Mesh::Point::t);
+
+    pybind11::class_<Mesh::Tri>(m, "Mesh_Tri")
+        .def_readwrite("p1", &Mesh::Tri::p1)
+        .def_readwrite("p2", &Mesh::Tri::p2)
+        .def_readwrite("p3", &Mesh::Tri::p3);
+
+    class Mesh_Py final : public Mesh {
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Mesh, construct, prop);
+        }
+        virtual void foreach_triangle(const ProcessTriangleFunc& process_triangle) const override {
+            PYBIND11_OVERLOAD_PURE(void, Mesh, foreach_triangle, process_triangle);
+        }
+        virtual Tri triangle_at(int face) const override {
+            PYBIND11_OVERLOAD_PURE(Tri, Mesh, triangle_at, face);
+        }
+        virtual Point surface_point(int face, Vec2 uv) const override {
+            PYBIND11_OVERLOAD_PURE(Point, Mesh, surface_point, face, uv);
+        }
+        virtual int num_triangles() const override {
+            PYBIND11_OVERLOAD_PURE(int, Mesh, num_triangles);
+        }
+    };
+    pybind11::class_<Mesh, Mesh_Py, Component, Component::Ptr<Mesh>>(m, "Mesh")
+        .def(pybind11::init<>())
+        .def("foreach_triangle", &Mesh::foreach_triangle)
+        .def("triangle_at", &Mesh::triangle_at)
+        .def("surface_point", &Mesh::surface_point)
+        .def("num_triangles", &Mesh::num_triangles)
+        .PYLM_DEF_COMP_BIND(Mesh);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -772,7 +930,8 @@ static void bind_medium(pybind11::module& m) {
 		.def("sample_distance", &Medium::sample_distance)
 		.def("eval_transmittance", &Medium::eval_transmittance)
 		.def("is_emitter", &Medium::is_emitter)
-		.def("phase", &Medium::phase, pybind11::return_value_policy::reference);
+		.def("phase", &Medium::phase, pybind11::return_value_policy::reference)
+        .PYLM_DEF_COMP_BIND(Medium);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -793,7 +952,101 @@ static void bind_model(pybind11::module& m) {
 	pybind11::class_<Model, Model_Py, Component, Component::Ptr<Model>>(m, "Model")
 		.def(pybind11::init<>())
 		.def("create_primitives", &Model::create_primitives)
-		.def("foreach_node", &Model::foreach_node);
+		.def("foreach_node", &Model::foreach_node)
+        .PYLM_DEF_COMP_BIND(Model);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind camera.h
+static void bind_camera(pybind11::module& m) {
+    pybind11::class_<CameraRaySample>(m, "CameraRaySample")
+        .def(pybind11::init<>())
+        .def_readwrite("geom", &CameraRaySample::geom)
+        .def_readwrite("wo", &CameraRaySample::wo)
+        .def_readwrite("weight", &CameraRaySample::weight);
+
+    class Camera_Py final : public Camera {
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Camera, construct, prop);
+        }
+        virtual bool is_specular(const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(bool, Camera, is_specular, geom);
+        }
+        virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const override {
+            PYBIND11_OVERLOAD_PURE(Ray, Camera, primary_ray, rp, aspect_ratio);
+        }
+        virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Camera, raster_position, wo, aspect_ratio);
+        }
+        virtual std::optional<CameraRaySample> sample_primary_ray(Rng& rng, Vec4 window, Float aspect_ratio) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<CameraRaySample>, Camera, sample_primary_ray, rng, window, aspect_ratio);
+        }
+        virtual Float pdf(Vec3 wo, Float aspect_ratio) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Camera, pdf, wo, aspect_ratio);
+        }
+        virtual Vec3 eval(Vec3 wo, Float aspect_ratio) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Camera, eval, wo, aspect_ratio);
+        }
+        virtual Mat4 view_matrix() const override {
+            PYBIND11_OVERLOAD_PURE(Mat4, Camera, view_matrix);
+        }
+        virtual Mat4 projection_matrix(Float aspect_ratio) const override {
+            PYBIND11_OVERLOAD_PURE(Mat4, Camera, projection_matrix, aspect_ratio);
+        }
+    };
+    pybind11::class_<Camera, Camera_Py, Component, Component::Ptr<Camera>>(m, "Camera")
+        .def(pybind11::init<>())
+        .def("is_specular", &Camera::is_specular)
+        .def("primary_ray", &Camera::primary_ray)
+        .def("raster_position", &Camera::raster_position)
+        .def("sample_primary_ray", &Camera::sample_primary_ray)
+        .def("pdf", &Camera::pdf)
+        .def("eval", &Camera::eval)
+        .def("view_matrix", &Camera::view_matrix)
+        .def("projection_matrix", &Camera::projection_matrix)
+        .PYLM_DEF_COMP_BIND(Camera);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// Bind light.h
+static void bind_light(pybind11::module& m) {
+    pybind11::class_<LightRaySample>(m, "LightRaySample")
+        .def(pybind11::init<>())
+        .def_readwrite("geom", &LightRaySample::geom)
+        .def_readwrite("wo", &LightRaySample::wo)
+        .def_readwrite("comp", &LightRaySample::comp)
+        .def_readwrite("weight", &LightRaySample::weight);
+
+    class Light_Py final : public Light {
+        virtual void construct(const Json& prop) override {
+            PYBIND11_OVERLOAD(void, Light, construct, prop);
+        }
+        virtual bool is_specular(const PointGeometry& geom, int comp) const override {
+            PYBIND11_OVERLOAD_PURE(bool, Light, is_specular, geom, comp);
+        }
+        virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<LightRaySample>, Light, sample, rng, geom, transform);
+        }
+        virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int comp, const Transform& transform, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Light, pdf, geom, geomL, comp, transform, wo);
+        }
+        virtual bool is_infinite() const override {
+            PYBIND11_OVERLOAD_PURE(bool, Light, is_infinite);
+        }
+        virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Light, eval, geom, comp, wo);
+        }
+    };
+    pybind11::class_<Light, Light_Py, Component, Component::Ptr<Light>>(m, "Light")
+        .def(pybind11::init<>())
+        .def("is_specular", &Light::is_specular)
+        .def("sample", &Light::sample)
+        .def("pdf", &Light::pdf)
+        .def("is_infinite", &Light::is_infinite)
+        .def("eval", &Light::eval)
+        .PYLM_DEF_COMP_BIND(Light);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -812,20 +1065,24 @@ PYBIND11_MODULE(pylm, m) {
     bind_component(m);
     bind_logger(m);
     bind_parallel(m);
-	bind_distributed(m);
     bind_objloader(m);
     bind_progress(m);
-    bind_debugio(m);
     bind_debug(m);
     bind_film(m);
     bind_surface(m);
+	bind_scenenode(m);
     bind_scene(m);
+    bind_accel(m);
     bind_renderer(m);
     bind_texture(m);
+    bind_mesh(m);
     bind_material(m);
 	bind_medium(m);
 	bind_phase(m);
 	bind_model(m);
+    bind_camera(m);
+    bind_light(m);
+    bind_asset_group(m);
 	bind_user(m);
 }
 

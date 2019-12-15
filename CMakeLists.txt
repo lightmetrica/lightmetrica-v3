@@ -22,7 +22,6 @@ option(LM_USE_EXTERNAL_DIR   "Use in-project external directory to find dependen
 option(LM_INSTALL            "Enable install"  ${LM_MASTER_PROJECT})
 option(LM_BUILD_TESTS        "Enable tests"    ${LM_MASTER_PROJECT})
 option(LM_BUILD_EXAMPLES     "Enable examples" ${LM_MASTER_PROJECT})
-option(LM_BUILD_GUI_EXAMPLES "Enable GUI examples" ${LM_MASTER_PROJECT})
 
 # -------------------------------------------------------------------------------------------------
 
@@ -47,7 +46,6 @@ set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(pybind11 REQUIRED)
-find_package(cppzmq REQUIRED)
 find_package(cereal REQUIRED)
 find_package(glm REQUIRED)
 find_package(nlohmann_json REQUIRED)
@@ -55,18 +53,6 @@ find_package(fmt REQUIRED)
 find_package(stb REQUIRED)
 if (LM_BUILD_TESTS)
     find_package(doctest REQUIRED)
-endif()
-if (LM_BUILD_EXAMPLES AND LM_BUILD_GUI_EXAMPLES)
-    find_package(OpenGL)
-    if (OpenGL_FOUND)
-        find_package(GLEW REQUIRED)
-        find_package(glfw3 REQUIRED)
-    else()
-        # Disable GUI example if there's no OpenGL support
-        message(WARNING "OpenGL is not supported. Disabled GUI examples. \
-                         To supress this warning, set LM_BUILD_GUI_EXAMPLES=OFF.")
-        set(LM_BUILD_GUI_EXAMPLES OFF)
-    endif()
 endif()
 
 # -------------------------------------------------------------------------------------------------
@@ -101,7 +87,7 @@ add_subdirectory(plugin)
 
 # Examples
 if (LM_BUILD_EXAMPLES)
-    add_subdirectory(example)
+    #add_subdirectory(example)
 endif()
 
 # Tests

@@ -245,7 +245,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // Forward declarations
 struct ComponentDeleter;  // component.h
 class Component;
-class Assets;             // assets.h
+class AssetGroup;             // assets.h
 class Mesh;               // mesh.h
 class Texture;            // texture.h
 class Material;           // material.h
@@ -261,6 +261,7 @@ struct SceneInteraction;  // scene.h
 struct RaySample;
 struct LightSample;
 class Scene;
+class Accel;              // accel.h
 class Renderer;           // renderer.h
 LM_FORWARD_DECLARE_WITH_NAMESPACE(comp::detail, struct Access)
 

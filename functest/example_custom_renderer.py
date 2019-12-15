@@ -40,21 +40,24 @@ import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
 lm.init()
-lm.log.init('logger::jupyter')
-lm.progress.init('progress::jupyter')
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
+
+if not lm.Release:
+    lm.debug.attach_to_debugger()
 
 lm.comp.load_plugin(os.path.join(env.bin_path, 'functest_renderer_ao'))
 
 # +
 # Film for the rendered image
-lm.asset('film1', 'film::bitmap', {
+film = lm.load_film('film1', 'bitmap', {
     'w': 1920,
     'h': 1080
 })
 
 # Pinhole camera
-lm.asset('camera1', 'camera::pinhole', {
+camera = lm.load_camera('camera1', 'pinhole', {
     'position': [5.101118, 1.083746, -2.756308],
     'center': [4.167568, 1.078925, -2.397892],
     'up': [0,1,0],
@@ -62,28 +65,32 @@ lm.asset('camera1', 'camera::pinhole', {
 })
 
 # OBJ model
-lm.asset('obj1', 'model::wavefrontobj', {
+model = lm.load_model('obj1', 'wavefrontobj', {
     'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj')
 })
 
-# Camera
-lm.primitive(lm.identity(), {
-    'camera': lm.asset('camera1')
+# Scene
+accel = lm.load_accel('accel', 'sahbvh', {})
+scene = lm.load_scene('scene', 'default', {
+    'accel': accel.loc()
 })
-
-# Create primitives from model asset
-lm.primitive(lm.identity(), {
-    'model': lm.asset('obj1')
+scene.add_primitive({
+    'camera': camera.loc()
 })
+scene.add_primitive({
+    'model': model.loc()
+})
+scene.build()
 # -
 
-lm.build('accel::sahbvh', {})
-lm.render('renderer::ao', {
-    'output': lm.asset('film1'),
+renderer = lm.load_renderer('renderer', 'ao', {
+    'scene': scene.loc(),
+    'output': film.loc(),
     'spp': 10
 })
+renderer.render()
 
-img = np.copy(lm.buffer(lm.asset('film1')))
+img = np.copy(film.buffer())
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')

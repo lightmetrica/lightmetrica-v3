@@ -8,9 +8,43 @@
 #include <lm/serial.h>
 #include <lm/math.h>
 
-LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
+// Serializaition helper
+namespace lm::serial {
+    template <typename... Ts>
+    void save(std::ostream& os, Ts&& ... v) {
+        lm::OutputArchive ar(os);
+        ar(std::forward<Ts>(v)...);
+    }
 
-// ----------------------------------------------------------------------------
+    static void save_owned(std::ostream& os, lm::Component* v) {
+        lm::OutputArchive ar(os);
+        cereal::save_owned(ar, v);
+    }
+
+    template <typename... Ts>
+    void load(std::istream& is, Ts& ... v) {
+        lm::InputArchive ar(is);
+        ar(v...);
+        ar.foreach_weakptr([](std::uintptr_t address, const std::string& loc) {
+            Component** weakptr = (Component * *)address;
+            *weakptr = lm::comp::get<Component>(loc);
+        });
+    }
+
+    template <typename T>
+    void save(const std::string& path, T&& v) {
+        std::ofstream os(path, std::ios::out | std::ios::binary);
+        save(os, std::forward<T>(v));
+    }
+
+    template <typename T>
+    void load(const std::string& path, T& v) {
+        std::ifstream is(path, std::ios::in | std::ios::binary);
+        load(is, v);
+    }
+}
+
+LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
 // Type trait to check the type are comparable.
 template <typename T, typename = void>
@@ -348,7 +382,7 @@ TEST_CASE("Serialization") {
             CHECK(s1 == s2);
         }
 
-        SUBCASE("Assets") {
+        SUBCASE("AssetGroup") {
             // Round-trip tests for various assets
             SUBCASE("Film") {
                 check_save_and_load_round_trip_compare_loaded(

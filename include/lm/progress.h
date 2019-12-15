@@ -16,7 +16,7 @@ LM_NAMESPACE_BEGIN(progress)
 */
 
 //! Default progress reporter type
-constexpr const char* DefaultType = "progress::default";
+constexpr const char* DefaultType = "default";
 
 /*!
     \brief Initialize progress reporter context.

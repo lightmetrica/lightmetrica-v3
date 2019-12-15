@@ -34,45 +34,52 @@ import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
 lm.init()
-lm.parallel.init('parallel::openmp', {
-    'num_threads': -1
-})
-lm.log.init('logger::jupyter', {})
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
 
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_nanort'))
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 
-accels = [
-    'accel::sahbvh',
-    'accel::nanort',
-    'accel::embree',
-    'accel::embreeinstanced'
+accel_names = [
+    'sahbvh',
+    'nanort',
+    'embree',
+    'embreeinstanced'
 ]
-scenes = lmscene.scenes_small()
+scene_names = lmscene.scenes_small()
 
-build_time_df = pd.DataFrame(columns=accels, index=scenes)
-render_time_df = pd.DataFrame(columns=accels, index=scenes)
-for scene in scenes:
-    lm.reset()
-    lmscene.load(env.scene_path, scene)
-    for accel in accels:
-        lm.asset('film_output', 'film::bitmap', {
-            'w': 1920,
-            'h': 1080
-        })
+# +
+build_time_df = pd.DataFrame(columns=accel_names, index=scene_names)
+render_time_df = pd.DataFrame(columns=accel_names, index=scene_names)
+
+film = lm.load_film('film_output', 'bitmap', {
+    'w': 1920,
+    'h': 1080
+})
+
+for scene_name in scene_names:
+    # Create scene w/o accel
+    scene = lm.load_scene('scene', 'default', {})
+    lmscene.load(scene, env.scene_path, scene_name)    
+    renderer = lm.load_renderer('renderer', 'raycast', {
+        'scene': scene.loc(),
+        'output': film.loc()
+    })
         
+    for accel_name in accel_names:
+        accel = lm.load_accel('accel', accel_name, {})
+        scene.set_accel(accel.loc())
         def build():
-            lm.build(accel, {})
+            scene.build()
         build_time = timeit.timeit(stmt=build, number=1)
-        build_time_df[accel][scene] = build_time
+        build_time_df[accel_name][scene_name] = build_time
 
         def render():
-            lm.render('renderer::raycast', {
-                'output': lm.asset('film_output')
-            })
+            renderer.render()
         render_time = timeit.timeit(stmt=render, number=1)
-        render_time_df[accel][scene] = render_time
+        render_time_df[accel_name][scene_name] = render_time
+# -
 
 build_time_df
 

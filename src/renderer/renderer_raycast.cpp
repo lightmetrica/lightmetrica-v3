@@ -15,19 +15,21 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 class Renderer_Raycast final : public Renderer {
 private:
+    Scene* scene_;
+    Film* film_;
     Vec3 bg_color_;
     bool use_constant_color_;
     bool visualize_normal_;
     std::optional<Vec3> color_;
-    Film* film_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(bg_color_, use_constant_color_, visualize_normal_, film_, sched_);
+        ar(scene_, film_, bg_color_, use_constant_color_, visualize_normal_, sched_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, scene_);
         comp::visit(visit, film_);
         comp::visit(visit, sched_);
     }
@@ -41,6 +43,7 @@ public:
 
 public:
     virtual void construct(const Json& prop) override {
+        scene_ = json::comp_ref<Scene>(prop, "scene");
         bg_color_ = json::value(prop, "bg_color", Vec3(0_f));
         use_constant_color_ = json::value(prop, "use_constant_color", false);
         visualize_normal_ = json::value(prop, "visualize_normal", false);
@@ -53,18 +56,18 @@ public:
             });
     }
 
-    virtual void render(const Scene* scene) const override {
-		scene->require_primitive();
-		scene->require_accel();
-		scene->require_camera();
+    virtual void render() const override {
+		scene_->require_primitive();
+		scene_->require_accel();
+		scene_->require_camera();
 
         film_->clear();
         const auto size = film_->size();
         sched_->run([&](long long index, long long, int) {
             const int x = int(index % size.w);
             const int y = int(index / size.w);
-            const auto ray = scene->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
-            const auto sp = scene->intersect(ray);
+            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
+            const auto sp = scene_->intersect(ray);
             if (!sp) {
                 film_->set_pixel(x, y, bg_color_);
                 return;
@@ -73,7 +76,7 @@ public:
                 film_->set_pixel(x, y, glm::abs(sp->geom.n));
             }
             else {
-                const auto R = color_ ? *color_ : scene->reflectance(*sp, -1);
+                const auto R = color_ ? *color_ : scene_->reflectance(*sp, -1);
                 auto C = R ? *R : Vec3();
                 if (!use_constant_color_) {
                     C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));

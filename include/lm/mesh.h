@@ -86,6 +86,7 @@ public:
     virtual Point surface_point(int face, Vec2 uv) const = 0;
 
     /*!
+        \brief Get number of triangles.
     */
     virtual int num_triangles() const = 0;
 };

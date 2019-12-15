@@ -34,62 +34,66 @@ import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
 lm.init()
-lm.parallel.init('parallel::openmp', {
-    'numThreads': -1
-})
-lm.log.init('logger::jupyter', {})
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
 
-lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_nanort'))
+lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 lm.comp.load_plugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
 
 
-def build_and_render(scene):
+def build_and_render(scene_name):
     lm.reset()
-    lmscene.load(env.scene_path, scene)
-    lm.build('accel::nanort', {})
-    lm.asset('film_output', 'film::bitmap', {
+    accel = lm.load_accel('accel', 'embree', {})
+    scene = lm.load_scene('scene', 'default', {
+        'accel': accel.loc()
+    })
+    lmscene.load(scene, env.scene_path, scene_name)
+    scene.build()
+    film = lm.load_film('film_output', 'bitmap', {
         'w': 1920,
         'h': 1080
     })
-    lm.render('renderer::raycast', {
-        'output': lm.asset('film_output')
+    renderer = lm.load_renderer('renderer', 'raycast', {
+        'scene': scene.loc(),
+        'output': film.loc()
     })
-    return np.copy(lm.buffer(lm.asset('film_output')))
+    renderer.render()
+    return np.copy(film.buffer())
 
 
-objloaders = ['objloader::tinyobjloader']
-scenes = lmscene.scenes_small()
+objloaders = ['tinyobjloader']
+scene_names = lmscene.scenes_small()
 
 
 def rmse_pixelwised(img1, img2):
     return np.sqrt(np.sum((img1 - img2) ** 2, axis=2) / 3)
 
 
-for scene in scenes:
+for scene_name in scene_names:
     # Reference
-    lm.objloader.init('objloader::simple', {})
-    ref = build_and_render(scene)
+    lm.objloader.init('simple', {})
+    ref = build_and_render(scene_name)
     
     # Visualize reference
     f = plt.figure(figsize=(15,15))
     ax = f.add_subplot(111)
     ax.imshow(np.clip(np.power(ref,1/2.2),0,1), origin='lower')
-    ax.set_title('{}, objloader::simple'.format(scene))
+    ax.set_title('{}, simple'.format(scene_name))
     plt.show()
     
     # Check consistency with other loaders
     for objloader in objloaders:
         # Render
         lm.objloader.init(objloader, {})
-        img = build_and_render(scene)
+        img = build_and_render(scene_name)
         diff = rmse_pixelwised(ref, img)
     
         # Visualize
         f = plt.figure(figsize=(15,15))
         ax = f.add_subplot(111)
         ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
-        ax.set_title('{}, {}'.format(scene, objloader))
+        ax.set_title('{}, {}'.format(scene_name, objloader))
         plt.show()
     
         # Visualize the difference image
@@ -99,5 +103,5 @@ for scene in scenes:
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax)
-        ax.set_title('{}, objloader::simple vs. {}'.format(scene, objloader))
+        ax.set_title('{}, simple vs. {}'.format(scene_name, objloader))
         plt.show()

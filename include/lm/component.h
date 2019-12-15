@@ -411,10 +411,16 @@ LM_PUBLIC_API void unreg(const std::string& key);
     This function loads a plugin from a specified path.
     The components inside the plugin are automatically registered to the framework
     and ready to use with :cpp:func:`lm::comp::create` function.
-    If the loading fails, the function returns false.
+    If the loading fails, the function throws an exception.
     \endrst
 */
-LM_PUBLIC_API bool load_plugin(const std::string& path);
+LM_PUBLIC_API void load_plugin(const std::string& path);
+
+/*!
+    \brief Unload a plugin
+    \param path Path to a plugin.
+*/
+LM_PUBLIC_API void unload_plugin(const std::string& path);
 
 /*!
     \brief Load plugins inside a given directory.
@@ -434,7 +440,7 @@ LM_PUBLIC_API void load_plugin_directory(const std::string& directory);
     This functions unloads all the plugins loaded so far.
     \endrst
 */
-LM_PUBLIC_API void unload_plugins();
+LM_PUBLIC_API void unload_all_plugins();
 
 /*!
     \brief Iterate registered component names.
@@ -478,8 +484,9 @@ LM_NAMESPACE_END(detail)
 */
 
 using detail::load_plugin;
+using detail::unload_plugin;
 using detail::load_plugin_directory;
-using detail::unload_plugins;
+using detail::unload_all_plugins;
 using detail::foreach_registered;
 
 /*!
@@ -682,21 +689,24 @@ public:
 */
 class ScopedLoadPlugin {
 private:
-    bool valid_ = true;
-
+    std::vector<std::string> paths_;
+    
 public:
-    ScopedLoadPlugin(const std::string& path) : ScopedLoadPlugin({ path }) {}
+    ScopedLoadPlugin(const std::string& path)
+        : ScopedLoadPlugin({ path })
+    {}
     ScopedLoadPlugin(std::initializer_list<std::string> paths) {
-        for (auto path : paths) {
-            valid_ |= load_plugin(path);
-            if (!valid_) { break; }
+        for (const auto& path : paths) {
+            load_plugin(path);
+            paths_.push_back(path);
         }
     }
-    ~ScopedLoadPlugin() { unload_plugins(); }
+    ~ScopedLoadPlugin() {
+        for (const auto& path : paths_) {
+            unload_plugin(path);
+        }
+    }
     LM_DISABLE_COPY_AND_MOVE(ScopedLoadPlugin)
-
-public:
-    bool valid() const { return valid_; }
 };
 
 // ------------------------------------------------------------------------------------------------

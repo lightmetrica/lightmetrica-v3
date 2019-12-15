@@ -12,36 +12,6 @@ import time
 from IPython import get_ipython
 from IPython.display import display, Markdown
 
-def jupyter_init_config(outfilm):
-    """ init() configuration for jupyter notebook extension """
-    return {
-        # Configure logger for jupyter notebook
-        'logger': 'logger::jupyter',
-        
-        # Configure progress reporter for jupyter notebook
-        # We can utilize multiple instance of progress reporters.
-        # In this example, we used progress bar UI (progress::jupyter)
-        # and progress image reporter (progress::film_jupyter)
-        'progress': {
-            'progress::mux': [
-                {
-                    'progress::jupyter': {}
-                },
-                {
-                    'progress::delay': {
-                        'delay': 1000,
-                        'progress': {
-                            'progress::film_jupyter': {
-                                'film': outfilm,
-                                'size': [10,5]
-                            }
-                        }
-                    }
-                }
-            ]
-        }
-    }
-
 def widen(arg):
     from IPython.core.display import display, HTML
     display(HTML("<style>.container { width:100% !important; }</style>"))
@@ -73,6 +43,10 @@ def load_ipython_extension(ip):
             self.severity = 0
             self.n = 0
             self.start = time.time()
+            if (prop is not None) and ('show_line_and_filename' in prop):
+                self.show_line_and_filename = prop['show_line_and_filename']
+            else:
+                self.show_line_and_filename = False
             return True
         def log(self, level, severity, filename, line, message):
             if self.severity > severity:
@@ -92,8 +66,11 @@ def load_ipython_extension(ip):
                 name = 'I'
             elapsed = time.time() - self.start
             file_no_ext = os.path.splitext(os.path.basename(filename))[0]
-            line_and_file = '{}@{}'.format(line, file_no_ext)[:10]
-            header = '[{}|{:.3f}|{:<10}] '.format(name, elapsed, line_and_file)
+            if self.show_line_and_filename:
+                line_and_file = '{}@{}'.format(line, file_no_ext)[:10]
+                header = '[{}|{:.3f}|{:<10}] '.format(name, elapsed, line_and_file)
+            else:
+                header = '[{}|{:.3f}] '.format(name, elapsed)
             spaces = ('.' * (self.n * 2)) + (' ' if self.n > 0 else '')
             s = header + spaces + message
             print(s, file=out)

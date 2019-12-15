@@ -32,30 +32,30 @@ import matplotlib.pyplot as plt
 import lightmetrica as lm
 # %load_ext lightmetrica_jupyter
 
-if not lm.Release:
-    lm.debug.attachToDebugger()
-
 lm.init()
-lm.log.init('logger::jupyter')
-lm.progress.init('progress::jupyter')
-if not lm.Release:
-    lm.parallel.init('parallel::openmp', {
-        'numThread': 1
-    })
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
 
+# + {"nbsphinx": "hidden"}
+if not lm.Release:
+    lm.debug.attach_to_debugger()
+    lm.parallel.init('openmp', {
+        'numThread': 1
+    })
+
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# Similarly we define the assets. In addition to ``film``, we define ``camera``, ``mesh``, and ``material``. Although the types of assets are different, we can use consistent interface to define the assets. Here we prepare for a pinhole camera (``camera::pinhole``), a raw mesh (``mesh::raw``), and a diffuse material (``material::diffuse``) with the corrsponding parameters. Please refer to :ref:`component_ref` for the detailed description of the parameters.
+# Similarly we define the assets. In addition to ``film``, we define ``camera``, ``mesh``, and ``material``. Although the types of assets are different, we can use consistent interface to define the assets: ``lm::load_*()`` functions. Here we prepare for a pinhole camera (``camera::pinhole``), a raw mesh (``mesh::raw``), and a diffuse material (``material::diffuse``) with the corrsponding parameters. Please refer to :ref:`component_ref` for the detailed description of the parameters.
 
 # +
 # Film for the rendered image
-lm.asset('film1', 'film::bitmap', {
+film = lm.load_film('film', 'bitmap', {
     'w': 1920,
     'h': 1080
 })
 
 # Pinhole camera
-lm.asset('camera1', 'camera::pinhole', {
+camera = lm.load_camera('camera', 'pinhole', {
     'position': [0,0,5],
     'center': [0,0,0],
     'up': [0,1,0],
@@ -63,7 +63,7 @@ lm.asset('camera1', 'camera::pinhole', {
 })
 
 # Load mesh with raw vertex data
-lm.asset('mesh1', 'mesh::raw', {
+mesh = lm.load_mesh('mesh', 'raw', {
     'ps': [-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1],
     'ns': [0,0,1],
     'ts': [0,0,1,0,1,1,0,1],
@@ -75,42 +75,58 @@ lm.asset('mesh1', 'mesh::raw', {
 })
 
 # Material
-lm.asset('material1', 'material::diffuse', {
+material = lm.load_material('material', 'diffuse', {
     'Kd': [1,1,1]
 })
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# The scene of Lightmetrica is defined by a set of ``primitives``. A primitive specifies an object inside the scene by associating geometries and materials with transformation. We can define a primitive by :cpp:func:`lm::primitive` function where we specifies transformation matrix and associating assets as arguments.
-# In this example we define two pritimives; one for camera and the other for quad mesh with diffuse material. Transformation is given by 4x4 matrix. Here we specified identify matrix meaning no transformation.
-#
-# .. note::
-#     Specifically, the scene is represented by a *scene graph*, a directed acyclic graph representing spatial structure and attributes of the scene. Each node of the scene graph describes either a primitive or a pritmive group. We provide a set of APIs to manipulate the structure of scene graph for advanced usage like instancing. For detail, please refer to TODO.
+# Next we will create a `scene` asset. The scene asset can also be created :cpp:func:`load_scene` function. Here, we will create ``scene::default`` asset.
+# A scene internally `uses acceleration structure` for ray-scene intersections, which can be specified by ``accel`` parameter.
+# -
 
-# +
-# Camera
-lm.primitive(lm.identity(), {
-    'camera': lm.asset('camera1')
-})
-
-# Mesh
-lm.primitive(lm.identity(), {
-    'mesh': lm.asset('mesh1'),
-    'material': lm.asset('material1')
+accel = lm.load_accel('accel', 'sahbvh', {})
+scene = lm.load_scene('scene', 'default', {
+    'accel': accel.loc()
 })
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
-# This example used ``renderer::raycast`` for rendering. 
-# This renderer internally uses acceleration structure for ray-scene intersections. 
-# The acceleration structure can be given by :cpp:func:`lm::build` function. In this example we used ``accel::sahbvh``.
+# The scene of Lightmetrica is defined by a set of ``primitives``. A primitive specifies an object inside the scene by associating geometries and materials. We can define a primitive by :cpp:func:`lm::Scene::add_primitive` function.
+#
+# .. note::
+#     If you need transformation applied to the geometry, you can use :cpp:func:`lm::Scene::add_transformed_primitive` function. The transformation is given by 4x4 matrix. 
+#
+# In this example we define two pritimives; one for camera and the other for quad mesh with diffuse material. We don't apply any transformation to the geometry, so we use :cpp:func:`lm::Scene::add_primitive` function.
+#
+# .. note::
+#     Specifically, the scene is represented by a *scene graph*, a directed acyclic graph representing spatial structure and attributes of the scene. Each node of the scene graph describes either a primitive or a pritmive group. We provide a set of APIs to manipulate the structure of scene graph for advanced usage like instancing.
 # -
 
-lm.build('accel::sahbvh', {})
-lm.render('renderer::raycast', {
-    'output': lm.asset('film1'),
-    'bg_color': [0,0,0]
+scene.add_primitive({
+    'camera': camera.loc()
+})
+scene.add_primitive({
+    'mesh': mesh.loc(),
+    'material': material.loc()
 })
 
-img = np.copy(lm.buffer(lm.asset('film1')))
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# After the configuration of the primitives, we must `build` the scene, which can be done by :cpp:func:`lm::Scene::build` function.
+# -
+
+scene.build()
+
+# + {"raw_mimetype": "text/restructuredtext", "active": ""}
+# Nowe we are ready for rendering. Here we will use ``renderer::raycast`` asset, which takes ``scene`` as a parameter. The rendered image will out written in the film asset specified by ``output`` parameter. We can also configure the background color with ``bg_color`` parameter.
+# -
+
+renderer = lm.load_renderer('renderer', 'raycast', {
+    'scene': scene.loc(),
+    'output': film.loc(),
+    'bg_color': [0,0,0]
+})
+renderer.render()
+
+img = np.copy(film.buffer())
 f = plt.figure(figsize=(15,15))
 ax = f.add_subplot(111)
 ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')

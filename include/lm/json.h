@@ -219,7 +219,7 @@ T value(const Json& j, const std::string& name, T&& def) {
     \rst
     This function returns a component pointer
     referenced by a component locator specified by a JSON element.
-    If not found, the function returns nullptr.
+    If failed, this function throws an exception.
     \endrst
 */
 template <typename T>
@@ -235,6 +235,34 @@ T* comp_ref(const Json& j, const std::string& name) {
     auto* p = comp::get<T>(ref);
     if (!p) {
         LM_THROW_EXCEPTION(Error::InvalidArgument, "Invalid componen reference [name='{}', ref='{}']", name, ref);
+    }
+    return p;
+}
+
+/*!
+    \brief Get value inside JSON element as component (if failed, nullptr).
+    \param j Json object.
+    \param name Name of the element.
+
+    \rst
+    This function returns a component pointer
+    referenced by a component locator specified by a JSON element.
+    Unlike :cpp:func:`lm::json::comp_ref`, this function returns ``nullptr`` if failed.
+    \endrst
+*/
+template <typename T>
+T* comp_ref_or_nullptr(const Json& j, const std::string& name) {
+    const auto it = j.find(name);
+    if (it == j.end()) {
+        return nullptr;
+    }
+    if (!it->is_string()) {
+        return nullptr;
+    }
+    const std::string ref = *it;
+    auto* p = comp::get<T>(ref);
+    if (!p) {
+        return nullptr;
     }
     return p;
 }

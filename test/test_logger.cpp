@@ -10,7 +10,7 @@
 LM_NAMESPACE_BEGIN(LM_TEST_NAMESPACE)
 
 TEST_CASE("Logger") {
-    lm::log::ScopedInit log_("logger::default", {
+    lm::log::ScopedInit log_("default", {
         {"color", false}
     });
 
@@ -154,7 +154,7 @@ class LoggerContext_User final : public lm::log::LoggerContext {
 LM_COMP_REG_IMPL(LoggerContext_User, "logger::user");
 
 TEST_CASE("User-defined logger") {
-    lm::log::ScopedInit log_("logger::user");
+    lm::log::ScopedInit log_("user");
     std::string out;
     out = capture_stdout([]() { LM_INFO("Info"); });
     CHECK(out == "[user] Info\n");

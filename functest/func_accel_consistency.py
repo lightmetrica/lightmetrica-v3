@@ -35,10 +35,8 @@ import lightmetrica as lm
 # + {"code_folding": [0]}
 # Initialize Lightmetrica
 lm.init()
-lm.log.init('logger::jupyter', {})
-lm.parallel.init('parallel::openmp', {
-    'numThreads': -1
-})
+lm.log.init('jupyter')
+lm.progress.init('jupyter')
 lm.info()
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_nanort'))
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
@@ -52,19 +50,26 @@ lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 
 # + {"code_folding": [0]}
 # Function to build and render the image
-def build_and_render(accel):
-    lm.build(accel, {})
-    lm.asset('film_output', 'film::bitmap', {'w': 1920, 'h': 1080})
-    lm.render('renderer::raycast', {
-        'output': lm.asset('film_output')
+def build_and_render(scene, accel_name):
+    accel = lm.load_accel('accel', accel_name, {})
+    scene.set_accel(accel.loc())
+    scene.build()
+    film = lm.load_film('film_output', 'bitmap', {
+        'w': 1920,
+        'h': 1080
     })
-    return np.copy(lm.buffer(lm.asset('film_output')))
+    renderer = lm.load_renderer('renderer', 'raycast', {
+        'scene': scene.loc(),
+        'output': film.loc()
+    })
+    renderer.render()
+    return np.copy(film.buffer())
 
 
 # + {"code_folding": []}
 # Accels and scenes
-accels = ['accel::nanort', 'accel::embree', 'accel::embreeinstanced']
-scenes = lmscene.scenes_small()
+accel_names = ['nanort', 'embree', 'embreeinstanced']
+scene_names = lmscene.scenes_small()
 
 
 # +
@@ -78,26 +83,26 @@ def rmse_pixelwised(img1, img2):
 # -
 
 # Execute rendering for each scene and accel
-rmse_df = pd.DataFrame(columns=accels, index=scenes)
-for scene in scenes:
-    print("Rendering [scene='{}']".format(scene))
+rmse_df = pd.DataFrame(columns=accel_names, index=scene_names)
+for scene_name in scene_names:
+    print("Rendering [scene='{}']".format(scene_name))
     
     # Load scene
-    lm.reset()
-    lmscene.load(env.scene_path, scene)
+    scene = lm.load_scene('scene', 'default', {})
+    lmscene.load(scene, env.scene_path, scene_name)
     
     # Use the image for 'accel::sahbvh' as reference
-    ref = build_and_render('accel::sahbvh')
+    ref = build_and_render(scene, 'sahbvh')
     
     # Check consistency for other accels
-    for accel in accels:
+    for accel_name in accel_names:
         # Render and compute a different image
-        img = build_and_render(accel)
+        img = build_and_render(scene, accel_name)
         diff = rmse_pixelwised(ref, img)
         
         # Record rmse
         e = rmse(ref, img)
-        rmse_df[accel][scene] = e
+        rmse_df[accel_name][scene_name] = e
     
         # Visualize the difference image
         f = plt.figure(figsize=(10,10))
@@ -106,7 +111,7 @@ for scene in scenes:
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax)
-        ax.set_title('{}, accel::sahbvh vs. {}'.format(scene, accel))
+        ax.set_title('{}, sahbvh vs. {}'.format(scene_name, accel_name))
         plt.show()
 
 # ### RMSE

@@ -25,6 +25,7 @@ private:
         std::chrono::high_resolution_clock::now();
     std::mutex mutex_;
     bool color_;
+    bool show_line_and_file_;
 
     struct Style {
         std::string name;
@@ -42,6 +43,7 @@ private:
 public:
     virtual void construct(const Json& prop) override {
         color_ = json::value(prop, "color", true);
+        show_line_and_file_ = json::value<bool>(prop, "show_line_and_filename", true);
     }
 
 public:
@@ -69,9 +71,17 @@ public:
         // <message> = <header> <body><eol><whitespaces>
         // <header>  = [{<log type>|<elapsed>|<line>@<filename>]
         // <body>    = <indentations><message>
-        const auto header = fmt::format("[{}|{:.3f}|{:<10}] ",
-            style.name, elapsed.count() / 1000.0,
-            line_and_filename.substr(0, 10));
+        std::string header;
+        if (show_line_and_file_) {
+            header = fmt::format("[{}|{:.3f}|{:<10}] ",
+                style.name, elapsed.count() / 1000.0,
+                line_and_filename.substr(0, 10));
+        }
+        else {
+            header = fmt::format("[{}|{:.3f}] ",
+                style.name, elapsed.count() / 1000.0,
+                line_and_filename.substr(0, 10));
+        }
 
         // Case with progress message
         // Progress message does not support multiline message.
@@ -172,7 +182,7 @@ LM_COMP_REG_IMPL(LoggerContext_Default, "logger::default");
 using Instance = comp::detail::ContextInstance<LoggerContext>;
 
 LM_PUBLIC_API void init(const std::string& type, const Json& prop) {
-    Instance::init(type, prop);
+    Instance::init("logger::" + type, prop);
 }
 
 LM_PUBLIC_API void shutdown() {

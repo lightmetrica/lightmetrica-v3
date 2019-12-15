@@ -75,28 +75,21 @@ struct DistanceSample {
 class Scene : public Component {
 public:
     /*!
-        \brief Loads an asset.
-        \param name Name of the asset.
-        \param impl_key Key of component implementation in `interface::implementation` format.
-        \param prop Properties.
-        \return Pointer to the created. nullptr if failed.
-
-        \rst
-        Loads an asset from the given information and registers to the class.
-        ``impl_key`` is used to create an instance and ``prop`` is used to construct it.
-        ``prop`` is passed to :cpp:func:`lm::Component::construct` function of
-        the implementation of the asset.
-		This function returns a pointer to the created instance.
-		If failed, it returns nullptr.
-
-        If the asset with same name is already loaded, the function tries
-        to deregister the previously-loaded asset and reload an asset again.
-        If the global component hierarchy contains a reference to the original asset,
-        the function automatically resolves the reference to the new asset.
-        For usage, see ``functest/func_update_asset.py``.
-        \endrst
+        \brief Reset the scene.
     */
-    virtual Component* load_asset(const std::string& name, const std::string& impl_key, const Json& prop) = 0;
+    virtual void reset() = 0;
+
+    /*!
+        \brief Get underlying acceleration structure.
+        \return Instance.
+    */
+    virtual Accel* accel() const = 0;
+
+    /*!
+        \brief Set underlying acceleration structure.
+        \param accel_loc Locator to the accel asset.
+    */
+    virtual void set_accel(const std::string& accel_loc) = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -106,21 +99,42 @@ public:
     */
     virtual int root_node() = 0;
 
-    /*!
-        \brief Load scene node(s).
-        \param type Scene node type.
+	/*!
+		\brief Create primitive node.
         \param prop Property containing references to the scene components.
         \return Index of the created node.
 
-        \rst
-        This function construct a primitive and add it to the scene
-        given the transformation and the references specified in ``prop``.
-        The type of the primitive created by this function changes according to
-        the properties in ``prop``.
-        The function returns true if the loading is a success.
-        \endrst
-    */
-    virtual int create_node(SceneNodeType type, const Json& prop) = 0;
+		\rst
+		This function create a primitive scene node and add it to the scene.
+		The references to the assets are specified in ``prop``.
+		The accepted assets types are ``mesh``, ``material``, ``light``, ``camera``, and ``medium``.
+		This function returns node index if succedded.
+		\endrst
+	*/
+	virtual int create_primitive_node(const Json& prop) = 0;
+
+	/*!
+		\brief Create group node.
+		\param transform Local transoform of the node.
+
+		\rst
+		This function creates a group scen node and add it to the scene.
+		''transform'' specifies the transformation of the node to be applied to the child nodes.
+		This function returns node index if succedded.
+		\endrst
+	*/
+	virtual int create_group_node(Mat4 transform) = 0;
+
+	/*!
+		\brief Create instance group node.
+
+		\rst
+		This function creates a special group node for instance group.
+		The child nodes of this node are considered as an instance group.
+		This function returns node index if succedded.
+		\endrst
+	*/
+	virtual int create_instance_group_node() = 0;
 
     /*!
         \brief Add primitive group.
@@ -149,6 +163,45 @@ public:
         \return Index of the created node.
     */
     virtual int create_group_from_model(const std::string& model_loc) = 0;
+
+    /*!
+        \brief Create primitive(s) and add to the scene.
+        \param prop Properties for configuration.
+        \see `example/quad.cpp`
+        \see `example/raycast.cpp`
+
+        \rst
+        This function creates primitive(s) and registers to the framework.
+        A primitive is a scene object associating the assets such as
+        meshes or materials. The coordinates of the object is
+        speficied by a 4x4 transformation matrix.
+        We can use the same assets to define different primitives
+        with different transformations.
+
+        If ``model`` parameter is specified,
+        the function will register primitives generated from the model.
+        In this case, the transformation is applied to all primitives to be generated.
+        \endrst
+    */
+    void add_primitive(const Json& prop) {
+        add_transformed_primitive(Mat4(1_f), prop);
+    }
+
+    /*!
+        \brief Create primitive(s) and add to the scene with transform.
+        \param transform Transformation matrix.
+        \param prop Properties for configuration.
+    */
+    void add_transformed_primitive(Mat4 transform, const Json& prop) {
+        auto t = create_group_node(transform);
+        if (prop.find("model") != prop.end()) {
+            add_child_from_model(t, prop["model"]);
+        }
+        else {
+            add_child(t, create_primitive_node(prop));
+        }
+        add_child(root_node(), t);
+    }
 
     // --------------------------------------------------------------------------------------------
 
@@ -271,7 +324,7 @@ public:
 		\brief Throws an exception if there is no accel created for the scene.
 	*/
 	virtual void require_accel() const {
-		if (underlying("accel")) {
+		if (accel()) {
 			return;
 		}
 		LM_THROW_EXCEPTION(Error::Unsupported,
@@ -301,10 +354,8 @@ public:
 
     /*!
         \brief Build acceleration structure.
-        \param name Name of the acceleration structure.
-        \param prop Property for configuration.
     */
-    virtual void build(const std::string& name, const Json& prop) = 0;
+    virtual void build() = 0;
 
     /*!
         \brief Compute closest intersection point.

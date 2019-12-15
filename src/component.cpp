@@ -73,7 +73,7 @@ public:
     }
 
     // Retrieve an address of an exported symbol.
-    void* getFuncPointer(const std::string& symbol) const {
+    void* get_func_pointer(const std::string& symbol) const {
         #if LM_PLATFORM_WINDOWS
         void* address = (void*)GetProcAddress(handle, symbol.c_str());
         if (address == nullptr) {
@@ -132,10 +132,35 @@ private:
 // ------------------------------------------------------------------------------------------------
 
 class ComponentContext final {
+private:
+    // Registered implementations
+    struct CreateAndReleaseFunctions {
+        Component::CreateFunction create_func;
+        Component::ReleaseFunction release_func;
+    };
+    std::unordered_map<std::string, CreateAndReleaseFunctions> func_map_;
+
+    // Loaded plugins
+    std::unordered_map<std::string, std::unique_ptr<SharedLibrary>> plugins_;
+
+    // Root component
+    Component* root_ = nullptr;
+
 public:
     static ComponentContext& instance() {
         static ComponentContext instance;
         return instance;
+    }
+
+private:
+    // Get plugin path according to the current configuration
+    fs::path plugin_path(const std::string& p) const {
+        #if LM_DEBUG_MODE
+        fs::path path(p + "-debug");
+        #else
+        fs::path path(p);
+        #endif
+        return path;
     }
 
 public:
@@ -169,14 +194,18 @@ public:
         func_map_.erase(key);
     }
 
-    bool load_plugin(const std::string& p) {
-        #if LM_DEBUG_MODE
-        fs::path path(p + "-debug");
-        #else
-        fs::path path(p);
-        #endif
+    void load_plugin(const std::string& p) {
+        // Path and filename
+        const auto path = plugin_path(p);
+        const auto filename = path.filename().string();
 
-        LM_INFO("Loading plugin [name='{}']", path.filename().string());
+        // Check if the plugin had been loaded already
+        if (plugins_.find(path.string()) != plugins_.end()) {
+            LM_WARN("Plugin is already loaded [name='{}']", filename);
+            return;
+        }
+
+        LM_INFO("Loading plugin [name='{}']", filename);
         LM_INDENT();
 
         // Load plugin
@@ -186,16 +215,35 @@ public:
         SetDllDirectory(parent.c_str());
         #endif
         if (!plugin->load(path.string())) {
-            LM_WARN("Failed to load library [path='{}']", path.string());
-            return false;
+            LM_THROW_EXCEPTION(Error::IOError,
+                "Failed to load library [path='{}']", path.string());
         }
         #if LM_PLATFORM_WINDOWS
         SetDllDirectory(nullptr);
         #endif
 
-        plugins_.push_back(std::move(plugin));
-        LM_INFO("Successfully loaded");
-        return true;
+        plugins_[path.string()] = std::move(plugin);
+        LM_INFO("Successfully loaded [name='{}']", filename);
+    }
+
+    void unload_plugin(const std::string& p) {
+        const auto path = plugin_path(p);
+        const auto filename = path.filename().string();
+        
+        // Check if the given plugin is loaded
+        auto it = plugins_.find(path.string());
+        if (it == plugins_.end()) {
+            LM_THROW_EXCEPTION(Error::IOError,
+                "Plugin is not loaded [name='{}']", filename);
+        }
+
+        // Unload plugin
+        if (!it->second->unload()) {
+            LM_THROW_EXCEPTION(Error::IOError,
+                "Failed to unload plugin [name='{}']", filename);
+        }
+
+        plugins_.erase(it);
     }
 
     void load_plugin_directory(const std::string& directory) {
@@ -215,8 +263,8 @@ public:
         #endif
 
         // Enumerate dynamic libraries in #pluginDir
-        fs::directory_iterator endIter;
-        for (fs::directory_iterator it(directory); it != endIter; ++it) {
+        fs::directory_iterator end_iter;
+        for (fs::directory_iterator it(directory); it != end_iter; ++it) {
             if (!fs::is_regular_file(it->status())) {
                 continue;
             }
@@ -225,14 +273,14 @@ public:
             if (!std::regex_match(filename.c_str(), match, pluginNameExp)) {
                 continue;
             }
-            if (!load_plugin(it->path().stem().string().c_str())) {
-                continue;
-            }
+            load_plugin(it->path().stem().string().c_str());
         }
     }
 
-    void unload_plugins() {
-        for (auto& plugin : plugins_) { plugin->unload(); }
+    void unload_all_plugins() {
+        for (auto& plugin : plugins_) {
+            plugin.second->unload();
+        }
         plugins_.clear();
     }
 
@@ -289,21 +337,6 @@ public:
 
         return curr;
     }
-
-private:
-    // Registered implementations
-    struct CreateAndReleaseFunctions
-    {
-        Component::CreateFunction create_func;
-        Component::ReleaseFunction release_func;
-    };
-    std::unordered_map<std::string, CreateAndReleaseFunctions> func_map_;
-
-    // Loaded plugins
-    std::vector<std::unique_ptr<SharedLibrary>> plugins_;
-
-    // Root component
-    Component* root_ = nullptr;
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -320,16 +353,20 @@ LM_PUBLIC_API void unreg(const std::string& key) {
     ComponentContext::instance().unreg(key);
 }
 
-LM_PUBLIC_API bool load_plugin(const std::string& path) {
-    return ComponentContext::instance().load_plugin(path);
+LM_PUBLIC_API void load_plugin(const std::string& path) {
+    ComponentContext::instance().load_plugin(path);
+}
+
+LM_PUBLIC_API void unload_plugin(const std::string& path) {
+    ComponentContext::instance().unload_plugin(path);
 }
 
 LM_PUBLIC_API void load_plugin_directory(const std::string& directory) {
     ComponentContext::instance().load_plugin_directory(directory);
 }
 
-LM_PUBLIC_API void unload_plugins() {
-    ComponentContext::instance().unload_plugins();
+LM_PUBLIC_API void unload_all_plugins() {
+    ComponentContext::instance().unload_all_plugins();
 }
 
 LM_PUBLIC_API void foreach_registered(const std::function<void(const std::string& name)>& func) {
