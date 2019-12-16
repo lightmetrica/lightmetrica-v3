@@ -21,9 +21,9 @@ int main(int argc, char** argv) {
         lm::init();
         lm::parallel::init(lm::parallel::DefaultType, {
             #if LM_DEBUG_MODE
-            {"numThreads", 1}
+            {"num_threads", 1}
             #else
-            {"numThreads", -1}
+            {"num_threads", -1}
             #endif
         });
         lm::info();
@@ -50,13 +50,13 @@ int main(int argc, char** argv) {
         // Define assets
 
         // Film for the rendered image
-        lm::asset("film1", "film::bitmap", {
+        const auto* film = lm::load_asset<lm::Film>("film1", "film::bitmap", {
             {"w", opt["w"]},
             {"h", opt["h"]}
         });
 
         // Pinhole camera
-        lm::asset("camera1", "camera::pinhole", {
+        lm::assets()->load_asset("camera1", "camera::pinhole", {
             {"film", lm::asset("film1")},
             {"position", opt["eye"]},
             {"center", opt["lookat"]},
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
         });
 
         // OBJ model
-        lm::asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
+        lm::assets()->load_asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
 
         // Define scene primitives
 

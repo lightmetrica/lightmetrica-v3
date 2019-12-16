@@ -75,6 +75,18 @@ LM_PUBLIC_API void save_state_to_file(const std::string& path);
 LM_PUBLIC_API void load_state_from_file(const std::string& path);
 
 /*!
+    \brief Load an asset with given type.
+    \tparam T Component interface type.
+    \param name Name of the asset.
+    \param impl_key Key of component implementation in `interface::implementation` format.
+    \param prop Properties.
+*/
+template <typename T>
+T* load_asset(const std::string& name, const std::string& impl_key, const Json& prop) {
+    return dynamic_cast<T*>(assets()->load_asset(name, impl_key, prop));
+}
+
+/*!
     @}
 */
 
