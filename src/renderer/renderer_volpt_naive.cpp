@@ -43,13 +43,13 @@ public:
         rr_prob_ = json::value<Float>(prop, "rr_prob", .2_f);
         const auto sched_name = json::value<std::string>(prop, "scheduler");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
-#if VOLPT_IMAGE_SAMPLNG
+        #if VOLPT_IMAGE_SAMPLNG
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spi::" + sched_name, makeLoc("scheduler"), prop);
-#else
+        #else
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spp::" + sched_name, make_loc("scheduler"), prop);
-#endif
+        #endif
     }
 
     virtual void render() const override {
@@ -61,17 +61,17 @@ public:
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
-#if VOLPT_IMAGE_SAMPLNG
+            #if VOLPT_IMAGE_SAMPLNG
             LM_UNUSED(pixelIndex);
             const Vec4 window(0_f, 0_f, 1_f, 1_f);
-#else
+            #else
             // Pixel positions
             const int x = int(pixel_index % size.w);
             const int y = int(pixel_index / size.w);
             const auto dx = 1_f / size.w;
             const auto dy = 1_f / size.h;
             const Vec4 window(dx * x, dy * y, dx, dy);
-#endif
+            #endif
 
             // Path throughput
             Vec3 throughput(1_f);
@@ -104,10 +104,6 @@ public:
                 // Update throughput
                 throughput *= s->weight * sd->weight;
 
-                if (x == 70 && y == 16) {
-                    debug::poll_float("throughput", glm::compMax(throughput));
-                }
-
                 // Accumulate contribution from emissive interaction
                 if (scene_->is_light(sd->sp)) {
                     const auto C = throughput * scene_->eval_contrb_endpoint(sd->sp, -s->wo);
@@ -132,11 +128,11 @@ public:
             film_->splat(rasterPos, L);
         });
 
-#if VOLPT_IMAGE_SAMPLNG
+        #if VOLPT_IMAGE_SAMPLNG
         film_->rescale(Float(size.w * size.h) / processed);
-#else
+        #else
         film_->rescale(1_f / processed);
-#endif
+        #endif
     }
 };
 
