@@ -6,6 +6,7 @@
 #pragma once
 
 #include "component.h"
+#include "assetgroup.h"
 #include "math.h"
 #include <regex>
 #include <fstream>
@@ -82,7 +83,7 @@ LM_PUBLIC_API void load_state_from_file(const std::string& path);
     \param prop Properties.
 */
 template <typename T>
-T* load_asset(const std::string& name, const std::string& impl_key, const Json& prop) {
+T* load(const std::string& name, const std::string& impl_key, const Json& prop) {
     return dynamic_cast<T*>(assets()->load_asset(name, impl_key, prop));
 }
 

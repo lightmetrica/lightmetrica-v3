@@ -43,21 +43,17 @@ int main(int argc, char** argv) {
 
         // ----------------------------------------------------------------------------------------
 
-        #if LM_DEBUG_MODE
-        // Load internal state
-        lm::deserialize("lm.serialized");
-        #else
         // Define assets
 
         // Film for the rendered image
-        const auto* film = lm::load_asset<lm::Film>("film1", "film::bitmap", {
+        const auto* film = lm::load<lm::Film>("film1", "film::bitmap", {
             {"w", opt["w"]},
             {"h", opt["h"]}
         });
 
         // Pinhole camera
-        lm::assets()->load_asset("camera1", "camera::pinhole", {
-            {"film", lm::asset("film1")},
+        const auto* camera = lm::load<lm::Camera>("camera1", "camera::pinhole", {
+            {"film", film->loc()},
             {"position", opt["eye"]},
             {"center", opt["lookat"]},
             {"up", {0,1,0}},
@@ -65,41 +61,43 @@ int main(int argc, char** argv) {
         });
 
         // OBJ model
-        lm::assets()->load_asset("obj1", "model::wavefrontobj", { {"path", opt["obj"]} });
+        const auto* model = lm::load<lm::Model>("obj1", "model::wavefrontobj", {
+            {"path", opt["obj"]}
+        });
 
         // Define scene primitives
+        const auto* accel = lm::load<lm::Accel>("accel", "accel::sahbvh", {});
+        auto* scene = lm::load<lm::Scene>("scene", "scene::default", {
+            {"accel", accel->loc()}
+        });
 
         // Camera
-        lm::primitive(lm::Mat4(1), {
-            {"camera", lm::asset("camera1")}
+        scene->add_primitive({
+            {"camera", camera->loc()}
         });
 
         // Create primitives from model asset
-        lm::primitive(lm::Mat4(1), {
-            {"model", lm::asset("obj1")}
+        scene->add_primitive({
+            {"model", model->loc()}
         });
 
         // Build acceleration structure
-        lm::build("accel::sahbvh");
-
-        // Save internal state for the debug mode
-        lm::serialize("lm.serialized");
-        #endif
+        scene->build();
 
         // ----------------------------------------------------------------------------------------
 
         // Render an image
-        // _begin_render
-        lm::render("renderer::pt", {
-            {"output", lm::asset("film1")},
+        const auto* renderer = lm::load<lm::Renderer>("renderer", "renderer::pt", {
+            {"output", film->loc()},
+            {"scene", scene->loc()},
             {"scheduler", "sample"},
             {"spp", opt["spp"]},
             {"max_length", opt["len"]}
         });
-        // _end_render
+        renderer->render();
 
         // Save rendered image
-        lm::save(lm::asset("film1"), opt["out"]);
+        film->save(opt["out"]);
 
         // Shutdown the framework
         lm::shutdown();
