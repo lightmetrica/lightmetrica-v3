@@ -87,7 +87,7 @@ add_subdirectory(plugin)
 
 # Examples
 if (LM_BUILD_EXAMPLES)
-    #add_subdirectory(example)
+    add_subdirectory(example)
 endif()
 
 # Tests
