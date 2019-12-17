@@ -65,29 +65,29 @@ public:
             }
         }
         {
-            const auto schedName = json::value<std::string>(prop, "scheduler");
+            const auto sched_name = json::value<std::string>(prop, "scheduler");
             const auto s = json::value<std::string>(prop, "image_sample_mode", "pixel");
             if (s == "pixel") {
                 image_sample_mode_ = ImageSampleMode::Pixel;
                 sched_ = comp::create<scheduler::Scheduler>(
-                    "scheduler::spp::" + schedName, make_loc("scheduler"), prop);
+                    "scheduler::spp::" + sched_name, make_loc("scheduler"), prop);
             }
             else if (s == "image") {
                 image_sample_mode_ = ImageSampleMode::Image;
                 sched_ = comp::create<scheduler::Scheduler>(
-                    "scheduler::spi::" + schedName, make_loc("scheduler"), prop);
+                    "scheduler::spi::" + sched_name, make_loc("scheduler"), prop);
             }
         }
     }
 
     virtual void render() const override {
-		scene_->require_renderable();
+        scene_->require_renderable();
 
         // Clear film
         film_->clear();
         const auto size = film_->size();
 
-        // Dispatch rendering
+        // Execute parallel process
         const auto processed = sched_->run([&](long long pixel_index, long long, int threadid) {
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
