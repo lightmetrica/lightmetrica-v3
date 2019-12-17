@@ -366,7 +366,7 @@ public:
         else if (sp.terminator && sp.terminator == TerminatorType::Camera) {
             // Endpoint
             const auto* camera = nodes_.at(*camera_).primitive.camera;
-            const auto s = camera->sample_primary_ray(rng, sp.cameraCond.window, sp.cameraCond.aspect_ratio);
+            const auto s = camera->sample_primary_ray(rng, sp.camera_cond.window, sp.camera_cond.aspect_ratio);
             if (!s) {
                 return {};
             }
@@ -374,8 +374,8 @@ public:
                 SceneInteraction::make_camera_endpoint(
                     *camera_,
                     s->geom,
-                    sp.cameraCond.window,
-                    sp.cameraCond.aspect_ratio
+                    sp.camera_cond.window,
+                    sp.camera_cond.aspect_ratio
                 ),
                 0,
                 s->wo,
@@ -469,7 +469,7 @@ public:
                 LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
             }
             else if (primitive.camera) {
-                return primitive.camera->pdf(wo, sp.cameraCond.aspect_ratio);
+                return primitive.camera->pdf(wo, sp.camera_cond.aspect_ratio);
             }
             LM_UNREACHABLE_RETURN();
         }
@@ -547,7 +547,7 @@ public:
             // Surface interaction
             if (sp.endpoint) {
                 if (primitive.camera) {
-                    return primitive.camera->eval(wo, sp.cameraCond.aspect_ratio);
+                    return primitive.camera->eval(wo, sp.camera_cond.aspect_ratio);
                 }
                 else if (primitive.light) {
                     return primitive.light->eval(sp.geom, comp, wo);
