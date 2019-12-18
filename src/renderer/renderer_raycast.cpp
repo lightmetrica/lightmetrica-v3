@@ -66,7 +66,7 @@ public:
         sched_->run([&](long long index, long long, int) {
             const int x = int(index % size.w);
             const int y = int(index / size.w);
-            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
+            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect());
             const auto sp = scene_->intersect(ray);
             if (!sp) {
                 film_->set_pixel(x, y, bg_color_);

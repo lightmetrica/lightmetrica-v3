@@ -215,8 +215,8 @@ struct SceneInteraction {
     // Information associated to terminator on camera
     struct {
         Vec4 window;
-        Float aspect_ratio;
-    } cameraCond;
+        Float aspect;
+    } camera_cond;
 
     /*!
         \brief Make surface interaction.
@@ -225,13 +225,13 @@ struct SceneInteraction {
         \return Created scene interaction.
     */
     static SceneInteraction make_surface_interaction(int primitive, const PointGeometry& geom) {
-        SceneInteraction si;
-        si.primitive = primitive;
-        si.geom = geom;
-        si.endpoint = false;
-        si.medium = false;
-        si.terminator = {};
-        return si;
+        SceneInteraction sp;
+        sp.primitive = primitive;
+        sp.geom = geom;
+        sp.endpoint = false;
+        sp.medium = false;
+        sp.terminator = {};
+        return sp;
     }
 
     /*!
@@ -241,13 +241,13 @@ struct SceneInteraction {
         \return Created scene interaction.
     */
     static SceneInteraction make_medium_interaction(int primitive, const PointGeometry& geom) {
-        SceneInteraction si;
-        si.primitive = primitive;
-        si.geom = geom;
-        si.endpoint = false;
-        si.medium = true;
-        si.terminator = {};
-        return si;
+        SceneInteraction sp;
+        sp.primitive = primitive;
+        sp.geom = geom;
+        sp.endpoint = false;
+        sp.medium = true;
+        sp.terminator = {};
+        return sp;
     }
 
     /*!
@@ -255,19 +255,19 @@ struct SceneInteraction {
         \param primitive Primitive index.
         \param geom Point geometry.
         \param window Window in raster coordinates.
-        \param aspect_ratio Aspect ratio.
+        \param aspect Aspect ratio.
         \return Created scene interaction.
     */
-    static SceneInteraction make_camera_endpoint(int primitive, const PointGeometry& geom, Vec4 window, Float aspect_ratio) {
-        SceneInteraction si;
-        si.primitive = primitive;
-        si.geom = geom;
-        si.endpoint = true;
-        si.medium = false;
-        si.terminator = {};
-        si.cameraCond.window = window;
-        si.cameraCond.aspect_ratio = aspect_ratio;
-        return si;
+    static SceneInteraction make_camera_endpoint(int primitive, const PointGeometry& geom, Vec4 window, Float aspect) {
+        SceneInteraction sp;
+        sp.primitive = primitive;
+        sp.geom = geom;
+        sp.endpoint = true;
+        sp.medium = false;
+        sp.terminator = {};
+        sp.camera_cond.window = window;
+        sp.camera_cond.aspect = aspect;
+        return sp;
     }
 
     /*!
@@ -276,28 +276,38 @@ struct SceneInteraction {
         \param geom Point geometry.
     */
     static SceneInteraction make_light_endpoint(int primitive, const PointGeometry& geom) {
-        SceneInteraction si;
-        si.primitive = primitive;
-        si.geom = geom;
-        si.endpoint = true;
-        si.medium = false;
-        si.terminator = {};
-        return si;
+        SceneInteraction sp;
+        sp.primitive = primitive;
+        sp.geom = geom;
+        sp.endpoint = true;
+        sp.medium = false;
+        sp.terminator = {};
+        return sp;
     }
 
     /*!
         \brief Make camera terminator.
         \param window Window in raster coordinates.
-        \param aspect_ratio Aspect ratio.
+        \param aspect Aspect ratio.
     */
-    static SceneInteraction make_camera_terminator(Vec4 window, Float aspect_ratio) {
-        SceneInteraction si;
-        si.endpoint = false;
-        si.medium = false;
-        si.terminator = TerminatorType::Camera;
-        si.cameraCond.window = window;
-        si.cameraCond.aspect_ratio = aspect_ratio;
-        return si;
+    static SceneInteraction make_camera_terminator(Vec4 window, Float aspect) {
+        SceneInteraction sp;
+        sp.endpoint = false;
+        sp.medium = false;
+        sp.terminator = TerminatorType::Camera;
+        sp.camera_cond.window = window;
+        sp.camera_cond.aspect = aspect;
+        return sp;
+    }
+
+    /*!
+        \brief Make light terminator.
+    */
+    static SceneInteraction make_light_terminator() {
+        SceneInteraction sp;
+        sp.endpoint = false;
+        sp.medium = false;
+        sp.terminator = TerminatorType::Light;
     }
 };
 

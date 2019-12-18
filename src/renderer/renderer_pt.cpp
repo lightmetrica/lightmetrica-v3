@@ -27,13 +27,13 @@ enum class ImageSampleMode {
 
 class Renderer_PT : public Renderer {
 private:
-    Scene* scene_;
-    Film* film_;
-    int max_length_;
-    std::optional<unsigned int> seed_;
-    PTMode pt_mode_;
-    ImageSampleMode image_sample_mode_;
-    Component::Ptr<scheduler::Scheduler> sched_;
+    Scene* scene_;                                  // Reference to scene asset
+    Film* film_;                                    // Reference to film asset for output
+    int max_length_;                                // Maximum number of path length
+    std::optional<unsigned int> seed_;              // Random seed
+    PTMode pt_mode_;                                // Sampling mode
+    ImageSampleMode image_sample_mode_;             // Image sample or pixel sample
+    Component::Ptr<scheduler::Scheduler> sched_;    // Scheduler for parallel processing
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -113,23 +113,24 @@ public:
             // Path throughput
             Vec3 throughput(1_f);
 
-            // Incident direction and current surface point
+            // Incident direction and current scene interaction
             Vec3 wi = {};
-            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect_ratio());
+            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect());
 
             // Raster position
             Vec2 raster_pos{};
 
             // Perform random walk
             for (int length = 0; length < max_length_; length++) {
-                // Sample a ray
+                // Sample a ray based on current scene interaction
                 const auto s = scene_->sample_ray(rng, sp, wi);
                 if (!s || math::is_zero(s->weight)) {
                     break;
                 }
+
                 // Compute raster position for the primary ray
                 if (length == 0) {
-                    raster_pos = *scene_->raster_position(s->wo, film_->aspect_ratio());
+                    raster_pos = *scene_->raster_position(s->wo, film_->aspect());
                 }
 
                 // --------------------------------------------------------------------------------
@@ -164,7 +165,7 @@ public:
                     // Recompute raster position for the primary edge
                     const auto rp = [&]() -> std::optional<Vec2> {
                         if (length == 0)
-                            return scene_->raster_position(-sL->wo, film_->aspect_ratio());
+                            return scene_->raster_position(-sL->wo, film_->aspect());
                         else
                             return raster_pos;
                     }();

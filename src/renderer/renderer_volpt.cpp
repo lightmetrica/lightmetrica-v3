@@ -10,7 +10,6 @@
 #include <lm/film.h>
 #include <lm/scheduler.h>
 
-#define VOLPT_DEBUG_VIS 0
 #define VOLPT_IMAGE_SAMPLNG 0
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -24,16 +23,9 @@ private:
     std::optional<unsigned int> seed_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
-    #if VOLPT_DEBUG_VIS
-    mutable std::vector<Ray> sampledRays_;
-    #endif
-
 public:
     LM_SERIALIZE_IMPL(ar) {
         ar(scene_, film_, max_length_, rr_prob_, sched_);
-        #if VOLPT_DEBUG_VIS
-        ar(sampledRays_);
-        #endif
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
@@ -41,15 +33,6 @@ public:
         comp::visit(visit, film_);
         comp::visit(visit, sched_);
     }
-
-    #if VOLPT_DEBUG_VIS
-    virtual void* underlyingRawPointer(const std::string& query) const override {
-        if (query == "sampledRays") {
-            return &sampledRays_;
-        }
-        return nullptr;
-    }
-    #endif
 
 public:
     virtual void construct(const Json& prop) override {
@@ -61,7 +44,7 @@ public:
         const auto sched_name = json::value<std::string>(prop, "scheduler");
         #if VOLPT_IMAGE_SAMPLNG
         sched_ = comp::create<scheduler::Scheduler>(
-            "scheduler::spi::" + sched_name, makeLoc("scheduler"), prop);
+            "scheduler::spi::" + sched_name, make_loc("scheduler"), prop);
         #else
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spp::" + sched_name, make_loc("scheduler"), prop);
@@ -93,7 +76,7 @@ public:
             Vec3 wi{};
 
             // Current scene interaction
-            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect_ratio());
+            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect());
 
             // Path throughput
             Vec3 throughput(1_f);
@@ -109,7 +92,7 @@ public:
 
                 // Compute raster position for the primary ray
                 if (length == 0) {
-                    raster_pos = *scene_->raster_position(s->wo, film_->aspect_ratio());
+                    raster_pos = *scene_->raster_position(s->wo, film_->aspect());
                 }
 
                 // Sample a NEE edge
@@ -128,7 +111,7 @@ public:
                     // Recompute raster position for the primary edge
                     const auto rp = [&]() -> std::optional<Vec2> {
                         if (length == 0)
-                            return scene_->raster_position(-sL->wo, film_->aspect_ratio());
+                            return scene_->raster_position(-sL->wo, film_->aspect());
                         else
                             return raster_pos;
                     }();

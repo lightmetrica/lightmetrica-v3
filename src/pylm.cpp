@@ -491,7 +491,7 @@ static void bind_film(pybind11::module& m) {
         .def("num_pixels", &Film::num_pixels)
         .def("set_pixel", &Film::set_pixel)
         .def("save", &Film::save)
-        .def("aspect_ratio", &Film::aspect_ratio)
+        .def("aspect", &Film::aspect)
         .def("buffer", &Film::buffer)
         .PYLM_DEF_COMP_BIND(Film);
 }
@@ -622,11 +622,11 @@ static void bind_scene(pybind11::module& m) {
 		virtual bool is_specular(const SceneInteraction& sp, int comp) const override {
 			PYBIND11_OVERLOAD_PURE(bool, Scene, is_specular, sp, comp);
 		}
-		virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const override {
-			PYBIND11_OVERLOAD_PURE(Ray, Scene, primary_ray, rp, aspect_ratio);
+		virtual Ray primary_ray(Vec2 rp, Float aspect) const override {
+			PYBIND11_OVERLOAD_PURE(Ray, Scene, primary_ray, rp, aspect);
 		}
-		virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const override {
-			PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, raster_position, wo, aspect_ratio);
+		virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, raster_position, wo, aspect);
 		}
 		virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
 			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_ray, rng, sp, wi);
@@ -973,26 +973,26 @@ static void bind_camera(pybind11::module& m) {
         virtual bool is_specular(const PointGeometry& geom) const override {
             PYBIND11_OVERLOAD_PURE(bool, Camera, is_specular, geom);
         }
-        virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const override {
-            PYBIND11_OVERLOAD_PURE(Ray, Camera, primary_ray, rp, aspect_ratio);
+        virtual Ray primary_ray(Vec2 rp, Float aspect) const override {
+            PYBIND11_OVERLOAD_PURE(Ray, Camera, primary_ray, rp, aspect);
         }
-        virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Camera, raster_position, wo, aspect_ratio);
+        virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Camera, raster_position, wo, aspect);
         }
-        virtual std::optional<CameraRaySample> sample_primary_ray(Rng& rng, Vec4 window, Float aspect_ratio) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<CameraRaySample>, Camera, sample_primary_ray, rng, window, aspect_ratio);
+        virtual std::optional<CameraRaySample> sample_primary_ray(Rng& rng, Vec4 window, Float aspect) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<CameraRaySample>, Camera, sample_primary_ray, rng, window, aspect);
         }
-        virtual Float pdf(Vec3 wo, Float aspect_ratio) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Camera, pdf, wo, aspect_ratio);
+        virtual Float pdf(Vec3 wo, Float aspect) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Camera, pdf, wo, aspect);
         }
-        virtual Vec3 eval(Vec3 wo, Float aspect_ratio) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Camera, eval, wo, aspect_ratio);
+        virtual Vec3 eval(Vec3 wo, Float aspect) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Camera, eval, wo, aspect);
         }
         virtual Mat4 view_matrix() const override {
             PYBIND11_OVERLOAD_PURE(Mat4, Camera, view_matrix);
         }
-        virtual Mat4 projection_matrix(Float aspect_ratio) const override {
-            PYBIND11_OVERLOAD_PURE(Mat4, Camera, projection_matrix, aspect_ratio);
+        virtual Mat4 projection_matrix(Float aspect) const override {
+            PYBIND11_OVERLOAD_PURE(Mat4, Camera, projection_matrix, aspect);
         }
     };
     pybind11::class_<Camera, Camera_Py, Component, Component::Ptr<Camera>>(m, "Camera")

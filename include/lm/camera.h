@@ -54,7 +54,7 @@ public:
     /*!
         \brief Generate a primary ray with the corresponding raster position.
         \param rp Raster position.
-        \param aspect_ratio Aspect ratio of the film.
+        \param aspect Aspect ratio of the film.
 
         \rst
         This function deterministically generates a ray from the given raster position in :math:`[0,1]^2`
@@ -63,21 +63,21 @@ public:
         Use :cpp:func:`samplePrimaryRay` when the primary ray is generated randomly.
         \endrst
     */
-    virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const = 0;
+    virtual Ray primary_ray(Vec2 rp, Float aspect) const = 0;
 
     /*!
         \brief Compute a raser position.
         \param wo Primary ray direction.
-        \param aspect_ratio Aspect ratio of the film.
+        \param aspect Aspect ratio of the film.
         \return Raster position.
     */
-    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const = 0;
+    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const = 0;
 
     /*!
         \brief Sample a primary ray within the given raster window.
         \param rng Random number generator.
         \param window Raster window.
-        \param aspect_ratio Aspect ratio of the film.
+        \param aspect Aspect ratio of the film.
 
         \rst
         This function generates a uniformly random ray from the raster window inside the screen.
@@ -98,26 +98,26 @@ public:
         Looking by the solid angle measure, for instance, the set of rays are not uniform.
         \endrst
     */
-    virtual std::optional<CameraRaySample> sample_primary_ray(Rng& rng, Vec4 window, Float aspect_ratio) const = 0;
+    virtual std::optional<CameraRaySample> sample_primary_ray(Rng& rng, Vec4 window, Float aspect) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
         \param wo Outgoing direction.
-        \param aspect_ratio Aspect ratio of the film.
+        \param aspect Aspect ratio of the film.
 		\return Evaluated pdf.
     */
-    virtual Float pdf(Vec3 wo, Float aspect_ratio) const = 0;
+    virtual Float pdf(Vec3 wo, Float aspect) const = 0;
 
     /*!
         \brief Evaluate sensitivity.
         \param wo Outgoing direction.
-        \param aspect_ratio Aspect ratio of the film.
+        \param aspect Aspect ratio of the film.
 
         \rst
         Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.
         \endrst
     */
-    virtual Vec3 eval(Vec3 wo, Float aspect_ratio) const = 0;
+    virtual Vec3 eval(Vec3 wo, Float aspect) const = 0;
 
     /*!
         \brief Get view matrix if available.
@@ -127,10 +127,10 @@ public:
 
     /*!
         \brief Get projection matrix if available.
-        \param aspect_ratio Aspect ratio of the film.
+        \param aspect Aspect ratio of the film.
         \return Projection matrix.
     */
-    virtual Mat4 projection_matrix(Float aspect_ratio) const = 0;
+    virtual Mat4 projection_matrix(Float aspect) const = 0;
 };
 
 /*!

@@ -78,7 +78,7 @@ public:
 
             // Incident direction and current surface point
             Vec3 wi = {};
-            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect_ratio());
+            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect());
 
             // Perform random walk
             Vec3 L(0_f);
@@ -92,7 +92,7 @@ public:
 
                 // Compute raster position for the primary ray
                 if (length == 0) {
-                    rasterPos = *scene_->raster_position(s->wo, film_->aspect_ratio());
+                    rasterPos = *scene_->raster_position(s->wo, film_->aspect());
                 }
 
                 // Sample next scene interaction

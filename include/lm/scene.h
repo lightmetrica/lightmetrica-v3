@@ -26,7 +26,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \endrst
 */
 struct RaySample {
-    SceneInteraction sp;   //!< Surface point information.
+    SceneInteraction sp;   //!< Sampled scene interaction.
     int comp;              //!< Sampled component index.
     Vec3 wo;               //!< Sampled direction.
     Vec3 weight;           //!< Contribution divided by probability.
@@ -430,7 +430,7 @@ public:
     /*!
         \brief Generate a primary ray.
         \param rp Raster position in [0,1]^2.
-        \param aspect_ratio Aspect ratio of the film.
+        \param aspect Aspect ratio of the film.
         \return Generated primary ray.
 
         \rst
@@ -438,15 +438,15 @@ public:
         corresponding to the given raster position.
         \endrst
     */
-    virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const = 0;
+    virtual Ray primary_ray(Vec2 rp, Float aspect) const = 0;
 
     /*!
         \brief Compute a raster position.
         \param wo Primary ray direction.
-        \param aspect_ratio Aspect ratio of the film.
+        \param aspect Aspect ratio of the film.
         \return Raster position.
     */
-    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const = 0;
+    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const = 0;
 
     /*!
         \brief Sample a ray given surface point and incident direction.

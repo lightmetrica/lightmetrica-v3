@@ -61,7 +61,7 @@ public:
             const int y = int(pixelIndex / size.w);
 
             // Generate primary ray
-            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
+            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect());
 
             // Ray marching
             Vec3 L(0_f);

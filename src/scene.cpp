@@ -344,8 +344,8 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const {
-        return nodes_.at(*camera_).primitive.camera->primary_ray(rp, aspect_ratio);
+    virtual Ray primary_ray(Vec2 rp, Float aspect) const {
+        return nodes_.at(*camera_).primitive.camera->primary_ray(rp, aspect);
     }
 
     virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
@@ -366,7 +366,7 @@ public:
         else if (sp.terminator && sp.terminator == TerminatorType::Camera) {
             // Endpoint
             const auto* camera = nodes_.at(*camera_).primitive.camera;
-            const auto s = camera->sample_primary_ray(rng, sp.camera_cond.window, sp.camera_cond.aspect_ratio);
+            const auto s = camera->sample_primary_ray(rng, sp.camera_cond.window, sp.camera_cond.aspect);
             if (!s) {
                 return {};
             }
@@ -375,7 +375,7 @@ public:
                     *camera_,
                     s->geom,
                     sp.camera_cond.window,
-                    sp.camera_cond.aspect_ratio
+                    sp.camera_cond.aspect
                 ),
                 0,
                 s->wo,
@@ -430,9 +430,9 @@ public:
         }
     }
 
-    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const override {
+    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
         const auto* camera = nodes_.at(*camera_).primitive.camera;
-        return camera->raster_position(wo, aspect_ratio);
+        return camera->raster_position(wo, aspect);
     }
 
     virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
@@ -469,7 +469,7 @@ public:
                 LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
             }
             else if (primitive.camera) {
-                return primitive.camera->pdf(wo, sp.camera_cond.aspect_ratio);
+                return primitive.camera->pdf(wo, sp.camera_cond.aspect);
             }
             LM_UNREACHABLE_RETURN();
         }
@@ -547,7 +547,7 @@ public:
             // Surface interaction
             if (sp.endpoint) {
                 if (primitive.camera) {
-                    return primitive.camera->eval(wo, sp.camera_cond.aspect_ratio);
+                    return primitive.camera->eval(wo, sp.camera_cond.aspect);
                 }
                 else if (primitive.light) {
                     return primitive.light->eval(sp.geom, comp, wo);
