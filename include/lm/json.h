@@ -260,6 +260,9 @@ T* comp_ref_or_nullptr(const Json& j, const std::string& name) {
         return nullptr;
     }
     const std::string ref = *it;
+    if (ref.empty()) {
+        return nullptr;
+    }
     auto* p = comp::get<T>(ref);
     if (!p) {
         return nullptr;

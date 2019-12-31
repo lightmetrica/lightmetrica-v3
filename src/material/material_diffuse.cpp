@@ -53,12 +53,8 @@ public:
 
 public:
     virtual void construct(const Json& prop) override {
-        if (auto it = prop.find("mapKd"); it != prop.end()) {
-            mapKd_ = comp::get<Texture>(*it);
-        }
-        else {
-            Kd_ = json::value(prop, "Kd", Vec3(1_f));
-        }
+        mapKd_ = json::comp_ref_or_nullptr<Texture>(prop, "mapKd");
+        Kd_ = json::value(prop, "Kd", Vec3(1_f));
     }
 
     virtual bool is_specular(const PointGeometry&, int) const override {
