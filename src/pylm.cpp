@@ -202,6 +202,7 @@ static void bind_user(pybind11::module& m) {
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Texture, texture);
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Material, material);
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Camera, camera);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Light, light);
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Medium, medium);
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Phase, phase);
 	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Film, film);
@@ -212,14 +213,23 @@ static void bind_user(pybind11::module& m) {
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Renderer, renderer);
 
     // Helper function to visualize the asset tree
-    m.def("print_asset_tree", []() {
+    m.def("print_asset_tree", [](bool visualize_weak_refs) {
         using namespace std::placeholders;
 
         // Traverse the asset from the root
         using Func = std::function<void(Component * &p, bool weak, std::string parent_loc)>;
         const Func visitor = [&](Component*& comp, bool weak, std::string parent_loc) {
-            if (!comp || weak) {
+            if (!comp) {
                 return;
+            }
+
+            if (weak) {
+                if (!visualize_weak_refs) {
+                    return;
+                }
+                else {
+                    //
+                }
             }
 
             // Print information
@@ -236,7 +246,7 @@ static void bind_user(pybind11::module& m) {
         LM_INFO("$.assets");
         LM_INDENT();
         lm::assets()->foreach_underlying(std::bind(visitor, _1, _2, "$.assets"));
-    });
+    }, "visualize_weak_refs"_a = false);
 }
 
 // ------------------------------------------------------------------------------------------------

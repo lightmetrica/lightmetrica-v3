@@ -174,7 +174,7 @@ public:
 
                     // Default mixture material of D and G
                     mat = comp::create<Material>(
-                        "mesh::wavefrontobj_mixture", make_loc(m.name), {
+                        "material::wavefrontobj_mixture", make_loc(m.name), {
                             {"Kd", m.Kd},
                             {"mapKd", mapKd_loc},
                             {"Ks", m.Ks},
@@ -300,7 +300,6 @@ LM_COMP_REG_IMPL(Mesh_WavefrontObj, "mesh::wavefrontobj");
 
 // ------------------------------------------------------------------------------------------------
 
-#if MODEL_WAVEFRONTOBJ_NEW_MIXTURE_MATERIAL
 class Material_WavefrontObj_Mixture final : public Material {
 private:
     Component::Ptr<Material> diffuse_;
@@ -370,18 +369,30 @@ private:
         // Alpha mask
         const auto alpha = eval_alpha(geom);
         if (comp == Comp_Alpha) {
+#if 1
             return 1_f - alpha;
+#else
+            return 1_f;
+#endif
         }
 
         // Diffuse
         const auto weight_d = diffuse_selection_weight(geom);
         if (comp == Comp_Diffuse) {
+#if 1
             return alpha * weight_d;
+#else
+            return weight_d;
+#endif
         }
         
         // Glossy
         assert(comp == Comp_Glossy);
+#if 1
         return alpha * (1_f - weight_d);
+#else
+        return (1_f - weight_d);
+#endif
     }
 
     // Evaluate mixture weight
@@ -457,13 +468,19 @@ public:
     }
 
     virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+#if 1
+        const auto w_mix = eval_mix_weight(geom, comp);
+        return w_mix * material_by_comp(comp)->eval(geom, SurfaceComp::DontCare, wi, wo);
+#else
         return material_by_comp(comp)->eval(geom, SurfaceComp::DontCare, wi, wo);
+#endif
     }
 };
 
-LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture, "mesh::wavefrontobj_mixture");
+LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture, "material::wavefrontobj_mixture");
 
-#else
+// ------------------------------------------------------------------------------------------------
+
 class Material_WavefrontObj final : public Material {
 private:
     // Material parameters of MLT file
@@ -683,6 +700,5 @@ private:
 };
 
 LM_COMP_REG_IMPL(Material_WavefrontObj, "material::wavefrontobj");
-#endif
 
 LM_NAMESPACE_END(LM_NAMESPACE)
