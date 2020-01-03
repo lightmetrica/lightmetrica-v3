@@ -227,20 +227,23 @@ static void bind_user(pybind11::module& m) {
                 if (!visualize_weak_refs) {
                     return;
                 }
-                else {
-                    //
-                }
-            }
 
-            // Print information
-            const auto loc = comp->loc();
-            auto comp_id = loc;
-            comp_id.erase(0, parent_loc.size());
-            LM_INFO("{} [{}]", comp_id, comp->key());
-            LM_INDENT();
+                // Print information of weak reference
+                LM_INFO("-> {}", comp->loc());
+            }
+            else {
+                // Current component index
+                const auto loc = comp->loc();
+                auto comp_id = loc;
+                comp_id.erase(0, parent_loc.size());
+
+                // Print information of owned pointer
+                LM_INFO("{} [{}]", comp_id, comp->key());
+                LM_INDENT();
             
-            // Traverse underlying components
-            comp->foreach_underlying(std::bind(visitor, _1, _2, loc));
+                // Traverse underlying components
+                comp->foreach_underlying(std::bind(visitor, _1, _2, loc));
+            }
         };
         
         LM_INFO("$.assets");

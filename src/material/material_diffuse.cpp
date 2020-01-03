@@ -92,8 +92,7 @@ public:
         if (geom.opposite(wi, wo)) {
             return {};
         }
-        const auto a = (mapKd_ && mapKd_->has_alpha()) ? mapKd_->eval_alpha(geom.t) : 1_f;
-        return (mapKd_ ? mapKd_->eval(geom.t) : Kd_) * (a / Pi);
+        return (mapKd_ ? mapKd_->eval(geom.t) : Kd_) / Pi;
     }
 };
 

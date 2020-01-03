@@ -314,6 +314,25 @@ private:
         Comp_Alpha   = 2,   // Alpha mask
     };
 
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(diffuse_, glossy_, alpha_mask_, mask_tex_);
+    }
+
+    virtual Component* underlying(const std::string& name) const override {
+        if (name == "diffuse") return diffuse_.get();
+        else if (name == "glossy") return glossy_.get();
+        else if (name == "alpha_mask") return alpha_mask_.get();
+        return nullptr;
+    }
+
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, diffuse_);
+        comp::visit(visit, glossy_);
+        comp::visit(visit, alpha_mask_);
+        comp::visit(visit, mask_tex_);
+    }
+
 private:
     // Get material by component index
     Material* material_by_comp(int comp) const {
