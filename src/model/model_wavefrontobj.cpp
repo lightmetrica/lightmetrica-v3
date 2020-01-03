@@ -388,30 +388,18 @@ private:
         // Alpha mask
         const auto alpha = eval_alpha(geom);
         if (comp == Comp_Alpha) {
-#if 1
             return 1_f - alpha;
-#else
-            return 1_f;
-#endif
         }
 
         // Diffuse
         const auto weight_d = diffuse_selection_weight(geom);
         if (comp == Comp_Diffuse) {
-#if 1
             return alpha * weight_d;
-#else
-            return weight_d;
-#endif
         }
         
         // Glossy
         assert(comp == Comp_Glossy);
-#if 1
         return alpha * (1_f - weight_d);
-#else
-        return (1_f - weight_d);
-#endif
     }
 
     // Evaluate mixture weight
@@ -487,12 +475,8 @@ public:
     }
 
     virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-#if 1
         const auto w_mix = eval_mix_weight(geom, comp);
         return w_mix * material_by_comp(comp)->eval(geom, SurfaceComp::DontCare, wi, wo);
-#else
-        return material_by_comp(comp)->eval(geom, SurfaceComp::DontCare, wi, wo);
-#endif
     }
 };
 
