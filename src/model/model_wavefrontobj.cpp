@@ -14,6 +14,8 @@
 #include <lm/light.h>
 #include <lm/surface.h>
 
+#define USE_MIXTURE_MARGINAL 1
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 using namespace objloader;
@@ -160,6 +162,16 @@ public:
                     const auto as = math::safe_sqrt(1_f - m.an * .9_f);
 
                     // Default mixture material of D and G
+#if USE_MIXTURE_MARGINAL
+                    mat = comp::create<Material>(
+                        "material::wavefrontobj_mixture_marginal", make_loc(m.name), {
+                            {"Kd", m.Kd},
+                            {"mapKd", mapKd_loc},
+                            {"Ks", m.Ks},
+                            {"ax", std::max(1e-3_f, r / as)},
+                            {"ay", std::max(1e-3_f, r * as)}
+                        });
+#else
                     mat = comp::create<Material>(
                         "material::wavefrontobj_mixture", make_loc(m.name), {
                             {"Kd", m.Kd},
@@ -168,6 +180,7 @@ public:
                             {"ax", std::max(1e-3_f, r / as)},
                             {"ay", std::max(1e-3_f, r * as)}
                         });
+#endif
                 }
                 if (!mat) {
                     return false;
@@ -451,5 +464,257 @@ public:
 };
 
 LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture, "material::wavefrontobj_mixture");
+
+// ------------------------------------------------------------------------------------------------
+
+class Material_WavefrontObj_Mixture_Marginal final : public Material {
+private:
+    Component::Ptr<Material> diffuse_;
+    Component::Ptr<Material> glossy_;
+    Component::Ptr<Material> alpha_mask_;
+    Texture* mask_tex_ = nullptr;
+
+    // Component indices
+    enum {
+        Comp_Diffuse = 0,   // Diffuse material
+        Comp_Glossy  = 1,   // Glossy material
+        Comp_Alpha   = 2,   // Alpha mask
+    };
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(diffuse_, glossy_, alpha_mask_, mask_tex_);
+    }
+
+    virtual Component* underlying(const std::string& name) const override {
+        if (name == "diffuse") return diffuse_.get();
+        else if (name == "glossy") return glossy_.get();
+        else if (name == "alpha_mask") return alpha_mask_.get();
+        return nullptr;
+    }
+
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, diffuse_);
+        comp::visit(visit, glossy_);
+        comp::visit(visit, alpha_mask_);
+        comp::visit(visit, mask_tex_);
+    }
+
+private:
+    // Get material by component index
+    Material* material_by_comp(int comp) const {
+        switch (comp) {
+        case Comp_Diffuse:
+            return diffuse_.get();
+        case Comp_Glossy:
+            return glossy_.get();
+        case Comp_Alpha:
+            return alpha_mask_.get();
+        }
+        return nullptr;
+    }
+
+    // Compute selection weight
+    Float diffuse_selection_weight(const PointGeometry& geom) const {
+        const auto weight_d = [&]() {
+            const auto weight_d = glm::compMax(*diffuse_->reflectance(geom, SurfaceComp::DontCare));
+            const auto weight_g = glm::compMax(*glossy_->reflectance(geom, SurfaceComp::DontCare));
+            if (weight_d == 0_f && weight_g == 0_f) {
+                return 1_f;
+            }
+            return weight_d / (weight_d + weight_g);
+        }();
+        return weight_d;
+    }
+
+    // Evaluate alpha value
+    Float eval_alpha(const PointGeometry& geom) const {
+        return !mask_tex_ ? 1_f : mask_tex_->eval_alpha(geom.t);
+    }
+
+    // Component selection
+    int sample_comp_select(Rng& rng, const PointGeometry& geom) const {
+        // Alpha mask
+        const auto alpha = eval_alpha(geom);
+        if (rng.u() > alpha) {
+            return Comp_Alpha;
+        }
+
+        // Difuse
+        const auto weight_d = diffuse_selection_weight(geom);
+        if (rng.u() < weight_d) {
+            return Comp_Diffuse;
+        }
+
+        // Glossy
+        return Comp_Glossy;
+    }
+    
+    // Component selection PMF
+    Float pdf_comp_select(const PointGeometry& geom, int comp) const {
+        // Alpha mask
+        const auto alpha = eval_alpha(geom);
+        if (comp == Comp_Alpha) {
+            return 1_f - alpha;
+        }
+
+        // Diffuse
+        const auto weight_d = diffuse_selection_weight(geom);
+        if (comp == Comp_Diffuse) {
+            return alpha * weight_d;
+        }
+
+        // Glossy
+        assert(comp == Comp_Glossy);
+        return alpha * (1_f - weight_d);
+    }
+
+    // Evaluate mixture weight
+    Float eval_mix_weight(const PointGeometry& geom, int comp) const {
+        const auto alpha = eval_alpha(geom);
+        return comp == Comp_Alpha ? (1_f - alpha) : alpha;
+    }
+
+    // Check if the direction sampled with the strategy comp can be sampled with the other strategy.
+    bool is_samplable(int comp, int other_comp) const {
+        if (comp == Comp_Diffuse || comp == Comp_Glossy) {
+            return other_comp != Comp_Alpha;
+        }
+        else if (comp == Comp_Alpha) {
+            return other_comp == Comp_Alpha;
+        }
+        LM_UNREACHABLE_RETURN();
+    }
+
+    // Evaluate pdf.
+    // This version evaluates delta function if eval_delta is true.
+    Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo, bool eval_delta) const {
+        // Evaluate p_sel(j) * p_j(wo)
+        const auto eval_pdf = [&](int c) -> Float {
+            // Consider only if wo can be samplable with the strategy c
+            if (!is_samplable(comp, c)) {
+                return 0_f;
+            }
+            const auto p_sel = pdf_comp_select(geom, c);
+            const auto p = [&]() -> Float {
+                const auto* material = material_by_comp(c);
+                if (material->is_specular(geom, -1)) {
+                    return eval_delta ? 0_f : 1_f /* \delta() */;
+                }
+                return material->pdf(geom, -1, wi, wo);
+            }();
+            return p_sel * p;
+        };
+
+        // Compute marginal
+        Float p_maginal = 0_f;
+        p_maginal += eval_pdf(Comp_Diffuse);
+        p_maginal += eval_pdf(Comp_Glossy);
+        p_maginal += eval_pdf(Comp_Alpha);
+
+        return p_maginal;
+    }
+
+    // Evaluate BSDF.
+    // This version evaluates delta function if eval_delta is true.
+    Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const {
+        const auto eval_f = [&](int c) -> Vec3 {
+            const auto w = eval_mix_weight(geom, c);
+            const auto f = [&]() -> Vec3 {
+                const auto* material = material_by_comp(c);
+                if (material->is_specular(geom, -1)) {
+                    return Vec3(eval_delta ? 0_f : 1_f /* \delta() */);
+                }
+                return material->eval(geom, -1, wi, wo);
+            }();
+            return w * f;
+        };
+
+        Vec3 f_mixture(0_f);
+        f_mixture += eval_f(Comp_Diffuse);
+        f_mixture += eval_f(Comp_Glossy);
+        f_mixture += eval_f(Comp_Alpha);
+
+        return f_mixture;
+    }
+
+public:
+    virtual void construct(const Json& prop) override {
+        const auto Kd = json::value<Vec3>(prop, "Kd");
+        const auto mapKd = json::value<std::string>(prop, "mapKd");
+        const auto Ks = json::value<Vec3>(prop, "Ks");
+        const auto ax = json::value<Float>(prop, "ax");
+        const auto ay = json::value<Float>(prop, "ay");
+
+        // Diffuse material
+        diffuse_ = comp::create<Material>(
+            "material::diffuse", make_loc("diffuse"), {
+                {"Kd", Kd},
+                {"mapKd", mapKd}
+            });
+
+        // Glossy material
+        glossy_ = comp::create<Material>(
+            "material::glossy", make_loc("glossy"), {
+                {"Ks", Ks},
+                {"ax", ax},
+                {"ay", ay}
+            });
+
+        // Alpha mask
+        alpha_mask_ = comp::create<Material>(
+            "material::mask", make_loc("alpha_mask"), {});
+        if (!mapKd.empty()) {
+            auto* texture = comp::get<Texture>(mapKd);
+            if (texture && texture->has_alpha()) {
+                mask_tex_ = texture;
+            }
+        }
+    }
+
+    virtual bool is_specular(const PointGeometry&, int) const override {
+        return false;
+        //return material_by_comp(comp)->is_specular(geom, -1);
+    }
+
+    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+        const int comp = sample_comp_select(rng, geom);
+        const auto* material = material_by_comp(comp);
+        const auto s = material->sample(rng, geom, wi);
+        if (!s) {
+            return {};
+        }
+        const auto eval_delta = !material->is_specular(geom, -1);
+        const auto f = eval(geom, wi, s->wo, eval_delta);
+        const auto p = pdf(geom, comp, wi, s->wo, eval_delta);
+        return MaterialDirectionSample{
+            s->wo,
+            comp,
+            f / p
+        };
+    }
+
+    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int) const override {
+        return diffuse_->reflectance(geom, -1);
+    }
+
+    virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+        assert(!material_by_comp(comp)->is_specular(geom, -1));
+        return pdf(geom, comp, wi, wo, true);
+    }
+
+    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
+        // TODO. Remove this function.
+        return 1_f;
+    }
+
+    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+        LM_UNUSED(comp);
+        assert(!material_by_comp(comp)->is_specular(geom, -1));
+        return eval(geom, wi, wo, true);
+    }
+};
+
+LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture_Marginal, "material::wavefrontobj_mixture_marginal");
 
 LM_NAMESPACE_END(LM_NAMESPACE)
