@@ -14,8 +14,7 @@
 #include <lm/light.h>
 #include <lm/surface.h>
 
-#define USE_MIXTURE_MARGINAL 1
-#define USE_MIXTURE_MARGINAL_WITHOUT_ALPHA 0
+#define USE_MIXTURE_MARGINAL_WITHOUT_ALPHA 1
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -163,25 +162,16 @@ public:
                     const auto as = math::safe_sqrt(1_f - m.an * .9_f);
 
                     // Default mixture material of D and G
-#if USE_MIXTURE_MARGINAL
+                    #if USE_MIXTURE_MARGINAL_WITHOUT_ALPHA
                     mat = comp::create<Material>(
-                        "material::wavefrontobj_mixture_marginal", make_loc(m.name), {
+                        "material::wavefrontobj_marginal_without_alpha", make_loc(m.name), {
                             {"Kd", m.Kd},
                             {"mapKd", mapKd_loc},
                             {"Ks", m.Ks},
                             {"ax", std::max(1e-3_f, r / as)},
                             {"ay", std::max(1e-3_f, r * as)}
                         });
-#elif USE_MIXTURE_MARGINAL_WITHOUT_ALPHA
-                    mat = comp::create<Material>(
-                        "material::wavefrontobj_mixture_marginal_without_alpha", make_loc(m.name), {
-                            {"Kd", m.Kd},
-                            {"mapKd", mapKd_loc},
-                            {"Ks", m.Ks},
-                            {"ax", std::max(1e-3_f, r / as)},
-                            {"ay", std::max(1e-3_f, r * as)}
-                        });
-#else
+                    #else
                     mat = comp::create<Material>(
                         "material::wavefrontobj_mixture", make_loc(m.name), {
                             {"Kd", m.Kd},
@@ -190,7 +180,7 @@ public:
                             {"ax", std::max(1e-3_f, r / as)},
                             {"ay", std::max(1e-3_f, r * as)}
                         });
-#endif
+                    #endif
                 }
                 if (!mat) {
                     return false;
@@ -293,192 +283,8 @@ LM_COMP_REG_IMPL(Mesh_WavefrontObj, "mesh::wavefrontobj");
 
 // ------------------------------------------------------------------------------------------------
 
-class Material_WavefrontObj_Mixture final : public Material {
-private:
-    Component::Ptr<Material> diffuse_;
-    Component::Ptr<Material> glossy_;
-    Component::Ptr<Material> alpha_mask_;
-    Texture* mask_tex_ = nullptr;
-
-    // Component indices
-    enum {
-        Comp_Diffuse = 0,   // Diffuse material
-        Comp_Glossy  = 1,   // Glossy material
-        Comp_Alpha   = 2,   // Alpha mask
-    };
-
-public:
-    LM_SERIALIZE_IMPL(ar) {
-        ar(diffuse_, glossy_, alpha_mask_, mask_tex_);
-    }
-
-    virtual Component* underlying(const std::string& name) const override {
-        if (name == "diffuse") return diffuse_.get();
-        else if (name == "glossy") return glossy_.get();
-        else if (name == "alpha_mask") return alpha_mask_.get();
-        return nullptr;
-    }
-
-    virtual void foreach_underlying(const ComponentVisitor& visit) override {
-        comp::visit(visit, diffuse_);
-        comp::visit(visit, glossy_);
-        comp::visit(visit, alpha_mask_);
-        comp::visit(visit, mask_tex_);
-    }
-
-private:
-    // Get material by component index
-    Material* material_by_comp(int comp) const {
-        switch (comp) {
-            case Comp_Diffuse:
-                return diffuse_.get();
-            case Comp_Glossy:
-                return glossy_.get();
-            case Comp_Alpha:
-                return alpha_mask_.get();
-        }
-        return nullptr;
-    }
-
-    // Compute selection weight
-    Float diffuse_selection_weight(const PointGeometry& geom) const {
-        const auto weight_d = [&]() {
-            const auto weight_d = glm::compMax(*diffuse_->reflectance(geom, SurfaceComp::DontCare));
-            const auto weight_g = glm::compMax(*glossy_->reflectance(geom, SurfaceComp::DontCare));
-            if (weight_d == 0_f && weight_g == 0_f) {
-                return 1_f;
-            }
-            return weight_d / (weight_d + weight_g);
-        }();
-        return weight_d;
-    }
-
-    // Evaluate alpha value
-    Float eval_alpha(const PointGeometry& geom) const {
-        return !mask_tex_ ? 1_f : mask_tex_->eval_alpha(geom.t);
-    }
-
-    // Component selection
-    int sample_comp_select(Rng& rng, const PointGeometry& geom) const {
-        // Alpha mask
-        const auto alpha = eval_alpha(geom);
-        if (rng.u() > alpha) {
-            return Comp_Alpha;
-        }
-
-        // Difuse
-        const auto weight_d = diffuse_selection_weight(geom);
-        if (rng.u() < weight_d) {
-            return Comp_Diffuse;
-        }
-
-        // Glossy
-        return Comp_Glossy;
-    }
-
-    // Component selection PMF
-    Float pdf_comp_select(const PointGeometry& geom, int comp) const {
-        // Alpha mask
-        const auto alpha = eval_alpha(geom);
-        if (comp == Comp_Alpha) {
-            return 1_f - alpha;
-        }
-
-        // Diffuse
-        const auto weight_d = diffuse_selection_weight(geom);
-        if (comp == Comp_Diffuse) {
-            return alpha * weight_d;
-        }
-        
-        // Glossy
-        assert(comp == Comp_Glossy);
-        return alpha * (1_f - weight_d);
-    }
-
-    // Evaluate mixture weight
-    Float eval_mix_weight(const PointGeometry& geom, int comp) const {
-        const auto alpha = eval_alpha(geom);
-        return comp == Comp_Alpha ? (1_f - alpha) : alpha;
-    }
-
-public:
-    virtual void construct(const Json& prop) override {
-        const auto Kd = json::value<Vec3>(prop, "Kd");
-        const auto mapKd = json::value<std::string>(prop, "mapKd");
-        const auto Ks = json::value<Vec3>(prop, "Ks");
-        const auto ax = json::value<Float>(prop, "ax");
-        const auto ay = json::value<Float>(prop, "ay");
-
-        // Diffuse material
-        diffuse_ = comp::create<Material>(
-            "material::diffuse", make_loc("diffuse"), {
-                {"Kd", Kd},
-                {"mapKd", mapKd}
-            });
-
-        // Glossy material
-        glossy_ = comp::create<Material>(
-            "material::glossy", make_loc("glossy"), {
-                {"Ks", Ks},
-                {"ax", ax},
-                {"ay", ay}
-            });
-
-        // Alpha mask
-        alpha_mask_ = comp::create<Material>(
-            "material::mask", make_loc("alpha_mask"), {});
-        if (!mapKd.empty()) {
-            auto* texture = comp::get<Texture>(mapKd);
-            if (texture && texture->has_alpha()) {
-                mask_tex_ = texture;
-            }
-        }
-    }
-
-    virtual bool is_specular(const PointGeometry& geom, int comp) const override {
-        return material_by_comp(comp)->is_specular(geom, SurfaceComp::DontCare);
-    }
-
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-        const int comp = sample_comp_select(rng, geom);
-        const auto pdf_sel = pdf_comp_select(geom, comp);
-        const auto w_mix = eval_mix_weight(geom, comp);
-        const auto s = material_by_comp(comp)->sample(rng, geom, wi);
-        if (!s) {
-            return {};
-        }
-        return MaterialDirectionSample{
-            s->wo,
-            comp,
-            s->weight * w_mix / pdf_sel
-        };
-    }
-
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int) const override {
-        // Always use diffuse
-        return diffuse_->reflectance(geom, SurfaceComp::DontCare);
-    }
-
-    virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-        return material_by_comp(comp)->pdf(geom, SurfaceComp::DontCare, wi, wo);
-    }
-
-    virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3) const override {
-        return pdf_comp_select(geom, comp);
-    }
-
-    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-        const auto w_mix = eval_mix_weight(geom, comp);
-        return w_mix * material_by_comp(comp)->eval(geom, SurfaceComp::DontCare, wi, wo);
-    }
-};
-
-LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture, "material::wavefrontobj_mixture");
-
-// ------------------------------------------------------------------------------------------------
-
 // Mixtured material without alpha texture
-class Material_WavefrontObj_Mixture_Marginal_Without_Alpha final : public Material {
+class Material_WavefrontObj_Mixture_Without_Alpha final : public Material {
 private:
     Component::Ptr<Material> diffuse_;
     Component::Ptr<Material> glossy_;
@@ -646,11 +452,11 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture_Marginal_Without_Alpha, "material::wavefrontobj_mixture_marginal_without_alpha");
+LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture_Without_Alpha, "material::wavefrontobj_marginal_without_alpha");
 
 // ------------------------------------------------------------------------------------------------
 
-class Material_WavefrontObj_Mixture_Marginal final : public Material {
+class Material_WavefrontObj_Mixture final : public Material {
 private:
     Component::Ptr<Material> diffuse_;
     Component::Ptr<Material> glossy_;
@@ -897,6 +703,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture_Marginal, "material::wavefrontobj_mixture_marginal");
+LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture, "material::wavefrontobj_mixture");
 
 LM_NAMESPACE_END(LM_NAMESPACE)
