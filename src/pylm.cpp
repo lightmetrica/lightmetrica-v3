@@ -644,17 +644,11 @@ static void bind_scene(pybind11::module& m) {
 		virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
 			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_ray, rng, sp, wi);
 		}
-		virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const {
-			PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, sample_direction_given_comp, rng, sp, comp, wi);
-		}
 		virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
 			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_direct_light, rng, sp);
 		}
 		virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
 			PYBIND11_OVERLOAD_PURE(Float, Scene, pdf, sp, comp, wi, wo);
-		}
-		virtual Float pdf_comp(const SceneInteraction& sp, int comp, Vec3 wi) const override {
-			PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_comp, sp, comp, wi);
 		}
 		virtual Float pdf_direct_light(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const override {
 			PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direct_light, sp, spL, compL, wo);
@@ -703,10 +697,8 @@ static void bind_scene(pybind11::module& m) {
         .def("primary_ray", &Scene::primary_ray)
 		.def("raster_position", &Scene::raster_position)
         .def("sample_ray", &Scene::sample_ray)
-		.def("sample_direction_given_comp", &Scene::sample_direction_given_comp)
 		.def("sample_direct_light", &Scene::sample_direct_light)
 		.def("pdf", &Scene::pdf)
-		.def("pdf_comp", &Scene::pdf_comp)
 		.def("pdf_direct_light", &Scene::pdf_direct_light)
 		.def("sample_distance", &Scene::sample_distance)
 		.def("eval_transmittance", &Scene::eval_transmittance)
@@ -858,9 +850,6 @@ static void bind_material(pybind11::module& m) {
         }
         virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Material, pdf, geom, comp, wi, wo);
-        }
-        virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3 wi) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_comp, geom, comp, wi);
         }
         virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, comp, wi, wo);

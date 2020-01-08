@@ -404,32 +404,6 @@ public:
         }
     }
 
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const  override {
-        // Currently only the surface interaction is supported
-        if (sp.medium || sp.terminator) {
-            LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
-        }
-
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (!primitive.material) {
-            return {};
-        }
-        return primitive.material->sample_direction_given_comp(rng, sp.geom, comp, wi);
-    }
-
-    virtual Float pdf_comp(const SceneInteraction& sp, int comp, Vec3 wi) const override {
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (sp.medium) {
-            return 1_f;
-        }
-        else {
-            if (!primitive.material) {
-                return 1_f;
-            }
-            return primitive.material->pdf_comp(sp.geom, comp, wi);
-        }
-    }
-
     virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
         const auto* camera = nodes_.at(*camera_).primitive.camera;
         return camera->raster_position(wo, aspect);

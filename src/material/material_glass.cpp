@@ -116,24 +116,6 @@ public:
         LM_UNREACHABLE_RETURN();
     }
 
-    virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3 wi) const override {
-        const bool in = glm::dot(wi, geom.n) > 0_f;
-        const auto n = in ? geom.n : -geom.n;
-        const auto eta = in ? 1_f / Ni_ : Ni_;
-        const auto [wt, total] = math::refraction(wi, n, eta);
-        if (total) {
-            return 1_f;
-        }
-        const auto Fr = fresnel(wi, wt, geom);
-        if (comp == 0) {
-            return Fr;
-        }
-        else if (comp == 1) {
-            return 1_f;
-        }
-        LM_UNREACHABLE_RETURN();
-    }
-
     virtual Float pdf(const PointGeometry&, int, Vec3, Vec3) const override {
         return 0_f;
     }

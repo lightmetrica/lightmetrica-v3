@@ -14,7 +14,7 @@
 #include <lm/light.h>
 #include <lm/surface.h>
 
-#define USE_MIXTURE_MARGINAL_WITHOUT_ALPHA 1
+#define USE_MIXTURE_MARGINAL_WITHOUT_ALPHA 0
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -430,11 +430,6 @@ public:
         return p_maginal;
     }
 
-    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
-        // TODO. Remove this function.
-        return 1_f;
-    }
-
     virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
         const auto eval_f = [&](int c) -> Vec3 {
             const auto f = [&]() -> Vec3 {
@@ -575,58 +570,6 @@ private:
         LM_UNREACHABLE_RETURN();
     }
 
-    // Evaluate pdf.
-    // This version evaluates delta function if eval_delta is true.
-    Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo, bool eval_delta) const {
-        // Evaluate p_sel(j) * p_j(wo)
-        const auto eval_pdf = [&](int c) -> Float {
-            // Consider only if wo can be samplable with the strategy c
-            if (!is_samplable(comp, c)) {
-                return 0_f;
-            }
-            const auto p_sel = pdf_comp_select(geom, c);
-            const auto p = [&]() -> Float {
-                const auto* material = material_by_comp(c);
-                if (material->is_specular(geom, -1)) {
-                    return eval_delta ? 0_f : 1_f /* \delta() */;
-                }
-                return material->pdf(geom, -1, wi, wo);
-            }();
-            return p_sel * p;
-        };
-
-        // Compute marginal
-        Float p_maginal = 0_f;
-        p_maginal += eval_pdf(Comp_Diffuse);
-        p_maginal += eval_pdf(Comp_Glossy);
-        p_maginal += eval_pdf(Comp_Alpha);
-
-        return p_maginal;
-    }
-
-    // Evaluate BSDF.
-    // This version evaluates delta function if eval_delta is true.
-    Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const {
-        const auto eval_f = [&](int c) -> Vec3 {
-            const auto w = eval_mix_weight(geom, c);
-            const auto f = [&]() -> Vec3 {
-                const auto* material = material_by_comp(c);
-                if (material->is_specular(geom, -1)) {
-                    return Vec3(eval_delta ? 0_f : 1_f /* \delta() */);
-                }
-                return material->eval(geom, -1, wi, wo);
-            }();
-            return w * f;
-        };
-
-        Vec3 f_mixture(0_f);
-        f_mixture += eval_f(Comp_Diffuse);
-        f_mixture += eval_f(Comp_Glossy);
-        f_mixture += eval_f(Comp_Alpha);
-
-        return f_mixture;
-    }
-
 public:
     virtual void construct(const Json& prop) override {
         const auto Kd = json::value<Vec3>(prop, "Kd");
@@ -673,12 +616,27 @@ public:
             return {};
         }
         const auto eval_delta = !material->is_specular(geom, -1);
-        const auto f = eval(geom, wi, s->wo, eval_delta);
-        const auto p = pdf(geom, comp, wi, s->wo, eval_delta);
+
+        // Evaluate weight: f/p
+        const auto weight = [&]() -> Vec3 {
+            // If the selected component is non-delta component,
+            // compute f and p separately and compute the weight.
+            if (!is_specular(geom, comp)) {
+                const auto f = eval(geom, -1, wi, s->wo);
+                const auto p = pdf(geom, -1, wi, s->wo);
+                return f / p;
+            }
+            // Otherwise, compute f/p = weight for selecting comp
+            // because delta components are cancelled out.
+            else {
+                return Vec3(eval_mix_weight(geom, comp));
+            }
+        }();
+
         return MaterialDirectionSample{
             s->wo,
             comp,
-            f / p
+            weight
         };
     }
 
@@ -686,20 +644,44 @@ public:
         return diffuse_->reflectance(geom, -1);
     }
 
-    virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-        assert(!material_by_comp(comp)->is_specular(geom, -1));
-        return pdf(geom, comp, wi, wo, true);
+    virtual Float pdf(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+        // Evaluate p_sel(j) * p_j(wo)
+        const auto eval_pdf = [&](int c) -> Float {
+            // Consider only if wo can be samplable with the strategy c
+            // All strategies are samplable each other.
+            const auto p_sel = pdf_comp_select(geom, c);
+            const auto p = [&]() -> Float {
+                const auto* material = material_by_comp(c);
+                return material->pdf(geom, -1, wi, wo);
+            }();
+            return p_sel * p;
+        };
+
+        // Compute marginal
+        // Evaluate components except for specular components
+        Float p_maginal = 0_f;
+        p_maginal += eval_pdf(Comp_Diffuse);
+        p_maginal += eval_pdf(Comp_Glossy);
+
+        return p_maginal;
     }
 
-    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
-        // TODO. Remove this function.
-        return 1_f;
-    }
+    virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+        const auto eval_f = [&](int c) -> Vec3 {
+            const auto w = eval_mix_weight(geom, c);
+            const auto f = [&]() -> Vec3 {
+                const auto* material = material_by_comp(c);
+                return material->eval(geom, -1, wi, wo);
+            }();
+            return w * f;
+        };
 
-    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-        LM_UNUSED(comp);
-        assert(!material_by_comp(comp)->is_specular(geom, -1));
-        return eval(geom, wi, wo, true);
+        // Evaluate components except for specular components
+        Vec3 f_mixture(0_f);
+        f_mixture += eval_f(Comp_Diffuse);
+        f_mixture += eval_f(Comp_Glossy);
+
+        return f_mixture;
     }
 };
 

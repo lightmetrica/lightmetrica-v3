@@ -50,10 +50,6 @@ private:
         return 0_f;
     }
 
-    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
-        return 1_f;
-    }
-
     virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {
         return Vec3(0_f);
     }

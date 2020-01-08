@@ -60,10 +60,6 @@ public:
         return ref_->pdf(geom, comp, wi, wo);
     }
 
-    virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3 wi) const override {
-        return ref_->pdf_comp(geom, comp, wi);
-    }
-
     virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
         return ref_->eval(geom, comp, wi, wo);
     }

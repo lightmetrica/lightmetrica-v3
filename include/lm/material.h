@@ -116,14 +116,6 @@ public:
     virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
-        \brief Evaluate pdf for component selection.
-        \param geom Point geometry.
-        \param comp Component index.
-        \param wi Incident ray direction.
-    */
-    virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3 wi) const = 0;
-
-    /*!
         \brief Evaluate BSDF.
         \param geom Point geometry.
         \param comp Component index.

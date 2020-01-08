@@ -474,11 +474,6 @@ public:
     virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
 
     /*!
-        \brief Sample direction given component.
-    */
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
-
-    /*!
         \brief Sample direction to a light given a scene interaction.
         \param rng Random number generator.
         \param sp Scene interaction.
@@ -507,14 +502,6 @@ public:
         \endrst
     */
     virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
-
-    /*!
-        \brief Evaluate pdf for component selection.
-        \param sp Scene interaction.
-		\param comp Component index.
-        \param wi Incident ray direction.
-    */
-    virtual Float pdf_comp(const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate pdf for light sampling given a scene interaction.
