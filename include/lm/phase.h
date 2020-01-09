@@ -45,7 +45,7 @@ public:
         \param wi Incident ray direction.
         \return Sampled direction and associated information.
     */
-    virtual std::optional<PhaseDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
+    virtual std::optional<PhaseDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate pdf in solid angle measure.
@@ -54,7 +54,7 @@ public:
         \param wo Outgoing ray direction.
         \return Evaluated pdf.
     */
-    virtual Float pdf(const PointGeometry& geom, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate the phase function.

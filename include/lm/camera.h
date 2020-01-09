@@ -31,6 +31,20 @@ struct CameraRaySample {
 };
 
 /*!
+*/
+struct CameraPositionSample {
+    PointGeometry geom;
+    Vec3 weight;
+};
+
+/*!
+*/
+struct CameraDirectionSample {
+    Vec3 wo;
+    Vec3 weight;
+};
+
+/*!
     \brief Camera.
 
     \rst
@@ -74,6 +88,32 @@ public:
     virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const = 0;
 
     /*!
+        \brief Evaluate sensitivity.
+        \param wo Outgoing direction.
+        \param aspect Aspect ratio of the film.
+
+        \rst
+        Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.
+        \endrst
+    */
+    virtual Vec3 eval(Vec3 wo, Float aspect) const = 0;
+
+    /*!
+        \brief Get view matrix if available.
+        \return View matrix.
+    */
+    virtual Mat4 view_matrix() const = 0;
+
+    /*!
+        \brief Get projection matrix if available.
+        \param aspect Aspect ratio of the film.
+        \return Projection matrix.
+    */
+    virtual Mat4 projection_matrix(Float aspect) const = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    /*!
         \brief Sample a primary ray within the given raster window.
         \param rng Random number generator.
         \param window Raster window.
@@ -98,39 +138,29 @@ public:
         Looking by the solid angle measure, for instance, the set of rays are not uniform.
         \endrst
     */
-    virtual std::optional<CameraRaySample> sample_primary_ray(Rng& rng, Vec4 window, Float aspect) const = 0;
+    virtual std::optional<CameraRaySample> sample_ray(Rng& rng, Vec4 window, Float aspect) const = 0;
+
+    /*!
+    */
+    virtual CameraDirectionSample sample_direction(Rng& rng, Vec4 window, Float aspect) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
         \param wo Outgoing direction.
         \param aspect Aspect ratio of the film.
-		\return Evaluated pdf.
+        \return Evaluated pdf.
     */
-    virtual Float pdf(Vec3 wo, Float aspect) const = 0;
+    virtual Float pdf_direction(Vec3 wo, Float aspect) const = 0;
+
+    // --------------------------------------------------------------------------------------------
 
     /*!
-        \brief Evaluate sensitivity.
-        \param wo Outgoing direction.
-        \param aspect Aspect ratio of the film.
-
-        \rst
-        Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.
-        \endrst
     */
-    virtual Vec3 eval(Vec3 wo, Float aspect) const = 0;
+    virtual std::optional<CameraRaySample> sample_direct(Rng& rng, const PointGeometry& geom) const = 0;
 
     /*!
-        \brief Get view matrix if available.
-        \return View matrix.
     */
-    virtual Mat4 view_matrix() const = 0;
-
-    /*!
-        \brief Get projection matrix if available.
-        \param aspect Aspect ratio of the film.
-        \return Projection matrix.
-    */
-    virtual Mat4 projection_matrix(Float aspect) const = 0;
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomE, Vec3 wo) const = 0;
 };
 
 /*!

@@ -71,86 +71,84 @@ public:
         nodes_.push_back(SceneNode::make_group(0, false, {}));
     }
 
-    virtual Accel* accel() const override {
-        return accel_;
-    }
+    // --------------------------------------------------------------------------------------------
 
-    virtual void set_accel(const std::string& accel_loc) override {
-        accel_ = comp::get<Accel>(accel_loc);
-    }
+    //
+    // Scene graph manipulation and access
+    //
 
     virtual int root_node() override {
         return 0;
     }
 
-	virtual int create_primitive_node(const Json& prop) override {
-		// Find an asset by property name
-		const auto get_asset_ref_by = [&](const std::string& propName) -> Component * {
-			const auto it = prop.find(propName);
-			if (it == prop.end()) {
-				return nullptr;
-			}
-			return comp::get<Component>(it.value().get<std::string>());
-		};
+    virtual int create_primitive_node(const Json& prop) override {
+        // Find an asset by property name
+        const auto get_asset_ref_by = [&](const std::string& propName) -> Component * {
+            const auto it = prop.find(propName);
+            if (it == prop.end()) {
+                return nullptr;
+            }
+            return comp::get<Component>(it.value().get<std::string>());
+        };
 
-		// Node index
-		const int index = int(nodes_.size());
+        // Node index
+        const int index = int(nodes_.size());
 
-		// Get asset references
-		auto* mesh = dynamic_cast<Mesh*>(get_asset_ref_by("mesh"));
-		auto* material = dynamic_cast<Material*>(get_asset_ref_by("material"));
-		auto* light = dynamic_cast<Light*>(get_asset_ref_by("light"));
-		auto* camera = dynamic_cast<Camera*>(get_asset_ref_by("camera"));
-		auto* medium = dynamic_cast<Medium*>(get_asset_ref_by("medium"));
+        // Get asset references
+        auto* mesh = dynamic_cast<Mesh*>(get_asset_ref_by("mesh"));
+        auto* material = dynamic_cast<Material*>(get_asset_ref_by("material"));
+        auto* light = dynamic_cast<Light*>(get_asset_ref_by("light"));
+        auto* camera = dynamic_cast<Camera*>(get_asset_ref_by("camera"));
+        auto* medium = dynamic_cast<Medium*>(get_asset_ref_by("medium"));
 
-		// Check validity
-		if (!mesh && !material && !light && !camera && !medium) {
-			LM_ERROR("Invalid primitive node. Given assets are invalid.");
-			return false;
-		}
-		if (camera && light) {
-			LM_ERROR("Primitive cannot be both camera and light");
-			return false;
-		}
+        // Check validity
+        if (!mesh && !material && !light && !camera && !medium) {
+            LM_ERROR("Invalid primitive node. Given assets are invalid.");
+            return false;
+        }
+        if (camera && light) {
+            LM_ERROR("Primitive cannot be both camera and light");
+            return false;
+        }
 
-		// Camera
-		if (camera) {
-			camera_ = index;
-		}
+        // Camera
+        if (camera) {
+            camera_ = index;
+        }
 
-		// Envlight
-		if (light && light->is_infinite()) {
-			if (env_light_) {
-				LM_ERROR("Environment light is already registered. "
-					"You can register only one environment light in the scene.");
-				return false;
-			}
-			env_light_ = index;
-		}
+        // Envlight
+        if (light && light->is_infinite()) {
+            if (env_light_) {
+                LM_ERROR("Environment light is already registered. "
+                    "You can register only one environment light in the scene.");
+                return false;
+            }
+            env_light_ = index;
+        }
 
-		// Medium
-		if (medium) {
-			// For now, consider the medium as global asset.
-			medium_ = index;
-		}
+        // Medium
+        if (medium) {
+            // For now, consider the medium as global asset.
+            medium_ = index;
+        }
 
-		// Create primitive node
-		nodes_.push_back(SceneNode::make_primitive(index, mesh, material, light, camera, medium));
+        // Create primitive node
+        nodes_.push_back(SceneNode::make_primitive(index, mesh, material, light, camera, medium));
 
-		return index;
-	}
+        return index;
+    }
 
-	virtual int create_group_node(Mat4 transform) override {
-		const int index = int(nodes_.size());
-		nodes_.push_back(SceneNode::make_group(index, false, transform));
-		return index;
-	}
+    virtual int create_group_node(Mat4 transform) override {
+        const int index = int(nodes_.size());
+        nodes_.push_back(SceneNode::make_group(index, false, transform));
+        return index;
+    }
 
-	virtual int create_instance_group_node() override {
-		const int index = int(nodes_.size());
-		nodes_.push_back(SceneNode::make_group(index, true, {}));
-		return index;
-	}
+    virtual int create_instance_group_node() override {
+        const int index = int(nodes_.size());
+        nodes_.push_back(SceneNode::make_group(index, true, {}));
+        return index;
+    }
 
     virtual void add_child(int parent, int child) override {
         if (parent < 0 || parent >= int(nodes_.size())) {
@@ -163,7 +161,7 @@ public:
             LM_ERROR("Adding child to non-group node [parent='{}', child='{}']", parent, child);
             return;
         }
-        
+
         node.group.children.push_back(child);
     }
 
@@ -177,7 +175,7 @@ public:
         if (!model) {
             return;
         }
-        
+
         model->create_primitives([&](Component* mesh, Component* material, Component* light) {
             const int index = int(nodes_.size());
             nodes_.push_back(SceneNode::make_primitive(
@@ -197,7 +195,7 @@ public:
             LM_ERROR("Invalid model [loc={}]", modelLoc);
             return -1;
         }
-        
+
         // Iterate underlyng scene nodes in the model
         // To copy the underlying scene graph as a child of scene graph of the scene,
         // we first want to copy the nodes and modify the references to the other nodes.
@@ -207,7 +205,7 @@ public:
             // Copy the node
             nodes_.push_back(modelNode);
             auto& node = nodes_.back();
-            
+
             // Update the references to other nodes
             node.index += offset;
             if (node.type == SceneNodeType::Group) {
@@ -224,8 +222,6 @@ public:
 
         return offset;
     }
-
-    // --------------------------------------------------------------------------------------------
 
     virtual void traverse_primitive_nodes(const NodeTraverseFunc& traverseFunc) const override {
         std::function<void(int, Mat4)> visit = [&](int index, Mat4 global_transform) {
@@ -269,6 +265,18 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
+    //
+    // Ray-scene intersection
+    //
+
+    virtual Accel* accel() const override {
+        return accel_;
+    }
+
+    virtual void set_accel(const std::string& accel_loc) override {
+        accel_ = comp::get<Accel>(accel_loc);
+    }
+
     virtual void build() override {
         // Update light indices
         // We keep the global transformation of the light primitive as well as the references.
@@ -303,7 +311,7 @@ public:
                 *env_light_,
                 PointGeometry::make_infinite(-ray.d));
         }
-        const auto [t, uv, global_transform, primitiveIndex, faceIndex] = *hit;
+        const auto[t, uv, global_transform, primitiveIndex, faceIndex] = *hit;
         const auto& primitive = nodes_.at(primitiveIndex).primitive;
         const auto p = primitive.mesh->surface_point(faceIndex, uv);
         return SceneInteraction::make_surface_interaction(
@@ -318,41 +326,65 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
+    //
+    // Primitive type checking
+    //
+
     virtual bool is_light(const SceneInteraction& sp) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
-        return sp.medium
-            ? primitive.medium->is_emitter()
-            : primitive.light != nullptr;
+        return (sp.is_type(SceneInteraction::MediumInteraction) && primitive.medium->is_emitter()) ||
+                sp.is_type(SceneInteraction::LightEndpoint);
     }
 
     virtual bool is_specular(const SceneInteraction& sp, int comp) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (sp.medium) {
-            return primitive.medium->phase()->is_specular(sp.geom);
-        }
-        if (sp.endpoint) {
-            if (primitive.light) {
-                return primitive.light->is_specular(sp.geom, comp);
-            }
-            else if (primitive.camera) {
+        switch (sp.type) {
+            case SceneInteraction::CameraEndpoint:
                 return primitive.camera->is_specular(sp.geom);
-            }
-            LM_UNREACHABLE_RETURN();
+            case SceneInteraction::LightEndpoint:
+                return primitive.light->is_specular(sp.geom, comp);
+            case SceneInteraction::MediumInteraction:
+                return primitive.medium->phase()->is_specular(sp.geom);
+            case SceneInteraction::SurfaceInteraction:
+                return primitive.material->is_specular(sp.geom, comp);
         }
-        return primitive.material->is_specular(sp.geom, comp);
+        LM_UNREACHABLE_RETURN();
     }
 
     // --------------------------------------------------------------------------------------------
+
+    //
+    // Ray sampling
+    //
 
     virtual Ray primary_ray(Vec2 rp, Float aspect) const {
         return nodes_.at(*camera_).primitive.camera->primary_ray(rp, aspect);
     }
 
     virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
-        if (sp.medium) {
-            // Medium interaction
+        if (sp.is_type(SceneInteraction::CameraTerminator)) {
+            const auto* camera = nodes_.at(*camera_).primitive.camera;
+            const auto s = camera->sample_ray(rng, sp.camera_cond.window, sp.camera_cond.aspect);
+            if (!s) {
+                return {};
+            }
+            return RaySample{
+                SceneInteraction::make_camera_endpoint(
+                    *camera_,
+                    s->geom,
+                    sp.camera_cond.aspect
+                ),
+                0,
+                s->wo,
+                s->weight
+            };
+        }
+        else if (sp.is_type(SceneInteraction::LightTerminator)) {
+            LM_TBA();
+        }
+        else if (sp.is_type(SceneInteraction::MediumInteraction)) {
             const auto& primitive = nodes_.at(sp.primitive).primitive;
-            const auto s = primitive.medium->phase()->sample(rng, sp.geom, wi);
+            const auto s = primitive.medium->phase()->sample_direction(rng, sp.geom, wi);
             if (!s) {
                 return {};
             }
@@ -363,32 +395,12 @@ public:
                 s->weight
             };
         }
-        else if (sp.terminator && sp.terminator == TerminatorType::Camera) {
-            // Endpoint
-            const auto* camera = nodes_.at(*camera_).primitive.camera;
-            const auto s = camera->sample_primary_ray(rng, sp.camera_cond.window, sp.camera_cond.aspect);
-            if (!s) {
-                return {};
-            }
-            return RaySample{
-                SceneInteraction::make_camera_endpoint(
-                    *camera_,
-                    s->geom,
-                    sp.camera_cond.window,
-                    sp.camera_cond.aspect
-                ),
-                0,
-                s->wo,
-                s->weight
-            };
-        }
-        else {
-            // Surface interaction
+        else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
             const auto& primitive = nodes_.at(sp.primitive).primitive;
             if (!primitive.material) {
                 return {};
             }
-            const auto s = primitive.material->sample(rng, sp.geom, wi);
+            const auto s = primitive.material->sample_direction(rng, sp.geom, wi);
             if (!s) {
                 return {};
             }
@@ -402,23 +414,82 @@ public:
                 s->weight
             };
         }
+        LM_UNREACHABLE_RETURN();
     }
 
-    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
-        const auto* camera = nodes_.at(*camera_).primitive.camera;
-        return camera->raster_position(wo, aspect);
+    // --------------------------------------------------------------------------------------------
+
+    //
+    // Direction sampling
+    //
+
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
+        if (!sp.is_type(SceneInteraction::Midpoint)) {
+            LM_THROW_EXCEPTION(Error::Unsupported,
+                "Direction sampling is only supported for midpoint interactions.");
+        }
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
+        if (sp.is_type(SceneInteraction::MediumInteraction)) {
+            const auto s = primitive.medium->phase()->sample_direction(rng, sp.geom, wi);
+            if (!s) {
+                return {};
+            }
+            return DirectionSample{
+                s->wo,
+                0,
+                s->weight
+            };
+        }
+        else if (sp.is_type(SceneInteraction::MediumInteraction)) {
+            const auto s = primitive.material->sample_direction(rng, sp.geom, wi);
+            if (!s) {
+                return {};
+            }
+            return DirectionSample{
+                s->wo,
+                s->comp,
+                s->weight
+            };
+        }
+        LM_UNREACHABLE_RETURN();
     }
+
+    virtual Float pdf_direction(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
+        switch (sp.type) {
+            case SceneInteraction::CameraEndpoint:
+                return primitive.camera->pdf_direction(wo, sp.camera_cond.aspect);
+            case SceneInteraction::LightEndpoint:
+                LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
+            case SceneInteraction::MediumInteraction:
+                return primitive.medium->phase()->pdf_direction(sp.geom, wi, wo);
+            case SceneInteraction::SurfaceInteraction:
+                return primitive.material->pdf_direction(sp.geom, comp, wi, wo);
+        }
+        LM_UNREACHABLE_RETURN();
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    //
+    // Direct endpoint sampling
+    //
 
     virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
+        if (!sp.is_type(SceneInteraction::Endpoint)) {
+            LM_THROW_EXCEPTION(Error::Unsupported,
+                "Direct sampling does not support non-endpoint interactions.");
+        }
+
         // Sample a light
-        const int n  = int(lights_.size());
-        const int i  = glm::clamp(int(rng.u() * n), 0, n-1);
+        const int n = int(lights_.size());
+        const int i = glm::clamp(int(rng.u() * n), 0, n - 1);
         const auto pL = 1_f / n;
-        
+
         // Sample a position on the light
         const auto light = lights_.at(i);
         const auto& primitive = nodes_.at(light.index).primitive;
-        const auto s = primitive.light->sample(rng, sp.geom, light.global_transform);
+        const auto s = primitive.light->sample_direct(rng, sp.geom, light.global_transform);
         if (!s) {
             return {};
         }
@@ -432,34 +503,55 @@ public:
             s->weight / pL
         };
     }
-    
-    virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (sp.medium) {
-            return primitive.medium->phase()->pdf(sp.geom, wi, wo);
+
+    virtual std::optional<RaySample> sample_direct_camera(Rng& rng, const SceneInteraction& sp, Float aspect) const override {
+        if (!sp.is_type(SceneInteraction::Endpoint)) {
+            LM_THROW_EXCEPTION(Error::Unsupported,
+                "Direct sampling does not support non-endpoint interactions.");
         }
-        else if (sp.endpoint) {
-            if (primitive.light) {
-                LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
-            }
-            else if (primitive.camera) {
-                return primitive.camera->pdf(wo, sp.camera_cond.aspect);
-            }
-            LM_UNREACHABLE_RETURN();
+
+        const auto& primitive = nodes_.at(*camera_).primitive;
+        const auto s = primitive.camera->sample_direct(rng, sp.geom);
+        if (!s) {
+            return {};
         }
-        else {
-            return primitive.material->pdf(sp.geom, comp, wi, wo);
-        }
+        return RaySample{
+            SceneInteraction::make_camera_endpoint(
+                *camera_,
+                s->geom,
+                aspect
+            ),
+            0,
+            s->wo,
+            s->weight
+        };
     }
 
-    virtual Float pdf_direct_light(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const override {
-        const auto& primitive = nodes_.at(spL.primitive).primitive;
-        const auto light_transform = lights_.at(light_indices_map_.at(spL.primitive)).global_transform;
-        const auto pL = 1_f / int(lights_.size());
-        return primitive.light->pdf(sp.geom, spL.geom, compL, light_transform, wo) * pL;
+    virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& sp_endpoint, int comp_endpoint, Vec3 wo) const override {
+        if (!sp.is_type(SceneInteraction::Endpoint)) {
+            LM_THROW_EXCEPTION(Error::Unsupported,
+                "Direct sampling does not support non-endpoint interactions.");
+        }
+
+        const auto& primitive = nodes_.at(sp_endpoint.primitive).primitive;
+        if (sp.is_type(SceneInteraction::CameraEndpoint)) {
+            return primitive.camera->pdf_direct(sp.geom, sp_endpoint.geom, wo);
+        }
+        else if (sp.is_type(SceneInteraction::LightEndpoint)) {
+            const int light_index = light_indices_map_.at(sp_endpoint.primitive);
+            const auto light_transform = lights_.at(light_index).global_transform;
+            const auto pL = 1_f / int(lights_.size());
+            return primitive.light->pdf_direct(sp.geom, sp_endpoint.geom, comp_endpoint, light_transform, wo) * pL;
+        }
+
+        LM_UNREACHABLE_RETURN();
     }
 
     // --------------------------------------------------------------------------------------------
+
+    //
+    // Distance sampling
+    //
 
     virtual std::optional<DistanceSample> sample_distance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
         // Intersection to next surface
@@ -511,40 +603,45 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
+    //
+    // Evaluating contribution
+    //
+
+    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
+        const auto* camera = nodes_.at(*camera_).primitive.camera;
+        return camera->raster_position(wo, aspect);
+    }
+
     virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (sp.medium) {
-            // Medium interaction
-            return primitive.medium->phase()->eval(sp.geom, wi, wo);
+        switch (sp.type) {
+            case SceneInteraction::CameraEndpoint:
+                return primitive.camera->eval(wo, sp.camera_cond.aspect);
+            case SceneInteraction::LightEndpoint:
+                return primitive.light->eval(sp.geom, comp, wo);
+            case SceneInteraction::MediumInteraction:
+                return primitive.medium->phase()->eval(sp.geom, wi, wo);
+            case SceneInteraction::SurfaceInteraction:
+                return primitive.material->eval(sp.geom, comp, wi, wo);
         }
-        else {
-            // Surface interaction
-            if (sp.endpoint) {
-                if (primitive.camera) {
-                    return primitive.camera->eval(wo, sp.camera_cond.aspect);
-                }
-                else if (primitive.light) {
-                    return primitive.light->eval(sp.geom, comp, wo);
-                }
-                LM_UNREACHABLE();
-            }
-            return primitive.material->eval(sp.geom, comp, wi, wo);
-        }
+        LM_UNREACHABLE_RETURN();
     }
 
     virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const override {
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (!primitive.light) {
-            return {};
+        if (!sp.is_type(SceneInteraction::Endpoint)) {
+            LM_THROW_EXCEPTION(Error::Unsupported,
+                "eval_contrb_endpoint() function only supports endpoint interactions.");
         }
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
         return primitive.light->eval(sp.geom, -1, wo);
     }
 
     virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const override {
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (!primitive.material) {
-            return {};
+        if (!sp.is_type(SceneInteraction::SurfaceInteraction)) {
+            LM_THROW_EXCEPTION(Error::Unsupported,
+                "reflectance() function only supports surface interactions.");
         }
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
         return primitive.material->reflectance(sp.geom, comp);
     }
 };

@@ -72,7 +72,7 @@ public:
         Note that the evaluated weight doesn't contain the evaluation of the pdf of component selection.
         \endrst
     */
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
 
     /*!
         \brief Sample a ray direction given a component.
@@ -113,7 +113,7 @@ public:
         Note that the evaluated pdf doesn't contain the probabilty of component selection.
         \endrst
     */
-    virtual Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf_direction(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate BSDF.

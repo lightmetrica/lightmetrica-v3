@@ -118,7 +118,7 @@ public:
         return rp;
     }
 
-    virtual std::optional<CameraRaySample> sample_primary_ray(Rng& rng, Vec4 window, Float aspect) const override {
+    virtual std::optional<CameraRaySample> sample_ray(Rng& rng, Vec4 window, Float aspect) const override {
         const auto [x, y, w, h] = window.data.data;
         return CameraRaySample{
             PointGeometry::make_degenerated(position_),
@@ -127,7 +127,26 @@ public:
         };
     }
 
-    virtual Float pdf(Vec3 wo, Float aspect) const override {
+    virtual CameraPositionSample sample_position(Rng& rng) const override {
+        return CameraPositionSample{
+            PointGeometry::make_degenerated(position_),
+            Vec3(1_f)
+        };
+    }
+
+    virtual Float pdf_position() const override {
+        return 1_f;
+    }
+
+    virtual CameraDirectionSample sample_direction(Rng& rng, Vec4 window, Float aspect) const override {
+        const auto[x, y, w, h] = window.data.data;
+        return CameraDirectionSample{
+            primary_ray({x+w*rng.u(), y+h*rng.u()}, aspect).d,
+            Vec3(1_f)
+        };
+    }
+
+    virtual Float pdf_direction(Vec3 wo, Float aspect) const override {
         // Given directions is not samplable if raster position is not in [0,1]^2
         if (!raster_position(wo, aspect)) {
             return 0_f;

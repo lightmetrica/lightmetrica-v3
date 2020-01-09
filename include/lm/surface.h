@@ -183,14 +183,6 @@ namespace SurfaceComp {
 }
 
 /*!
-    \brief Terminator type.
-*/
-enum class TerminatorType {
-    Camera,
-    Light,
-};
-
-/*!
     \brief Scene interaction.
 
     \rst
@@ -206,17 +198,35 @@ enum class TerminatorType {
     \endrst
 */
 struct SceneInteraction {
+    // Scene interaction type.
+    enum {
+        None               = 0,
+        CameraTerminator   = 1<<0,
+        LightTerminator    = 1<<1,
+        CameraEndpoint     = 1<<2,
+        LightEndpoint      = 1<<3,
+        SurfaceInteraction = 1<<4,
+        MediumInteraction  = 1<<5,
+        Terminator         = CameraTerminator | LightTerminator,
+        Endpoint           = CameraEndpoint | LightEndpoint,
+        Midpoint           = SurfaceInteraction | MediumInteraction
+    };
+
+    int type = None;        //!< Scene interaction type.
     int primitive;          //!< Primitive node index.
     PointGeometry geom;     //!< Surface point geometry information.
-    bool endpoint;          //!< True if endpoint of light path.
-    bool medium;            //!< True if it is medium interaction.
-    std::optional<TerminatorType> terminator;   //!< Terminator type.
 
     // Information associated to terminator on camera
     struct {
         Vec4 window;
         Float aspect;
     } camera_cond;
+
+    /*!
+    */
+    bool is_type(int type_flag) const {
+        return (type & type_flag) > 0;
+    }
 
     /*!
         \brief Make surface interaction.
@@ -226,11 +236,9 @@ struct SceneInteraction {
     */
     static SceneInteraction make_surface_interaction(int primitive, const PointGeometry& geom) {
         SceneInteraction sp;
+        sp.type = SurfaceInteraction;
         sp.primitive = primitive;
         sp.geom = geom;
-        sp.endpoint = false;
-        sp.medium = false;
-        sp.terminator = {};
         return sp;
     }
 
@@ -242,11 +250,9 @@ struct SceneInteraction {
     */
     static SceneInteraction make_medium_interaction(int primitive, const PointGeometry& geom) {
         SceneInteraction sp;
+        sp.type = MediumInteraction;
         sp.primitive = primitive;
         sp.geom = geom;
-        sp.endpoint = false;
-        sp.medium = true;
-        sp.terminator = {};
         return sp;
     }
 
@@ -258,14 +264,11 @@ struct SceneInteraction {
         \param aspect Aspect ratio.
         \return Created scene interaction.
     */
-    static SceneInteraction make_camera_endpoint(int primitive, const PointGeometry& geom, Vec4 window, Float aspect) {
+    static SceneInteraction make_camera_endpoint(int primitive, const PointGeometry& geom, Float aspect) {
         SceneInteraction sp;
+        sp.type = CameraEndpoint;
         sp.primitive = primitive;
         sp.geom = geom;
-        sp.endpoint = true;
-        sp.medium = false;
-        sp.terminator = {};
-        sp.camera_cond.window = window;
         sp.camera_cond.aspect = aspect;
         return sp;
     }
@@ -277,11 +280,9 @@ struct SceneInteraction {
     */
     static SceneInteraction make_light_endpoint(int primitive, const PointGeometry& geom) {
         SceneInteraction sp;
+        sp.type = LightEndpoint;
         sp.primitive = primitive;
         sp.geom = geom;
-        sp.endpoint = true;
-        sp.medium = false;
-        sp.terminator = {};
         return sp;
     }
 
@@ -292,9 +293,7 @@ struct SceneInteraction {
     */
     static SceneInteraction make_camera_terminator(Vec4 window, Float aspect) {
         SceneInteraction sp;
-        sp.endpoint = false;
-        sp.medium = false;
-        sp.terminator = TerminatorType::Camera;
+        sp.type = CameraTerminator;
         sp.camera_cond.window = window;
         sp.camera_cond.aspect = aspect;
         return sp;
@@ -305,9 +304,7 @@ struct SceneInteraction {
     */
     static SceneInteraction make_light_terminator() {
         SceneInteraction sp;
-        sp.endpoint = false;
-        sp.medium = false;
-        sp.terminator = TerminatorType::Light;
+        sp.type = LightTerminator;
     }
 };
 

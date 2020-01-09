@@ -46,6 +46,14 @@ struct RaySample {
 };
 
 /*!
+*/
+struct DirectionSample {
+    Vec3 wo;
+    int comp;
+    Vec3 weight;
+};
+
+/*!
     \brief Result of distance sampling.
 */
 struct DistanceSample {
@@ -79,19 +87,11 @@ public:
     */
     virtual void reset() = 0;
 
-    /*!
-        \brief Get underlying acceleration structure.
-        \return Instance.
-    */
-    virtual Accel* accel() const = 0;
-
-    /*!
-        \brief Set underlying acceleration structure.
-        \param accel_loc Locator to the accel asset.
-    */
-    virtual void set_accel(const std::string& accel_loc) = 0;
-
     // --------------------------------------------------------------------------------------------
+
+    //
+    // Scene graph manipulation and access
+    //
 
     /*!
         \brief Get index of the root node.
@@ -203,8 +203,6 @@ public:
         add_child(root_node(), t);
     }
 
-    // --------------------------------------------------------------------------------------------
-
     /*!
         \brief Callback function to traverse the scene nodes.
         \param node Current node.
@@ -287,6 +285,10 @@ public:
 
 	// --------------------------------------------------------------------------------------------
 
+    //
+    // Scene requirement checking
+    //
+
 	/*!
 		\brief Throws an exception if there is no primitive in the scene.
 	*/
@@ -352,6 +354,22 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
+    //
+    // Ray-scene intersection
+    //
+
+    /*!
+        \brief Get underlying acceleration structure.
+        \return Instance.
+    */
+    virtual Accel* accel() const = 0;
+
+    /*!
+        \brief Set underlying acceleration structure.
+        \param accel_loc Locator to the accel asset.
+    */
+    virtual void set_accel(const std::string& accel_loc) = 0;
+
     /*!
         \brief Build acceleration structure.
     */
@@ -405,6 +423,10 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
+    //
+    // Primitive type checking
+    //
+
     /*!
         \brief Check if given surface point is light.
         \param sp Scene interaction.
@@ -427,6 +449,13 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
+    //
+    // Ray sampling
+    //
+    // Samples the joint distribution of the scene interaction x and the direction wo
+    // originated from x. (x, wo) ~ p(x, wo).
+    //
+
     /*!
         \brief Generate a primary ray.
         \param rp Raster position in [0,1]^2.
@@ -439,14 +468,6 @@ public:
         \endrst
     */
     virtual Ray primary_ray(Vec2 rp, Float aspect) const = 0;
-
-    /*!
-        \brief Compute a raster position.
-        \param wo Primary ray direction.
-        \param aspect Aspect ratio of the film.
-        \return Raster position.
-    */
-    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const = 0;
 
     /*!
         \brief Sample a ray given surface point and incident direction.
@@ -473,19 +494,17 @@ public:
     */
     virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
 
-    /*!
-        \brief Sample direction to a light given a scene interaction.
-        \param rng Random number generator.
-        \param sp Scene interaction.
+    // --------------------------------------------------------------------------------------------
 
-        \rst
-        This function samples a ray to the light given a scene interaction.
-        Be careful not to confuse the sampled ray with the ray sampled via :cpp:func:`Scene::sample_ray`
-        function from a light source. Both rays are sampled from the different distributions
-        and if you want to evaluate densities you want to use different functions.
-        \endrst
+    //
+    // Direction sampling
+    //
+    // wo ~ p_{\sigma^\bot}(wo).
+    //
+
+    /*!
     */
-    virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
@@ -501,23 +520,55 @@ public:
         utlizing corresponding densities from which the direction is sampled.
         \endrst
     */
-    virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
-
-    /*!
-        \brief Evaluate pdf for light sampling given a scene interaction.
-        \param sp Scene interaction.
-        \param spL Sampled scene interaction of the light.
-		\param compL Component index of the light.
-        \param wo Sampled outgoing ray directiom *from* the light.
-
-        \rst
-        This function evaluate pdf for the ray sampled via :cpp:func:`Scene::sample_direct_light`.
-        Be careful ``wo`` is the outgoing direction originated from ``spL``, not ``sp``.
-        \endrst
-    */
-    virtual Float pdf_direct_light(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const = 0;
+    virtual Float pdf_direction(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     // --------------------------------------------------------------------------------------------
+
+    //
+    // Direct endpoint sampling
+    //
+    // Samples a direction to a light or a sensor given a current x.
+    // wo ~ p_{\sigma^\bot}(wo | x)
+    //
+
+    /*!
+        \brief Sample direction to a light given a scene interaction.
+        \param rng Random number generator.
+        \param sp Scene interaction.
+
+        \rst
+        This function samples a ray to the light given a scene interaction.
+        Be careful not to confuse the sampled ray with the ray sampled via :cpp:func:`Scene::sample_ray`
+        function from a light source. Both rays are sampled from the different distributions
+        and if you want to evaluate densities you want to use different functions.
+        \endrst
+    */
+    virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const = 0;
+
+    /*!
+    */
+    virtual std::optional<RaySample> sample_direct_camera(Rng& rng, const SceneInteraction& sp, Float aspect) const = 0;
+
+    /*!
+        \brief Evaluate pdf for endpoint sampling given a scene interaction.
+        \param sp Scene interaction.
+        \param sp_endpoint Sampled scene interaction of the endpoint.
+		\param comp_endpoint Component index of the endpoint.
+        \param wo Sampled outgoing ray directiom *from* the endpoint.
+
+        \rst
+        This function evaluate pdf for the ray sampled via :cpp:func:`Scene::sample_direct_light`
+        or :cpp:func:`Scene::sample_direct_camera`.
+        Be careful ``wo`` is the outgoing direction originated from ``sp_endpoint``, not ``sp``.
+        \endrst
+    */
+    virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& sp_endpoint, int comp_endpoint, Vec3 wo) const = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    //
+    // Distance sampling
+    //
 
     /*!
         \brief Sample a distance in a ray direction.
@@ -550,6 +601,18 @@ public:
     virtual Vec3 eval_transmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const = 0;
 
     // --------------------------------------------------------------------------------------------
+
+    //
+    // Evaluating contribution
+    //
+
+    /*!
+        \brief Compute a raster position.
+        \param wo Primary ray direction.
+        \param aspect Aspect ratio of the film.
+        \return Raster position.
+    */
+    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const = 0;
 
     /*!
         \brief Evaluate contribution.
