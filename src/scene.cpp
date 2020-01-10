@@ -353,6 +353,32 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
+    // Helper function for light selection
+
+    struct LightSelectionSample {
+        int light_index;    // Sampled light index
+        Float p_sel;        // Selection probability
+    };
+    
+    // Light selection sampling
+    LightSelectionSample sample_light_selection(Rng& rng) const {
+        const int n = int(lights_.size());
+        const int i = glm::clamp(int(rng.u() * n), 0, n - 1);
+        const auto pL = 1_f / n;
+        return LightSelectionSample{
+            i,
+            pL
+        };
+    }
+
+    // PMF for light selection sampling
+    Float pdf_light_selection(int light_index) const {
+        const int n = int(lights_.size());
+        return 1_f / n;
+    };
+
+    // --------------------------------------------------------------------------------------------
+
     //
     // Ray sampling
     //
@@ -380,7 +406,11 @@ public:
             };
         }
         else if (sp.is_type(SceneInteraction::LightTerminator)) {
-            LM_TBA();
+            const auto [i, p_sel] = sample_light_selection(rng);
+            const auto light_index = lights_.at(i);
+            const auto* light = nodes_.at(light_index.index).primitive.light;
+            
+            const auto s = light->sample_ray();
         }
         else if (sp.is_type(SceneInteraction::MediumInteraction)) {
             const auto& primitive = nodes_.at(sp.primitive).primitive;
@@ -482,12 +512,10 @@ public:
         }
 
         // Sample a light
-        const int n = int(lights_.size());
-        const int i = glm::clamp(int(rng.u() * n), 0, n - 1);
-        const auto pL = 1_f / n;
+        const auto [light_index, p_sel] = sample_light_selection(rng);
 
         // Sample a position on the light
-        const auto light = lights_.at(i);
+        const auto light = lights_.at(light_index);
         const auto& primitive = nodes_.at(light.index).primitive;
         const auto s = primitive.light->sample_direct(rng, sp.geom, light.global_transform);
         if (!s) {
@@ -500,7 +528,7 @@ public:
             ),
             s->comp,
             s->wo,
-            s->weight / pL
+            s->weight / p_sel
         };
     }
 
@@ -511,7 +539,7 @@ public:
         }
 
         const auto& primitive = nodes_.at(*camera_).primitive;
-        const auto s = primitive.camera->sample_direct(rng, sp.geom);
+        const auto s = primitive.camera->sample_direct(rng, sp.geom, aspect);
         if (!s) {
             return {};
         }

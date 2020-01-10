@@ -35,10 +35,10 @@ public:
         position_ = json::value<Vec3>(prop, "position");
     }
 
-    virtual std::optional<LightRaySample> sample(Rng&, const PointGeometry& geom, const Transform&) const override {
+    virtual std::optional<LightRaySample> sample_direct(Rng&, const PointGeometry& geom, const Transform&) const override {
         const auto wo = glm::normalize(geom.p - position_);
         const auto geomL = PointGeometry::make_degenerated(position_);
-        const auto pL = pdf(geom, geomL, 0, {}, wo);
+        const auto pL = pdf_direct(geom, geomL, 0, {}, wo);
         if (pL == 0_f) {
             return {};
         }
@@ -50,7 +50,7 @@ public:
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
         const auto G = surface::geometry_term(geom, geomL);
         return G == 0_f ? 0_f : 1_f / G;
     }

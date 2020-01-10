@@ -63,6 +63,8 @@ public:
     */
     virtual bool is_infinite() const = 0;
 
+    // --------------------------------------------------------------------------------------------
+
     /*!
         \brief Evaluate luminance.
         \param geom Point geometry on the light source.
@@ -74,6 +76,12 @@ public:
         \endrst
     */
     virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wo) const = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    /*!
+    */
+    virtual std::optional<LightRaySample> sample_ray(Rng& rng) const = 0;
 
     // --------------------------------------------------------------------------------------------
 

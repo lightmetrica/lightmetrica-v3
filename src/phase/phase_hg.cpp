@@ -27,7 +27,7 @@ public:
         return false;
     }
 
-    virtual std::optional<PhaseDirectionSample> sample(Rng& rng, const PointGeometry&, Vec3 wi) const override {
+    virtual std::optional<PhaseDirectionSample> sample_direction(Rng& rng, const PointGeometry&, Vec3 wi) const override {
         const auto cosT = [&]() -> Float {
             if (std::abs(g_) < Eps) {
                 return 1_f - 2_f*rng.u();
@@ -47,13 +47,13 @@ public:
         return PhaseDirectionSample{ wo, Vec3(1_f) };
     }
 
-    virtual Float pdf(const PointGeometry&, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const PointGeometry&, Vec3 wi, Vec3 wo) const override {
         Float t = 1_f + g_*g_ + 2_f*g_*glm::dot(wi, wo);
         return (1_f-g_*g_) / (t*std::sqrt(t)) / (Pi*4_f);
     }
 
     virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
-        return Vec3(pdf(geom, wi, wo));
+        return Vec3(pdf_direction(geom, wi, wo));
     }
 };
 

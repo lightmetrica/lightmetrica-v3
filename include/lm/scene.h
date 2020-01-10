@@ -292,7 +292,7 @@ public:
 	/*!
 		\brief Throws an exception if there is no primitive in the scene.
 	*/
-	virtual void require_primitive() const {
+	void require_primitive() const {
 		if (num_nodes() > 1) {
 			return;
 		}
@@ -303,7 +303,7 @@ public:
 	/*!
 		\brief Throws an exception if there is no camera in the scene.
 	*/
-	virtual void require_camera() const {
+	void require_camera() const {
 		if (camera_node() != -1) {
 			return;
 		}
@@ -314,7 +314,7 @@ public:
 	/*!
 		\brief Throws an exception if there is no light in the scene.
 	*/
-	virtual void require_light() const {
+	void require_light() const {
 		if (num_lights() > 0) {
 			return;
 		}
@@ -325,7 +325,7 @@ public:
 	/*!
 		\brief Throws an exception if there is no accel created for the scene.
 	*/
-	virtual void require_accel() const {
+	void require_accel() const {
 		if (accel()) {
 			return;
 		}
@@ -345,7 +345,7 @@ public:
 		- :cpp:func:`require_accel`
 		\endrst
 	*/
-	virtual void require_renderable() const {
+	void require_renderable() const {
 		require_primitive();
 		require_camera();
 		require_light();

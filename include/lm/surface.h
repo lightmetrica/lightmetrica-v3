@@ -199,7 +199,7 @@ namespace SurfaceComp {
 */
 struct SceneInteraction {
     // Scene interaction type.
-    enum {
+    enum Type {
         None               = 0,
         CameraTerminator   = 1<<0,
         LightTerminator    = 1<<1,
@@ -305,6 +305,7 @@ struct SceneInteraction {
     static SceneInteraction make_light_terminator() {
         SceneInteraction sp;
         sp.type = LightTerminator;
+        return sp;
     }
 };
 

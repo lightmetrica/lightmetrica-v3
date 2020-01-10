@@ -312,7 +312,7 @@ public:
         }
     }
 
-    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {
+    virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform&) const override {
         // Create a distribution to select a portal
         const auto sdist = selection_dist(geom);
         
@@ -339,7 +339,7 @@ public:
         const auto geomL = PointGeometry::make_infinite(wo);
 
         // Evaluate pdf
-        const auto pL = pdf(geom, geomL, portal_index, {}, wo);
+        const auto pL = pdf_direct(geom, geomL, portal_index, {}, wo);
         if (pL == 0_f) {
             return {};
         }
@@ -371,7 +371,7 @@ public:
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int comp, const Transform&, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int comp, const Transform&, Vec3) const override {
         // Component index represents portal index
         const int portal_index = comp;
 

@@ -16,7 +16,7 @@ public:
         return false;
     }
 
-    virtual std::optional<PhaseDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3) const override {
+    virtual std::optional<PhaseDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3) const override {
         LM_UNUSED(geom);
         assert(geom.degenerated);
         return PhaseDirectionSample{
@@ -25,7 +25,7 @@ public:
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, Vec3, Vec3) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3, Vec3) const override {
         LM_UNUSED(geom);
         assert(geom.degenerated);
         return math::pdf_uniform_sphere();

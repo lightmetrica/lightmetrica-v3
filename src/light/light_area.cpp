@@ -59,7 +59,7 @@ public:
         dist_.norm();
     }
 
-    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
+    virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
         const int i = dist_.sample(rng);
         const auto s = math::safe_sqrt(rng.u());
         const auto tri = mesh_->triangle_at(i);
@@ -73,7 +73,7 @@ public:
             glm::normalize(transform.normal_M * n));
         const auto ppL = geomL.p - geom.p;
         const auto wo = glm::normalize(ppL);
-        const auto pL = pdf(geom, geomL, 0, transform, -wo);
+        const auto pL = pdf_direct(geom, geomL, 0, transform, -wo);
         if (pL == 0_f) {
             return {};
         }
@@ -86,7 +86,7 @@ public:
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform& transform, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform& transform, Vec3) const override {
         const auto G = surface::geometry_term(geom, geomL);
         return G == 0_f ? 0_f : tranformedInvA(transform) / G;
     }

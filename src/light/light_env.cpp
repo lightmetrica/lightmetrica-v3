@@ -61,14 +61,14 @@ public:
         dist_.init(ls, w, h);
     }
 
-    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {
+    virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform&) const override {
         const auto u = dist_.sample(rng);
         const auto t  = Pi * u[1];
         const auto st = sin(t);
         const auto p  = 2 * Pi * u[0] + rot_;
         const auto wo = -Vec3(st * sin(p), cos(t), st * cos(p));
         const auto geomL = PointGeometry::make_infinite(wo);
-        const auto pL = pdf(geom, geomL, 0, {}, wo);
+        const auto pL = pdf_direct(geom, geomL, 0, {}, wo);
         if (pL == 0_f) {
             return {};
         }
@@ -81,7 +81,7 @@ public:
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
         const auto d  = -geomL.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);

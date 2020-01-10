@@ -35,9 +35,9 @@ public:
         direction_ = glm::normalize(json::value<Vec3>(prop, "direction"));
     }
 
-    virtual std::optional<LightRaySample> sample(Rng&, const PointGeometry& geom, const Transform&) const override {
+    virtual std::optional<LightRaySample> sample_direct(Rng&, const PointGeometry& geom, const Transform&) const override {
         const auto geomL = PointGeometry::make_infinite(direction_);
-        const auto pL = pdf(geom, geomL, 0, {}, direction_);
+        const auto pL = pdf_direct(geom, geomL, 0, {}, direction_);
         if (pL == 0_f) {
             return {};
         }
@@ -49,7 +49,7 @@ public:
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
         const auto d = -geomL.wo;
         return surface::convert_SA_to_projSA(1_f, geom, d);
     }

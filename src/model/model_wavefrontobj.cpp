@@ -389,15 +389,15 @@ public:
         return material_by_comp(comp)->is_specular(geom, -1);
     }
 
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
         const int comp = sample_comp_select(rng, geom);
         const auto* material = material_by_comp(comp);
-        const auto s = material->sample(rng, geom, wi);
+        const auto s = material->sample_direction(rng, geom, wi);
         if (!s) {
             return {};
         }
         const auto f = eval(geom, -1, wi, s->wo);
-        const auto p = pdf(geom, -1, wi, s->wo);
+        const auto p = pdf_direction(geom, -1, wi, s->wo);
         return MaterialDirectionSample{
             s->wo,
             comp,
@@ -409,7 +409,7 @@ public:
         return diffuse_->reflectance(geom, -1);
     }
 
-    virtual Float pdf(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
         // Evaluate p_sel(j) * p_j(wo)
         const auto eval_pdf = [&](int c) -> Float {
             // Consider only if wo can be samplable with the strategy c
@@ -417,7 +417,7 @@ public:
             const auto p_sel = pdf_comp_select(geom, c);
             const auto p = [&]() -> Float {
                 const auto* material = material_by_comp(c);
-                return material->pdf(geom, -1, wi, wo);
+                return material->pdf_direction(geom, -1, wi, wo);
             }();
             return p_sel * p;
         };
@@ -608,10 +608,10 @@ public:
         return material_by_comp(comp)->is_specular(geom, -1);
     }
 
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
         const int comp = sample_comp_select(rng, geom);
         const auto* material = material_by_comp(comp);
-        const auto s = material->sample(rng, geom, wi);
+        const auto s = material->sample_direction(rng, geom, wi);
         if (!s) {
             return {};
         }
@@ -623,7 +623,7 @@ public:
             // compute f and p separately and compute the weight.
             if (!is_specular(geom, comp)) {
                 const auto f = eval(geom, -1, wi, s->wo);
-                const auto p = pdf(geom, -1, wi, s->wo);
+                const auto p = pdf_direction(geom, -1, wi, s->wo);
                 return f / p;
             }
             // Otherwise, compute f/p = weight for selecting comp
@@ -644,7 +644,7 @@ public:
         return diffuse_->reflectance(geom, -1);
     }
 
-    virtual Float pdf(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
         // Evaluate p_sel(j) * p_j(wo)
         const auto eval_pdf = [&](int c) -> Float {
             // Consider only if wo can be samplable with the strategy c
@@ -652,7 +652,7 @@ public:
             const auto p_sel = pdf_comp_select(geom, c);
             const auto p = [&]() -> Float {
                 const auto* material = material_by_comp(c);
-                return material->pdf(geom, -1, wi, wo);
+                return material->pdf_direction(geom, -1, wi, wo);
             }();
             return p_sel * p;
         };

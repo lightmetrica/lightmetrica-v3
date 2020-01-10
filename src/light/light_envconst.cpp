@@ -32,10 +32,10 @@ public:
         Le_ = json::value<Vec3>(prop, "Le");
     }
 
-    virtual std::optional<LightRaySample> sample(Rng& rng, const PointGeometry& geom, const Transform&) const override {
+    virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform&) const override {
         const auto wo = math::sample_uniform_sphere(rng);
         const auto geomL = PointGeometry::make_infinite(wo);
-        const auto pL = pdf(geom, geomL, 0, {}, wo);
+        const auto pL = pdf_direct(geom, geomL, 0, {}, wo);
         if (pL == 0_f) {
             return {};
         }
@@ -47,7 +47,7 @@ public:
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
         const auto d = -geomL.wo;
         return surface::convert_SA_to_projSA(math::pdf_uniform_sphere(), geom, d);
     }

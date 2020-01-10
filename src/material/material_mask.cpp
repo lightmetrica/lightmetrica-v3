@@ -31,7 +31,7 @@ public:
         return true;
     }
 
-    virtual std::optional<MaterialDirectionSample> sample(Rng&, const PointGeometry&, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng&, const PointGeometry&, Vec3 wi) const override {
         return MaterialDirectionSample{
             -wi,
             SurfaceComp::DontCare,
@@ -43,7 +43,7 @@ public:
         return -wi;
     }
 
-    virtual Float pdf(const PointGeometry&, int, Vec3, Vec3) const override {
+    virtual Float pdf_direction(const PointGeometry&, int, Vec3, Vec3) const override {
         return 0_f;
     }
 

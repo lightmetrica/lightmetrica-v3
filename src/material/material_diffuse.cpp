@@ -61,7 +61,7 @@ public:
         return false;
     }
 
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
         const auto[n, u, v] = geom.orthonormal_basis(wi);
         const auto Kd = mapKd_ ? mapKd_->eval(geom.t) : Kd_;
         const auto d = math::sample_cosine_weighted(rng);
@@ -73,14 +73,14 @@ public:
     }
 
     virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int, Vec3 wi) const override {
-        return sample(rng, geom, wi)->wo;
+        return sample_direction(rng, geom, wi)->wo;
     }
 
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int) const override {
         return mapKd_ ? mapKd_->eval(geom.t) : Kd_;
     }
 
-    virtual Float pdf(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
         return geom.opposite(wi, wo) ? 0_f : 1_f / Pi;
     }
 

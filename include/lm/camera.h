@@ -32,13 +32,6 @@ struct CameraRaySample {
 
 /*!
 */
-struct CameraPositionSample {
-    PointGeometry geom;
-    Vec3 weight;
-};
-
-/*!
-*/
 struct CameraDirectionSample {
     Vec3 wo;
     Vec3 weight;
@@ -65,19 +58,22 @@ public:
     */
     virtual bool is_specular(const PointGeometry& geom) const = 0;
 
-    /*!
-        \brief Generate a primary ray with the corresponding raster position.
-        \param rp Raster position.
-        \param aspect Aspect ratio of the film.
+    // --------------------------------------------------------------------------------------------
 
-        \rst
-        This function deterministically generates a ray from the given raster position in :math:`[0,1]^2`
-        corresponding to width and height of the screen, leaf-to-right and bottom-to-top.
-        This function is useful in the application that the primary ray is fixed (e.g., ray casting).
-        Use :cpp:func:`samplePrimaryRay` when the primary ray is generated randomly.
-        \endrst
+    /*!
+        \brief Get view matrix if available.
+        \return View matrix.
     */
-    virtual Ray primary_ray(Vec2 rp, Float aspect) const = 0;
+    virtual Mat4 view_matrix() const = 0;
+
+    /*!
+        \brief Get projection matrix if available.
+        \param aspect Aspect ratio of the film.
+        \return Projection matrix.
+    */
+    virtual Mat4 projection_matrix(Float aspect) const = 0;
+
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Compute a raser position.
@@ -98,20 +94,21 @@ public:
     */
     virtual Vec3 eval(Vec3 wo, Float aspect) const = 0;
 
-    /*!
-        \brief Get view matrix if available.
-        \return View matrix.
-    */
-    virtual Mat4 view_matrix() const = 0;
-
-    /*!
-        \brief Get projection matrix if available.
-        \param aspect Aspect ratio of the film.
-        \return Projection matrix.
-    */
-    virtual Mat4 projection_matrix(Float aspect) const = 0;
-
     // --------------------------------------------------------------------------------------------
+
+    /*!
+        \brief Generate a primary ray with the corresponding raster position.
+        \param rp Raster position.
+        \param aspect Aspect ratio of the film.
+
+        \rst
+        This function deterministically generates a ray from the given raster position in :math:`[0,1]^2`
+        corresponding to width and height of the screen, leaf-to-right and bottom-to-top.
+        This function is useful in the application that the primary ray is fixed (e.g., ray casting).
+        Use :cpp:func:`samplePrimaryRay` when the primary ray is generated randomly.
+        \endrst
+    */
+    virtual Ray primary_ray(Vec2 rp, Float aspect) const = 0;
 
     /*!
         \brief Sample a primary ray within the given raster window.
@@ -142,7 +139,7 @@ public:
 
     /*!
     */
-    virtual CameraDirectionSample sample_direction(Rng& rng, Vec4 window, Float aspect) const = 0;
+    virtual std::optional<CameraDirectionSample> sample_direction(Rng& rng, Vec4 window, Float aspect) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
@@ -156,7 +153,7 @@ public:
 
     /*!
     */
-    virtual std::optional<CameraRaySample> sample_direct(Rng& rng, const PointGeometry& geom) const = 0;
+    virtual std::optional<CameraRaySample> sample_direct(Rng& rng, const PointGeometry& geom, Float aspect) const = 0;
 
     /*!
     */

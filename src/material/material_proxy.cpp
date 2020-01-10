@@ -44,8 +44,8 @@ public:
         return ref_->is_specular(geom, comp);
     }
 
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-        return ref_->sample(rng, geom, wi);
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+        return ref_->sample_direction(rng, geom, wi);
     }
 
     virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const override {
@@ -56,8 +56,8 @@ public:
         return ref_->reflectance(geom, comp);
     }
 
-    Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-        return ref_->pdf(geom, comp, wi, wo);
+    Float pdf_direction(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
+        return ref_->pdf_direction(geom, comp, wi, wo);
     }
 
     virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {

@@ -79,7 +79,7 @@ public:
         return true;
     }
 
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
         const bool in = glm::dot(wi, geom.n) > 0_f;
         const auto n = in ? geom.n : -geom.n;
         const auto eta = in ? 1_f / Ni_ : Ni_;
@@ -116,7 +116,7 @@ public:
         LM_UNREACHABLE_RETURN();
     }
 
-    virtual Float pdf(const PointGeometry&, int, Vec3, Vec3) const override {
+    virtual Float pdf_direction(const PointGeometry&, int, Vec3, Vec3) const override {
         return 0_f;
     }
 
