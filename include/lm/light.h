@@ -81,7 +81,7 @@ public:
 
     /*!
     */
-    virtual std::optional<LightRaySample> sample_ray(Rng& rng) const = 0;
+    virtual std::optional<LightRaySample> sample_ray(Rng& rng, const Transform& transform) const = 0;
 
     // --------------------------------------------------------------------------------------------
 

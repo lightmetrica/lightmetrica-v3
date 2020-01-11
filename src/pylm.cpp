@@ -1116,6 +1116,10 @@ static void bind_light(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Vec3, Light, eval, geom, comp, wo);
         }
         // ----------------------------------------------------------------------------------------
+        virtual std::optional<LightRaySample> sample_ray(Rng& rng, const Transform& transform) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<LightRaySample>, Light, sample_ray, rng, transform);
+        }
+        // ----------------------------------------------------------------------------------------
         virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<LightRaySample>, Light, sample_direct, rng, geom, transform);
         }

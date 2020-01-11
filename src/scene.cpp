@@ -311,9 +311,9 @@ public:
                 *env_light_,
                 PointGeometry::make_infinite(-ray.d));
         }
-        const auto[t, uv, global_transform, primitiveIndex, faceIndex] = *hit;
+        const auto[t, uv, global_transform, primitiveIndex, face_index] = *hit;
         const auto& primitive = nodes_.at(primitiveIndex).primitive;
-        const auto p = primitive.mesh->surface_point(faceIndex, uv);
+        const auto p = primitive.mesh->surface_point(face_index, uv);
         return SceneInteraction::make_surface_interaction(
             primitiveIndex,
             PointGeometry::make_on_surface(
@@ -372,7 +372,7 @@ public:
     }
 
     // PMF for light selection sampling
-    Float pdf_light_selection(int light_index) const {
+    Float pdf_light_selection(int) const {
         const int n = int(lights_.size());
         return 1_f / n;
     };
@@ -409,8 +409,19 @@ public:
             const auto [i, p_sel] = sample_light_selection(rng);
             const auto light_index = lights_.at(i);
             const auto* light = nodes_.at(light_index.index).primitive.light;
-            
-            const auto s = light->sample_ray();
+            const auto s = light->sample_ray(rng, light_index.global_transform);
+            if (!s) {
+                return {};
+            }
+            return RaySample{
+                SceneInteraction::make_light_endpoint(
+                    light_index.index,
+                    s->geom
+                ),
+                0,
+                s->wo,
+                s->weight
+            };
         }
         else if (sp.is_type(SceneInteraction::MediumInteraction)) {
             const auto& primitive = nodes_.at(sp.primitive).primitive;

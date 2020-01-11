@@ -44,6 +44,20 @@ private:
         return invA_ / transform.J;
     }
 
+    PointGeometry sample_position_on_triangle_mesh(Rng& rng, const Transform& transform) const {
+        const int i = dist_.sample(rng);
+        const auto s = math::safe_sqrt(rng.u());
+        const auto tri = mesh_->triangle_at(i);
+        const auto a = tri.p1.p;
+        const auto b = tri.p2.p;
+        const auto c = tri.p3.p;
+        const auto p = math::mix_barycentric(a, b, c, Vec2(1_f - s, rng.u()*s));
+        const auto n = glm::normalize(glm::cross(b - a, c - a));
+        return PointGeometry::make_on_surface(
+            transform.M * Vec4(p, 1_f),
+            glm::normalize(transform.normal_M * n));
+    }
+
 public:
     virtual void construct(const Json& prop) override {
         Ke_ = json::value<Vec3>(prop, "Ke");
@@ -59,37 +73,7 @@ public:
         dist_.norm();
     }
 
-    virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
-        const int i = dist_.sample(rng);
-        const auto s = math::safe_sqrt(rng.u());
-        const auto tri = mesh_->triangle_at(i);
-        const auto a = tri.p1.p;
-        const auto b = tri.p2.p;
-        const auto c = tri.p3.p;
-        const auto p = math::mix_barycentric(a, b, c, Vec2(1_f-s, rng.u()*s));
-        const auto n = glm::normalize(glm::cross(b - a, c - a));
-        const auto geomL = PointGeometry::make_on_surface(
-            transform.M * Vec4(p, 1_f),
-            glm::normalize(transform.normal_M * n));
-        const auto ppL = geomL.p - geom.p;
-        const auto wo = glm::normalize(ppL);
-        const auto pL = pdf_direct(geom, geomL, 0, transform, -wo);
-        if (pL == 0_f) {
-            return {};
-        }
-        const auto Le = eval(geomL, 0, -wo);
-        return LightRaySample{
-            geomL,
-            -wo,
-            0,
-            Le / pL
-        };
-    }
-
-    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform& transform, Vec3) const override {
-        const auto G = surface::geometry_term(geom, geomL);
-        return G == 0_f ? 0_f : tranformedInvA(transform) / G;
-    }
+    // --------------------------------------------------------------------------------------------
 
     virtual bool is_specular(const PointGeometry&, int) const override {
         return false;
@@ -101,6 +85,56 @@ public:
 
     virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wo) const override {
         return glm::dot(wo, geom.n) <= 0_f ? Vec3(0_f) : Ke_;
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    virtual std::optional<LightRaySample> sample_ray(Rng& rng, const Transform& transform) const override {
+        // Sample position
+        const auto geomL = sample_position_on_triangle_mesh(rng, transform);
+        const auto pA = invA_;
+        
+        // Sample direction
+        const auto wo_local = math::sample_cosine_weighted(rng);
+        const auto [u, v] = math::orthonormal_basis(geomL.n);
+        const Mat3 to_world(u, v, geomL.n);
+        const auto wo_world = to_world * wo_local;
+        const auto pD_projSA = math::pdf_cosine_weighted_projSA();
+        
+        // Contribution & probability
+        const auto Le = eval(geomL, -1, wo_world);
+        const auto p = pA * pD_projSA;
+        const auto contrb = Le / p;
+
+        return LightRaySample{
+            geomL,
+            wo_world,
+            0,
+            contrb
+        };
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
+        const auto geomL = sample_position_on_triangle_mesh(rng, transform);
+        const auto wo = glm::normalize(geom.p - geomL.p);
+        const auto pL = pdf_direct(geom, geomL, 0, transform, wo);
+        if (pL == 0_f) {
+            return {};
+        }
+        const auto Le = eval(geomL, 0, wo);
+        return LightRaySample{
+            geomL,
+            wo,
+            0,
+            Le / pL
+        };
+    }
+
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform& transform, Vec3) const override {
+        const auto G = surface::geometry_term(geom, geomL);
+        return G == 0_f ? 0_f : tranformedInvA(transform) / G;
     }
 };
 

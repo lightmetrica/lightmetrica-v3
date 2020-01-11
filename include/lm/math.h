@@ -518,7 +518,15 @@ static Vec3 sample_cosine_weighted(Rng& rng) {
 }
 
 /*!
-    \brief Uniformly sample a direction from an sphere.
+    \brief PDF of cosine-weighted distribution on a sphere in projected solid angle measure.
+    \return Evaluated density.
+*/
+static constexpr Float pdf_cosine_weighted_projSA() {
+    return 1_f / Pi;
+}
+
+/*!
+    \brief Uniformly sample a direction from a sphere.
     \param rng Random number generator.
     \return Sampled value.
 */
@@ -532,7 +540,7 @@ static Vec3 sample_uniform_sphere(Rng& rng) {
 }
 
 /*!
-    \brief Pdf of uniformly sampled directions from an sphere in solid angle measure.
+    \brief PDF of uniform direction on a sphere in solid angle measure.
     \return Evaluated density.
 */
 static constexpr Float pdf_uniform_sphere() {
@@ -540,7 +548,10 @@ static constexpr Float pdf_uniform_sphere() {
 }
 
 /*!
-    \brief Balance heuristics.
+    \brief Compute balance heuristics.
+    \param p1 Evalauted PDF for the first strategy.
+    \param p2 Evaluated PDF for the second strategy.
+    \return Evaluated weight.
 */
 static Float balance_heuristic(Float p1, Float p2) {
     if (p1 == 0_f && p2 == 0_f) {
