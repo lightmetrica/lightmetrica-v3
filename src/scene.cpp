@@ -332,8 +332,13 @@ public:
 
     virtual bool is_light(const SceneInteraction& sp) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
-        return (sp.is_type(SceneInteraction::MediumInteraction) && primitive.medium->is_emitter()) ||
-                sp.is_type(SceneInteraction::LightEndpoint);
+        if (sp.is_type(SceneInteraction::MediumInteraction)) {
+            return primitive.medium->is_emitter();
+        }
+        else {
+            // Note: SurfaceInterfaction can contain light component.
+            return primitive.light != nullptr;
+        }
     }
 
     virtual bool is_specular(const SceneInteraction& sp, int comp) const override {
@@ -517,11 +522,6 @@ public:
     //
 
     virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
-        if (!sp.is_type(SceneInteraction::Endpoint)) {
-            LM_THROW_EXCEPTION(Error::Unsupported,
-                "Direct sampling does not support non-endpoint interactions.");
-        }
-
         // Sample a light
         const auto [light_index, p_sel] = sample_light_selection(rng);
 
@@ -544,11 +544,6 @@ public:
     }
 
     virtual std::optional<RaySample> sample_direct_camera(Rng& rng, const SceneInteraction& sp, Float aspect) const override {
-        if (!sp.is_type(SceneInteraction::Endpoint)) {
-            LM_THROW_EXCEPTION(Error::Unsupported,
-                "Direct sampling does not support non-endpoint interactions.");
-        }
-
         const auto& primitive = nodes_.at(*camera_).primitive;
         const auto s = primitive.camera->sample_direct(rng, sp.geom, aspect);
         if (!s) {
@@ -567,16 +562,16 @@ public:
     }
 
     virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& sp_endpoint, int comp_endpoint, Vec3 wo) const override {
-        if (!sp.is_type(SceneInteraction::Endpoint)) {
+        if (!sp_endpoint.is_type(SceneInteraction::Endpoint)) {
             LM_THROW_EXCEPTION(Error::Unsupported,
-                "Direct sampling does not support non-endpoint interactions.");
+                "pdf_direct() does not support non-endpoint interactions.");
         }
 
         const auto& primitive = nodes_.at(sp_endpoint.primitive).primitive;
-        if (sp.is_type(SceneInteraction::CameraEndpoint)) {
+        if (sp_endpoint.is_type(SceneInteraction::CameraEndpoint)) {
             return primitive.camera->pdf_direct(sp.geom, sp_endpoint.geom, wo);
         }
-        else if (sp.is_type(SceneInteraction::LightEndpoint)) {
+        else if (sp_endpoint.is_type(SceneInteraction::LightEndpoint)) {
             const int light_index = light_indices_map_.at(sp_endpoint.primitive);
             const auto light_transform = lights_.at(light_index).global_transform;
             const auto pL = 1_f / int(lights_.size());

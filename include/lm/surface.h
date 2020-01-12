@@ -223,10 +223,22 @@ struct SceneInteraction {
     } camera_cond;
 
     /*!
+        \brief Check the scene interaction type.
     */
     bool is_type(int type_flag) const {
         return (type & type_flag) > 0;
     }
+
+    /*!
+        \brief Consider the scene interaction as a different type.
+    */
+    SceneInteraction as_type(int new_type) const {
+        SceneInteraction sp;
+        sp.type = new_type;
+        sp.primitive = primitive;
+        sp.geom = geom;
+        return sp;
+    };
 
     /*!
         \brief Make surface interaction.
