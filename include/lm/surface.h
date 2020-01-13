@@ -50,12 +50,13 @@ struct PointGeometry {
     bool degenerated;       //!< True if surface is degenerated (e.g., point light).
     bool infinite;          //!< True if the point is a point at infinity.
     Vec3 p;                 //!< Position.
-    union {
-        Vec3 n;             //!< Shading normal.
-        Vec3 wo;            //!< Direction from a point at infinity.
-    };
+    Vec3 n;                 //!< Shading normal.
+    Vec3 gn;                //!< Geometry normal.
+    Vec3 wo;                //!< Direction from a point at infinity (used only when infinite=true).
     Vec2 t;                 //!< Texture coordinates.
     Vec3 u, v;              //!< Orthogonal tangent vectors.
+    Mat3 to_world;          //!< Matrix to convert to world coordinates.
+    Mat3 to_local;          //!< Matrix to convert to local shading coordinates.
 
     /*!
         \brief Make degenerated point.
@@ -94,7 +95,8 @@ struct PointGeometry {
     /*!
         \brief Make a point on surface.
         \param p Position.
-        \param n Normal.
+        \param n Shading normal.
+        \param gn Geometry normal.
         \param t Texture coordinates.
 
         \rst
@@ -102,29 +104,33 @@ struct PointGeometry {
         from the specified surface geometry information.
         \endrst
     */
-    static PointGeometry make_on_surface(Vec3 p, Vec3 n, Vec2 t) {
+    static PointGeometry make_on_surface(Vec3 p, Vec3 n, Vec3 gn, Vec2 t) {
         PointGeometry geom;
         geom.degenerated = false;
         geom.infinite = false;
         geom.p = p;
         geom.n = n;
+        geom.gn = gn;
         geom.t = t;
         std::tie(geom.u, geom.v) = math::orthonormal_basis(n);
+        geom.to_world = Mat3(geom.u, geom.v, geom.n);
+        geom.to_local = glm::transpose(geom.to_world);
         return geom;
     }
 
     /*!
         \brief Make a point on surface.
         \param p Position.
-        \param n Normal.
+        \param n Shading normal.
+        \param gn Geometry normal.
 
         \rst
         A static function to generate a point on the scene surface
         from the specified surface geometry information.
         \endrst
     */
-    static PointGeometry make_on_surface(Vec3 p, Vec3 n) {
-        return make_on_surface(p, n, {});
+    static PointGeometry make_on_surface(Vec3 p, Vec3 n, Vec3 gn) {
+        return make_on_surface(p, n, gn, {});
     }
 
     /*!
@@ -143,7 +149,7 @@ struct PointGeometry {
     }
 
     /*!
-        \brief Return orthonormal basis according to the incident direction.
+        \brief Compute orthonormal basis according to the incident direction.
         \param wi Incident direction.
 
         \rst
@@ -152,26 +158,9 @@ struct PointGeometry {
         based on the negated normal vector. This function is useful to support two-sided materials.
         \endrst
     */
-    std::tuple<Vec3, Vec3, Vec3> orthonormal_basis(Vec3 wi) const {
+    std::tuple<Vec3, Vec3, Vec3> orthonormal_basis_twosided(Vec3 wi) const {
         const int i = glm::dot(wi, n) > 0;
         return { i ? n : -n, u, i ? v : -v };
-    }
-
-    /*!
-        \brief Compute a transformation matrix to change local shading coordinates to world coordinates.
-        \return Transformation matrix.
-    */
-    Mat3 get_shading_local_to_world(Vec3 wi) const {
-        const auto [n_, u_, v_] = orthonormal_basis(wi);
-        return Mat3(u_, v_, n_);
-    }
-
-    /*!
-        \brief Compute a transformation matrix to change world coordinates to local shading coordinates.
-        \return Transformation matrix.
-    */
-    Mat3 get_world_to_shading_local(Vec3 wi) const {
-        return glm::transpose(get_shading_local_to_world(wi));
     }
 };
 

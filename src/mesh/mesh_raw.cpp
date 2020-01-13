@@ -53,9 +53,9 @@ public:
         }
     }
 
-    virtual void foreach_triangle(const ProcessTriangleFunc& processTriangle) const override {
+    virtual void foreach_triangle(const ProcessTriangleFunc& process_triangle) const override {
         for (int fi = 0; fi < int(fs_.size())/3; fi++) {
-            processTriangle(fi, triangle_at(fi));
+            process_triangle(fi, triangle_at(fi));
         }
     }
 
@@ -70,17 +70,15 @@ public:
         };
     }
 
-    virtual Point surface_point(int face, Vec2 uv) const override {
+    virtual InterpolatedPoint surface_point(int face, Vec2 uv) const override {
         const auto i1 = fs_[3*face];
         const auto i2 = fs_[3*face+1];
         const auto i3 = fs_[3*face+2];
         return {
-            math::mix_barycentric(
-                ps_[i1.p], ps_[i2.p], ps_[i3.p], uv),
-            glm::normalize(math::mix_barycentric(
-                ns_[i1.n], ns_[i2.n], ns_[i3.n], uv)),
-            math::mix_barycentric(
-                ts_[i1.t], ts_[i2.t], ts_[i3.t], uv)
+            math::mix_barycentric(ps_[i1.p], ps_[i2.p], ps_[i3.p], uv),
+            glm::normalize(math::mix_barycentric(ns_[i1.n], ns_[i2.n], ns_[i3.n], uv)),
+            math::geometry_normal(ps_[i1.p], ps_[i2.p], ps_[i3.p]),
+            math::mix_barycentric(ts_[i1.t], ts_[i2.t], ts_[i3.t], uv)
         };
     }
 

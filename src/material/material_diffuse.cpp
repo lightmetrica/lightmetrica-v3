@@ -62,7 +62,7 @@ public:
     }
 
     virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-        const auto[n, u, v] = geom.orthonormal_basis(wi);
+        const auto[n, u, v] = geom.orthonormal_basis_twosided(wi);
         const auto Kd = mapKd_ ? mapKd_->eval(geom.t) : Kd_;
         const auto d = math::sample_cosine_weighted(rng);
         return MaterialDirectionSample{

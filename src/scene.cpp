@@ -319,6 +319,7 @@ public:
             PointGeometry::make_on_surface(
                 global_transform.M * Vec4(p.p, 1_f),
                 glm::normalize(global_transform.normal_M * p.n),
+                glm::normalize(global_transform.normal_M * p.gn),
                 p.t
             )
         );
@@ -486,7 +487,7 @@ public:
                 s->weight
             };
         }
-        else if (sp.is_type(SceneInteraction::MediumInteraction)) {
+        else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
             const auto s = primitive.material->sample_direction(rng, sp.geom, wi);
             if (!s) {
                 return {};

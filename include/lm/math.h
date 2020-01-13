@@ -429,6 +429,21 @@ static std::tuple<Vec3, Vec3> orthonormal_basis(Vec3 n) {
 }
 
 /*!
+    \brief Compute geometry normal.
+    \param p1 First point.
+    \param p2 Second point.
+    \param p3 Third point.
+    \return Geometry normal.
+
+    \rst
+    Note that the three points must be given in counter-clockwised order.
+    \endrst
+*/
+static Vec3 geometry_normal(Vec3 p1, Vec3 p2, Vec3 p3) {
+    return glm::normalize(glm::cross(p2 - p1, p3 - p1));
+}
+
+/*!
     \brief Interpolation with barycentric coordinates.
     \param a A value associated with the first point on the triangle.
     \param b A value associated with the second point on the triangle.
@@ -570,6 +585,40 @@ static Vec3 spherical_to_cartesian(Float theta, Float phi) {
         sinTheta * glm::sin(phi),
         glm::cos(theta)
     );
+}
+
+/*!
+    \brief Compute sin in local shading coordinates.
+*/
+static Float local_sin(Vec3 local_d) {
+    return safe_sqrt(1_f - local_d.z * local_d.z);
+}
+
+/*!
+    \brief Compute cos in local shading coordinates.
+*/
+static Float local_cos(Vec3 local_d) {
+    return local_d.z;
+}
+
+/*!
+    \brief Compute tan in local shading coordinates.
+*/
+static Float local_tan(Vec3 local_d) {
+    const auto t = 1_f - local_d.z * local_d.z;
+    return t <= 0_f ? 0_f : std::sqrt(t) / local_d.z;
+}
+
+/*!
+    \brief Compute tan^2 in local shading coordinates.
+*/
+static Float local_tan2(Vec3 local_d) {
+    if (local_d.z == 0_f) {
+        return Inf;
+    }
+    const auto cos2 = local_d.z * local_d.z;
+    const auto sin2 = 1_f - cos2;
+    return sin2 <= 0_f ? 0_f : sin2 / cos2;
 }
 
 /*!

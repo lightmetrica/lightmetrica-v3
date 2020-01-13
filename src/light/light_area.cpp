@@ -52,10 +52,10 @@ private:
         const auto b = tri.p2.p;
         const auto c = tri.p3.p;
         const auto p = math::mix_barycentric(a, b, c, Vec2(1_f - s, rng.u()*s));
-        const auto n = glm::normalize(glm::cross(b - a, c - a));
-        return PointGeometry::make_on_surface(
-            transform.M * Vec4(p, 1_f),
-            glm::normalize(transform.normal_M * n));
+        const auto gn = math::geometry_normal(a, b, c);
+        const auto p_trans = Vec3(transform.M * Vec4(p, 1_f));
+        const auto gn_trans = glm::normalize(transform.normal_M * gn);
+        return PointGeometry::make_on_surface(p_trans, gn_trans, gn_trans);
     }
 
 public:

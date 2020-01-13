@@ -14,8 +14,6 @@
 #include <lm/light.h>
 #include <lm/surface.h>
 
-#define USE_MIXTURE_MARGINAL_WITHOUT_ALPHA 0
-
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 using namespace objloader;
@@ -146,15 +144,23 @@ public:
 
                 // Load material
                 Ptr<Material> mat;
-                if (m.illum == 7) {
-                    // Glass
-                    mat = comp::create<Material>(
-                        "material::glass", make_loc(m.name), {{"Ni", m.Ni}});
-                }
-                else if (m.illum == 5) {
-                    // Mirror
-                    mat = comp::create<Material>(
-                        "material::mirror", make_loc(m.name), {});
+                const bool skip_specular_mat = json::value<bool>(prop, "skip_specular_mat", false);
+                if (m.illum == 5 || m.illum == 7) {
+                    if (skip_specular_mat) {
+                        // Skip specular material. Use black material.
+                        mat = comp::create<Material>(
+                            "material::diffuse", make_loc(m.name), { {"Kd", Vec3(0_f)} });
+                    }
+                    else if (m.illum == 7) {
+                        // Glass
+                        mat = comp::create<Material>(
+                            "material::glass", make_loc(m.name), { {"Ni", m.Ni} });
+                    }
+                    else if (m.illum == 5) {
+                        // Mirror
+                        mat = comp::create<Material>(
+                            "material::mirror", make_loc(m.name), {});
+                    }
                 }
                 else {
                     // Convert parameter for anisotropic GGX 
@@ -162,25 +168,17 @@ public:
                     const auto as = math::safe_sqrt(1_f - m.an * .9_f);
 
                     // Default mixture material of D and G
-                    #if USE_MIXTURE_MARGINAL_WITHOUT_ALPHA
                     mat = comp::create<Material>(
-                        "material::wavefrontobj_marginal_without_alpha", make_loc(m.name), {
+                        skip_specular_mat ? "material::wavefrontobj_marginal_without_alpha" 
+                                          : "material::wavefrontobj_mixture",
+                        make_loc(m.name),
+                        {
                             {"Kd", m.Kd},
                             {"mapKd", mapKd_loc},
                             {"Ks", m.Ks},
                             {"ax", std::max(1e-3_f, r / as)},
                             {"ay", std::max(1e-3_f, r * as)}
                         });
-                    #else
-                    mat = comp::create<Material>(
-                        "material::wavefrontobj_mixture", make_loc(m.name), {
-                            {"Kd", m.Kd},
-                            {"mapKd", mapKd_loc},
-                            {"Ks", m.Ks},
-                            {"ax", std::max(1e-3_f, r / as)},
-                            {"ay", std::max(1e-3_f, r * as)}
-                        });
-                    #endif
                 }
                 if (!mat) {
                     return false;
@@ -253,7 +251,7 @@ public:
         };
     }
 
-    virtual Point surface_point(int face, Vec2 uv) const override {
+    virtual InterpolatedPoint surface_point(int face, Vec2 uv) const override {
         const auto& geo_ = model_->geo_;
         const auto i1 = fs_[3*face];
         const auto i2 = fs_[3*face+1];
@@ -265,9 +263,11 @@ public:
             // Position
             math::mix_barycentric(p1, p2, p3, uv),
             // Normal. Use geometry normal if the attribute is missing.
-            i1.n < 0 ? glm::normalize(glm::cross(p2-p1, p3-p1))
+            i1.n < 0 ? math::geometry_normal(p1, p2, p3)
                      : glm::normalize(math::mix_barycentric(
                          geo_.ns[i1.n], geo_.ns[i2.n], geo_.ns[i3.n], uv)),
+            // Geometry normal
+            math::geometry_normal(p1, p2, p3),
             // Texture coordinates
             i1.t < 0 ? Vec2(0) : math::mix_barycentric(
                 geo_.ts[i1.t], geo_.ts[i2.t], geo_.ts[i3.t], uv)

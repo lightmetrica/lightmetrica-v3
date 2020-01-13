@@ -519,16 +519,17 @@ static void bind_surface(pybind11::module& m) {
         .def_readwrite("infinite", &PointGeometry::infinite)
         .def_readwrite("p", &PointGeometry::p)
         .def_readwrite("n", &PointGeometry::n)
+        .def_readwrite("gn", &PointGeometry::gn)
         .def_readwrite("wo", &PointGeometry::wo)
         .def_readwrite("t", &PointGeometry::t)
         .def_readwrite("u", &PointGeometry::u)
         .def_readwrite("v", &PointGeometry::v)
         .def_static("make_degenerated", &PointGeometry::make_degenerated)
         .def_static("make_infinite", &PointGeometry::make_infinite)
-        .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3, Vec2))&PointGeometry::make_on_surface)
-        .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3))&PointGeometry::make_on_surface)
+        .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3, Vec3, Vec2))&PointGeometry::make_on_surface)
+        .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3, Vec3))&PointGeometry::make_on_surface)
         .def("opposite", &PointGeometry::opposite)
-        .def("orthonormal_basis", &PointGeometry::orthonormal_basis);
+        .def("orthonormal_basis_twosided", &PointGeometry::orthonormal_basis_twosided);
 
     pybind11::class_<SceneInteraction>(m, "SceneInteraction")
         .def(pybind11::init<>())
@@ -846,6 +847,12 @@ static void bind_mesh(pybind11::module& m) {
         .def_readwrite("n", &Mesh::Point::n)
         .def_readwrite("t", &Mesh::Point::t);
 
+    pybind11::class_<Mesh::InterpolatedPoint>(m, "Mesh_InterpolatedPoint")
+        .def_readwrite("p", &Mesh::InterpolatedPoint::p)
+        .def_readwrite("n", &Mesh::InterpolatedPoint::n)
+        .def_readwrite("gn", &Mesh::InterpolatedPoint::gn)
+        .def_readwrite("t", &Mesh::InterpolatedPoint::t);
+
     pybind11::class_<Mesh::Tri>(m, "Mesh_Tri")
         .def_readwrite("p1", &Mesh::Tri::p1)
         .def_readwrite("p2", &Mesh::Tri::p2)
@@ -861,8 +868,8 @@ static void bind_mesh(pybind11::module& m) {
         virtual Tri triangle_at(int face) const override {
             PYBIND11_OVERLOAD_PURE(Tri, Mesh, triangle_at, face);
         }
-        virtual Point surface_point(int face, Vec2 uv) const override {
-            PYBIND11_OVERLOAD_PURE(Point, Mesh, surface_point, face, uv);
+        virtual InterpolatedPoint surface_point(int face, Vec2 uv) const override {
+            PYBIND11_OVERLOAD_PURE(InterpolatedPoint, Mesh, surface_point, face, uv);
         }
         virtual int num_triangles() const override {
             PYBIND11_OVERLOAD_PURE(int, Mesh, num_triangles);
