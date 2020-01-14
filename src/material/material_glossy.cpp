@@ -98,7 +98,7 @@ public:
     }
 };
 
-//LM_COMP_REG_IMPL(Material_Glossy, "material::glossy");
+LM_COMP_REG_IMPL(Material_Glossy, "material::glossy");
 
 // ------------------------------------------------------------------------------------------------
 
@@ -119,7 +119,7 @@ public:
         R_ = Ks;
         eta_ = Vec3(0.140000_f, 0.129000_f, 0.158500_f);
         k_ = Vec3(4.586250_f, 3.348125_f, 2.329375_f);
-        roughness_ = .1_f;
+        roughness_ = .5_f;
     }
 
 private:
@@ -168,6 +168,29 @@ private:
         return t1 / t2;
     }
 
+    Float evalaute_shadow_masking(const Vec3& wi, const Vec3& wo, const Vec3& H) const
+    {
+        const auto n_dot_H = math::local_cos(H);
+        const auto n_dot_wo = math::local_cos(wo);
+        const auto n_dot_wi = math::local_cos(wi);
+        const auto wo_dot_H = std::abs(glm::dot(wo, H));
+        const auto wi_dot_H = std::abs(glm::dot(wo, H));
+        return std::min(1_f, std::min(2_f * n_dot_H * n_dot_wo / wo_dot_H, 2_f * n_dot_H * n_dot_wi / wi_dot_H));
+    }
+
+    Vec3 evaluate_fresnel_conductor(Float cos_theta_i) const
+    {
+        const auto tmp = (eta_*eta_ + k_ * k_) * (cos_theta_i * cos_theta_i);
+        const auto rParl2 =
+            (tmp - (eta_ * Vec3(2_f * cos_theta_i)) + Vec3(1_f)) /
+            (tmp + (eta_ * Vec3(2_f * cos_theta_i)) + Vec3(1_f));
+        const auto tmpF = eta_ * eta_ + k_ * k_;
+        const auto rPerp2 =
+            (tmpF - (eta_ * (2_f * cos_theta_i)) + cos_theta_i * cos_theta_i) /
+            (tmpF + (eta_ * (2_f * cos_theta_i)) + cos_theta_i * cos_theta_i);
+        return (rParl2 + rPerp2) * .5_f;
+    }
+
 public:
     virtual bool is_specular(const PointGeometry&, int) const override {
         return false;
@@ -195,7 +218,7 @@ public:
         };
     }
 
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int, Vec3 wi) const override {
+    virtual std::optional<Vec3> sample_direction_given_comp(Rng&, const PointGeometry&, int, Vec3) const override {
         return {};
     }
 
@@ -216,10 +239,20 @@ public:
     }
 
     virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
-        LM_TBA();
+        const auto local_wi = geom.to_local * wi;
+        const auto local_wo = geom.to_local * wo;
+        if (math::local_cos(local_wi) <= 0_f || math::local_cos(local_wo) <= 0_f) {
+            return Vec3(0_f);
+        }
+
+        const auto H = glm::normalize(local_wi + local_wo);
+        const auto D = evaluate_GGX(H);
+        const auto G = evalaute_shadow_masking(local_wi, local_wo, H);
+        const auto  F = evaluate_fresnel_conductor(glm::dot(local_wi, H));
+        return R_ * D * G * F / (4_f * math::local_cos(local_wi)) / math::local_cos(local_wo);
     }
 };
 
-LM_COMP_REG_IMPL(Material_Glossy2, "material::glossy");
+//LM_COMP_REG_IMPL(Material_Glossy2, "material::glossy");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

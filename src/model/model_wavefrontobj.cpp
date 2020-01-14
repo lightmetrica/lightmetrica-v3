@@ -14,6 +14,8 @@
 #include <lm/light.h>
 #include <lm/surface.h>
 
+#define NO_MIXTURE_MATERIAL 0
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 using namespace objloader;
@@ -163,6 +165,29 @@ public:
                     }
                 }
                 else {
+
+                    #if NO_MIXTURE_MATERIAL
+                    if (math::is_zero(m.Ks)) {
+                        // Diffuse material
+                        mat = comp::create<Material>(
+                            "material::diffuse", make_loc(m.name), {
+                                {"Kd", m.Kd},
+                                {"mapKd", mapKd_loc}
+                            });
+                    }
+                    else {
+                        // Glossy material
+                        const auto r = 2_f / (2_f + m.Ns);
+                        const auto as = math::safe_sqrt(1_f - m.an * .9_f);
+                        mat = comp::create<Material>(
+                            "material::glossy", make_loc(m.name), {
+                                {"Ks", m.Ks},
+                                {"ax", std::max(1e-3_f, r / as)},
+                                {"ay", std::max(1e-3_f, r * as)}
+                            });
+                        
+                    }
+                    #else
                     // Convert parameter for anisotropic GGX 
                     const auto r = 2_f / (2_f + m.Ns);
                     const auto as = math::safe_sqrt(1_f - m.an * .9_f);
@@ -179,6 +204,7 @@ public:
                             {"ax", std::max(1e-3_f, r / as)},
                             {"ay", std::max(1e-3_f, r * as)}
                         });
+                    #endif
                 }
                 if (!mat) {
                     return false;

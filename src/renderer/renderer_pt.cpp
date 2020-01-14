@@ -178,7 +178,7 @@ public:
                     // Evaluate and accumulate contribution
                     const auto wo = -sL->wo;
                     const auto fs = scene_->eval_contrb(s->sp, s->comp, wi, wo);
-                    const auto pdf_sel = scene_->pdf_comp(s->sp, s->comp, wi);
+                    //const auto pdf_sel = scene_->pdf_comp(s->sp, s->comp, wi);
                     const auto misw = [&]() -> Float {
                         if (pt_mode_ == PTMode::NEE) {
                             return 1_f;
@@ -188,10 +188,11 @@ public:
                         }
                         // Compute MIS weight only when wo can be sampled with both strategies.
                         return math::balance_heuristic(
-                            scene_->pdf_direct_light(s->sp, sL->sp, sL->comp, sL->wo), 
-                            scene_->pdf(s->sp, s->comp, wi, wo));
+                            scene_->pdf_direct(s->sp, sL->sp, sL->comp, sL->wo), 
+                            scene_->pdf_direction(s->sp, s->comp, wi, wo));
                     }();
-                    const auto C = throughput / pdf_sel * fs * sL->weight * misw;
+                    //const auto C = throughput / pdf_sel * fs * sL->weight * misw;
+                    const auto C = throughput * fs * sL->weight * misw;
                     film_->splat(*rp, C);
                 }();
 
@@ -222,8 +223,9 @@ public:
                     }
                 }();
                 if (direct) {
+                    const auto spL = hit->as_type(SceneInteraction::LightEndpoint);
                     const auto woL = -s->wo;
-                    const auto fs = scene_->eval_contrb_endpoint(*hit, woL);
+                    const auto fs = scene_->eval_contrb_endpoint(spL, woL);
                     const auto misw = [&]() -> Float {
                         if (pt_mode_ == PTMode::Naive) {
                             return 1_f;
@@ -233,8 +235,8 @@ public:
                         }
                         // The continuation edge can be sampled via both direct and NEE
                         return math::balance_heuristic(
-                            scene_->pdf(s->sp, s->comp, wi, s->wo),
-                            scene_->pdf_direct_light(s->sp, *hit, -1, woL));
+                            scene_->pdf_direction(s->sp, s->comp, wi, s->wo),
+                            scene_->pdf_direct(s->sp, spL, -1, woL));
                     }();
                     const auto C = throughput * fs * misw;
                     film_->splat(raster_pos, C);
