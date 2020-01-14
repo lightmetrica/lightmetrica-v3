@@ -615,7 +615,7 @@ public:
     virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const = 0;
 
     /*!
-        \brief Evaluate contribution.
+        \brief Evaluate directional contribution.
         \param sp Scene interaction.
 		\param comp Component index.
         \param wi Incident ray direction.
@@ -647,6 +647,12 @@ public:
     virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
+        \brief Evaluate positional contribution of the endpoint.
+    */
+    virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp) const = 0;
+
+#if 0
+    /*!
         \brief Evaluate endpoint contribution.
 		\param sp Surface interaction.
 		\param wo Outgoing ray direction.
@@ -665,6 +671,7 @@ public:
         \endrst
     */
     virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const = 0;
+#endif
 
     /*!
         \brief Evaluate reflectance (if available).

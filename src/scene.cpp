@@ -662,6 +662,16 @@ public:
         LM_UNREACHABLE_RETURN();
     }
 
+    virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp) const override {
+        if (!sp.is_type(SceneInteraction::Endpoint)) {
+            LM_THROW_EXCEPTION(Error::Unsupported,
+                "eval_contrb_endpoint() function only supports endpoint interactions.");
+        }
+        // Always 1 for now
+        return Vec3(1_f);
+    }
+
+#if 0
     virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const override {
         if (!sp.is_type(SceneInteraction::Endpoint)) {
             LM_THROW_EXCEPTION(Error::Unsupported,
@@ -670,6 +680,7 @@ public:
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         return primitive.light->eval(sp.geom, -1, wo);
     }
+#endif
 
     virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const override {
         if (!sp.is_type(SceneInteraction::SurfaceInteraction)) {
