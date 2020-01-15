@@ -18,8 +18,8 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 struct LightPrimitiveIndex {
-    Transform global_transform; // Global transform matrix
-    int index;                 // Primitive node index
+    Transform global_transform;  // Global transform matrix
+    int index;                   // Primitive node index
 
     template <typename Archive>
     void serialize(Archive& ar) {
@@ -512,6 +512,24 @@ public:
                 return primitive.medium->phase()->pdf_direction(sp.geom, wi, wo);
             case SceneInteraction::SurfaceInteraction:
                 return primitive.material->pdf_direction(sp.geom, comp, wi, wo);
+        }
+        LM_UNREACHABLE_RETURN();
+    }
+
+    virtual Float pdf_position(const SceneInteraction& sp) const override {
+        if (!sp.is_type(SceneInteraction::Endpoint)) {
+            LM_THROW_EXCEPTION(Error::Unsupported,
+                "pdf_position() does not support non-endpoint interactions.");
+        }
+        const auto& primitive = nodes_.at(sp.primitive).primitive;
+        if (sp.is_type(SceneInteraction::CameraEndpoint)) {
+            return primitive.camera->pdf_position(sp.geom);
+        }
+        else if (sp.is_type(SceneInteraction::LightEndpoint)) {
+            const int light_index = light_indices_map_.at(sp.primitive);
+            const auto light_transform = lights_.at(light_index).global_transform;
+            const auto pL = 1_f / int(lights_.size());
+            return primitive.light->pdf_position(sp.geom, light_transform) * pL;
         }
         LM_UNREACHABLE_RETURN();
     }

@@ -83,6 +83,14 @@ public:
     */
     virtual std::optional<LightRaySample> sample_ray(Rng& rng, const Transform& transform) const = 0;
 
+    /*!
+    */
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const = 0;
+
+    /*!
+    */
+    virtual Float pdf_position(const PointGeometry& geom, const Transform& transform) const = 0;
+
     // --------------------------------------------------------------------------------------------
 
     /*!

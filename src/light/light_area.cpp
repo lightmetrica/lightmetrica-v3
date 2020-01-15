@@ -37,7 +37,7 @@ public:
     }
 
 private:
-    Float tranformedInvA(const Transform& transform) const {
+    Float tranformed_invA(const Transform& transform) const {
         // TODO: Handle degenerated axis
         // e.g., scaling by (.2,.2,.2) leads J=1/5^3
         // but the actual change of areae is J=1/5^2
@@ -92,7 +92,7 @@ public:
     virtual std::optional<LightRaySample> sample_ray(Rng& rng, const Transform& transform) const override {
         // Sample position
         const auto geomL = sample_position_on_triangle_mesh(rng, transform);
-        const auto pA = invA_;
+        const auto pA = tranformed_invA(transform);
         
         // Sample direction
         const auto wo_local = math::sample_cosine_weighted(rng);
@@ -112,6 +112,17 @@ public:
             0,
             contrb
         };
+    }
+
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const override {
+        if (glm::dot(wo, geom.n) <= 0_f) {
+            return 0_f;
+        }
+        return math::pdf_cosine_weighted_projSA();
+    }
+
+    virtual Float pdf_position(const PointGeometry&, const Transform& transform) const override {
+        return tranformed_invA(transform);
     }
 
     // --------------------------------------------------------------------------------------------
@@ -134,7 +145,7 @@ public:
 
     virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform& transform, Vec3) const override {
         const auto G = surface::geometry_term(geom, geomL);
-        return G == 0_f ? 0_f : tranformedInvA(transform) / G;
+        return G == 0_f ? 0_f : tranformed_invA(transform) / G;
     }
 };
 

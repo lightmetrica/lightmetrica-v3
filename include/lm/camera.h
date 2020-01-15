@@ -149,6 +149,10 @@ public:
     */
     virtual Float pdf_direction(Vec3 wo, Float aspect) const = 0;
 
+    /*!
+    */
+    virtual Float pdf_position(const PointGeometry& geom) const = 0;
+
     // --------------------------------------------------------------------------------------------
 
     /*!

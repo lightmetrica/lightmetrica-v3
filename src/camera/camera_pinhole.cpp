@@ -176,6 +176,10 @@ public:
         return J(wo, aspect);
     }
 
+    virtual Float pdf_position(const PointGeometry&) const override {
+        return 1_f;
+    }
+
     // --------------------------------------------------------------------------------------------
 
     virtual std::optional<CameraRaySample> sample_direct(Rng&, const PointGeometry& geom, Float aspect) const override {

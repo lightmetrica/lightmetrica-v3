@@ -672,6 +672,9 @@ static void bind_scene(pybind11::module& m) {
         virtual Float pdf_direction(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direction, sp, comp, wi, wo);
         }
+        virtual Float pdf_position(const SceneInteraction& sp) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_position, sp);
+        }
         // --------------------------------------------------------------------------------------------
 		virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
 			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_direct_light, rng, sp);
@@ -696,8 +699,8 @@ static void bind_scene(pybind11::module& m) {
 		virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
 			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb, sp, comp, wi, wo);
 		}
-		virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const override {
-			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb_endpoint, sp, wo);
+		virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp) const override {
+			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb_endpoint, sp);
 		}
 		virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const override {
 			PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp, comp);
@@ -1065,7 +1068,10 @@ static void bind_camera(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(std::optional<CameraDirectionSample>, Camera, sample_direction, rng, window, aspect);
         }
         virtual Float pdf_direction(Vec3 wo, Float aspect) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Camera, pdf, wo, aspect);
+            PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_direction, wo, aspect);
+        }
+        virtual Float pdf_position(const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_position, geom);
         }
         // ----------------------------------------------------------------------------------------
         virtual std::optional<CameraRaySample> sample_direct(Rng& rng, const PointGeometry& geom, Float aspect) const override {
@@ -1090,6 +1096,7 @@ static void bind_camera(pybind11::module& m) {
         .def("sample_ray", &Camera::sample_ray)
         .def("sample_direction", &Camera::sample_direction)
         .def("pdf_direction", &Camera::pdf_direction)
+        .def("pdf_position", &Camera::pdf_position)
         //
         .def("sample_direct", &Camera::sample_direct)
         .def("pdf_direct", &Camera::pdf_direct)
@@ -1126,6 +1133,12 @@ static void bind_light(pybind11::module& m) {
         virtual std::optional<LightRaySample> sample_ray(Rng& rng, const Transform& transform) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<LightRaySample>, Light, sample_ray, rng, transform);
         }
+        virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Light, pdf_direction, geom, wo);
+        }
+        virtual Float pdf_position(const PointGeometry& geom, const Transform& transform) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Light, pdf_position, geom, transform);
+        }
         // ----------------------------------------------------------------------------------------
         virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<LightRaySample>, Light, sample_direct, rng, geom, transform);
@@ -1136,9 +1149,16 @@ static void bind_light(pybind11::module& m) {
     };
     pybind11::class_<Light, Light_Py, Component, Component::Ptr<Light>>(m, "Light")
         .def(pybind11::init<>())
+        //
         .def("is_specular", &Light::is_specular)
         .def("is_infinite", &Light::is_infinite)
+        //
         .def("eval", &Light::eval)
+        //
+        .def("sample_ray", &Light::sample_ray)
+        .def("pdf_direction", &Light::pdf_direction)
+        .def("pdf_position", &Light::pdf_position)
+        //
         .def("sample_direct", &Light::sample_direct)
         .def("pdf_direct", &Light::pdf_direct)
         .PYLM_DEF_COMP_BIND(Light);

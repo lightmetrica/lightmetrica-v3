@@ -522,6 +522,10 @@ public:
     */
     virtual Float pdf_direction(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
 
+    /*!
+    */
+    virtual Float pdf_position(const SceneInteraction& sp) const = 0;
+
     // --------------------------------------------------------------------------------------------
 
     //

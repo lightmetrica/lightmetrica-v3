@@ -364,7 +364,7 @@ static Float distance(const PointGeometry& s1, const PointGeometry& s2) {
     this function keeps the solid angle measure.
     \endrst
 */
-static Float convert_SA_to_projSA(Float pdf_SA, const PointGeometry& geom, Vec3 d) {
+static Float convert_pdf_SA_to_projSA(Float pdf_SA, const PointGeometry& geom, Vec3 d) {
     if (geom.degenerated) {
         // When geom is degenerated, use pdf with solid angle measure.
         return pdf_SA;
@@ -377,6 +377,13 @@ static Float convert_SA_to_projSA(Float pdf_SA, const PointGeometry& geom, Vec3 
         return 0_f;
     }
     return pdf_SA / J;
+}
+
+/*!
+*/
+static Float convert_pdf_projSA_to_area(Float pdf_projSA, const PointGeometry& geom1, const PointGeometry& geom2) {
+    const auto G = geometry_term(geom1, geom2);
+    return pdf_projSA * G;
 }
 
 /*!
