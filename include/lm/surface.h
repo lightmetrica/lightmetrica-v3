@@ -222,10 +222,8 @@ struct SceneInteraction {
         \brief Consider the scene interaction as a different type.
     */
     SceneInteraction as_type(int new_type) const {
-        SceneInteraction sp;
+        auto sp = *this;
         sp.type = new_type;
-        sp.primitive = primitive;
-        sp.geom = geom;
         return sp;
     };
 
