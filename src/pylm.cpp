@@ -198,14 +198,15 @@ static void bind_user(pybind11::module& m) {
     }, pybind11::return_value_policy::reference);
 
     // Bind load and get functions for each asset interface
-	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Mesh, mesh);
-	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Texture, texture);
-	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Material, material);
-	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Camera, camera);
-	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Medium, medium);
-	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Phase, phase);
-	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Film, film);
-	PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Model, model);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Mesh, mesh);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Texture, texture);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Material, material);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Camera, camera);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Light, light);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Medium, medium);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Phase, phase);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Film, film);
+    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Model, model);
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, AssetGroup, asset_group);
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Accel, accel);
     PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Scene, scene);
