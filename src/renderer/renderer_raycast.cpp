@@ -76,7 +76,7 @@ public:
                 film_->set_pixel(x, y, glm::abs(sp->geom.n));
             }
             else {
-                const auto R = color_ ? *color_ : scene_->reflectance(*sp, -1);
+                const auto R = color_ ? *color_ : scene_->reflectance(*sp);
                 auto C = R ? *R : Vec3();
                 if (!use_constant_color_) {
                     C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));

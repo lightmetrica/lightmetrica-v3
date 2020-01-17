@@ -30,27 +30,23 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Material_Mirror final : public Material {
 private:
-    virtual bool is_specular(const PointGeometry&, int) const override {
-        return true;
-    }
-
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng&, const PointGeometry& geom, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng&, const PointGeometry& geom, Vec3 wi, MaterialTransDir) const override {
         return MaterialDirectionSample{
             math::reflection(wi, geom.n),
-            SurfaceComp::DontCare,
-            Vec3(1_f)
+            Vec3(1_f),
+            true
         };
     }
 
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng&, const PointGeometry& geom, int, Vec3 wi) const override {
-        return math::reflection(wi, geom.n);
-    }
-
-    virtual Float pdf_direction(const PointGeometry&, int, Vec3, Vec3) const override {
+    virtual Float pdf_direction(const PointGeometry&, Vec3, Vec3) const override {
         return 0_f;
     }
 
-    virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {
+    virtual Vec3 eval(const PointGeometry&, Vec3, Vec3) const override {
+        return Vec3(0_f);
+    }
+
+    virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
         return Vec3(0_f);
     }
 };

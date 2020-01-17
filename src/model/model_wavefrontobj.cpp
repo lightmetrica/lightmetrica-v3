@@ -352,8 +352,8 @@ private:
     // Compute selection weight
     Float diffuse_selection_weight(const PointGeometry& geom) const {
         const auto weight_d = [&]() {
-            const auto weight_d = glm::compMax(*diffuse_->reflectance(geom, SurfaceComp::DontCare));
-            const auto weight_g = glm::compMax(*glossy_->reflectance(geom, SurfaceComp::DontCare));
+            const auto weight_d = glm::compMax(*diffuse_->reflectance(geom));
+            const auto weight_g = glm::compMax(*glossy_->reflectance(geom));
             if (weight_d == 0_f && weight_g == 0_f) {
                 return 1_f;
             }
@@ -411,31 +411,27 @@ public:
             });
     }
 
-    virtual bool is_specular(const PointGeometry& geom, int comp) const override {
-        return material_by_comp(comp)->is_specular(geom, -1);
-    }
-
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
         const int comp = sample_comp_select(rng, geom);
         const auto* material = material_by_comp(comp);
-        const auto s = material->sample_direction(rng, geom, wi);
+        const auto s = material->sample_direction(rng, geom, wi, trans_dir);
         if (!s) {
             return {};
         }
-        const auto f = eval(geom, -1, wi, s->wo);
-        const auto p = pdf_direction(geom, -1, wi, s->wo);
+        const auto f = eval(geom, wi, s->wo);
+        const auto p = pdf_direction(geom, wi, s->wo);
         return MaterialDirectionSample{
             s->wo,
-            comp,
-            f / p
+            f / p,
+            false
         };
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int) const override {
-        return diffuse_->reflectance(geom, -1);
+    virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
+        return diffuse_->reflectance(geom);
     }
 
-    virtual Float pdf_direction(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
         // Evaluate p_sel(j) * p_j(wo)
         const auto eval_pdf = [&](int c) -> Float {
             // Consider only if wo can be samplable with the strategy c
@@ -443,7 +439,7 @@ public:
             const auto p_sel = pdf_comp_select(geom, c);
             const auto p = [&]() -> Float {
                 const auto* material = material_by_comp(c);
-                return material->pdf_direction(geom, -1, wi, wo);
+                return material->pdf_direction(geom, wi, wo);
             }();
             return p_sel * p;
         };
@@ -456,11 +452,11 @@ public:
         return p_maginal;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
         const auto eval_f = [&](int c) -> Vec3 {
             const auto f = [&]() -> Vec3 {
                 const auto* material = material_by_comp(c);
-                return material->eval(geom, -1, wi, wo);
+                return material->eval(geom, wi, wo);
             }();
             return f;
         };
@@ -514,21 +510,26 @@ private:
     // Get material by component index
     Material* material_by_comp(int comp) const {
         switch (comp) {
-        case Comp_Diffuse:
-            return diffuse_.get();
-        case Comp_Glossy:
-            return glossy_.get();
-        case Comp_Alpha:
-            return alpha_mask_.get();
+            case Comp_Diffuse:
+                return diffuse_.get();
+            case Comp_Glossy:
+                return glossy_.get();
+            case Comp_Alpha:
+                return alpha_mask_.get();
         }
         return nullptr;
+    }
+
+    // Check if component is specular
+    bool is_specular_comp(int comp) const {
+        return comp == Comp_Alpha;
     }
 
     // Compute selection weight
     Float diffuse_selection_weight(const PointGeometry& geom) const {
         const auto weight_d = [&]() {
-            const auto weight_d = glm::compMax(*diffuse_->reflectance(geom, SurfaceComp::DontCare));
-            const auto weight_g = glm::compMax(*glossy_->reflectance(geom, SurfaceComp::DontCare));
+            const auto weight_d = glm::compMax(*diffuse_->reflectance(geom));
+            const auto weight_g = glm::compMax(*glossy_->reflectance(geom));
             if (weight_d == 0_f && weight_g == 0_f) {
                 return 1_f;
             }
@@ -630,47 +631,43 @@ public:
         }
     }
 
-    virtual bool is_specular(const PointGeometry& geom, int comp) const override {
-        return material_by_comp(comp)->is_specular(geom, -1);
-    }
-
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
         const int comp = sample_comp_select(rng, geom);
         const auto* material = material_by_comp(comp);
-        const auto s = material->sample_direction(rng, geom, wi);
+        const auto s = material->sample_direction(rng, geom, wi, trans_dir);
         if (!s) {
             return {};
         }
-        const auto eval_delta = !material->is_specular(geom, -1);
 
-        // Evaluate weight: f/p
-        const auto weight = [&]() -> Vec3 {
-            // If the selected component is non-delta component,
-            // compute f and p separately and compute the weight.
-            if (!is_specular(geom, comp)) {
-                const auto f = eval(geom, -1, wi, s->wo);
-                const auto p = pdf_direction(geom, -1, wi, s->wo);
-                return f / p;
-            }
-            // Otherwise, compute f/p = weight for selecting comp
-            // because delta components are cancelled out.
-            else {
-                return Vec3(eval_mix_weight(geom, comp));
-            }
-        }();
-
-        return MaterialDirectionSample{
-            s->wo,
-            comp,
-            weight
-        };
+        // If the selected component is non-delta component,
+        // compute f and p separately and compute the weight.
+        if (!is_specular_comp(comp)) {
+            const auto f = eval(geom, wi, s->wo);
+            const auto p = pdf_direction(geom, wi, s->wo);
+            const auto C = f / p;
+            return MaterialDirectionSample{
+                s->wo,
+                C,
+                false
+            };
+        }
+        // Otherwise, compute f/p = weight for selecting comp
+        // because delta components are cancelled out.
+        else {
+            const auto C = Vec3(eval_mix_weight(geom, comp));
+            return MaterialDirectionSample{
+                s->wo,
+                C,
+                true
+            };
+        }
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int) const override {
-        return diffuse_->reflectance(geom, -1);
+    virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
+        return diffuse_->reflectance(geom);
     }
 
-    virtual Float pdf_direction(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
         // Evaluate p_sel(j) * p_j(wo)
         const auto eval_pdf = [&](int c) -> Float {
             // Consider only if wo can be samplable with the strategy c
@@ -678,7 +675,7 @@ public:
             const auto p_sel = pdf_comp_select(geom, c);
             const auto p = [&]() -> Float {
                 const auto* material = material_by_comp(c);
-                return material->pdf_direction(geom, -1, wi, wo);
+                return material->pdf_direction(geom, wi, wo);
             }();
             return p_sel * p;
         };
@@ -692,12 +689,12 @@ public:
         return p_maginal;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
         const auto eval_f = [&](int c) -> Vec3 {
             const auto w = eval_mix_weight(geom, c);
             const auto f = [&]() -> Vec3 {
                 const auto* material = material_by_comp(c);
-                return material->eval(geom, -1, wi, wo);
+                return material->eval(geom, wi, wo);
             }();
             return w * f;
         };

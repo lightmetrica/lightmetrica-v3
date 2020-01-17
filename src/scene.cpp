@@ -342,21 +342,6 @@ public:
         }
     }
 
-    virtual bool is_specular(const SceneInteraction& sp, int comp) const override {
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        switch (sp.type) {
-            case SceneInteraction::CameraEndpoint:
-                return primitive.camera->is_specular(sp.geom);
-            case SceneInteraction::LightEndpoint:
-                return primitive.light->is_specular(sp.geom, comp);
-            case SceneInteraction::MediumInteraction:
-                return primitive.medium->phase()->is_specular(sp.geom);
-            case SceneInteraction::SurfaceInteraction:
-                return primitive.material->is_specular(sp.geom, comp);
-        }
-        LM_UNREACHABLE_RETURN();
-    }
-
     // --------------------------------------------------------------------------------------------
 
     // Helper function for light selection
@@ -393,7 +378,7 @@ public:
         return nodes_.at(*camera_).primitive.camera->primary_ray(rp, aspect);
     }
 
-    virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
+    virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const override {
         if (sp.is_type(SceneInteraction::CameraTerminator)) {
             const auto* camera = nodes_.at(*camera_).primitive.camera;
             const auto s = camera->sample_ray(rng, sp.camera_cond.window, sp.camera_cond.aspect);
@@ -406,9 +391,9 @@ public:
                     s->geom,
                     sp.camera_cond.aspect
                 ),
-                0,
                 s->wo,
-                s->weight
+                s->weight,
+                s->specular
             };
         }
         else if (sp.is_type(SceneInteraction::LightTerminator)) {
@@ -424,9 +409,9 @@ public:
                     light_index.index,
                     s->geom
                 ),
-                0,
                 s->wo,
-                s->weight
+                s->weight,
+                s->specular
             };
         }
         else if (sp.is_type(SceneInteraction::MediumInteraction)) {
@@ -437,9 +422,9 @@ public:
             }
             return RaySample{
                 sp,
-                0,
                 s->wo,
-                s->weight
+                s->weight,
+                s->specular
             };
         }
         else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
@@ -447,18 +432,19 @@ public:
             if (!primitive.material) {
                 return {};
             }
-            const auto s = primitive.material->sample_direction(rng, sp.geom, wi);
+            const auto s = primitive.material->sample_direction(rng, sp.geom, wi, static_cast<MaterialTransDir>(trans_dir));
             if (!s) {
                 return {};
             }
+            const auto sn_corr = surface::shading_normal_correction(sp.geom, wi, s->wo, trans_dir);
             return RaySample{
                 SceneInteraction::make_surface_interaction(
                     sp.primitive,
                     sp.geom
                 ),
-                s->comp,
                 s->wo,
-                s->weight
+                s->weight * sn_corr,
+                s->specular
             };
         }
         LM_UNREACHABLE_RETURN();
@@ -470,7 +456,7 @@ public:
     // Direction sampling
     //
 
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const override {
         if (!sp.is_type(SceneInteraction::Midpoint)) {
             LM_THROW_EXCEPTION(Error::Unsupported,
                 "Direction sampling is only supported for midpoint interactions.");
@@ -483,25 +469,26 @@ public:
             }
             return DirectionSample{
                 s->wo,
-                0,
-                s->weight
+                s->weight,
+                s->specular
             };
         }
         else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
-            const auto s = primitive.material->sample_direction(rng, sp.geom, wi);
+            const auto s = primitive.material->sample_direction(rng, sp.geom, wi, static_cast<MaterialTransDir>(trans_dir));
             if (!s) {
                 return {};
             }
+            const auto sn_corr = surface::shading_normal_correction(sp.geom, wi, s->wo, trans_dir);
             return DirectionSample{
                 s->wo,
-                s->comp,
-                s->weight
+                s->weight * sn_corr,
+                s->specular
             };
         }
         LM_UNREACHABLE_RETURN();
     }
 
-    virtual Float pdf_direction(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         switch (sp.type) {
             case SceneInteraction::CameraEndpoint:
@@ -511,7 +498,7 @@ public:
             case SceneInteraction::MediumInteraction:
                 return primitive.medium->phase()->pdf_direction(sp.geom, wi, wo);
             case SceneInteraction::SurfaceInteraction:
-                return primitive.material->pdf_direction(sp.geom, comp, wi, wo);
+                return primitive.material->pdf_direction(sp.geom, wi, wo);
         }
         LM_UNREACHABLE_RETURN();
     }
@@ -556,9 +543,9 @@ public:
                 light.index,
                 s->geom
             ),
-            s->comp,
             s->wo,
-            s->weight / p_sel
+            s->weight / p_sel,
+            s->specular
         };
     }
 
@@ -574,13 +561,13 @@ public:
                 s->geom,
                 aspect
             ),
-            0,
             s->wo,
-            s->weight
+            s->weight,
+            s->specular
         };
     }
 
-    virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& sp_endpoint, int comp_endpoint, Vec3 wo) const override {
+    virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& sp_endpoint, Vec3 wo) const override {
         if (!sp_endpoint.is_type(SceneInteraction::Endpoint)) {
             LM_THROW_EXCEPTION(Error::Unsupported,
                 "pdf_direct() does not support non-endpoint interactions.");
@@ -594,7 +581,7 @@ public:
             const int light_index = light_indices_map_.at(sp_endpoint.primitive);
             const auto light_transform = lights_.at(light_index).global_transform;
             const auto pL = 1_f / int(lights_.size());
-            return primitive.light->pdf_direct(sp.geom, sp_endpoint.geom, comp_endpoint, light_transform, wo) * pL;
+            return primitive.light->pdf_direct(sp.geom, sp_endpoint.geom, light_transform, wo) * pL;
         }
 
         LM_UNREACHABLE_RETURN();
@@ -665,17 +652,18 @@ public:
         return camera->raster_position(wo, aspect);
     }
 
-    virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
+    virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         switch (sp.type) {
             case SceneInteraction::CameraEndpoint:
                 return primitive.camera->eval(wo, sp.camera_cond.aspect);
             case SceneInteraction::LightEndpoint:
-                return primitive.light->eval(sp.geom, comp, wo);
+                return primitive.light->eval(sp.geom, wo);
             case SceneInteraction::MediumInteraction:
                 return primitive.medium->phase()->eval(sp.geom, wi, wo);
             case SceneInteraction::SurfaceInteraction:
-                return primitive.material->eval(sp.geom, comp, wi, wo);
+                return primitive.material->eval(sp.geom, wi, wo) *
+                       surface::shading_normal_correction(sp.geom, wi, wo, trans_dir);
         }
         LM_UNREACHABLE_RETURN();
     }
@@ -689,24 +677,13 @@ public:
         return Vec3(1_f);
     }
 
-#if 0
-    virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const override {
-        if (!sp.is_type(SceneInteraction::Endpoint)) {
-            LM_THROW_EXCEPTION(Error::Unsupported,
-                "eval_contrb_endpoint() function only supports endpoint interactions.");
-        }
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        return primitive.light->eval(sp.geom, -1, wo);
-    }
-#endif
-
-    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const override {
+    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const override {
         if (!sp.is_type(SceneInteraction::SurfaceInteraction)) {
             LM_THROW_EXCEPTION(Error::Unsupported,
                 "reflectance() function only supports surface interactions.");
         }
         const auto& primitive = nodes_.at(sp.primitive).primitive;
-        return primitive.material->reflectance(sp.geom, comp);
+        return primitive.material->reflectance(sp.geom);
     }
 };
 

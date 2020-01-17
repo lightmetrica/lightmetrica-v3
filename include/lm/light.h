@@ -27,8 +27,8 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 struct LightRaySample {
     PointGeometry geom;   //!< Sampled geometry information.
     Vec3 wo;              //!< Sampled direction.
-    int comp;             //!< Sampled component.
     Vec3 weight;          //!< Contribution divided by probability.
+    bool specular;          //!< Sampled component is specular.
 };
 
 /*!
@@ -41,18 +41,6 @@ struct LightRaySample {
 */
 class Light : public Component {
 public:
-    /*!
-        \brief Check if the light contains delta component.
-        \param geom Surface geometry information.
-        \param comp Component index.
-
-        \rst
-        This function returns true if the luminance function :math:`L_e` of the light source
-        contains a component of delta function.
-        \endrst
-    */
-    virtual bool is_specular(const PointGeometry& geom, int comp) const = 0;
-
     /*!
         \brief Check if the light source is inifite distant light.
 
@@ -75,7 +63,7 @@ public:
         This function evaluates luminance function :math:`L_e` of the light source.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wo) const = 0;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -130,7 +118,7 @@ public:
         If the given direction cannot be sampled, the function returns zero.
         \endrst
     */
-    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int comp, const Transform& transform, Vec3 wo) const = 0;
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const = 0;
 };
 
 /*!

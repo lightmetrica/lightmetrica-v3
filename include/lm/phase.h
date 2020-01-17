@@ -19,8 +19,9 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \brief Result of direction sampling.
 */
 struct PhaseDirectionSample {
-    Vec3 wo;        //!< Sampled direction.
-    Vec3 weight;    //!< Contribution divided by probability.
+    Vec3 wo;            //!< Sampled direction.
+    Vec3 weight;        //!< Contribution divided by probability.
+    bool specular;      //!< Sampled component is specular.
 };
 
 /*!
@@ -28,16 +29,6 @@ struct PhaseDirectionSample {
 */
 class Phase : public Component {
 public:
-    /*!
-        \brief Check if the phase function is specular.
-        \param geom Point geometry.
-
-        \rst
-        This function checks if the phase function contains delta component.
-        \endrst
-    */
-    virtual bool is_specular(const PointGeometry& geom) const = 0;
-
     /*!
         \brief Sample a direction.
         \param rng Random number generator.

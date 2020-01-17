@@ -25,8 +25,16 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 struct MaterialDirectionSample {
     Vec3 wo;        //!< Sampled direction.
-    int comp;       //!< Sampled component index.
     Vec3 weight;    //!< Contribution divided by probability (including probability of component selection).
+    bool specular;  //!< Sampled component is specular.
+};
+
+/*!
+    \brief Light transport direction.
+*/
+enum class MaterialTransDir {
+    LE,
+    EL
 };
 
 /*!
@@ -43,17 +51,6 @@ struct MaterialDirectionSample {
 */
 class Material : public Component {
 public:
-    /*!
-        \brief Check if the material is specular.
-        \param geom Point geometry.
-        \param comp Component index.
-
-        \rst
-        This function checks if the BSDF of the material contains delta component.
-        \endrst
-    */
-    virtual bool is_specular(const PointGeometry& geom, int comp) const = 0;
-
     /*!
         \brief Sample a ray given surface point and incident direction.
         \param rng Random number generator.
@@ -72,34 +69,7 @@ public:
         Note that the evaluated weight doesn't contain the evaluation of the pdf of component selection.
         \endrst
     */
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
-
-    /*!
-        \brief Sample a ray direction given a component.
-		\param rng Random number generator.
-        \param geom Point geometry.
-        \param comp Component index.
-		\param wi Incident ray direction.
-		\return Sampled direction. nullopt for invalid sample.
-    */
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const {
-        LM_UNUSED(rng, geom, comp, wi);
-        LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
-    }
-
-    /*!
-        \brief Evaluate reflectance.
-        \param geom Point geometry.
-        \param comp Component index.
-
-        \rst
-        This function evaluates the reflectance function of the underlying material if exists.
-        \endrst
-    */
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const {
-        LM_UNUSED(geom, comp);
-        LM_UNREACHABLE_RETURN();
-    }
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const = 0;
 
     /*!
         \brief Evaluate pdf in projected solid angle measure.
@@ -113,7 +83,7 @@ public:
         Note that the evaluated pdf doesn't contain the probabilty of component selection.
         \endrst
     */
-    virtual Float pdf_direction(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate BSDF.
@@ -126,7 +96,18 @@ public:
         This function evaluates underlying BSDF of the material.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const = 0;
+
+    /*!
+        \brief Evaluate reflectance.
+        \param geom Point geometry.
+        \param comp Component index.
+
+        \rst
+        This function evaluates the reflectance function of the underlying material if exists.
+        \endrst
+    */
+    virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const = 0;
 };
 
 /*!

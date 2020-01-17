@@ -23,9 +23,11 @@ public:
     }
 
 public:
+#if 0
     virtual bool is_specular(const PointGeometry&) const override {
         return false;
     }
+#endif
 
     virtual std::optional<PhaseDirectionSample> sample_direction(Rng& rng, const PointGeometry&, Vec3 wi) const override {
         const auto cosT = [&]() -> Float {
@@ -44,7 +46,7 @@ public:
         const auto local_wo = Vec3(sinT*cosP, sinT*sinP, cosT);
         const auto [u, v] = math::orthonormal_basis(-wi);
         const auto wo = Mat3(u, v, -wi) * local_wo;
-        return PhaseDirectionSample{ wo, Vec3(1_f) };
+        return PhaseDirectionSample{ wo, Vec3(1_f), false };
     }
 
     virtual Float pdf_direction(const PointGeometry&, Vec3 wi, Vec3 wo) const override {

@@ -164,13 +164,6 @@ struct PointGeometry {
     }
 };
 
-namespace SurfaceComp {
-    enum {
-        All = -1,
-        DontCare = 0,
-    };
-}
-
 /*!
     \brief Scene interaction.
 
@@ -309,6 +302,14 @@ struct SceneInteraction {
 };
 
 /*!
+    \brief Light transport direction.
+*/
+enum class TransDir {
+    LE,     //!< Transport direction is L (light) to E (sensor).
+    EL      //!< Transport direction is E (sensor) to L (light).
+};
+
+/*!
     @}
 */
 
@@ -354,7 +355,7 @@ static Float distance(const PointGeometry& s1, const PointGeometry& s2) {
 }
 
 /*!
-    \brief Convert pdf in solid angle measure to projected solid angle measure.
+    \brief Convert PDF in solid angle measure to projected solid angle measure.
 
     \rst
     If the point geometry is not degenerated, this function converts the given pdf to
@@ -378,10 +379,30 @@ static Float convert_pdf_SA_to_projSA(Float pdf_SA, const PointGeometry& geom, V
 }
 
 /*!
+    \brief Convert PDF in projected solid angle measure to area measure.
 */
 static Float convert_pdf_projSA_to_area(Float pdf_projSA, const PointGeometry& geom1, const PointGeometry& geom2) {
     const auto G = geometry_term(geom1, geom2);
     return pdf_projSA * G;
+}
+
+/*!
+    \brief Energy compensation factor for shading normal.
+*/
+static Float shading_normal_correction(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir) {
+    const auto local_wi = geom.to_local * wi;
+    const auto local_wo = geom.to_local * wo;
+    const auto wi_dot_ng = glm::dot(wi, geom.gn);
+    const auto wo_dot_ng = glm::dot(wo, geom.gn);
+    const auto wi_dot_ns = math::local_cos(local_wi);
+    const auto wo_dot_ns = math::local_cos(local_wo);
+    if (wi_dot_ng * wi_dot_ns <= 0_f || wo_dot_ng * wo_dot_ns <= 0_f) {
+        return 0_f;
+    }
+    if (trans_dir == TransDir::LE) {
+        return wi_dot_ns * wo_dot_ng / (wo_dot_ns * wi_dot_ng);
+    }
+    return 1_f;
 }
 
 /*!

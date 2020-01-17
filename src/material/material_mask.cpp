@@ -27,27 +27,29 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Material_Mask final : public Material {
 public:
+#if 0
     virtual bool is_specular(const PointGeometry&, int) const override {
         return true;
     }
+#endif
 
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng&, const PointGeometry&, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng&, const PointGeometry&, Vec3 wi, MaterialTransDir) const override {
         return MaterialDirectionSample{
             -wi,
-            SurfaceComp::DontCare,
-            Vec3(1_f)
+            Vec3(1_f),
+            true
         };
     }
 
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng&, const PointGeometry&, int, Vec3 wi) const override {
-        return -wi;
-    }
-
-    virtual Float pdf_direction(const PointGeometry&, int, Vec3, Vec3) const override {
+    virtual Float pdf_direction(const PointGeometry&, Vec3, Vec3) const override {
         return 0_f;
     }
 
-    virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {
+    virtual Vec3 eval(const PointGeometry&, Vec3, Vec3) const override {
+        return Vec3(0_f);
+    }
+
+    virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
         return Vec3(0_f);
     }
 };

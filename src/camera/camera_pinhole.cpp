@@ -103,10 +103,6 @@ private:
     }
 
 public:
-    virtual bool is_specular(const PointGeometry&) const override {
-        return false;
-    }
-
     virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
         // Convert to camera space
         const auto to_eye = glm::transpose(Mat3(u_, v_, w_));
@@ -156,7 +152,8 @@ public:
         return CameraRaySample{
             PointGeometry::make_degenerated(position_),
             primary_ray({x+w*rng.u(), y+h*rng.u()}, aspect).d,
-            Vec3(1_f)
+            Vec3(1_f),
+            false
         };
     }
 
@@ -164,7 +161,8 @@ public:
         const auto[x, y, w, h] = window.data.data;
         return CameraDirectionSample{
             primary_ray({x+w*rng.u(), y+h*rng.u()}, aspect).d,
-            Vec3(1_f)
+            Vec3(1_f),
+            false
         };
     }
 
@@ -194,7 +192,8 @@ public:
         return CameraRaySample{
             geomE,
             wo,
-            We / p
+            We / p,
+            false
         };
     }
 

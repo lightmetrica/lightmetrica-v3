@@ -576,12 +576,13 @@ static void bind_scene(pybind11::module& m) {
         .def_readonly("sp", &RaySample::sp)
         .def_readonly("wo", &RaySample::wo)
         .def_readonly("weight", &RaySample::weight)
+        .def_readonly("specular", &RaySample::specular)
         .def("ray", &RaySample::ray);
 
     pybind11::class_<DirectionSample>(m, "DirectionSample")
         .def_readonly("wo", &DirectionSample::wo)
-        .def_readonly("comp", &DirectionSample::comp)
-        .def_readonly("weight", &DirectionSample::weight);
+        .def_readonly("weight", &DirectionSample::weight)
+        .def_readonly("specular", &DirectionSample::specular);
 
 	pybind11::class_<DistanceSample>(m, "DistanceSample")
 		.def_readonly("sp", &DistanceSample::sp)
@@ -655,22 +656,19 @@ static void bind_scene(pybind11::module& m) {
 		virtual bool is_light(const SceneInteraction& sp) const override {
 			PYBIND11_OVERLOAD_PURE(bool, Scene, is_light, sp);
 		}
-		virtual bool is_specular(const SceneInteraction& sp, int comp) const override {
-			PYBIND11_OVERLOAD_PURE(bool, Scene, is_specular, sp, comp);
-		}
         // ----------------------------------------------------------------------------------------
 		virtual Ray primary_ray(Vec2 rp, Float aspect) const override {
 			PYBIND11_OVERLOAD_PURE(Ray, Scene, primary_ray, rp, aspect);
 		}
-		virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
-			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_ray, rng, sp, wi);
+		virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_ray, rng, sp, wi, trans_dir);
 		}
         // ----------------------------------------------------------------------------------------
-        virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Scene, sample_direction, rng, sp, wi);
+        virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Scene, sample_direction, rng, sp, wi, trans_dir);
         }
-        virtual Float pdf_direction(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direction, sp, comp, wi, wo);
+        virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direction, sp, wi, wo);
         }
         virtual Float pdf_position(const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_position, sp);
@@ -682,8 +680,8 @@ static void bind_scene(pybind11::module& m) {
         virtual std::optional<RaySample> sample_direct_camera(Rng& rng, const SceneInteraction& sp, Float aspect) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_direct_camera, rng, sp, aspect);
         }
-		virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const override {
-			PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direct, sp, spL, compL, wo);
+		virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
+			PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direct, sp, spL, wo);
 		}
         // --------------------------------------------------------------------------------------------
 		virtual std::optional<DistanceSample> sample_distance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
@@ -696,14 +694,14 @@ static void bind_scene(pybind11::module& m) {
         virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, raster_position, wo, aspect);
         }
-		virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const override {
-			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb, sp, comp, wi, wo);
+		virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir) const override {
+			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb, sp, wi, wo, trans_dir);
 		}
 		virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp) const override {
 			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb_endpoint, sp);
 		}
-		virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const override {
-			PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp, comp);
+		virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp);
 		}
 	};
 
@@ -742,7 +740,6 @@ static void bind_scene(pybind11::module& m) {
         .def("visible", &Scene::visible)
         //
         .def("is_light", &Scene::is_light)
-        .def("is_specular", &Scene::is_specular)
         //
         .def("primary_ray", &Scene::primary_ray)
         .def("sample_ray", &Scene::sample_ray)
@@ -894,36 +891,32 @@ static void bind_material(pybind11::module& m) {
     pybind11::class_<MaterialDirectionSample>(m, "MaterialDirectionSample")
         .def(pybind11::init<>())
         .def_readwrite("wo", &MaterialDirectionSample::wo)
-        .def_readwrite("comp", &MaterialDirectionSample::comp)
-        .def_readwrite("weight", &MaterialDirectionSample::weight);
+        .def_readwrite("weight", &MaterialDirectionSample::weight)
+        .def_readwrite("specular", &MaterialDirectionSample::specular);
 
     class Material_Py final : public Material {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Material, construct, prop);
         }
-        virtual bool is_specular(const PointGeometry& geom, int comp) const override {
-            PYBIND11_OVERLOAD_PURE(bool, Material, is_specular, geom, comp);
+        virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<MaterialDirectionSample>, Material, sample_direction, rng, geom, wi, trans_dir);
         }
-        virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<MaterialDirectionSample>, Material, sample_direction, rng, geom, wi);
+        virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_direction, geom, wi, wo);
         }
-        virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
-            PYBIND11_OVERLOAD(std::optional<Vec3>, Material, reflectance, geom, comp);
+        virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, wi, wo);
         }
-        virtual Float pdf_direction(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_direction, geom, comp, wi, wo);
-        }
-        virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, comp, wi, wo);
+        virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Material, reflectance, geom);
         }
     };
     pybind11::class_<Material, Material_Py, Component, Component::Ptr<Material>>(m, "Material")
         .def(pybind11::init<>())
-        .def("is_specular", &Material::is_specular)
         .def("sample_direction", &Material::sample_direction)
-        .def("reflectance", &Material::reflectance)
         .def("pdf_direction", &Material::pdf_direction)
         .def("eval", &Material::eval)
+        .def("reflectance", &Material::reflectance)
         .PYLM_DEF_COMP_BIND(Material);
 }
 
@@ -934,14 +927,12 @@ static void bind_phase(pybind11::module& m) {
 	pybind11::class_<PhaseDirectionSample>(m, "PhaseDirectionSample")
 		.def(pybind11::init<>())
 		.def_readwrite("wo", &PhaseDirectionSample::wo)
-		.def_readwrite("weight", &PhaseDirectionSample::weight);
+		.def_readwrite("weight", &PhaseDirectionSample::weight)
+        .def_readwrite("specular", &PhaseDirectionSample::specular);
 
 	class Phase_Py final : public Phase {
 		virtual void construct(const Json& prop) override {
 			PYBIND11_OVERLOAD(void, Phase, construct, prop);
-		}
-		virtual bool is_specular(const PointGeometry& geom) const override {
-			PYBIND11_OVERLOAD_PURE(bool, Phase, is_specular, geom);
 		}
 		virtual std::optional<PhaseDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
 			PYBIND11_OVERLOAD_PURE(std::optional<PhaseDirectionSample>, Phase, sample_direction, rng, geom, wi);
@@ -955,7 +946,6 @@ static void bind_phase(pybind11::module& m) {
 	};
 	pybind11::class_<Phase, Phase_Py, Component, Component::Ptr<Phase>>(m, "Phase")
 		.def(pybind11::init<>())
-		.def("is_specular", &Phase::is_specular)
 		.def("sample_direction", &Phase::sample_direction)
 		.def("pdf_direction", &Phase::pdf_direction)
 		.def("eval", &Phase::eval)
@@ -1028,20 +1018,18 @@ static void bind_camera(pybind11::module& m) {
         .def(pybind11::init<>())
         .def_readonly("geom", &CameraRaySample::geom)
         .def_readonly("wo", &CameraRaySample::wo)
-        .def_readonly("weight", &CameraRaySample::weight);
+        .def_readonly("weight", &CameraRaySample::weight)
+        .def_readonly("specular", &CameraRaySample::specular);
 
     pybind11::class_<CameraDirectionSample>(m, "CameraDirectionSample")
         .def(pybind11::init<>())
         .def_readonly("wo", &CameraDirectionSample::wo)
-        .def_readonly("weight", &CameraDirectionSample::weight);
+        .def_readonly("weight", &CameraDirectionSample::weight)
+        .def_readonly("specular", &CameraDirectionSample::specular);
 
     class Camera_Py final : public Camera {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Camera, construct, prop);
-        }
-        // ----------------------------------------------------------------------------------------
-        virtual bool is_specular(const PointGeometry& geom) const override {
-            PYBIND11_OVERLOAD_PURE(bool, Camera, is_specular, geom);
         }
         // ----------------------------------------------------------------------------------------
         virtual Mat4 view_matrix() const override {
@@ -1084,8 +1072,6 @@ static void bind_camera(pybind11::module& m) {
     pybind11::class_<Camera, Camera_Py, Component, Component::Ptr<Camera>>(m, "Camera")
         .def(pybind11::init<>())
         //
-        .def("is_specular", &Camera::is_specular)
-        //
         .def("view_matrix", &Camera::view_matrix)
         .def("projection_matrix", &Camera::projection_matrix)
         //
@@ -1111,23 +1097,20 @@ static void bind_light(pybind11::module& m) {
         .def(pybind11::init<>())
         .def_readwrite("geom", &LightRaySample::geom)
         .def_readwrite("wo", &LightRaySample::wo)
-        .def_readwrite("comp", &LightRaySample::comp)
-        .def_readwrite("weight", &LightRaySample::weight);
+        .def_readwrite("weight", &LightRaySample::weight)
+        .def_readwrite("specular", &LightRaySample::specular);
 
     class Light_Py final : public Light {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Light, construct, prop);
         }
-        // ----------------------------------------------------------------------------------------
-        virtual bool is_specular(const PointGeometry& geom, int comp) const override {
-            PYBIND11_OVERLOAD_PURE(bool, Light, is_specular, geom, comp);
-        }
+        // ---------------------------------------------------------------------------------------
         virtual bool is_infinite() const override {
             PYBIND11_OVERLOAD_PURE(bool, Light, is_infinite);
         }
         // ----------------------------------------------------------------------------------------
-        virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Light, eval, geom, comp, wo);
+        virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Light, eval, geom, wo);
         }
         // ----------------------------------------------------------------------------------------
         virtual std::optional<LightRaySample> sample_ray(Rng& rng, const Transform& transform) const override {
@@ -1143,14 +1126,12 @@ static void bind_light(pybind11::module& m) {
         virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<LightRaySample>, Light, sample_direct, rng, geom, transform);
         }
-        virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int comp, const Transform& transform, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Light, pdf_direct, geom, geomL, comp, transform, wo);
+        virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Light, pdf_direct, geom, geomL, transform, wo);
         }
     };
     pybind11::class_<Light, Light_Py, Component, Component::Ptr<Light>>(m, "Light")
         .def(pybind11::init<>())
-        //
-        .def("is_specular", &Light::is_specular)
         .def("is_infinite", &Light::is_infinite)
         //
         .def("eval", &Light::eval)

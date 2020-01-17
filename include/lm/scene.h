@@ -26,10 +26,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \endrst
 */
 struct RaySample {
-    SceneInteraction sp;   //!< Sampled scene interaction.
-    int comp;              //!< Sampled component index.
-    Vec3 wo;               //!< Sampled direction.
-    Vec3 weight;           //!< Contribution divided by probability.
+    SceneInteraction sp;    //!< Sampled scene interaction.
+    Vec3 wo;                //!< Sampled direction.
+    Vec3 weight;            //!< Contribution divided by probability.
+    bool specular;          //!< Sampled from specular distribution.
 
     /*!
         \brief Get a ray from the sample.
@@ -49,8 +49,8 @@ struct RaySample {
 */
 struct DirectionSample {
     Vec3 wo;
-    int comp;
     Vec3 weight;
+    bool specular;
 };
 
 /*!
@@ -434,19 +434,6 @@ public:
     */
     virtual bool is_light(const SceneInteraction& sp) const = 0;
 
-    /*!
-        \brief Check if given surface point is specular.
-        \param sp Scene intersection.
-		\param comp Component index.
-        \return True if scene interaction is specular.
-
-        \rst
-        Scene interaction is specular if the material, light, or camera associated
-        with point specified by scene intersection contains delta function.
-        \endrst
-    */
-    virtual bool is_specular(const SceneInteraction& sp, int comp) const = 0;
-
     // --------------------------------------------------------------------------------------------
 
     //
@@ -492,7 +479,7 @@ public:
         the evaluated contribution of the sampled direction is zero.
         \endrst
     */
-    virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
+    virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -504,7 +491,7 @@ public:
 
     /*!
     */
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
@@ -520,7 +507,7 @@ public:
         utlizing corresponding densities from which the direction is sampled.
         \endrst
     */
-    virtual Float pdf_direction(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
     */
@@ -566,7 +553,7 @@ public:
         Be careful ``wo`` is the outgoing direction originated from ``sp_endpoint``, not ``sp``.
         \endrst
     */
-    virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& sp_endpoint, int comp_endpoint, Vec3 wo) const = 0;
+    virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& sp_endpoint, Vec3 wo) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -648,34 +635,12 @@ public:
         to enforce an evaluation as an endpoint.
         \endrst
     */
-    virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir) const = 0;
 
     /*!
         \brief Evaluate positional contribution of the endpoint.
     */
     virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp) const = 0;
-
-#if 0
-    /*!
-        \brief Evaluate endpoint contribution.
-		\param sp Surface interaction.
-		\param wo Outgoing ray direction.
-
-        \rst
-        This function evaluates
-
-        (1) If the scene interaction *contains* a light component,
-            this function evaluates luminance function.
-
-        (2) If the scene interaction *contains* a sensor component,
-            this function evaluates importance function.
-
-        That is, this function enforces the evaluation as an endpoint
-        irrespective to the value of ``sp.endpoint``.
-        \endrst
-    */
-    virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const = 0;
-#endif
 
     /*!
         \brief Evaluate reflectance (if available).
@@ -687,7 +652,7 @@ public:
         and the associated material implements :cpp:func:`Material::reflectance` function.
         \endrst
     */
-    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const = 0;
+    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const = 0;
 };
 
 /*!

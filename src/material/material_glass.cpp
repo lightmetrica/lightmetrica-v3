@@ -70,16 +70,17 @@ public:
         ar(Ni_);
     }
 
+private:
+    Float refr_correction(Float eta, MaterialTransDir trans_dir) const {
+        return trans_dir == MaterialTransDir::EL ? eta * eta : 1_f;
+    }
+
 public:
     virtual void construct(const Json& prop) override {
         Ni_ = json::value<Float>(prop, "Ni");
     }
 
-    virtual bool is_specular(const PointGeometry&, int) const override {
-        return true;
-    }
-
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
         const bool in = glm::dot(wi, geom.n) > 0_f;
         const auto n = in ? geom.n : -geom.n;
         const auto eta = in ? 1_f / Ni_ : Ni_;
@@ -87,40 +88,33 @@ public:
         const auto Fr = total ? 1_f : fresnel(wi, wt, geom);
         if (rng.u() < Fr) {
             // Reflection
+            // Fr / p_sel = 1
+            const auto C = Vec3(1_f);
             return MaterialDirectionSample{
                 math::reflection(wi, geom.n),
-                0,  
-                Vec3(1_f)   // Fr / p_sel = Fr
+                C,
+                true
             };
         }
         // Refraction
+        // refr_correction*(1-Fr) / p_sel = refr_correction
+        const auto C = Vec3(refr_correction(eta, trans_dir));
         return MaterialDirectionSample{
             wt,
-            1,
-            Vec3(eta*eta)   // eta*eta*(1-Fr) / p_sel = eta*eta
+            C,
+            true
         };
     }
 
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng&, const PointGeometry& geom, int comp, Vec3 wi) const override {
-        if (comp == 0) {
-            return math::reflection(wi, geom.n);
-        }
-        else if (comp == 1) {
-            const bool in = glm::dot(wi, geom.n) > 0_f;
-            const auto n = in ? geom.n : -geom.n;
-            const auto eta = in ? 1_f / Ni_ : Ni_;
-            const auto [wt, total] = math::refraction(wi, n, eta);
-            LM_UNUSED(total);
-            return wt;
-        }
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual Float pdf_direction(const PointGeometry&, int, Vec3, Vec3) const override {
+    virtual Float pdf_direction(const PointGeometry&, Vec3, Vec3) const override {
         return 0_f;
     }
 
-    virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {
+    virtual Vec3 eval(const PointGeometry&, Vec3, Vec3) const override {
+        return Vec3(0_f);
+    }
+
+    virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
         return Vec3(0_f);
     }
 

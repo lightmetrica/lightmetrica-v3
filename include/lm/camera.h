@@ -25,9 +25,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     \endrst
 */
 struct CameraRaySample {
-    PointGeometry geom;   //!< Sampled geometry information.
-    Vec3 wo;              //!< Sampled direction.
-    Vec3 weight;          //!< Contribution divided by probability.
+    PointGeometry geom;     //!< Sampled geometry information.
+    Vec3 wo;                //!< Sampled direction.
+    Vec3 weight;            //!< Contribution divided by probability.
+    bool specular;          //!< Sampled component is specular.
 };
 
 /*!
@@ -35,6 +36,7 @@ struct CameraRaySample {
 struct CameraDirectionSample {
     Vec3 wo;
     Vec3 weight;
+    bool specular;
 };
 
 /*!
@@ -47,19 +49,6 @@ struct CameraDirectionSample {
 */
 class Camera : public Component {
 public:
-    /*!
-        \brief Check if the camera contains delta component.
-        \param geom Surface geometry information.
-
-        \rst
-        This function returns true if the sensitivity function :math:`W_e` of the camera
-        contains a component of delta function.
-        \endrst
-    */
-    virtual bool is_specular(const PointGeometry& geom) const = 0;
-
-    // --------------------------------------------------------------------------------------------
-
     /*!
         \brief Get view matrix if available.
         \return View matrix.
