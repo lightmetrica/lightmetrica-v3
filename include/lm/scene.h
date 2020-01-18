@@ -507,7 +507,7 @@ public:
         utlizing corresponding densities from which the direction is sampled.
         \endrst
     */
-    virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo, bool eval_delta) const = 0;
 
     /*!
     */
@@ -635,7 +635,7 @@ public:
         to enforce an evaluation as an endpoint.
         \endrst
     */
-    virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir) const = 0;
+    virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const = 0;
 
     /*!
         \brief Evaluate positional contribution of the endpoint.

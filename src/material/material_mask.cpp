@@ -41,12 +41,12 @@ public:
         };
     }
 
-    virtual Float pdf_direction(const PointGeometry&, Vec3, Vec3) const override {
-        return 0_f;
+    virtual Float pdf_direction(const PointGeometry&, Vec3, Vec3, bool eval_delta) const override {
+        return eval_delta ? 0_f : 1_f;
     }
 
-    virtual Vec3 eval(const PointGeometry&, Vec3, Vec3) const override {
-        return Vec3(0_f);
+    virtual Vec3 eval(const PointGeometry&, Vec3, Vec3, MaterialTransDir, bool eval_delta) const override {
+        return eval_delta ? Vec3(0_f) : Vec3(1_f);
     }
 
     virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {

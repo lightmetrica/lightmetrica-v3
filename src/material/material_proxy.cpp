@@ -44,12 +44,12 @@ public:
         return ref_->sample_direction(rng, geom, wi, trans_dir);
     }
 
-    Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
-        return ref_->pdf_direction(geom, wi, wo);
+    Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const override {
+        return ref_->pdf_direction(geom, wi, wo, eval_delta);
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
-        return ref_->eval(geom, wi, wo);
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir trans_dir, bool eval_delta) const override {
+        return ref_->eval(geom, wi, wo, trans_dir, eval_delta);
     }
 
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {

@@ -667,8 +667,8 @@ static void bind_scene(pybind11::module& m) {
         virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Scene, sample_direction, rng, sp, wi, trans_dir);
         }
-        virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direction, sp, wi, wo);
+        virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo, bool eval_delta) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direction, sp, wi, wo, eval_delta);
         }
         virtual Float pdf_position(const SceneInteraction& sp) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_position, sp);
@@ -694,8 +694,8 @@ static void bind_scene(pybind11::module& m) {
         virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, raster_position, wo, aspect);
         }
-		virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir) const override {
-			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb, sp, wi, wo, trans_dir);
+		virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
+			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb, sp, wi, wo, trans_dir, eval_delta);
 		}
 		virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp) const override {
 			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb_endpoint, sp);
@@ -901,11 +901,11 @@ static void bind_material(pybind11::module& m) {
         virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<MaterialDirectionSample>, Material, sample_direction, rng, geom, wi, trans_dir);
         }
-        virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_direction, geom, wi, wo);
+        virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_direction, geom, wi, wo, eval_delta);
         }
-        virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, wi, wo);
+        virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir trans_dir, bool eval_delta) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, wi, wo, trans_dir, eval_delta);
         }
         virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Material, reflectance, geom);

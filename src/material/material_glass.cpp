@@ -71,8 +71,39 @@ public:
     }
 
 private:
+    // Energy compensation for importance transport
     Float refr_correction(Float eta, MaterialTransDir trans_dir) const {
         return trans_dir == MaterialTransDir::EL ? eta * eta : 1_f;
+    }
+
+    // Fresnel term
+    Float fresnel(Vec3 wi, Vec3 wt, const PointGeometry& geom) const {
+        const bool in = glm::dot(wi, geom.n) > 0_f;
+        const auto n = in ? geom.n : -geom.n;
+        const auto eta = in ? 1_f / Ni_ : Ni_;
+        const auto cos = in ? glm::dot(wi, geom.n) : glm::dot(wt, geom.n);
+        const auto r = (1_f - Ni_) / (1_f + Ni_);
+        const auto r2 = r * r;
+        return r2 + (1_f - r2) * std::pow(1_f - cos, 5_f);
+    }
+
+    // Weight by Fresnel term
+    Float fresnel_weight(const PointGeometry& geom, Vec3 wi, Vec3 wo) const {
+        const bool in = glm::dot(wi, geom.n) > 0_f;
+        const auto n = in ? geom.n : -geom.n;
+        const auto eta = in ? 1_f / Ni_ : Ni_;
+        const auto [wt, total] = math::refraction(wi, n, eta);
+        const auto Fr = total ? 1_f : fresnel(wi, wt, geom);
+
+        // Choose delta component according to the relashionship of wi and wo
+        if (geom.opposite(wi, wo)) {
+            // Reflection
+            return Fr;
+        }
+        else {
+            // Refraction
+            return 1_f - Fr;
+        }
     }
 
 public:
@@ -96,38 +127,34 @@ public:
                 true
             };
         }
-        // Refraction
-        // refr_correction*(1-Fr) / p_sel = refr_correction
-        const auto C = Vec3(refr_correction(eta, trans_dir));
-        return MaterialDirectionSample{
-            wt,
-            C,
-            true
-        };
+        else {
+            // Refraction
+            // refr_correction*(1-Fr) / p_sel = refr_correction
+            const auto C = Vec3(refr_correction(eta, trans_dir));
+            return MaterialDirectionSample{
+                wt,
+                C,
+                true
+            };
+        }
     }
 
-    virtual Float pdf_direction(const PointGeometry&, Vec3, Vec3) const override {
-        return 0_f;
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const override {
+        return eval_delta
+            ? 0_f
+            : fresnel_weight(geom, wi, wo);
     }
 
-    virtual Vec3 eval(const PointGeometry&, Vec3, Vec3) const override {
-        return Vec3(0_f);
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir trans_dir, bool eval_delta) const override {
+        const bool in = glm::dot(wi, geom.n) > 0_f;
+        const auto eta = in ? 1_f / Ni_ : Ni_;
+        return eval_delta
+            ? Vec3(0_f)
+            : Vec3(fresnel_weight(geom, wi, wo) * refr_correction(eta, trans_dir));
     }
 
     virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
         return Vec3(0_f);
-    }
-
-private:
-    // Fresnel term
-    Float fresnel(Vec3 wi, Vec3 wt, const PointGeometry& geom) const {
-        const bool in = glm::dot(wi, geom.n) > 0_f;
-        const auto n = in ? geom.n : -geom.n;
-        const auto eta = in ? 1_f / Ni_ : Ni_;
-        const auto cos = in ? glm::dot(wi, geom.n) : glm::dot(wt, geom.n);
-        const auto r = (1_f - Ni_) / (1_f + Ni_);
-        const auto r2 = r * r;
-        return r2 + (1_f - r2) * std::pow(1_f - cos, 5_f);
     }
 };
 

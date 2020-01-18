@@ -432,7 +432,7 @@ public:
             if (!primitive.material) {
                 return {};
             }
-            const auto s = primitive.material->sample_direction(rng, sp.geom, wi, static_cast<MaterialTransDir>(trans_dir));
+            const auto s = primitive.material->sample_direction(rng, sp.geom, wi, (MaterialTransDir)(trans_dir));
             if (!s) {
                 return {};
             }
@@ -488,7 +488,7 @@ public:
         LM_UNREACHABLE_RETURN();
     }
 
-    virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo, bool eval_delta) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         switch (sp.type) {
             case SceneInteraction::CameraEndpoint:
@@ -498,7 +498,7 @@ public:
             case SceneInteraction::MediumInteraction:
                 return primitive.medium->phase()->pdf_direction(sp.geom, wi, wo);
             case SceneInteraction::SurfaceInteraction:
-                return primitive.material->pdf_direction(sp.geom, wi, wo);
+                return primitive.material->pdf_direction(sp.geom, wi, wo, eval_delta);
         }
         LM_UNREACHABLE_RETURN();
     }
@@ -652,7 +652,7 @@ public:
         return camera->raster_position(wo, aspect);
     }
 
-    virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir) const override {
+    virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
         switch (sp.type) {
             case SceneInteraction::CameraEndpoint:
@@ -662,7 +662,7 @@ public:
             case SceneInteraction::MediumInteraction:
                 return primitive.medium->phase()->eval(sp.geom, wi, wo);
             case SceneInteraction::SurfaceInteraction:
-                return primitive.material->eval(sp.geom, wi, wo) *
+                return primitive.material->eval(sp.geom, wi, wo, (MaterialTransDir)(trans_dir), eval_delta) *
                        surface::shading_normal_correction(sp.geom, wi, wo, trans_dir);
         }
         LM_UNREACHABLE_RETURN();

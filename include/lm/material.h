@@ -83,7 +83,7 @@ public:
         Note that the evaluated pdf doesn't contain the probabilty of component selection.
         \endrst
     */
-    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const = 0;
 
     /*!
         \brief Evaluate BSDF.
@@ -96,7 +96,7 @@ public:
         This function evaluates underlying BSDF of the material.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const = 0;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir trans_dir, bool eval_delta) const = 0;
 
     /*!
         \brief Evaluate reflectance.

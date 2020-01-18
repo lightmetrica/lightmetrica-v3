@@ -72,11 +72,11 @@ public:
         return mapKd_ ? mapKd_->eval(geom.t) : Kd_;
     }
 
-    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool) const override {
         return geom.opposite(wi, wo) ? 0_f : 1_f / Pi;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir, bool) const override {
         if (geom.opposite(wi, wo)) {
             return {};
         }
