@@ -656,6 +656,9 @@ static void bind_scene(pybind11::module& m) {
 		virtual bool is_light(const SceneInteraction& sp) const override {
 			PYBIND11_OVERLOAD_PURE(bool, Scene, is_light, sp);
 		}
+        virtual bool is_camera(const SceneInteraction& sp) const override {
+            PYBIND11_OVERLOAD_PURE(bool, Scene, is_camera, sp);
+        }
         // ----------------------------------------------------------------------------------------
 		virtual Ray primary_ray(Vec2 rp, Float aspect) const override {
 			PYBIND11_OVERLOAD_PURE(Ray, Scene, primary_ray, rp, aspect);
@@ -740,6 +743,7 @@ static void bind_scene(pybind11::module& m) {
         .def("visible", &Scene::visible)
         //
         .def("is_light", &Scene::is_light)
+        .def("is_camera", &Scene::is_camera)
         //
         .def("primary_ray", &Scene::primary_ray)
         .def("sample_ray", &Scene::sample_ray)

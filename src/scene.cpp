@@ -342,6 +342,10 @@ public:
         }
     }
 
+    virtual bool is_camera(const SceneInteraction& sp) const override {
+        return sp.primitive == *camera_;
+    }
+
     // --------------------------------------------------------------------------------------------
 
     // Helper function for light selection
@@ -494,7 +498,7 @@ public:
             case SceneInteraction::CameraEndpoint:
                 return primitive.camera->pdf_direction(wo, sp.camera_cond.aspect);
             case SceneInteraction::LightEndpoint:
-                LM_THROW_EXCEPTION_DEFAULT(Error::Unimplemented);
+                return primitive.light->pdf_direction(sp.geom, wo);
             case SceneInteraction::MediumInteraction:
                 return primitive.medium->phase()->pdf_direction(sp.geom, wi, wo);
             case SceneInteraction::SurfaceInteraction:

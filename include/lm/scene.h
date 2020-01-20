@@ -434,6 +434,10 @@ public:
     */
     virtual bool is_light(const SceneInteraction& sp) const = 0;
 
+    /*!
+    */
+    virtual bool is_camera(const SceneInteraction& sp) const = 0;
+
     // --------------------------------------------------------------------------------------------
 
     //
