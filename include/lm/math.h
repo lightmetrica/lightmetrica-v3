@@ -184,6 +184,7 @@ class RngImplBase {
 private:
     std::mt19937 eng_;
     std::uniform_real_distribution<double> dist_;  // Always use double
+    std::uniform_int_distribution<int> dist_int_;
 
 protected:
     RngImplBase() {
@@ -194,6 +195,7 @@ protected:
         eng_.seed(seed);
     }
     double u() { return dist_(eng_); }
+    int u_int() { return dist_int_(eng_); }
 };
 
 template <typename F>
@@ -205,6 +207,7 @@ public:
     RngImpl() = default;
     RngImpl(int seed) : RngImplBase(seed) {}
     using RngImplBase::u;
+    using RngImplBase::u_int;
 };
 
 template <>
@@ -232,6 +235,8 @@ public:
         assert(rf < 1.f);
         return rf;
     }
+
+    using RngImplBase::u_int;
 };
 
 LM_NAMESPACE_END(detail)

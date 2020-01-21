@@ -122,16 +122,6 @@ public:
             // Fr / p_sel = 1
             const auto wo = math::reflection(wi, geom.n);
             const auto C = Vec3(1_f);
-
-#if 1
-            const auto f = eval(geom, wi, wo, trans_dir, false);
-            const auto p = pdf_direction(geom, wi, wo, false);
-            const auto C2 = f / p;
-            if (glm::compMax(glm::abs(C - C2)) > Eps) {
-                __debugbreak();
-            }
-#endif
-
             return MaterialDirectionSample{
                 wo,
                 C,
