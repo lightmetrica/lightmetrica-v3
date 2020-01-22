@@ -17,16 +17,6 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-struct LightPrimitiveIndex {
-    Transform global_transform;  // Global transform matrix
-    int index;                   // Primitive node index
-
-    template <typename Archive>
-    void serialize(Archive& ar) {
-        ar(global_transform, index);
-    }
-};
-
 class Scene_ final : public Scene {
 private:
     Accel* accel_;                                   // Acceleration structure
@@ -73,9 +63,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    //
-    // Scene graph manipulation and access
-    //
+    #pragma region Scene graph manipulation and access
 
     virtual int root_node() override {
         return 0;
@@ -259,15 +247,19 @@ public:
         return camera_ ? *camera_ : -1;
     }
 
+    virtual int medium_node() const override {
+        return medium_ ? *medium_ : -1;
+    }
+
     virtual int num_lights() const override {
         return (int)(lights_.size());
     }
 
+    #pragma endregion
+
     // --------------------------------------------------------------------------------------------
 
-    //
-    // Ray-scene intersection
-    //
+    #pragma region Ray-scene intersection
 
     virtual Accel* accel() const override {
         return accel_;
@@ -325,11 +317,11 @@ public:
         );
     }
 
+    #pragma endregion
+
     // --------------------------------------------------------------------------------------------
 
-    //
-    // Primitive type checking
-    //
+    #pragma region Primitive type checking
 
     virtual bool is_light(const SceneInteraction& sp) const override {
         const auto& primitive = nodes_.at(sp.primitive).primitive;
@@ -346,17 +338,13 @@ public:
         return sp.primitive == *camera_;
     }
 
+    #pragma endregion
+
     // --------------------------------------------------------------------------------------------
 
-    // Helper function for light selection
+    #pragma region Light sampling
 
-    struct LightSelectionSample {
-        int light_index;    // Sampled light index
-        Float p_sel;        // Selection probability
-    };
-    
-    // Light selection sampling
-    LightSelectionSample sample_light_selection(Rng& rng) const {
+    virtual LightSelectionSample sample_light_selection(Rng& rng) const override {
         const int n = int(lights_.size());
         const int i = glm::clamp(int(rng.u() * n), 0, n - 1);
         const auto pL = 1_f / n;
@@ -366,329 +354,20 @@ public:
         };
     }
 
-    // PMF for light selection sampling
-    Float pdf_light_selection(int) const {
+    virtual Float pdf_light_selection(int) const override {
         const int n = int(lights_.size());
         return 1_f / n;
     };
 
-    // --------------------------------------------------------------------------------------------
-
-    //
-    // Ray sampling
-    //
-
-    virtual Ray primary_ray(Vec2 rp, Float aspect) const {
-        return nodes_.at(*camera_).primitive.camera->primary_ray(rp, aspect);
+    virtual LightPrimitiveIndex light_primitive_index_at(int light_index) const override {
+        return lights_.at(light_index);
     }
 
-    virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const override {
-        if (sp.is_type(SceneInteraction::CameraTerminator)) {
-            const auto* camera = nodes_.at(*camera_).primitive.camera;
-            const auto s = camera->sample_ray(rng, sp.camera_cond.window, sp.camera_cond.aspect);
-            if (!s) {
-                return {};
-            }
-            return RaySample{
-                SceneInteraction::make_camera_endpoint(
-                    *camera_,
-                    s->geom,
-                    sp.camera_cond.aspect
-                ),
-                s->wo,
-                s->weight,
-                s->specular
-            };
-        }
-        else if (sp.is_type(SceneInteraction::LightTerminator)) {
-            const auto [i, p_sel] = sample_light_selection(rng);
-            const auto light_index = lights_.at(i);
-            const auto* light = nodes_.at(light_index.index).primitive.light;
-            const auto s = light->sample_ray(rng, light_index.global_transform);
-            if (!s) {
-                return {};
-            }
-            return RaySample{
-                SceneInteraction::make_light_endpoint(
-                    light_index.index,
-                    s->geom
-                ),
-                s->wo,
-                s->weight,
-                s->specular
-            };
-        }
-        else if (sp.is_type(SceneInteraction::MediumInteraction)) {
-            const auto& primitive = nodes_.at(sp.primitive).primitive;
-            const auto s = primitive.medium->phase()->sample_direction(rng, sp.geom, wi);
-            if (!s) {
-                return {};
-            }
-            return RaySample{
-                sp,
-                s->wo,
-                s->weight,
-                s->specular
-            };
-        }
-        else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
-            const auto& primitive = nodes_.at(sp.primitive).primitive;
-            if (!primitive.material) {
-                return {};
-            }
-            const auto s = primitive.material->sample_direction(rng, sp.geom, wi, (MaterialTransDir)(trans_dir));
-            if (!s) {
-                return {};
-            }
-            const auto sn_corr = surface::shading_normal_correction(sp.geom, wi, s->wo, trans_dir);
-            return RaySample{
-                SceneInteraction::make_surface_interaction(
-                    sp.primitive,
-                    sp.geom
-                ),
-                s->wo,
-                s->weight * sn_corr,
-                s->specular
-            };
-        }
-        LM_UNREACHABLE_RETURN();
+    virtual int light_index_at(int node_index) const override {
+        return light_indices_map_.at(node_index);
     }
 
-    // --------------------------------------------------------------------------------------------
-
-    //
-    // Direction sampling
-    //
-
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const override {
-        if (!sp.is_type(SceneInteraction::Midpoint)) {
-            LM_THROW_EXCEPTION(Error::Unsupported,
-                "Direction sampling is only supported for midpoint interactions.");
-        }
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (sp.is_type(SceneInteraction::MediumInteraction)) {
-            const auto s = primitive.medium->phase()->sample_direction(rng, sp.geom, wi);
-            if (!s) {
-                return {};
-            }
-            return DirectionSample{
-                s->wo,
-                s->weight,
-                s->specular
-            };
-        }
-        else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
-            const auto s = primitive.material->sample_direction(rng, sp.geom, wi, static_cast<MaterialTransDir>(trans_dir));
-            if (!s) {
-                return {};
-            }
-            const auto sn_corr = surface::shading_normal_correction(sp.geom, wi, s->wo, trans_dir);
-            return DirectionSample{
-                s->wo,
-                s->weight * sn_corr,
-                s->specular
-            };
-        }
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo, bool eval_delta) const override {
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        switch (sp.type) {
-            case SceneInteraction::CameraEndpoint:
-                return primitive.camera->pdf_direction(wo, sp.camera_cond.aspect);
-            case SceneInteraction::LightEndpoint:
-                return primitive.light->pdf_direction(sp.geom, wo);
-            case SceneInteraction::MediumInteraction:
-                return primitive.medium->phase()->pdf_direction(sp.geom, wi, wo);
-            case SceneInteraction::SurfaceInteraction:
-                return primitive.material->pdf_direction(sp.geom, wi, wo, eval_delta);
-        }
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual Float pdf_position(const SceneInteraction& sp) const override {
-        if (!sp.is_type(SceneInteraction::Endpoint)) {
-            LM_THROW_EXCEPTION(Error::Unsupported,
-                "pdf_position() does not support non-endpoint interactions.");
-        }
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        if (sp.is_type(SceneInteraction::CameraEndpoint)) {
-            return primitive.camera->pdf_position(sp.geom);
-        }
-        else if (sp.is_type(SceneInteraction::LightEndpoint)) {
-            const int light_index = light_indices_map_.at(sp.primitive);
-            const auto light_transform = lights_.at(light_index).global_transform;
-            const auto pL = 1_f / int(lights_.size());
-            return primitive.light->pdf_position(sp.geom, light_transform) * pL;
-        }
-        LM_UNREACHABLE_RETURN();
-    }
-
-    // --------------------------------------------------------------------------------------------
-
-    //
-    // Direct endpoint sampling
-    //
-
-    virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
-        // Sample a light
-        const auto [light_index, p_sel] = sample_light_selection(rng);
-
-        // Sample a position on the light
-        const auto light = lights_.at(light_index);
-        const auto& primitive = nodes_.at(light.index).primitive;
-        const auto s = primitive.light->sample_direct(rng, sp.geom, light.global_transform);
-        if (!s) {
-            return {};
-        }
-        return RaySample{
-            SceneInteraction::make_light_endpoint(
-                light.index,
-                s->geom
-            ),
-            s->wo,
-            s->weight / p_sel,
-            s->specular
-        };
-    }
-
-    virtual std::optional<RaySample> sample_direct_camera(Rng& rng, const SceneInteraction& sp, Float aspect) const override {
-        const auto& primitive = nodes_.at(*camera_).primitive;
-        const auto s = primitive.camera->sample_direct(rng, sp.geom, aspect);
-        if (!s) {
-            return {};
-        }
-        return RaySample{
-            SceneInteraction::make_camera_endpoint(
-                *camera_,
-                s->geom,
-                aspect
-            ),
-            s->wo,
-            s->weight,
-            s->specular
-        };
-    }
-
-    virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& sp_endpoint, Vec3 wo) const override {
-        if (!sp_endpoint.is_type(SceneInteraction::Endpoint)) {
-            LM_THROW_EXCEPTION(Error::Unsupported,
-                "pdf_direct() does not support non-endpoint interactions.");
-        }
-
-        const auto& primitive = nodes_.at(sp_endpoint.primitive).primitive;
-        if (sp_endpoint.is_type(SceneInteraction::CameraEndpoint)) {
-            return primitive.camera->pdf_direct(sp.geom, sp_endpoint.geom, wo);
-        }
-        else if (sp_endpoint.is_type(SceneInteraction::LightEndpoint)) {
-            const int light_index = light_indices_map_.at(sp_endpoint.primitive);
-            const auto light_transform = lights_.at(light_index).global_transform;
-            const auto pL = 1_f / int(lights_.size());
-            return primitive.light->pdf_direct(sp.geom, sp_endpoint.geom, light_transform, wo) * pL;
-        }
-
-        LM_UNREACHABLE_RETURN();
-    }
-
-    // --------------------------------------------------------------------------------------------
-
-    //
-    // Distance sampling
-    //
-
-    virtual std::optional<DistanceSample> sample_distance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
-        // Intersection to next surface
-        const auto hit = intersect({ sp.geom.p, wo }, Eps, Inf);
-        const auto dist = hit && !hit->geom.infinite ? glm::length(hit->geom.p - sp.geom.p) : Inf;
-
-        // Sample a distance
-        const auto* medium = nodes_.at(*medium_).primitive.medium;
-        const auto ds = medium->sample_distance(rng, { sp.geom.p, wo }, 0_f, dist);
-        if (ds && ds->medium) {
-            // Medium interaction
-            return DistanceSample{
-                SceneInteraction::make_medium_interaction(
-                    *medium_,
-                    PointGeometry::make_degenerated(ds->p)
-                ),
-                ds->weight
-            };
-        }
-        else {
-            // Surface interaction
-            return DistanceSample{
-                *hit,
-                ds ? ds->weight : Vec3(1_f)
-            };
-        }
-    }
-
-    virtual Vec3 eval_transmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
-        if (!visible(sp1, sp2)) {
-            return Vec3(0_f);
-        }
-        if (!medium_) {
-            return Vec3(1_f);
-        }
-        
-        // Extended distance between two points
-        assert(!sp1.geom.infinite);
-        const auto dist = !sp2.geom.infinite
-            ? glm::distance(sp1.geom.p, sp2.geom.p)
-            : Inf;
-        const auto wo = !sp2.geom.infinite
-            ? glm::normalize(sp2.geom.p - sp1.geom.p)
-            : -sp2.geom.wo;
-
-        const auto* medium = nodes_.at(*medium_).primitive.medium;
-        return medium->eval_transmittance(rng, { sp1.geom.p, wo }, 0_f, dist);
-    }
-
-    // --------------------------------------------------------------------------------------------
-
-    //
-    // Evaluating contribution
-    //
-
-    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
-        const auto* camera = nodes_.at(*camera_).primitive.camera;
-        return camera->raster_position(wo, aspect);
-    }
-
-    virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        switch (sp.type) {
-            case SceneInteraction::CameraEndpoint:
-                return primitive.camera->eval(wo, sp.camera_cond.aspect);
-            case SceneInteraction::LightEndpoint:
-                return primitive.light->eval(sp.geom, wo);
-            case SceneInteraction::MediumInteraction:
-                return primitive.medium->phase()->eval(sp.geom, wi, wo);
-            case SceneInteraction::SurfaceInteraction:
-                return primitive.material->eval(sp.geom, wi, wo, (MaterialTransDir)(trans_dir), eval_delta) *
-                       surface::shading_normal_correction(sp.geom, wi, wo, trans_dir);
-        }
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp) const override {
-        if (!sp.is_type(SceneInteraction::Endpoint)) {
-            LM_THROW_EXCEPTION(Error::Unsupported,
-                "eval_contrb_endpoint() function only supports endpoint interactions.");
-        }
-        // Always 1 for now
-        return Vec3(1_f);
-    }
-
-    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const override {
-        if (!sp.is_type(SceneInteraction::SurfaceInteraction)) {
-            LM_THROW_EXCEPTION(Error::Unsupported,
-                "reflectance() function only supports surface interactions.");
-        }
-        const auto& primitive = nodes_.at(sp.primitive).primitive;
-        return primitive.material->reflectance(sp.geom);
-    }
+    #pragma endregion
 };
 
 LM_COMP_REG_IMPL(Scene_, "scene::default");

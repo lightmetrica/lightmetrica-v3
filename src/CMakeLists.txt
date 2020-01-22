@@ -49,7 +49,8 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/objloader.h"
     "${_INCLUDE_DIR}/medium.h"
     "${_INCLUDE_DIR}/phase.h"
-    "${_INCLUDE_DIR}/volume.h")
+    "${_INCLUDE_DIR}/volume.h"
+    "${_INCLUDE_DIR}/path.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"

@@ -10,6 +10,7 @@
 #include <lm/film.h>
 #include <lm/parallel.h>
 #include <lm/scheduler.h>
+#include <lm/path.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -66,7 +67,7 @@ public:
         sched_->run([&](long long index, long long, int) {
             const int x = int(index % size.w);
             const int y = int(index / size.w);
-            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect());
+            const auto ray = path::primary_ray(scene_, {(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect());
             const auto sp = scene_->intersect(ray);
             if (!sp) {
                 film_->set_pixel(x, y, bg_color_);
@@ -76,7 +77,7 @@ public:
                 film_->set_pixel(x, y, glm::abs(sp->geom.n));
             }
             else {
-                const auto R = color_ ? *color_ : scene_->reflectance(*sp);
+                const auto R = color_ ? *color_ : path::reflectance(scene_ , *sp);
                 auto C = R ? *R : Vec3();
                 if (!use_constant_color_) {
                     C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));

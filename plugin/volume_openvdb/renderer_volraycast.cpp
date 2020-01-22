@@ -10,6 +10,7 @@
 #include <lm/scene.h>
 #include <lm/phase.h>
 #include <lm/scheduler.h>
+#include <lm/path.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -61,7 +62,7 @@ public:
             const int y = int(pixelIndex / size.w);
 
             // Generate primary ray
-            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect());
+            const auto ray = path::primary_ray(scene_, {(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect());
 
             // Ray marching
             Vec3 L(0_f);

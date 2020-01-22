@@ -572,6 +572,7 @@ static void bind_scenenode(pybind11::module& m) {
 
 // Bind scene.h
 static void bind_scene(pybind11::module& m) {
+#if 0
     pybind11::class_<RaySample>(m, "RaySample")
         .def_readonly("sp", &RaySample::sp)
         .def_readonly("wo", &RaySample::wo)
@@ -587,6 +588,7 @@ static void bind_scene(pybind11::module& m) {
 	pybind11::class_<DistanceSample>(m, "DistanceSample")
 		.def_readonly("sp", &DistanceSample::sp)
 		.def_readonly("weight", &DistanceSample::weight);
+#endif
 
 	class Scene_Py final : public Scene {
 		virtual void construct(const Json& prop) override {
@@ -627,6 +629,9 @@ static void bind_scene(pybind11::module& m) {
 		virtual int camera_node() const override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, camera_node);
 		}
+        virtual int medium_node() const override {
+			PYBIND11_OVERLOAD_PURE(int, Scene, medium_node);
+        }
 		virtual int env_light_node() const override {
 			PYBIND11_OVERLOAD_PURE(int, Scene, env_light_node);
 		}
@@ -660,52 +665,18 @@ static void bind_scene(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(bool, Scene, is_camera, sp);
         }
         // ----------------------------------------------------------------------------------------
-		virtual Ray primary_ray(Vec2 rp, Float aspect) const override {
-			PYBIND11_OVERLOAD_PURE(Ray, Scene, primary_ray, rp, aspect);
-		}
-		virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const override {
-			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_ray, rng, sp, wi, trans_dir);
-		}
-        // ----------------------------------------------------------------------------------------
-        virtual std::optional<DirectionSample> sample_direction(Rng& rng, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Scene, sample_direction, rng, sp, wi, trans_dir);
+        virtual LightSelectionSample sample_light_selection(Rng& rng) const override {
+            PYBIND11_OVERLOAD_PURE(LightSelectionSample, Scene, sample_light_selection, rng);
         }
-        virtual Float pdf_direction(const SceneInteraction& sp, Vec3 wi, Vec3 wo, bool eval_delta) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direction, sp, wi, wo, eval_delta);
+        virtual Float pdf_light_selection(int light_index) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_light_selection, light_index);
         }
-        virtual Float pdf_position(const SceneInteraction& sp) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_position, sp);
+        virtual LightPrimitiveIndex light_primitive_index_at(int light_index) const override {
+            PYBIND11_OVERLOAD_PURE(LightPrimitiveIndex, Scene, light_primitive_index_at, light_index);
         }
-        // --------------------------------------------------------------------------------------------
-		virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const override {
-			PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_direct_light, rng, sp);
-		}
-        virtual std::optional<RaySample> sample_direct_camera(Rng& rng, const SceneInteraction& sp, Float aspect) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Scene, sample_direct_camera, rng, sp, aspect);
+        virtual int light_index_at(int node_index) const override {
+            PYBIND11_OVERLOAD_PURE(int, Scene, light_index_at, node_index);
         }
-		virtual Float pdf_direct(const SceneInteraction& sp, const SceneInteraction& spL, Vec3 wo) const override {
-			PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_direct, sp, spL, wo);
-		}
-        // --------------------------------------------------------------------------------------------
-		virtual std::optional<DistanceSample> sample_distance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const override {
-			PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Scene, sample_distance, rng, sp, wo);
-		}
-		virtual Vec3 eval_transmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const override {
-			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_transmittance, rng, sp1, sp2);
-		}
-        // --------------------------------------------------------------------------------------------
-        virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Scene, raster_position, wo, aspect);
-        }
-		virtual Vec3 eval_contrb(const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
-			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb, sp, wi, wo, trans_dir, eval_delta);
-		}
-		virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp) const override {
-			PYBIND11_OVERLOAD_PURE(Vec3, Scene, eval_contrb_endpoint, sp);
-		}
-		virtual std::optional<Vec3> reflectance(const SceneInteraction& sp) const override {
-			PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Scene, reflectance, sp);
-		}
 	};
 
     pybind11::class_<Scene, Scene_Py, Component, Component::Ptr<Scene>>(m, "Scene")
@@ -728,6 +699,7 @@ static void bind_scene(pybind11::module& m) {
 		.def("num_nodes", &Scene::num_nodes)
 		.def("num_lights", &Scene::num_lights)
 		.def("camera_node", &Scene::camera_node)
+        .def("medium_node", &Scene::medium_node)
 		.def("env_light_node", &Scene::env_light_node)
         //
         .def("require_primitive", &Scene::require_primitive)
@@ -745,23 +717,10 @@ static void bind_scene(pybind11::module& m) {
         .def("is_light", &Scene::is_light)
         .def("is_camera", &Scene::is_camera)
         //
-        .def("primary_ray", &Scene::primary_ray)
-        .def("sample_ray", &Scene::sample_ray)
-        //
-        .def("sample_direction", &Scene::sample_direction)
-        .def("pdf_direction", &Scene::pdf_direction)
-        //
-        .def("sample_direct_light", &Scene::sample_direct_light)
-        .def("sample_direct_camera", &Scene::sample_direct_camera)
-        .def("pdf_direct", &Scene::pdf_direct)
-        //
-		.def("sample_distance", &Scene::sample_distance)
-		.def("eval_transmittance", &Scene::eval_transmittance)
-        //
-        .def("raster_position", &Scene::raster_position)
-		.def("eval_contrb", &Scene::eval_contrb)
-        .def("eval_contrb_endpoint", &Scene::eval_contrb_endpoint)
-        .def("reflectance", &Scene::reflectance)
+        .def("sample_light_selection", &Scene::sample_light_selection)
+        .def("pdf_light_selection", &Scene::pdf_light_selection)
+        .def("light_primitive_index_at", &Scene::light_primitive_index_at)
+        .def("light_index_at", &Scene::light_index_at)
         .PYLM_DEF_COMP_BIND(Scene);
 }
 
