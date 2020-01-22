@@ -40,7 +40,7 @@ public:
         ref_ = json::comp_ref<Material>(prop, "ref");
     }
 
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
         return ref_->sample_direction(rng, geom, wi, trans_dir);
     }
 
@@ -48,7 +48,7 @@ public:
         return ref_->pdf_direction(geom, wi, wo, eval_delta);
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir trans_dir, bool eval_delta) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
         return ref_->eval(geom, wi, wo, trans_dir, eval_delta);
     }
 

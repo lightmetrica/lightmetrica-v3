@@ -411,7 +411,7 @@ public:
             });
     }
 
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
         const int comp = sample_comp_select(rng, geom);
         const auto* material = material_by_comp(comp);
         const auto s = material->sample_direction(rng, geom, wi, trans_dir);
@@ -420,7 +420,7 @@ public:
         }
         const auto f = eval(geom, wi, s->wo, trans_dir, {});
         const auto p = pdf_direction(geom, wi, s->wo, {});
-        return MaterialDirectionSample{
+        return DirectionSample{
             s->wo,
             f / p,
             false
@@ -452,7 +452,7 @@ public:
         return p_maginal;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir trans_dir, bool) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool) const override {
         const auto eval_f = [&](int c) -> Vec3 {
             const auto f = [&]() -> Vec3 {
                 const auto* material = material_by_comp(c);
@@ -631,7 +631,7 @@ public:
         }
     }
 
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
         const int comp = sample_comp_select(rng, geom);
         const auto* material = material_by_comp(comp);
         const auto s = material->sample_direction(rng, geom, wi, trans_dir);
@@ -645,7 +645,7 @@ public:
         const auto f = eval(geom, wi, s->wo, trans_dir, false);
         const auto p = pdf_direction(geom, wi, s->wo, false);
         const auto C = f / p;
-        return MaterialDirectionSample{
+        return DirectionSample{
             s->wo,
             C,
             is_specular_comp(comp)
@@ -657,7 +657,7 @@ public:
             const auto f = eval(geom, wi, s->wo);
             const auto p = pdf_direction(geom, wi, s->wo);
             const auto C = f / p;
-            return MaterialDirectionSample{
+            return DirectionSample{
                 s->wo,
                 C,
                 false
@@ -667,7 +667,7 @@ public:
         // because delta components are cancelled out.
         else {
             const auto C = Vec3(eval_mix_weight(geom, comp));
-            return MaterialDirectionSample{
+            return DirectionSample{
                 s->wo,
                 C,
                 true
@@ -708,7 +708,7 @@ public:
         }
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir trans_dir, bool eval_delta) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
         const auto eval_f = [&](int c) -> Vec3 {
             const auto w = eval_mix_weight(geom, c);
             const auto f = [&]() -> Vec3 {

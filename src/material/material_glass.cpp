@@ -72,8 +72,8 @@ public:
 
 private:
     // Energy compensation for importance transport
-    Float refr_correction(Float eta, MaterialTransDir trans_dir) const {
-        return trans_dir == MaterialTransDir::EL ? eta * eta : 1_f;
+    Float refr_correction(Float eta, TransDir trans_dir) const {
+        return trans_dir == TransDir::EL ? eta * eta : 1_f;
     }
 
     // Fresnel term
@@ -111,7 +111,7 @@ public:
         Ni_ = json::value<Float>(prop, "Ni");
     }
 
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
         const bool in = glm::dot(wi, geom.n) > 0_f;
         const auto n = in ? geom.n : -geom.n;
         const auto eta = in ? 1_f / Ni_ : Ni_;
@@ -122,7 +122,7 @@ public:
             // Fr / p_sel = 1
             const auto wo = math::reflection(wi, geom.n);
             const auto C = Vec3(1_f);
-            return MaterialDirectionSample{
+            return DirectionSample{
                 wo,
                 C,
                 true
@@ -132,7 +132,7 @@ public:
             // Refraction
             // refr_correction*(1-Fr) / p_sel = refr_correction
             const auto C = Vec3(refr_correction(eta, trans_dir));
-            return MaterialDirectionSample{
+            return DirectionSample{
                 wt,
                 C,
                 true
@@ -162,7 +162,7 @@ public:
         }
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir trans_dir, bool eval_delta) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
         if (eval_delta) {
             return Vec3(0_f);
         }

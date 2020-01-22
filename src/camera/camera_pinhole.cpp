@@ -147,9 +147,9 @@ public:
         return { position_, u_*d.x + v_ * d.y + w_ * d.z };
     }
 
-    virtual std::optional<CameraRaySample> sample_ray(Rng& rng, Vec4 window, Float aspect) const override {
+    virtual std::optional<RaySample> sample_ray(Rng& rng, Vec4 window, Float aspect) const override {
         const auto [x, y, w, h] = window.data.data;
-        return CameraRaySample{
+        return RaySample{
             PointGeometry::make_degenerated(position_),
             primary_ray({x+w*rng.u(), y+h*rng.u()}, aspect).d,
             Vec3(1_f),
@@ -157,9 +157,9 @@ public:
         };
     }
 
-    virtual std::optional<CameraDirectionSample> sample_direction(Rng& rng, Vec4 window, Float aspect) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, Vec4 window, Float aspect) const override {
         const auto[x, y, w, h] = window.data.data;
-        return CameraDirectionSample{
+        return DirectionSample{
             primary_ray({x+w*rng.u(), y+h*rng.u()}, aspect).d,
             Vec3(1_f),
             false
@@ -180,7 +180,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<CameraRaySample> sample_direct(Rng&, const PointGeometry& geom, Float aspect) const override {
+    virtual std::optional<RaySample> sample_direct(Rng&, const PointGeometry& geom, Float aspect) const override {
         assert(!geom.infinite);
         const auto geomE = PointGeometry::make_degenerated(position_);
         const auto wo = glm::normalize(geom.p - position_);
@@ -189,7 +189,7 @@ public:
         if (p == 0_f) {
             return {};
         }
-        return CameraRaySample{
+        return RaySample{
             geomE,
             wo,
             We / p,

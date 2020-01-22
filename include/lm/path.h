@@ -73,14 +73,12 @@ static Ray primary_ray(const Scene* scene, Vec2 rp, Float aspect) {
 
 /*!
 */
-#if 0
 struct SampleRayU {
     Vec2 u_pos;
     Float u_pos_comp;
     Vec2 u_dir;
     Float u_dir_comp;
 };
-#endif
 
 /*!
     \brief Sample a ray given surface point and incident direction.
@@ -162,7 +160,7 @@ static std::optional<RaySample> sample_ray(Rng& rng, const Scene* scene, const S
         if (!primitive.material) {
             return {};
         }
-        const auto s = primitive.material->sample_direction(rng, sp.geom, wi, (MaterialTransDir)(trans_dir));
+        const auto s = primitive.material->sample_direction(rng, sp.geom, wi, (Material::TransDir)(trans_dir));
         if (!s) {
             return {};
         }
@@ -227,7 +225,7 @@ static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* sc
         };
     }
     else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
-        const auto s = primitive.material->sample_direction(rng, sp.geom, wi, static_cast<MaterialTransDir>(trans_dir));
+        const auto s = primitive.material->sample_direction(rng, sp.geom, wi, static_cast<Material::TransDir>(trans_dir));
         if (!s) {
             return {};
         }
@@ -554,7 +552,7 @@ static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp
         case SceneInteraction::MediumInteraction:
             return primitive.medium->phase()->eval(sp.geom, wi, wo);
         case SceneInteraction::SurfaceInteraction:
-            return primitive.material->eval(sp.geom, wi, wo, (MaterialTransDir)(trans_dir), eval_delta) *
+            return primitive.material->eval(sp.geom, wi, wo, (Material::TransDir)(trans_dir), eval_delta) *
                    surface::shading_normal_correction(sp.geom, wi, wo, trans_dir);
     }
     LM_UNREACHABLE_RETURN();

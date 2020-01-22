@@ -48,7 +48,7 @@ private:
     }
 
 public:
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
         const auto [n, u, v] = geom.orthonormal_basis_twosided(wi);
         const auto u1 = rng.u() * 2_f * Pi;
         const auto u2 = rng.u();
@@ -59,7 +59,7 @@ public:
         }
         const auto f = eval(geom, wi, wo, trans_dir, {});
         const auto p = pdf_direction(geom, wi, wo, {});
-        return MaterialDirectionSample{
+        return DirectionSample{
             wo,
             f / p,
             false
@@ -79,7 +79,7 @@ public:
         return normal_dist(wh,u,v,n)*glm::dot(wh,n)/(4_f*glm::dot(wo, wh)*glm::dot(wo, n));
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir, bool) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir, bool) const override {
         if (geom.opposite(wi, wo)) {
             return {};
         }
@@ -189,7 +189,7 @@ public:
         return false;
     }
 
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
         const auto local_wi = geom.to_local * wi;
         if (math::local_cos(local_wi) <= 0_f) {
             return {};
@@ -204,7 +204,7 @@ public:
         const auto wo = geom.to_world * local_wo;
         const auto f = eval(geom, {}, wi, wo);
         const auto p = pdf_direction(geom, {}, wi, wo);
-        return MaterialDirectionSample{
+        return DirectionSample{
             wo,
             SurfaceComp::DontCare,
             f / p

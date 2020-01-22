@@ -29,7 +29,7 @@ public:
     }
 #endif
 
-    virtual std::optional<PhaseDirectionSample> sample_direction(Rng& rng, const PointGeometry&, Vec3 wi) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry&, Vec3 wi) const override {
         const auto cosT = [&]() -> Float {
             if (std::abs(g_) < Eps) {
                 return 1_f - 2_f*rng.u();
@@ -46,7 +46,7 @@ public:
         const auto local_wo = Vec3(sinT*cosP, sinT*sinP, cosT);
         const auto [u, v] = math::orthonormal_basis(-wi);
         const auto wo = Mat3(u, v, -wi) * local_wo;
-        return PhaseDirectionSample{ wo, Vec3(1_f), false };
+        return DirectionSample{ wo, Vec3(1_f), false };
     }
 
     virtual Float pdf_direction(const PointGeometry&, Vec3 wi, Vec3 wo) const override {

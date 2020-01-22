@@ -17,21 +17,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Result of light sampling.
-    
-    \rst
-    This structure represents the result of
-    :cpp:func:`lm::Light::sample` function.
-    \endrst
-*/
-struct LightRaySample {
-    PointGeometry geom;   //!< Sampled geometry information.
-    Vec3 wo;              //!< Sampled direction.
-    Vec3 weight;          //!< Contribution divided by probability.
-    bool specular;          //!< Sampled component is specular.
-};
-
-/*!
     \brief Light.
 
     \rst
@@ -68,8 +53,23 @@ public:
     // --------------------------------------------------------------------------------------------
 
     /*!
+        \brief Result of light sampling.
+
+        \rst
+        This structure represents the result of
+        :cpp:func:`lm::Light::sample` function.
+        \endrst
     */
-    virtual std::optional<LightRaySample> sample_ray(Rng& rng, const Transform& transform) const = 0;
+        struct RaySample {
+            PointGeometry geom;   //!< Sampled geometry information.
+            Vec3 wo;              //!< Sampled direction.
+            Vec3 weight;          //!< Contribution divided by probability.
+            bool specular;          //!< Sampled component is specular.
+        };
+
+    /*!
+    */
+    virtual std::optional<RaySample> sample_ray(Rng& rng, const Transform& transform) const = 0;
 
     /*!
     */
@@ -102,7 +102,7 @@ public:
         ``geom.infinite`` becomes true.
         \endrst
     */
-    virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const = 0;
+    virtual std::optional<RaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const = 0;
 
     /*!
         \brief Evaluate pdf for light sampling in projected solid angle measure.

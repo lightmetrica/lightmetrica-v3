@@ -17,29 +17,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Result of primary ray sampling.
-    
-    \rst
-    This structure represents the result of
-    :cpp:func:`lm::Camera::sample_primary_ray` function.
-    \endrst
-*/
-struct CameraRaySample {
-    PointGeometry geom;     //!< Sampled geometry information.
-    Vec3 wo;                //!< Sampled direction.
-    Vec3 weight;            //!< Contribution divided by probability.
-    bool specular;          //!< Sampled component is specular.
-};
-
-/*!
-*/
-struct CameraDirectionSample {
-    Vec3 wo;
-    Vec3 weight;
-    bool specular;
-};
-
-/*!
     \brief Camera.
 
     \rst
@@ -100,6 +77,21 @@ public:
     virtual Ray primary_ray(Vec2 rp, Float aspect) const = 0;
 
     /*!
+        \brief Result of primary ray sampling.
+    
+        \rst
+        This structure represents the result of
+        :cpp:func:`lm::Camera::sample_primary_ray` function.
+        \endrst
+    */
+    struct RaySample {
+        PointGeometry geom;     //!< Sampled geometry information.
+        Vec3 wo;                //!< Sampled direction.
+        Vec3 weight;            //!< Contribution divided by probability.
+        bool specular;          //!< Sampled component is specular.
+    };
+
+    /*!
         \brief Sample a primary ray within the given raster window.
         \param rng Random number generator.
         \param window Raster window.
@@ -124,11 +116,19 @@ public:
         Looking by the solid angle measure, for instance, the set of rays are not uniform.
         \endrst
     */
-    virtual std::optional<CameraRaySample> sample_ray(Rng& rng, Vec4 window, Float aspect) const = 0;
+    virtual std::optional<RaySample> sample_ray(Rng& rng, Vec4 window, Float aspect) const = 0;
 
     /*!
     */
-    virtual std::optional<CameraDirectionSample> sample_direction(Rng& rng, Vec4 window, Float aspect) const = 0;
+    struct DirectionSample {
+        Vec3 wo;
+        Vec3 weight;
+        bool specular;
+    };
+
+    /*!
+    */
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, Vec4 window, Float aspect) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
@@ -146,7 +146,7 @@ public:
 
     /*!
     */
-    virtual std::optional<CameraRaySample> sample_direct(Rng& rng, const PointGeometry& geom, Float aspect) const = 0;
+    virtual std::optional<RaySample> sample_direct(Rng& rng, const PointGeometry& geom, Float aspect) const = 0;
 
     /*!
     */

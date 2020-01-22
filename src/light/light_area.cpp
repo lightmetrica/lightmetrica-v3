@@ -85,7 +85,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<LightRaySample> sample_ray(Rng& rng, const Transform& transform) const override {
+    virtual std::optional<RaySample> sample_ray(Rng& rng, const Transform& transform) const override {
         // Sample position
         const auto geomL = sample_position_on_triangle_mesh(rng, transform);
         const auto pA = tranformed_invA(transform);
@@ -102,7 +102,7 @@ public:
         const auto p = pA * pD_projSA;
         const auto contrb = Le / p;
 
-        return LightRaySample{
+        return RaySample{
             geomL,
             wo_world,
             contrb,
@@ -123,7 +123,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
+    virtual std::optional<RaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
         const auto geomL = sample_position_on_triangle_mesh(rng, transform);
         const auto wo = glm::normalize(geom.p - geomL.p);
         const auto pL = pdf_direct(geom, geomL, transform, wo);
@@ -131,7 +131,7 @@ public:
             return {};
         }
         const auto Le = eval(geomL, wo);
-        return LightRaySample{
+        return RaySample{
             geomL,
             wo,
             Le / pL,

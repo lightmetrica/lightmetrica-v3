@@ -16,19 +16,19 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Result of direction sampling.
-*/
-struct PhaseDirectionSample {
-    Vec3 wo;            //!< Sampled direction.
-    Vec3 weight;        //!< Contribution divided by probability.
-    bool specular;      //!< Sampled component is specular.
-};
-
-/*!
     \brief Phase function.
 */
 class Phase : public Component {
 public:
+    /*!
+        \brief Result of direction sampling.
+    */
+    struct DirectionSample {
+        Vec3 wo;            //!< Sampled direction.
+        Vec3 weight;        //!< Contribution divided by probability.
+        bool specular;      //!< Sampled component is specular.
+    };
+
     /*!
         \brief Sample a direction.
         \param rng Random number generator.
@@ -36,7 +36,7 @@ public:
         \param wi Incident ray direction.
         \return Sampled direction and associated information.
     */
-    virtual std::optional<PhaseDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate pdf in solid angle measure.

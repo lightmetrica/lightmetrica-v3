@@ -16,28 +16,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Result of direction sampling.
-
-    \rst
-    This structure represents the result of
-    :cpp:func:`lm::Material::sample` function.
-    \endrst
-*/
-struct MaterialDirectionSample {
-    Vec3 wo;        //!< Sampled direction.
-    Vec3 weight;    //!< Contribution divided by probability (including probability of component selection).
-    bool specular;  //!< Sampled component is specular.
-};
-
-/*!
-    \brief Light transport direction.
-*/
-enum class MaterialTransDir {
-    LE,
-    EL
-};
-
-/*!
     \brief Material.
 
     \rst
@@ -52,6 +30,28 @@ enum class MaterialTransDir {
 class Material : public Component {
 public:
     /*!
+        \brief Result of direction sampling.
+
+        \rst
+        This structure represents the result of
+        :cpp:func:`lm::Material::sample` function.
+        \endrst
+    */
+    struct DirectionSample {
+        Vec3 wo;        //!< Sampled direction.
+        Vec3 weight;    //!< Contribution divided by probability (including probability of component selection).
+        bool specular;  //!< Sampled component is specular.
+    };
+
+    /*!
+        \brief Light transport direction.
+    */
+    enum class TransDir {
+        LE,
+        EL
+    };
+
+    /*!
         \brief Sample a ray given surface point and incident direction.
         \param rng Random number generator.
         \param geom Point geometry.
@@ -65,11 +65,11 @@ public:
         where :math:`\mathbf{x}` is a surface point and :math:`\omega_i` is an incident ray direction.
 
         If the material contains multiple component, this function also samples the component type.
-        The selected component type is stored into :cpp:member:`lm::MaterialDirectionSample::comp`.
+        The selected component type is stored into :cpp:member:`lm::DirectionSample::comp`.
         Note that the evaluated weight doesn't contain the evaluation of the pdf of component selection.
         \endrst
     */
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir trans_dir) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const = 0;
 
     /*!
         \brief Evaluate pdf in projected solid angle measure.
@@ -96,7 +96,7 @@ public:
         This function evaluates underlying BSDF of the material.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir trans_dir, bool eval_delta) const = 0;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const = 0;
 
     /*!
         \brief Evaluate reflectance.

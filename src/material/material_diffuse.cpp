@@ -57,11 +57,11 @@ public:
         Kd_ = json::value(prop, "Kd", Vec3(1_f));
     }
 
-    virtual std::optional<MaterialDirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, MaterialTransDir) const override {
+    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir) const override {
         const auto[n, u, v] = geom.orthonormal_basis_twosided(wi);
         const auto Kd = mapKd_ ? mapKd_->eval(geom.t) : Kd_;
         const auto d = math::sample_cosine_weighted(rng);
-        return MaterialDirectionSample{
+        return DirectionSample{
             u*d.x + v * d.y + n * d.z,
             Kd,
             false
@@ -76,7 +76,7 @@ public:
         return geom.opposite(wi, wo) ? 0_f : 1_f / Pi;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, MaterialTransDir, bool) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir, bool) const override {
         if (geom.opposite(wi, wo)) {
             return {};
         }
