@@ -30,7 +30,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Material_Mirror final : public Material {
 private:
-    virtual std::optional<DirectionSample> sample_direction(Rng&, const PointGeometry& geom, Vec3 wi, TransDir) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU&, const PointGeometry& geom, Vec3 wi, TransDir) const override {
         return DirectionSample{
             math::reflection(wi, geom.n),
             Vec3(1_f),

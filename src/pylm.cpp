@@ -665,8 +665,8 @@ static void bind_scene(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(bool, Scene, is_camera, sp);
         }
         // ----------------------------------------------------------------------------------------
-        virtual LightSelectionSample sample_light_selection(Rng& rng) const override {
-            PYBIND11_OVERLOAD_PURE(LightSelectionSample, Scene, sample_light_selection, rng);
+        virtual LightSelectionSample sample_light_selection(Float u) const override {
+            PYBIND11_OVERLOAD_PURE(LightSelectionSample, Scene, sample_light_selection, u);
         }
         virtual Float pdf_light_selection(int light_index) const override {
             PYBIND11_OVERLOAD_PURE(Float, Scene, pdf_light_selection, light_index);
@@ -861,8 +861,8 @@ static void bind_material(pybind11::module& m) {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Material, construct, prop);
         }
-        virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Material, sample_direction, rng, geom, wi, trans_dir);
+        virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Material, sample_direction, u, geom, wi, trans_dir);
         }
         virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const override {
             PYBIND11_OVERLOAD_PURE(Float, Material, pdf_direction, geom, wi, wo, eval_delta);
@@ -897,8 +897,8 @@ static void bind_phase(pybind11::module& m) {
 		virtual void construct(const Json& prop) override {
 			PYBIND11_OVERLOAD(void, Phase, construct, prop);
 		}
-		virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-			PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Phase, sample_direction, rng, geom, wi);
+		virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi) const override {
+			PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Phase, sample_direction, u, geom, wi);
 		}
 		virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const override {
 			PYBIND11_OVERLOAD_PURE(Float, Phase, pdf_direction, geom, wi, wo);
@@ -1012,11 +1012,11 @@ static void bind_camera(pybind11::module& m) {
         virtual Ray primary_ray(Vec2 rp, Float aspect) const override {
             PYBIND11_OVERLOAD_PURE(Ray, Camera, primary_ray, rp, aspect);
         }
-        virtual std::optional<RaySample> sample_ray(Rng& rng, Vec4 window, Float aspect) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Camera, sample_ray, rng, window, aspect);
+        virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window, Float aspect) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Camera, sample_ray, u, window, aspect);
         }
-        virtual std::optional<DirectionSample> sample_direction(Rng& rng, Vec4 window, Float aspect) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Camera, sample_direction, rng, window, aspect);
+        virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window, Float aspect) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Camera, sample_direction, u, window, aspect);
         }
         virtual Float pdf_direction(Vec3 wo, Float aspect) const override {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_direction, wo, aspect);
@@ -1025,8 +1025,8 @@ static void bind_camera(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_position, geom);
         }
         // ----------------------------------------------------------------------------------------
-        virtual std::optional<RaySample> sample_direct(Rng& rng, const PointGeometry& geom, Float aspect) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Camera, sample_direct, rng, geom, aspect);
+        virtual std::optional<RaySample> sample_direct(const RaySampleU& u, const PointGeometry& geom, Float aspect) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Camera, sample_direct, u, geom, aspect);
         }
         virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomE, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_direct, geom, geomE, wo);
@@ -1076,8 +1076,8 @@ static void bind_light(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Vec3, Light, eval, geom, wo);
         }
         // ----------------------------------------------------------------------------------------
-        virtual std::optional<RaySample> sample_ray(Rng& rng, const Transform& transform) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Light, sample_ray, rng, transform);
+        virtual std::optional<RaySample> sample_ray(const RaySampleU& u, const Transform& transform) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Light, sample_ray, u, transform);
         }
         virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Light, pdf_direction, geom, wo);
@@ -1086,8 +1086,8 @@ static void bind_light(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Float, Light, pdf_position, geom, transform);
         }
         // ----------------------------------------------------------------------------------------
-        virtual std::optional<RaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Light, sample_direct, rng, geom, transform);
+        virtual std::optional<RaySample> sample_direct(const RaySampleU& u, const PointGeometry& geom, const Transform& transform) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Light, sample_direct, u, geom, transform);
         }
         virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Light, pdf_direct, geom, geomL, transform, wo);

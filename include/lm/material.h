@@ -30,6 +30,14 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Material : public Component {
 public:
     /*!
+        \brief Light transport direction.
+    */
+    enum class TransDir {
+        LE,
+        EL
+    };
+
+    /*!
         \brief Result of direction sampling.
 
         \rst
@@ -44,11 +52,10 @@ public:
     };
 
     /*!
-        \brief Light transport direction.
     */
-    enum class TransDir {
-        LE,
-        EL
+    struct DirectionSampleU {
+        Vec2 ud;
+        Vec2 udc;
     };
 
     /*!
@@ -69,7 +76,7 @@ public:
         Note that the evaluated weight doesn't contain the evaluation of the pdf of component selection.
         \endrst
     */
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const = 0;
 
     /*!
         \brief Evaluate pdf in projected solid angle measure.

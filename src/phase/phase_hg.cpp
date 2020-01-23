@@ -29,18 +29,18 @@ public:
     }
 #endif
 
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry&, Vec3 wi) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry&, Vec3 wi) const override {
         const auto cosT = [&]() -> Float {
             if (std::abs(g_) < Eps) {
-                return 1_f - 2_f*rng.u();
+                return 1_f - 2_f*us.ud[0];
             }
             else {
-                const auto sq = (1_f-g_*g_)/(1_f-g_+2*g_*rng.u());
+                const auto sq = (1_f-g_*g_)/(1_f-g_+2*g_*us.ud[0]);
                 return (1_f+g_*g_-sq*sq)/(2_f*g_);
             }
         }();
         const auto sinT = math::safe_sqrt(1_f-cosT*cosT);
-        const auto phi = 2_f * Pi * rng.u();
+        const auto phi = 2_f * Pi * us.ud[1];
         const auto sinP = std::sin(phi);
         const auto cosP = std::cos(phi);
         const auto local_wo = Vec3(sinT*cosP, sinT*sinP, cosT);

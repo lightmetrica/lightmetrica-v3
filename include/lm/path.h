@@ -73,11 +73,11 @@ static Ray primary_ray(const Scene* scene, Vec2 rp, Float aspect) {
 
 /*!
 */
-struct SampleRayU {
-    Vec2 u_pos;
-    Float u_pos_comp;
-    Vec2 u_dir;
-    Float u_dir_comp;
+struct RaySampleU {
+    Vec2 up;        // For position
+    Vec2 upc;       // For positional component
+    Vec2 ud;        // For direction
+    Vec2 udc;       // For directional component
 };
 
 /*!
@@ -103,10 +103,10 @@ struct SampleRayU {
     the evaluated contribution of the sampled direction is zero.
     \endrst
 */
-static std::optional<RaySample> sample_ray(Rng& rng, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
+static std::optional<RaySample> sample_ray(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
     if (sp.is_type(SceneInteraction::CameraTerminator)) {
         const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
-        const auto s = camera->sample_ray(rng, sp.camera_cond.window, sp.camera_cond.aspect);
+        const auto s = camera->sample_ray({u.ud}, sp.camera_cond.window, sp.camera_cond.aspect);
         if (!s) {
             return {};
         }
@@ -122,11 +122,11 @@ static std::optional<RaySample> sample_ray(Rng& rng, const Scene* scene, const S
         };
     }
     else if (sp.is_type(SceneInteraction::LightTerminator)) {
-        const auto [light_index, p_sel] = scene->sample_light_selection(rng);
+        const auto [light_index, p_sel] = scene->sample_light_selection(u.upc[0]);
         const auto light_primitive_index = scene->light_primitive_index_at(light_index);
         const auto& node = scene->node_at(light_primitive_index.index);
         const auto* light = node.primitive.light;
-        const auto s = light->sample_ray(rng, light_primitive_index.global_transform);
+        const auto s = light->sample_ray({u.up,u.upc[0],u.ud}, light_primitive_index.global_transform);
         if (!s) {
             return {};
         }
@@ -143,7 +143,7 @@ static std::optional<RaySample> sample_ray(Rng& rng, const Scene* scene, const S
     else if (sp.is_type(SceneInteraction::MediumInteraction)) {
         const auto& node = scene->node_at(sp.primitive);
         const auto& primitive = node.primitive;
-        const auto s = primitive.medium->phase()->sample_direction(rng, sp.geom, wi);
+        const auto s = primitive.medium->phase()->sample_direction({u.ud}, sp.geom, wi);
         if (!s) {
             return {};
         }
@@ -160,7 +160,7 @@ static std::optional<RaySample> sample_ray(Rng& rng, const Scene* scene, const S
         if (!primitive.material) {
             return {};
         }
-        const auto s = primitive.material->sample_direction(rng, sp.geom, wi, (Material::TransDir)(trans_dir));
+        const auto s = primitive.material->sample_direction({u.ud,u.udc}, sp.geom, wi, (Material::TransDir)(trans_dir));
         if (!s) {
             return {};
         }
@@ -198,23 +198,21 @@ struct DirectionSample {
 
 /*!
 */
-#if 0
-struct SampleDirectionU {
-    Vec2 u_d;
-    Float u_comp;
+struct DirectionSampleU {
+    Vec2 ud;
+    Vec2 udc;
 };
-#endif
 
 /*!
 */
-static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
+static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
     if (!sp.is_type(SceneInteraction::Midpoint)) {
         LM_THROW_EXCEPTION(Error::Unsupported,
             "Direction sampling is only supported for midpoint interactions.");
     }
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     if (sp.is_type(SceneInteraction::MediumInteraction)) {
-        const auto s = primitive.medium->phase()->sample_direction(rng, sp.geom, wi);
+        const auto s = primitive.medium->phase()->sample_direction({u.ud}, sp.geom, wi);
         if (!s) {
             return {};
         }
@@ -225,7 +223,7 @@ static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* sc
         };
     }
     else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
-        const auto s = primitive.material->sample_direction(rng, sp.geom, wi, static_cast<Material::TransDir>(trans_dir));
+        const auto s = primitive.material->sample_direction({u.ud,u.udc}, sp.geom, wi, static_cast<Material::TransDir>(trans_dir));
         if (!s) {
             return {};
         }
@@ -301,17 +299,6 @@ static Float pdf_position(const Scene* scene, const SceneInteraction& sp) {
 */
 
 /*!
-*/
-#if 0
-struct SampleDirectU {
-    Vec2 u_pos;
-    Float u_pos_comp;
-    Vec2 u_dir;
-    Float u_dir_comp;
-};
-#endif
-
-/*!
     \brief Sample direction to a light given a scene interaction.
     \param rng Random number generator.
     \param sp Scene interaction.
@@ -323,14 +310,14 @@ struct SampleDirectU {
     and if you want to evaluate densities you want to use different functions.
     \endrst
 */
-static std::optional<RaySample> sample_direct_light(Rng& rng, const Scene* scene, const SceneInteraction& sp) {
+static std::optional<RaySample> sample_direct_light(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp) {
     // Sample a light
-    const auto [light_index, p_sel] = scene->sample_light_selection(rng);
+    const auto [light_index, p_sel] = scene->sample_light_selection(u.upc[0]);
 
     // Sample a position on the light
     const auto light_primitive_index = scene->light_primitive_index_at(light_index);
     const auto& primitive = scene->node_at(light_primitive_index.index).primitive;
-    const auto s = primitive.light->sample_direct(rng, sp.geom, light_primitive_index.global_transform);
+    const auto s = primitive.light->sample_direct({u.up,u.upc[1],u.ud}, sp.geom, light_primitive_index.global_transform);
     if (!s) {
         return {};
     }
@@ -347,9 +334,9 @@ static std::optional<RaySample> sample_direct_light(Rng& rng, const Scene* scene
 
 /*!
 */
-static std::optional<RaySample> sample_direct_camera(Rng& rng, const Scene* scene, const SceneInteraction& sp, Float aspect) {
+static std::optional<RaySample> sample_direct_camera(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp, Float aspect) {
     const auto& primitive = scene->node_at(scene->camera_node()).primitive;
-    const auto s = primitive.camera->sample_direct(rng, sp.geom, aspect);
+    const auto s = primitive.camera->sample_direct({u.ud}, sp.geom, aspect);
     if (!s) {
         return {};
     }
@@ -413,12 +400,6 @@ struct DistanceSample {
     SceneInteraction sp;    //!< Sampled interaction point.
     Vec3 weight;            //!< Contribution divided by probability.
 };
-
-/*!
-*/
-#if 0
-using SampleDistanceNextU = std::function<>();
-#endif
 
 /*!
     \brief Sample a distance in a ray direction.

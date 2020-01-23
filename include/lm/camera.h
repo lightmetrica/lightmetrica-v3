@@ -92,6 +92,12 @@ public:
     };
 
     /*!
+    */
+    struct RaySampleU {
+        Vec2 ud;
+    };
+
+    /*!
         \brief Sample a primary ray within the given raster window.
         \param rng Random number generator.
         \param window Raster window.
@@ -116,7 +122,7 @@ public:
         Looking by the solid angle measure, for instance, the set of rays are not uniform.
         \endrst
     */
-    virtual std::optional<RaySample> sample_ray(Rng& rng, Vec4 window, Float aspect) const = 0;
+    virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window, Float aspect) const = 0;
 
     /*!
     */
@@ -128,7 +134,13 @@ public:
 
     /*!
     */
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, Vec4 window, Float aspect) const = 0;
+    struct DirectionSampleU {
+        Vec2 ud;
+    };
+
+    /*!
+    */
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window, Float aspect) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
@@ -146,7 +158,7 @@ public:
 
     /*!
     */
-    virtual std::optional<RaySample> sample_direct(Rng& rng, const PointGeometry& geom, Float aspect) const = 0;
+    virtual std::optional<RaySample> sample_direct(const RaySampleU& u, const PointGeometry& geom, Float aspect) const = 0;
 
     /*!
     */

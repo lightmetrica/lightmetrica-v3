@@ -57,10 +57,10 @@ public:
         Kd_ = json::value(prop, "Kd", Vec3(1_f));
     }
 
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& geom, Vec3 wi, TransDir) const override {
         const auto[n, u, v] = geom.orthonormal_basis_twosided(wi);
         const auto Kd = mapKd_ ? mapKd_->eval(geom.t) : Kd_;
-        const auto d = math::sample_cosine_weighted(rng);
+        const auto d = math::sample_cosine_weighted(us.ud);
         return DirectionSample{
             u*d.x + v * d.y + n * d.z,
             Kd,

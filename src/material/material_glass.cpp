@@ -111,13 +111,13 @@ public:
         Ni_ = json::value<Float>(prop, "Ni");
     }
 
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
         const bool in = glm::dot(wi, geom.n) > 0_f;
         const auto n = in ? geom.n : -geom.n;
         const auto eta = in ? 1_f / Ni_ : Ni_;
         const auto [wt, total] = math::refraction(wi, n, eta);
         const auto Fr = total ? 1_f : fresnel(wi, wt, geom);
-        if (rng.u() < Fr) {
+        if (u.udc[0] < Fr) {
             // Reflection
             // Fr / p_sel = 1
             const auto wo = math::reflection(wi, geom.n);

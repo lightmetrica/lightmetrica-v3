@@ -147,20 +147,20 @@ public:
         return { position_, u_*d.x + v_ * d.y + w_ * d.z };
     }
 
-    virtual std::optional<RaySample> sample_ray(Rng& rng, Vec4 window, Float aspect) const override {
+    virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window, Float aspect) const override {
         const auto [x, y, w, h] = window.data.data;
         return RaySample{
             PointGeometry::make_degenerated(position_),
-            primary_ray({x+w*rng.u(), y+h*rng.u()}, aspect).d,
+            primary_ray({x+w*u.ud[0], y+h*u.ud[1]}, aspect).d,
             Vec3(1_f),
             false
         };
     }
 
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, Vec4 window, Float aspect) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window, Float aspect) const override {
         const auto[x, y, w, h] = window.data.data;
         return DirectionSample{
-            primary_ray({x+w*rng.u(), y+h*rng.u()}, aspect).d,
+            primary_ray({x+w*u.ud[0], y+h*u.ud[1]}, aspect).d,
             Vec3(1_f),
             false
         };
@@ -180,7 +180,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<RaySample> sample_direct(Rng&, const PointGeometry& geom, Float aspect) const override {
+    virtual std::optional<RaySample> sample_direct(const RaySampleU&, const PointGeometry& geom, Float aspect) const override {
         assert(!geom.infinite);
         const auto geomE = PointGeometry::make_degenerated(position_);
         const auto wo = glm::normalize(geom.p - position_);

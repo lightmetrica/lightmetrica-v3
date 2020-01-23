@@ -48,11 +48,12 @@ private:
     }
 
 public:
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
         const auto [n, u, v] = geom.orthonormal_basis_twosided(wi);
-        const auto u1 = rng.u() * 2_f * Pi;
-        const auto u2 = rng.u();
-        const auto wh = glm::normalize(math::safe_sqrt(u2/(1_f-u2))*(ax_*glm::cos(u1)*u+ay_*glm::sin(u1)*v)+n);
+        const auto u1 = us.ud[0] * 2_f * Pi;
+        const auto u2 = us.ud[1];
+        const auto wh = glm::normalize(
+            math::safe_sqrt(u2/(1_f-u2))*(ax_*glm::cos(u1)*u+ay_*glm::sin(u1)*v)+n);
         const auto wo = math::reflection(wi, wh);
         if (geom.opposite(wi, wo)) {
             return {};

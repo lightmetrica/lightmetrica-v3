@@ -18,11 +18,11 @@ public:
     }
 #endif
 
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& geom, Vec3) const override {
         LM_UNUSED(geom);
         assert(geom.degenerated);
         return DirectionSample{
-            math::sample_uniform_sphere(rng),
+            math::sample_uniform_sphere(us.ud),
             Vec3(1_f),
             false
         };

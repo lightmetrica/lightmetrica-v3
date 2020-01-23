@@ -60,16 +60,24 @@ public:
         :cpp:func:`lm::Light::sample` function.
         \endrst
     */
-        struct RaySample {
-            PointGeometry geom;   //!< Sampled geometry information.
-            Vec3 wo;              //!< Sampled direction.
-            Vec3 weight;          //!< Contribution divided by probability.
-            bool specular;          //!< Sampled component is specular.
-        };
+    struct RaySample {
+        PointGeometry geom;   //!< Sampled geometry information.
+        Vec3 wo;              //!< Sampled direction.
+        Vec3 weight;          //!< Contribution divided by probability.
+        bool specular;        //!< Sampled component is specular.
+    };
 
     /*!
     */
-    virtual std::optional<RaySample> sample_ray(Rng& rng, const Transform& transform) const = 0;
+    struct RaySampleU {
+        Vec2 up;
+        Float upc;
+        Vec2 ud;
+    };
+
+    /*!
+    */
+    virtual std::optional<RaySample> sample_ray(const RaySampleU& u, const Transform& transform) const = 0;
 
     /*!
     */
@@ -102,7 +110,7 @@ public:
         ``geom.infinite`` becomes true.
         \endrst
     */
-    virtual std::optional<RaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const = 0;
+    virtual std::optional<RaySample> sample_direct(const RaySampleU& u, const PointGeometry& geom, const Transform& transform) const = 0;
 
     /*!
         \brief Evaluate pdf for light sampling in projected solid angle measure.

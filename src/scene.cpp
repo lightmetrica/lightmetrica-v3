@@ -344,9 +344,9 @@ public:
 
     #pragma region Light sampling
 
-    virtual LightSelectionSample sample_light_selection(Rng& rng) const override {
+    virtual LightSelectionSample sample_light_selection(Float u) const override {
         const int n = int(lights_.size());
-        const int i = glm::clamp(int(rng.u() * n), 0, n - 1);
+        const int i = glm::clamp(int(u * n), 0, n - 1);
         const auto pL = 1_f / n;
         return LightSelectionSample{
             i,

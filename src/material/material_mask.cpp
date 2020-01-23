@@ -33,7 +33,7 @@ public:
     }
 #endif
 
-    virtual std::optional<DirectionSample> sample_direction(Rng&, const PointGeometry&, Vec3 wi, TransDir) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU&, const PointGeometry&, Vec3 wi, TransDir) const override {
         return DirectionSample{
             -wi,
             Vec3(1_f),

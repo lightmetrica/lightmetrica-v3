@@ -44,14 +44,14 @@ private:
         return invA_ / transform.J;
     }
 
-    PointGeometry sample_position_on_triangle_mesh(Rng& rng, const Transform& transform) const {
-        const int i = dist_.sample(rng);
-        const auto s = math::safe_sqrt(rng.u());
+    PointGeometry sample_position_on_triangle_mesh(Vec2 up, Float upc, const Transform& transform) const {
+        const int i = dist_.sample(upc);
+        const auto s = math::safe_sqrt(up[0]);
         const auto tri = mesh_->triangle_at(i);
         const auto a = tri.p1.p;
         const auto b = tri.p2.p;
         const auto c = tri.p3.p;
-        const auto p = math::mix_barycentric(a, b, c, Vec2(1_f - s, rng.u()*s));
+        const auto p = math::mix_barycentric(a, b, c, Vec2(1_f - s, up[1]*s));
         const auto gn = math::geometry_normal(a, b, c);
         const auto p_trans = Vec3(transform.M * Vec4(p, 1_f));
         const auto gn_trans = glm::normalize(transform.normal_M * gn);
@@ -85,13 +85,13 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<RaySample> sample_ray(Rng& rng, const Transform& transform) const override {
+    virtual std::optional<RaySample> sample_ray(const RaySampleU& us, const Transform& transform) const override {
         // Sample position
-        const auto geomL = sample_position_on_triangle_mesh(rng, transform);
+        const auto geomL = sample_position_on_triangle_mesh(us.up, us.upc, transform);
         const auto pA = tranformed_invA(transform);
         
         // Sample direction
-        const auto wo_local = math::sample_cosine_weighted(rng);
+        const auto wo_local = math::sample_cosine_weighted(us.ud);
         const auto [u, v] = math::orthonormal_basis(geomL.n);
         const Mat3 to_world(u, v, geomL.n);
         const auto wo_world = to_world * wo_local;
@@ -123,8 +123,8 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<RaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform& transform) const override {
-        const auto geomL = sample_position_on_triangle_mesh(rng, transform);
+    virtual std::optional<RaySample> sample_direct(const RaySampleU& us, const PointGeometry& geom, const Transform& transform) const override {
+        const auto geomL = sample_position_on_triangle_mesh(us.up, us.upc, transform);
         const auto wo = glm::normalize(geom.p - geomL.p);
         const auto pL = pdf_direct(geom, geomL, transform, wo);
         if (pL == 0_f) {

@@ -363,10 +363,10 @@ private:
     }
 
     // Component selection
-    int sample_comp_select(Rng& rng, const PointGeometry& geom) const {
+    int sample_comp_select(Vec2 u, const PointGeometry& geom) const {
         // Difuse
         const auto weight_d = diffuse_selection_weight(geom);
-        if (rng.u() < weight_d) {
+        if (u[0] < weight_d) {
             return Comp_Diffuse;
         }
 
@@ -411,10 +411,10 @@ public:
             });
     }
 
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
-        const int comp = sample_comp_select(rng, geom);
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
+        const int comp = sample_comp_select(u.udc, geom);
         const auto* material = material_by_comp(comp);
-        const auto s = material->sample_direction(rng, geom, wi, trans_dir);
+        const auto s = material->sample_direction({u.ud,{}}, geom, wi, trans_dir);
         if (!s) {
             return {};
         }
@@ -544,16 +544,16 @@ private:
     }
 
     // Component selection
-    int sample_comp_select(Rng& rng, const PointGeometry& geom) const {
+    int sample_comp_select(Vec2 u, const PointGeometry& geom) const {
         // Alpha mask
         const auto alpha = eval_alpha(geom);
-        if (rng.u() > alpha) {
+        if (u[0] > alpha) {
             return Comp_Alpha;
         }
 
         // Difuse
         const auto weight_d = diffuse_selection_weight(geom);
-        if (rng.u() < weight_d) {
+        if (u[1] < weight_d) {
             return Comp_Diffuse;
         }
 
@@ -631,10 +631,10 @@ public:
         }
     }
 
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
-        const int comp = sample_comp_select(rng, geom);
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
+        const int comp = sample_comp_select(u.udc, geom);
         const auto* material = material_by_comp(comp);
-        const auto s = material->sample_direction(rng, geom, wi, trans_dir);
+        const auto s = material->sample_direction({u.ud,{}}, geom, wi, trans_dir);
         if (!s) {
             return {};
         }

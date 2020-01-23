@@ -30,13 +30,19 @@ public:
     };
 
     /*!
+    */
+    struct DirectionSampleU {
+        Vec2 ud;
+    };
+
+    /*!
         \brief Sample a direction.
         \param rng Random number generator.
         \param geom Point geometry.
         \param wi Incident ray direction.
         \return Sampled direction and associated information.
     */
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate pdf in solid angle measure.

@@ -423,7 +423,7 @@ public:
 
     /*!
     */
-    virtual LightSelectionSample sample_light_selection(Rng& rng) const = 0;
+    virtual LightSelectionSample sample_light_selection(Float u) const = 0;
 
     /*!
     */
