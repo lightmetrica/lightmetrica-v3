@@ -155,7 +155,7 @@ public:
 public:
     virtual void construct(const Json& prop) override {
         render_time_ = json::value<Float>(prop, "render_time");
-        samples_per_iter_ = json::value<long long>(prop, "samples_per_iter", 1000000);
+        samples_per_iter_ = json::value<long long>(prop, "samples_per_iter", 100000);
     }
 
     virtual long long run(const ProcessFunc& process) const override {

@@ -119,6 +119,7 @@
         #define WIN32_LEAN_AND_MEAN
     #endif
     #pragma warning(disable:4505)  // unreferenced local function has been removed
+    #pragma warning(disable:4201)  // nonstandard extension used: nameless struct/union
 #endif
 
 // ------------------------------------------------------------------------------------------------
