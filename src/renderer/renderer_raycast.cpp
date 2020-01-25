@@ -7,6 +7,7 @@
 #include <lm/core.h>
 #include <lm/renderer.h>
 #include <lm/scene.h>
+#include <lm/camera.h>
 #include <lm/film.h>
 #include <lm/parallel.h>
 #include <lm/scheduler.h>
@@ -50,6 +51,7 @@ public:
         visualize_normal_ = json::value(prop, "visualize_normal", false);
         color_ = json::value_or_none<Vec3>(prop, "color");
         film_ = json::comp_ref<Film>(prop, "output");
+        scene_->camera()->set_aspect_ratio(film_->aspect());
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spp::sample", make_loc("scheduler"), {
                 {"spp", 1},
@@ -67,7 +69,7 @@ public:
         sched_->run([&](long long index, long long, int) {
             const int x = int(index % size.w);
             const int y = int(index / size.w);
-            const auto ray = path::primary_ray(scene_, {(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect());
+            const auto ray = path::primary_ray(scene_, {(x+.5_f)/size.w, (y+.5_f)/size.h});
             const auto sp = scene_->intersect(ray);
             if (!sp) {
                 film_->set_pixel(x, y, bg_color_);

@@ -27,6 +27,17 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Camera : public Component {
 public:
     /*!
+        \brief Set aspect ratio.
+
+        \rst
+        This function sets the aspect ratio of the film to be rendered.
+        \endrst
+    */
+    virtual void set_aspect_ratio(Float aspect) = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    /*!
         \brief Get view matrix if available.
         \return View matrix.
     */
@@ -37,17 +48,17 @@ public:
         \param aspect Aspect ratio of the film.
         \return Projection matrix.
     */
-    virtual Mat4 projection_matrix(Float aspect) const = 0;
+    virtual Mat4 projection_matrix() const = 0;
 
     // --------------------------------------------------------------------------------------------
 
     /*!
-        \brief Compute a raser position.
+        \brief Compute a raster position.
         \param wo Primary ray direction.
         \param aspect Aspect ratio of the film.
         \return Raster position.
     */
-    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const = 0;
+    virtual std::optional<Vec2> raster_position(Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate sensitivity.
@@ -58,7 +69,7 @@ public:
         Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.
         \endrst
     */
-    virtual Vec3 eval(Vec3 wo, Float aspect) const = 0;
+    virtual Vec3 eval(Vec3 wo) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -74,7 +85,7 @@ public:
         Use :cpp:func:`samplePrimaryRay` when the primary ray is generated randomly.
         \endrst
     */
-    virtual Ray primary_ray(Vec2 rp, Float aspect) const = 0;
+    virtual Ray primary_ray(Vec2 rp) const = 0;
 
     /*!
         \brief Result of primary ray sampling.
@@ -122,7 +133,7 @@ public:
         Looking by the solid angle measure, for instance, the set of rays are not uniform.
         \endrst
     */
-    virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window, Float aspect) const = 0;
+    virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window) const = 0;
 
     /*!
     */
@@ -140,7 +151,7 @@ public:
 
     /*!
     */
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window, Float aspect) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.
@@ -148,7 +159,7 @@ public:
         \param aspect Aspect ratio of the film.
         \return Evaluated pdf.
     */
-    virtual Float pdf_direction(Vec3 wo, Float aspect) const = 0;
+    virtual Float pdf_direction(Vec3 wo) const = 0;
 
     /*!
     */
@@ -158,7 +169,7 @@ public:
 
     /*!
     */
-    virtual std::optional<RaySample> sample_direct(const RaySampleU& u, const PointGeometry& geom, Float aspect) const = 0;
+    virtual std::optional<RaySample> sample_direct(const RaySampleU& u, const PointGeometry& geom) const = 0;
 
     /*!
     */

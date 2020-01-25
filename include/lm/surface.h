@@ -256,12 +256,11 @@ struct SceneInteraction {
         \param aspect Aspect ratio.
         \return Created scene interaction.
     */
-    static SceneInteraction make_camera_endpoint(int primitive, const PointGeometry& geom, Float aspect) {
+    static SceneInteraction make_camera_endpoint(int primitive, const PointGeometry& geom) {
         SceneInteraction sp;
         sp.type = CameraEndpoint;
         sp.primitive = primitive;
         sp.geom = geom;
-        sp.camera_cond.aspect = aspect;
         return sp;
     }
 
@@ -283,11 +282,10 @@ struct SceneInteraction {
         \param window Window in raster coordinates.
         \param aspect Aspect ratio.
     */
-    static SceneInteraction make_camera_terminator(Vec4 window, Float aspect) {
+    static SceneInteraction make_camera_terminator(Vec4 window) {
         SceneInteraction sp;
         sp.type = CameraTerminator;
         sp.camera_cond.window = window;
-        sp.camera_cond.aspect = aspect;
         return sp;
     }
 

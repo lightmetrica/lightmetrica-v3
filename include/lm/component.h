@@ -570,7 +570,7 @@ Component::Ptr<InterfaceT> create_without_construct(const std::string& key, cons
 }
 
 /*!
-    \brief Create component with construction with given properties.
+    \brief Create component with given properties.
     \tparam InterfaceT Component interface type.
     \param key Name of the implementation.
     \param loc Component locator of the instance.

@@ -50,12 +50,12 @@ private:
     Float vfov_;      // Vertical field of view
     Float tf_;        // Half of the screen height at 1 unit forward from the position
 
+    Float aspect_;    // Aspect raio (height / width)
+
 public:
     LM_SERIALIZE_IMPL(ar) {
         ar(position_, center_, up_, u_, v_, w_, vfov_, tf_);
     }
-
-
 
 public:
     virtual Json underlying_value(const std::string&) const override {
@@ -93,17 +93,33 @@ public:
 private:
     // Compute Jacobian
     // TODO. Add derivation in documentataion
-    Float J(Vec3 wo, Float aspect) const {
+    Float J(Vec3 wo) const {
         const auto V = glm::transpose(Mat3(u_, v_, w_));
         const auto wo_eye = V * wo;
         const Float cos_theta = -wo_eye.z;
         const Float inv_cos_theta = 1_f / cos_theta;
-        const Float A = tf_ * tf_ * aspect * 4_f;
+        const Float A = tf_ * tf_ * aspect_ * 4_f;
         return inv_cos_theta * inv_cos_theta * inv_cos_theta / A;
     }
 
 public:
-    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect) const override {
+    virtual void set_aspect_ratio(Float aspect) override {
+        aspect_ = aspect;
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    virtual Mat4 view_matrix() const override {
+        return glm::lookAt(position_, position_ - w_, up_);
+    }
+
+    virtual Mat4 projection_matrix() const override {
+        return glm::perspective(glm::radians(vfov_), aspect_, 0.01_f, 10000_f);
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    virtual std::optional<Vec2> raster_position(Vec3 wo) const override {
         // Convert to camera space
         const auto to_eye = glm::transpose(Mat3(u_, v_, w_));
         const auto wo_eye = to_eye * wo;
@@ -114,7 +130,7 @@ public:
 
         // Calculate raster position
         const auto rp = Vec2(
-            -wo_eye.x/wo_eye.z/tf_/aspect,
+            -wo_eye.x/wo_eye.z/tf_/aspect_,
             -wo_eye.y/wo_eye.z/tf_)*.5_f + .5_f;
         if (rp.x < 0_f || rp.x > 1_f || rp.y < 0_f || rp.y > 1_f) {
             // wo is not in the view frustum
@@ -124,54 +140,46 @@ public:
         return rp;
     }
 
-    virtual Vec3 eval(Vec3 wo, Float aspect) const override {
-        if (!raster_position(wo, aspect)) {
+    virtual Vec3 eval(Vec3 wo) const override {
+        if (!raster_position(wo)) {
             return Vec3(0_f);
         }
-        return Vec3(J(wo, aspect));
-    }
-
-    virtual Mat4 view_matrix() const override {
-        return glm::lookAt(position_, position_ - w_, up_);
-    }
-
-    virtual Mat4 projection_matrix(Float aspect) const override {
-        return glm::perspective(glm::radians(vfov_), aspect, 0.01_f, 10000_f);
+        return Vec3(J(wo));
     }
 
     // --------------------------------------------------------------------------------------------
 
-    virtual Ray primary_ray(Vec2 rp, Float aspect) const override {
+    virtual Ray primary_ray(Vec2 rp) const override {
         rp = 2_f*rp - 1_f;
-        const auto d = glm::normalize(Vec3(aspect*tf_*rp.x, tf_*rp.y, -1_f));
+        const auto d = glm::normalize(Vec3(aspect_*tf_*rp.x, tf_*rp.y, -1_f));
         return { position_, u_*d.x + v_ * d.y + w_ * d.z };
     }
 
-    virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window, Float aspect) const override {
+    virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window) const override {
         const auto [x, y, w, h] = window.data.data;
         return RaySample{
             PointGeometry::make_degenerated(position_),
-            primary_ray({x+w*u.ud[0], y+h*u.ud[1]}, aspect).d,
+            primary_ray({x+w*u.ud[0], y+h*u.ud[1]}).d,
             Vec3(1_f),
             false
         };
     }
 
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window, Float aspect) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window) const override {
         const auto[x, y, w, h] = window.data.data;
         return DirectionSample{
-            primary_ray({x+w*u.ud[0], y+h*u.ud[1]}, aspect).d,
+            primary_ray({x+w*u.ud[0], y+h*u.ud[1]}).d,
             Vec3(1_f),
             false
         };
     }
 
-    virtual Float pdf_direction(Vec3 wo, Float aspect) const override {
+    virtual Float pdf_direction(Vec3 wo) const override {
         // Given directions is not samplable if raster position is not in [0,1]^2
-        if (!raster_position(wo, aspect)) {
+        if (!raster_position(wo)) {
             return 0_f;
         }
-        return J(wo, aspect);
+        return J(wo);
     }
 
     virtual Float pdf_position(const PointGeometry&) const override {
@@ -180,11 +188,11 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<RaySample> sample_direct(const RaySampleU&, const PointGeometry& geom, Float aspect) const override {
+    virtual std::optional<RaySample> sample_direct(const RaySampleU&, const PointGeometry& geom) const override {
         assert(!geom.infinite);
         const auto geomE = PointGeometry::make_degenerated(position_);
         const auto wo = glm::normalize(geom.p - position_);
-        const auto We = Vec3(J(wo, aspect));
+        const auto We = Vec3(J(wo));
         const auto p = pdf_direct(geom, geomE, wo);
         if (p == 0_f) {
             return {};

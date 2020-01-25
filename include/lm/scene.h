@@ -260,6 +260,12 @@ public:
 	*/
 	virtual int env_light_node() const = 0;
 
+    /*!
+    */
+    Camera* camera() const {
+        return node_at(camera_node()).primitive.camera;
+    }
+
     #pragma endregion
 
 	// --------------------------------------------------------------------------------------------

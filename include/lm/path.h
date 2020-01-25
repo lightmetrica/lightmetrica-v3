@@ -66,9 +66,9 @@ struct RaySample {
     corresponding to the given raster position.
     \endrst
 */
-static Ray primary_ray(const Scene* scene, Vec2 rp, Float aspect) {
+static Ray primary_ray(const Scene* scene, Vec2 rp) {
     const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
-    return camera->primary_ray(rp, aspect);
+    return camera->primary_ray(rp);
 }
 
 /*!
@@ -111,15 +111,14 @@ struct RaySampleU {
 static std::optional<RaySample> sample_ray(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
     if (sp.is_type(SceneInteraction::CameraTerminator)) {
         const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
-        const auto s = camera->sample_ray({u.ud}, sp.camera_cond.window, sp.camera_cond.aspect);
+        const auto s = camera->sample_ray({u.ud}, sp.camera_cond.window);
         if (!s) {
             return {};
         }
         return RaySample{
             SceneInteraction::make_camera_endpoint(
                 scene->camera_node(),
-                s->geom,
-                sp.camera_cond.aspect
+                s->geom
             ),
             s->wo,
             s->weight,
@@ -260,7 +259,7 @@ static Float pdf_direction(const Scene* scene, const SceneInteraction& sp, Vec3 
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     switch (sp.type) {
         case SceneInteraction::CameraEndpoint:
-            return primitive.camera->pdf_direction(wo, sp.camera_cond.aspect);
+            return primitive.camera->pdf_direction(wo);
         case SceneInteraction::LightEndpoint:
             return primitive.light->pdf_direction(sp.geom, wo);
         case SceneInteraction::MediumInteraction:
@@ -339,17 +338,16 @@ static std::optional<RaySample> sample_direct_light(const RaySampleU& u, const S
 
 /*!
 */
-static std::optional<RaySample> sample_direct_camera(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp, Float aspect) {
+static std::optional<RaySample> sample_direct_camera(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp) {
     const auto& primitive = scene->node_at(scene->camera_node()).primitive;
-    const auto s = primitive.camera->sample_direct({u.ud}, sp.geom, aspect);
+    const auto s = primitive.camera->sample_direct({u.ud}, sp.geom);
     if (!s) {
         return {};
     }
     return RaySample{
         SceneInteraction::make_camera_endpoint(
             scene->camera_node(),
-            s->geom,
-            aspect
+            s->geom
         ),
         s->wo,
         s->weight,
@@ -493,9 +491,9 @@ static Vec3 eval_transmittance(Rng& rng, const Scene* scene, const SceneInteract
     \param aspect Aspect ratio of the film.
     \return Raster position.
 */
-static std::optional<Vec2> raster_position(const Scene* scene, Vec3 wo, Float aspect) {
+static std::optional<Vec2> raster_position(const Scene* scene, Vec3 wo) {
     const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
-    return camera->raster_position(wo, aspect);
+    return camera->raster_position(wo);
 }
 
 /*!
@@ -532,7 +530,7 @@ static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     switch (sp.type) {
         case SceneInteraction::CameraEndpoint:
-            return primitive.camera->eval(wo, sp.camera_cond.aspect);
+            return primitive.camera->eval(wo);
         case SceneInteraction::LightEndpoint:
             return primitive.light->eval(sp.geom, wo);
         case SceneInteraction::MediumInteraction:
