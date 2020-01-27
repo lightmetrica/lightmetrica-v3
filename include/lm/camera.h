@@ -163,6 +163,17 @@ public:
 
     /*!
     */
+    struct PositionSample {
+        PointGeometry geom;
+        Vec3 weight;
+    };
+
+    /*!
+    */
+    virtual std::optional<PositionSample> sample_position() const = 0;
+
+    /*!
+    */
     virtual Float pdf_position(const PointGeometry& geom) const = 0;
 
     // --------------------------------------------------------------------------------------------

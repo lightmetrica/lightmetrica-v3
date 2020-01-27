@@ -109,7 +109,7 @@ struct RaySampleU {
     \endrst
 */
 static std::optional<RaySample> sample_ray(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
-    if (sp.is_type(SceneInteraction::CameraTerminator)) {
+    if (sp.is_type(SceneInteraction::CameraTerm)) {
         const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
         const auto s = camera->sample_ray({u.ud});
         if (!s) {
@@ -125,12 +125,12 @@ static std::optional<RaySample> sample_ray(const RaySampleU& u, const Scene* sce
             s->specular
         };
     }
-    else if (sp.is_type(SceneInteraction::LightTerminator)) {
+    else if (sp.is_type(SceneInteraction::LightTerm)) {
         const auto [light_index, p_sel] = scene->sample_light_selection(u.upc[0]);
         const auto light_primitive_index = scene->light_primitive_index_at(light_index);
         const auto& node = scene->node_at(light_primitive_index.index);
         const auto* light = node.primitive.light;
-        const auto s = light->sample_ray({u.up,u.upc[0],u.ud}, light_primitive_index.global_transform);
+        const auto s = light->sample_ray({u.up,u.upc[1],u.ud}, light_primitive_index.global_transform);
         if (!s) {
             return {};
         }
@@ -186,6 +186,62 @@ static std::optional<RaySample> sample_ray(const RaySampleU& u, const Scene* sce
 
 // ------------------------------------------------------------------------------------------------
 
+#pragma region Position sampling
+
+/*!
+*/
+struct PositionSample {
+    SceneInteraction sp;
+    Vec3 weight;
+};
+
+/*!
+*/
+struct PositionSampleU {
+    Vec2 up;
+    Vec2 upc;
+};
+
+/*!
+*/
+static std::optional<PositionSample> sample_position(const PositionSampleU& u, const Scene* scene, TransDir trans_dir) {
+    if (trans_dir == TransDir::EL) {
+        const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
+        const auto s = camera->sample_position();
+        if (!s) {
+            return {};
+        }
+        return PositionSample{
+            SceneInteraction::make_camera_endpoint(
+                scene->camera_node(),
+                s->geom
+            ),
+            s->weight
+        };
+    }
+    else if (trans_dir == TransDir::LE) {
+        const auto [light_index, p_sel] = scene->sample_light_selection(u.upc[0]);
+        const auto light_primitive_index = scene->light_primitive_index_at(light_index);
+        const auto& node = scene->node_at(light_primitive_index.index);
+        const auto* light = node.primitive.light;
+        const auto s = light->sample_position({ u.up, u.upc[1] }, light_primitive_index.global_transform);
+        if (!s) {
+            return {};
+        }
+        return PositionSample{
+            SceneInteraction::make_light_endpoint(
+                light_primitive_index.index,
+                s->geom
+            ),
+            s->weight
+        };
+    }
+    LM_UNREACHABLE_RETURN();
+}
+#pragma endregion
+
+// ------------------------------------------------------------------------------------------------
+
 #pragma region Direction sampling
 
 /*
@@ -210,12 +266,30 @@ struct DirectionSampleU {
 /*!
 */
 static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
-    if (!sp.is_type(SceneInteraction::Midpoint)) {
-        LM_THROW_EXCEPTION(Error::Unsupported,
-            "Direction sampling is only supported for midpoint interactions.");
-    }
     const auto& primitive = scene->node_at(sp.primitive).primitive;
-    if (sp.is_type(SceneInteraction::MediumInteraction)) {
+    if (sp.is_type(SceneInteraction::CameraEndpoint)) {
+        const auto s = primitive.camera->sample_direction({ u.ud });
+        if (!s) {
+            return {};
+        }
+        return DirectionSample{
+            s->wo,
+            s->weight,
+            s->specular
+        };
+    }
+    else if (sp.is_type(SceneInteraction::LightEndpoint)) {
+        const auto s = primitive.light->sample_direction(sp.geom, { u.ud });
+        if (!s) {
+            return {};
+        }
+        return DirectionSample{
+            s->wo,
+            s->weight,
+            s->specular
+        };
+    }
+    else if (sp.is_type(SceneInteraction::MediumInteraction)) {
         const auto s = primitive.medium->phase()->sample_direction({u.ud}, sp.geom, wi);
         if (!s) {
             return {};
@@ -484,6 +558,17 @@ static Vec3 eval_transmittance(Rng& rng, const Scene* scene, const SceneInteract
 // ------------------------------------------------------------------------------------------------
 
 #pragma region Evaluating contribution
+
+/*!
+*/
+static bool is_specular_any(const Scene* scene, const SceneInteraction& sp) {
+    const auto& primitive = scene->node_at(sp.primitive).primitive;
+    switch (sp.type) {
+        case SceneInteraction::SurfaceInteraction:
+            return primitive.material->is_specular_any();
+    }
+    LM_UNREACHABLE_RETURN();
+}
 
 /*!
     \brief Compute a raster position.

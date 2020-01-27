@@ -467,6 +467,10 @@ public:
 
         return f_mixture;
     }
+
+    virtual bool is_specular_any() const override {
+        return false;
+    }
 };
 
 LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture_Without_Alpha, "material::wavefrontobj_marginal_without_alpha");
@@ -727,6 +731,10 @@ public:
             f_mixture += eval_f(Comp_Glossy);
             return f_mixture;
         }
+    }
+
+    virtual bool is_specular_any() const override {
+        return mask_tex_ != nullptr;
     }
 };
 

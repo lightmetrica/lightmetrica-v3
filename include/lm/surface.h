@@ -183,13 +183,13 @@ struct SceneInteraction {
     // Scene interaction type.
     enum Type {
         None               = 0,
-        CameraTerminator   = 1<<0,
-        LightTerminator    = 1<<1,
+        CameraTerm         = 1<<0,
+        LightTerm          = 1<<1,
         CameraEndpoint     = 1<<2,
         LightEndpoint      = 1<<3,
         SurfaceInteraction = 1<<4,
         MediumInteraction  = 1<<5,
-        Terminator         = CameraTerminator | LightTerminator,
+        Terminator         = CameraTerm | LightTerm,
         Endpoint           = CameraEndpoint | LightEndpoint,
         Midpoint           = SurfaceInteraction | MediumInteraction
     };
@@ -276,18 +276,18 @@ struct SceneInteraction {
         \param window Window in raster coordinates.
         \param aspect Aspect ratio.
     */
-    static SceneInteraction make_camera_terminator() {
+    static SceneInteraction make_camera_term() {
         SceneInteraction sp;
-        sp.type = CameraTerminator;
+        sp.type = CameraTerm;
         return sp;
     }
 
     /*!
         \brief Make light terminator.
     */
-    static SceneInteraction make_light_terminator() {
+    static SceneInteraction make_light_term() {
         SceneInteraction sp;
-        sp.type = LightTerminator;
+        sp.type = LightTerm;
         return sp;
     }
 };

@@ -113,7 +113,7 @@ public:
 
             // Incident direction and current scene interaction
             Vec3 wi = {};
-            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect());
+            auto sp = SceneInteraction::make_camera_term(window, film_->aspect());
 
             // Raster position
             Vec2 raster_pos{};

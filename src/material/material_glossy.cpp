@@ -89,6 +89,10 @@ public:
         const auto Fr = Ks_+(1_f-Ks_)*std::pow(1_f-dot(wo, wh),5_f);
         return Ks_*Fr*(normal_dist(wh,u,v,n)*shadowG(wi,wo,u,v,n)/(4_f*dot(wi,n)*dot(wo,n)));
     }
+
+    virtual bool is_specular_any() const override {
+        return false;
+    }
 };
 
 LM_COMP_REG_IMPL(Material_Glossy, "material::glossy");

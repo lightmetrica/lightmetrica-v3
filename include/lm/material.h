@@ -106,6 +106,10 @@ public:
     virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const = 0;
 
     /*!
+    */
+    virtual bool is_specular_any() const = 0;
+
+    /*!
         \brief Evaluate reflectance.
         \param geom Point geometry.
         \param comp Component index.

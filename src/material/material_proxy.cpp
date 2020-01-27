@@ -55,6 +55,10 @@ public:
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
         return ref_->reflectance(geom);
     }
+
+    virtual bool is_specular_any() const override {
+        return ref_->is_specular_any();
+    }
 };
 
 LM_COMP_REG_IMPL(Material_Proxy, "material::proxy");

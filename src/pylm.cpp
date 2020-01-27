@@ -539,8 +539,8 @@ static void bind_surface(pybind11::module& m) {
 
     pybind11::enum_<SceneInteraction::Type>(m, "SceneInteractionType")
         .value("None", SceneInteraction::None)
-        .value("CameraTerminator", SceneInteraction::CameraTerminator)
-        .value("LightTerminator", SceneInteraction::LightTerminator)
+        .value("CameraTerm", SceneInteraction::CameraTerm)
+        .value("LightTerm", SceneInteraction::LightTerm)
         .value("CameraEndpoint", SceneInteraction::CameraEndpoint)
         .value("LightEndpoint", SceneInteraction::LightEndpoint)
         .value("SurfaceInteraction", SceneInteraction::SurfaceInteraction)
@@ -870,6 +870,9 @@ static void bind_material(pybind11::module& m) {
         virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, wi, wo, trans_dir, eval_delta);
         }
+        virtual bool is_specular_any() const override {
+            PYBIND11_OVERLOAD_PURE(bool, Material, is_specular_any);
+        }
         virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Material, reflectance, geom);
         }
@@ -879,6 +882,7 @@ static void bind_material(pybind11::module& m) {
         .def("sample_direction", &Material::sample_direction)
         .def("pdf_direction", &Material::pdf_direction)
         .def("eval", &Material::eval)
+        .def("is_specular_any", &Material::is_specular_any)
         .def("reflectance", &Material::reflectance)
         .PYLM_DEF_COMP_BIND(Material);
 }
@@ -1025,6 +1029,9 @@ static void bind_camera(pybind11::module& m) {
         virtual Float pdf_direction(Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_direction, wo);
         }
+        virtual std::optional<PositionSample> sample_position() const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<PositionSample>, Camera, sample_position);
+        }
         virtual Float pdf_position(const PointGeometry& geom) const override {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_position, geom);
         }
@@ -1051,6 +1058,7 @@ static void bind_camera(pybind11::module& m) {
         .def("sample_ray", &Camera::sample_ray)
         .def("sample_direction", &Camera::sample_direction)
         .def("pdf_direction", &Camera::pdf_direction)
+        .def("sample_position", &Camera::sample_position)
         .def("pdf_position", &Camera::pdf_position)
         //
         .def("sample_direct", &Camera::sample_direct)
@@ -1085,8 +1093,14 @@ static void bind_light(pybind11::module& m) {
         virtual std::optional<RaySample> sample_ray(const RaySampleU& u, const Transform& transform) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Light, sample_ray, u, transform);
         }
+        virtual std::optional<DirectionSample> sample_direction(const PointGeometry& geom, const DirectionSampleU& u) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Light, sample_direction, geom, u);
+        }
         virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Light, pdf_direction, geom, wo);
+        }
+        virtual std::optional<PositionSample> sample_position(const PositionSampleU& u, const Transform& transform) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<PositionSample>, Light, sample_position, u, transform);
         }
         virtual Float pdf_position(const PointGeometry& geom, const Transform& transform) const override {
             PYBIND11_OVERLOAD_PURE(Float, Light, pdf_position, geom, transform);
@@ -1106,7 +1120,9 @@ static void bind_light(pybind11::module& m) {
         .def("eval", &Light::eval)
         //
         .def("sample_ray", &Light::sample_ray)
+        .def("sample_direction", &Light::sample_direction)
         .def("pdf_direction", &Light::pdf_direction)
+        .def("sample_position", &Light::sample_position)
         .def("pdf_position", &Light::pdf_position)
         //
         .def("sample_direct", &Light::sample_direct)

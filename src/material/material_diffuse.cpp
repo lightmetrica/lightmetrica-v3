@@ -82,6 +82,10 @@ public:
         }
         return (mapKd_ ? mapKd_->eval(geom.t) : Kd_) / Pi;
     }
+
+    virtual bool is_specular_any() const override {
+        return false;
+    }
 };
 
 LM_COMP_REG_IMPL(Material_Diffuse, "material::diffuse");

@@ -185,6 +185,10 @@ public:
     virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
         return Vec3(0_f);
     }
+
+    virtual bool is_specular_any() const override {
+        return true;
+    }
 };
 
 LM_COMP_REG_IMPL(Material_Glass, "material::glass");

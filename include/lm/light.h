@@ -81,7 +81,43 @@ public:
 
     /*!
     */
+    struct DirectionSample {
+        Vec3 wo;
+        Vec3 weight;
+        bool specular;
+    };
+
+    /*!
+    */
+    struct DirectionSampleU {
+        Vec2 ud;
+    };
+
+    /*!
+    */
+    virtual std::optional<DirectionSample> sample_direction(const PointGeometry& geom, const DirectionSampleU& u) const = 0;
+
+    /*!
+    */
     virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const = 0;
+
+    /*!
+    */
+    struct PositionSample {
+        PointGeometry geom;
+        Vec3 weight;
+    };
+
+    /*!
+    */
+    struct PositionSampleU {
+        Vec2 up;
+        Float upc;
+    };
+
+    /*!
+    */
+    virtual std::optional<PositionSample> sample_position(const PositionSampleU& u, const Transform& transform) const = 0;
 
     /*!
     */

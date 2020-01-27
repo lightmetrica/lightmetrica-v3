@@ -110,11 +110,35 @@ public:
         };
     }
 
+    virtual std::optional<DirectionSample> sample_direction(const PointGeometry& geom, const DirectionSampleU& us) const override {
+        const auto wo_local = math::sample_cosine_weighted(us.ud);
+        const auto [u, v] = math::orthonormal_basis(geom.n);
+        const Mat3 to_world(u, v, geom.n);
+        const auto wo_world = to_world * wo_local;
+        const auto pD_projSA = math::pdf_cosine_weighted_projSA();
+        const auto Le = eval(geom, wo_world);
+        const auto contrb = Le / pD_projSA;
+        return DirectionSample{
+            wo_world,
+            contrb,
+            false
+        };
+    }
+
     virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const override {
         if (glm::dot(wo, geom.n) <= 0_f) {
             return 0_f;
         }
         return math::pdf_cosine_weighted_projSA();
+    }
+
+    virtual std::optional<PositionSample> sample_position(const PositionSampleU& us, const Transform& transform) const override {
+        const auto geomL = sample_position_on_triangle_mesh(us.up, us.upc, transform);
+        const auto pA = tranformed_invA(transform);
+        return PositionSample{
+            geomL,
+            Vec3(1_f / pA)
+        };
     }
 
     virtual Float pdf_position(const PointGeometry&, const Transform& transform) const override {

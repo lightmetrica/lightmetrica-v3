@@ -180,6 +180,13 @@ public:
         return J(wo);
     }
 
+    virtual std::optional<PositionSample> sample_position() const override {
+        return PositionSample{
+            PointGeometry::make_degenerated(position_),
+            Vec3(1_f)
+        };
+    }
+
     virtual Float pdf_position(const PointGeometry&) const override {
         return 1_f;
     }
