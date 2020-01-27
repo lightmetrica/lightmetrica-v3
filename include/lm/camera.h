@@ -133,7 +133,7 @@ public:
         Looking by the solid angle measure, for instance, the set of rays are not uniform.
         \endrst
     */
-    virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window) const = 0;
+    virtual std::optional<RaySample> sample_ray(const RaySampleU& u) const = 0;
 
     /*!
     */
@@ -151,7 +151,7 @@ public:
 
     /*!
     */
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u) const = 0;
 
     /*!
         \brief Evaluate pdf for direction sampling.

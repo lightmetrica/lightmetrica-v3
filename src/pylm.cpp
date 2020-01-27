@@ -1016,11 +1016,11 @@ static void bind_camera(pybind11::module& m) {
         virtual Ray primary_ray(Vec2 rp) const override {
             PYBIND11_OVERLOAD_PURE(Ray, Camera, primary_ray, rp);
         }
-        virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Camera, sample_ray, u, window);
+        virtual std::optional<RaySample> sample_ray(const RaySampleU& u) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Camera, sample_ray, u);
         }
-        virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Camera, sample_direction, u, window);
+        virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Camera, sample_direction, u);
         }
         virtual Float pdf_direction(Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_direction, wo);

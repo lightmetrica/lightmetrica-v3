@@ -111,7 +111,7 @@ struct RaySampleU {
 static std::optional<RaySample> sample_ray(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
     if (sp.is_type(SceneInteraction::CameraTerminator)) {
         const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
-        const auto s = camera->sample_ray({u.ud}, sp.camera_cond.window);
+        const auto s = camera->sample_ray({u.ud});
         if (!s) {
             return {};
         }

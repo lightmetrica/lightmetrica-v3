@@ -155,20 +155,18 @@ public:
         return { position_, u_*d.x + v_ * d.y + w_ * d.z };
     }
 
-    virtual std::optional<RaySample> sample_ray(const RaySampleU& u, Vec4 window) const override {
-        const auto [x, y, w, h] = window.data.data;
+    virtual std::optional<RaySample> sample_ray(const RaySampleU& u) const override {
         return RaySample{
             PointGeometry::make_degenerated(position_),
-            primary_ray({x+w*u.ud[0], y+h*u.ud[1]}).d,
+            primary_ray(u.ud).d,
             Vec3(1_f),
             false
         };
     }
 
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, Vec4 window) const override {
-        const auto[x, y, w, h] = window.data.data;
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u) const override {
         return DirectionSample{
-            primary_ray({x+w*u.ud[0], y+h*u.ud[1]}).d,
+            primary_ray(u.ud).d,
             Vec3(1_f),
             false
         };

@@ -198,12 +198,6 @@ struct SceneInteraction {
     int primitive;          //!< Primitive node index.
     PointGeometry geom;     //!< Surface point geometry information.
 
-    // Information associated to terminator on camera
-    struct {
-        Vec4 window;
-        Float aspect;
-    } camera_cond;
-
     /*!
         \brief Check the scene interaction type.
     */
@@ -282,10 +276,9 @@ struct SceneInteraction {
         \param window Window in raster coordinates.
         \param aspect Aspect ratio.
     */
-    static SceneInteraction make_camera_terminator(Vec4 window) {
+    static SceneInteraction make_camera_terminator() {
         SceneInteraction sp;
         sp.type = CameraTerminator;
-        sp.camera_cond.window = window;
         return sp;
     }
 
