@@ -607,7 +607,7 @@ static std::optional<Vec2> raster_position(const Scene* scene, Vec3 wo) {
     Note that the scene interaction obtained from :cpp:func:`Scene::intersect` or 
     :cpp:func:`Scene::sample_distance` is not an endpont
     even if it might represent either a light or a sensor.
-    In this case, you want to use :cpp:func:`Scene::eval_contrb_endpoint`
+    In this case, you want to use :cpp:func:`Scene::eval_contrb_position`
     to enforce an evaluation as an endpoint.
     \endrst
 */
@@ -630,10 +630,10 @@ static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp
 /*!
     \brief Evaluate positional contribution of the endpoint.
 */
-static Vec3 eval_contrb_endpoint(const Scene* scene, const SceneInteraction& sp) {
+static Vec3 eval_contrb_position(const Scene* scene, const SceneInteraction& sp) {
     if (!sp.is_type(SceneInteraction::Endpoint)) {
         LM_THROW_EXCEPTION(Error::Unsupported,
-            "eval_contrb_endpoint() function only supports endpoint interactions.");
+            "eval_contrb_position() function only supports endpoint interactions.");
     }
     // Always 1 for now
     LM_UNUSED(scene);

@@ -225,7 +225,7 @@ public:
                 if (direct) {
                     const auto spL = hit->as_type(SceneInteraction::LightEndpoint);
                     const auto woL = -s->wo;
-                    const auto fs = scene_->eval_contrb_endpoint(spL, woL);
+                    const auto fs = scene_->eval_contrb_position(spL, woL);
                     const auto misw = [&]() -> Float {
                         if (pt_mode_ == PTMode::Naive) {
                             return 1_f;
