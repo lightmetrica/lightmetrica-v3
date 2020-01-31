@@ -762,8 +762,8 @@ static void bind_renderer(pybind11::module& m) {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Renderer, construct, prop);
         }
-        virtual void render() const override {
-            PYBIND11_OVERLOAD_PURE(void, Renderer, render);
+        virtual Json render() const override {
+            PYBIND11_OVERLOAD_PURE(Json, Renderer, render);
         }
     };
     pybind11::class_<Renderer, Renderer_Py, Component, Component::Ptr<Renderer>>(m, "Renderer")

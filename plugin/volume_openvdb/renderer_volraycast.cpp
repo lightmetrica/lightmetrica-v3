@@ -54,7 +54,7 @@ public:
     
     // Assume volume stores density of the extinction coefficient and
     // densityScale_ is multipled to the evaluated density value.
-    virtual void render() const override {
+    virtual Json render() const override {
         film_->clear();
         const auto size = film_->size();
 
@@ -106,6 +106,8 @@ public:
             // Record to the film
             film_->set_pixel(x, y, L);
         });
+
+        return {};
     }
 };
 

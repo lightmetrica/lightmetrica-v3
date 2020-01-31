@@ -59,7 +59,7 @@ public:
             });
     }
 
-    virtual void render() const override {
+    virtual Json render() const override {
 		scene_->require_primitive();
 		scene_->require_accel();
 		scene_->require_camera();
@@ -87,6 +87,8 @@ public:
                 film_->set_pixel(x, y, C);
             }
         });
+
+        return {};
     }
 };
 

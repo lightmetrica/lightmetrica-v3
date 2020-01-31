@@ -31,7 +31,7 @@ public:
         film_ = json::comp_ref<Film>(prop, "output");
     }
 
-    virtual void render() const override {
+    virtual Json render() const override {
         film_->clear();
         const auto [w, h] = film_->size();
         for (int y = 0; y < h; y++) {
@@ -39,6 +39,7 @@ public:
                 film_->set_pixel(x, y, color_);
             }
         }
+        return {};
     }
 };
 
