@@ -50,7 +50,9 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/medium.h"
     "${_INCLUDE_DIR}/phase.h"
     "${_INCLUDE_DIR}/volume.h"
-    "${_INCLUDE_DIR}/path.h")
+    "${_INCLUDE_DIR}/path.h"
+    "${_INCLUDE_DIR}/bidir.h"
+    "${_INCLUDE_DIR}/mut.h")
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
     "${_SOURCE_DIR}/version.cpp"
@@ -87,7 +89,12 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/accel/accel_sahbvh.cpp"
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
     "${_SOURCE_DIR}/renderer/renderer_raycast.cpp"
-    # "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_lt.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_bdpt.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_pssmlt.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_mlt.cpp"
+    #"${_SOURCE_DIR}/renderer/renderer_pt_old.cpp"
     # "${_SOURCE_DIR}/renderer/renderer_volpt.cpp"
     # "${_SOURCE_DIR}/renderer/renderer_volpt_naive.cpp"
     "${_SOURCE_DIR}/medium/medium_homogeneous.cpp"
@@ -96,6 +103,9 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/volume/volume_constant.cpp"
     "${_SOURCE_DIR}/phase/phase_hg.cpp"
     "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
+    "${_SOURCE_DIR}/mut/mut_bidir_simple.cpp"
+    "${_SOURCE_DIR}/mut/mut_bidir.cpp"
+    "${_SOURCE_DIR}/mut/mut_lens.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
 set(_PCH_FILES
     "${_PCH_DIR}/pch.h"
