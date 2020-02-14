@@ -154,7 +154,7 @@ public:
             #if MUT_LENS_POLL_FAILED_CONNECTION
             if (nL > 0 && nE > 0 && parallel::main_thread()) {
                 debug::poll({
-                    {"id", "failed_connection"},
+                    {"id", "mut_lens_failed_connection"},
                     {"v1", subpathL.vs[nL-1].sp.geom.p},
                     {"v2", subpathE->vs[nE-1].sp.geom.p}
                 });
