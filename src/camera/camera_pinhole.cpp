@@ -50,7 +50,8 @@ private:
     Float vfov_;      // Vertical field of view
     Float tf_;        // Half of the screen height at 1 unit forward from the position
 
-    Float aspect_;    // Aspect raio (height / width)
+    Float aspect_;              // Aspect raio (height / width)
+    Float preferred_aspect_;    // Preferred aspect ratio
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -63,7 +64,8 @@ public:
             {"eye", position_},
             {"center", center_},
             {"up", up_},
-            {"vfov", vfov_}
+            {"vfov", vfov_},
+            {"preferred_aspect", preferred_aspect_}
         };
     }
 
@@ -87,8 +89,8 @@ public:
         }
         vfov_ = json::value<Float>(prop, "vfov");        // Vertical FoV
         tf_ = tan(vfov_ * Pi / 180_f * .5_f);            // Precompute half of screen height
+        preferred_aspect_ = json::value<Float>(prop, "preferred_aspect", 1_f);
     }
-
 
 private:
     // Compute Jacobian

@@ -12,6 +12,33 @@
 #include <lm/parallel.h>
 #include <lm/mut.h>
 
+// Record acceptance ratio (overall and per-strategy)
+#define MLT_STAT_ACCEPTANCE_RATIO 1
+// Poll paths
+#define MLT_POLL_PATHS 1
+
+#if MLT_POLL_PATHS
+#include <lm/debug.h>
+#endif
+
+// ------------------------------------------------------------------------------------------------
+
+#if MLT_POLL_PATHS
+LM_NAMESPACE_BEGIN(nlohmann)
+// Specialize adl_serializer for one-way automatic conversion from path to Json type
+template <>
+struct adl_serializer<lm::Path> {
+    static void to_json(lm::Json& j, const lm::Path& path) {
+        for (const auto& v : path.vs) {
+            j.push_back(v.sp.geom.p);
+        }
+    }
+};
+LM_NAMESPACE_END(nlohmann)
+#endif
+
+// ------------------------------------------------------------------------------------------------
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // A set of mutation strategies
@@ -55,8 +82,6 @@ public:
 LM_COMP_REG_IMPL(MutSet, "mutset::default");
 
 // ------------------------------------------------------------------------------------------------
-
-#define MLT_STAT_ACCEPTANCE_RATIO 1
 
 // Metropolis light transport (MLT)
 class Renderer_MLT final : public Renderer {
@@ -152,6 +177,16 @@ public:
             auto& ctx = contexts[thread_id];
             LM_UNUSED(sample_index);
 
+            #if MLT_POLL_PATHS
+            if (thread_id == 0) {
+                debug::poll({
+                    {"id", "path"},
+                    {"sample_index", sample_index},
+                    {"path", ctx.curr}
+                });
+            }
+            #endif
+
             const auto [accept, strategy_index] = [&]() -> std::tuple<bool, int> {
                 // Select a mutation strategy
                 const auto [mut, strategy_index] = mutset_->select_mut(ctx.rng);
@@ -173,6 +208,16 @@ public:
                 }
                 else {
                     // Rejected
+                    #if MLT_POLL_PATHS
+                    // Record proposed but rejeced paths
+                    if (thread_id == 0) {
+                        debug::poll({
+                            {"id", "rejected_path"},
+                            {"sample_index", sample_index},
+                            {"path", prop->path}
+                        });
+                    }
+                    #endif
                     return { false, strategy_index };
                 }
             }();

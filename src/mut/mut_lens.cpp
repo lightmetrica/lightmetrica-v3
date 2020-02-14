@@ -7,6 +7,14 @@
 #include <lm/core.h>
 #include <lm/mut.h>
 
+// Poll failed connections
+#define MUT_LENS_POLL_FAILED_CONNECTION 1
+
+#if MUT_LENS_POLL_FAILED_CONNECTION
+#include <lm/debug.h>
+#include <lm/parallel.h>
+#endif
+
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // Lens perturbation
@@ -143,6 +151,15 @@ public:
         // Generate proposal
         const auto prop_path = path::connect_subpaths(scene_, subpathL, *subpathE, nL, nE);
         if (!prop_path) {
+            #if MUT_LENS_POLL_FAILED_CONNECTION
+            if (nL > 0 && nE > 0 && parallel::main_thread()) {
+                debug::poll({
+                    {"id", "failed_connection"},
+                    {"v1", subpathL.vs[nL-1].sp.geom.p},
+                    {"v2", subpathE->vs[nE-1].sp.geom.p}
+                });
+            }
+            #endif
             return {};
         }
 

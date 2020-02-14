@@ -52,7 +52,7 @@ struct SceneNode {
     // --------------------------------------------------------------------------------------------
     
     //! Variables available for Primitive type.
-	struct {
+	struct Primitive {
 		Mesh* mesh = nullptr;               //!< Underlying mesh.
 		Material* material = nullptr;       //!< Underlying material.
 		Light* light = nullptr;             //!< Underlying light.
@@ -65,12 +65,13 @@ struct SceneNode {
 			ar(mesh, material, light, camera, medium);
 		}
 		//! \endcond
-	} primitive;
+	};
+    Primitive primitive;
 
     // --------------------------------------------------------------------------------------------
 
     //! Variable available for Group type.
-    struct {
+    struct Group {
         std::vector<int> children;			    //!< Child primitives.
         bool instanced;							//!< True if the group is an instance group.
         std::optional<Mat4> local_transform;	//!< Transformation applied to children.
@@ -81,7 +82,8 @@ struct SceneNode {
             ar(children, instanced, local_transform);
         }
         //! \endcond
-    } group;
+    };
+    Group group;
 
     // --------------------------------------------------------------------------------------------
 
