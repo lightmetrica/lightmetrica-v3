@@ -378,6 +378,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Renderer_PT_MIS, "renderer::pt_mis");
+LM_COMP_REG_IMPL_ALIAS(Renderer_PT_MIS, "renderer::pt_mis", "renderer::pt");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

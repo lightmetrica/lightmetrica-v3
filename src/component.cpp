@@ -139,6 +139,7 @@ private:
         Component::ReleaseFunction release_func;
     };
     std::unordered_map<std::string, CreateAndReleaseFunctions> func_map_;
+    std::unordered_map<std::string, std::string> func_alias_map_;
 
     // Loaded plugins
     std::unordered_map<std::string, std::unique_ptr<SharedLibrary>> plugins_;
@@ -164,7 +165,20 @@ private:
     }
 
 public:
-    Component* create_comp(const std::string& key) {
+    Component* create_comp(const std::string& key_) {
+        // Find alias first
+        auto alias = func_alias_map_.find(key_);
+        std::string key;
+        if (alias == func_alias_map_.end()) {
+            // Alias is not found, use key as it is
+            key = key_;
+        }
+        else {
+            // Alias is found, use referenced key
+            key = alias->second;
+        }
+
+        // Find registered component
         auto it = func_map_.find(key);
         if (it == func_map_.end()) {
             LM_ERROR("Missing component [key='{}']. Check if", key);
@@ -177,21 +191,29 @@ public:
         Access::key(p) = key;
         Access::create_func(p) = it->second.create_func;
         Access::release_func(p) = it->second.release_func;
+
         return p;
     }
 
     void reg(
         const std::string& key,
+        const std::string& alias,
         const Component::CreateFunction& create_func,
         const Component::ReleaseFunction& release_func) {
         if (func_map_.find(key) != func_map_.end()) {
             LM_WARN("Component is already registered [key='{}'], overriding", key);
         }
         func_map_[key] = CreateAndReleaseFunctions{ create_func, release_func };
+        if (!alias.empty()) {
+            func_alias_map_[alias] = key;
+        }
     }
 
-    void unreg(const std::string& key) {
+    void unreg(const std::string& key, const std::string& alias) {
         func_map_.erase(key);
+        if (!alias.empty()) {
+            func_alias_map_.erase(alias);
+        }
     }
 
     void load_plugin(const std::string& p) {
@@ -345,12 +367,12 @@ LM_PUBLIC_API Component* create_comp(const std::string& key) {
     return ComponentContext::instance().create_comp(key);
 }
 
-LM_PUBLIC_API void reg(const std::string& key, const Component::CreateFunction& create_func, const Component::ReleaseFunction& release_func) {
-    ComponentContext::instance().reg(key, create_func, release_func);
+LM_PUBLIC_API void reg(const std::string& key, const std::string& alias, const Component::CreateFunction& create_func, const Component::ReleaseFunction& release_func) {
+    ComponentContext::instance().reg(key, alias, create_func, release_func);
 }
 
-LM_PUBLIC_API void unreg(const std::string& key) {
-    ComponentContext::instance().unreg(key);
+LM_PUBLIC_API void unreg(const std::string& key, const std::string& alias) {
+    ComponentContext::instance().unreg(key, alias);
 }
 
 LM_PUBLIC_API void load_plugin(const std::string& path) {
