@@ -21,7 +21,6 @@ LM_NAMESPACE_BEGIN(path)
 */
 
 #pragma region Ray sampling
-
 /*
     Samples the joint distribution of the scene interaction x and the direction wo
     originated from x. (x, wo) ~ p(x, wo).
@@ -41,6 +40,7 @@ struct RaySample {
     Vec3 weight;            //!< Contribution divided by probability.
     bool specular;          //!< Sampled from specular distribution.
 
+#if 1
     /*!
         \brief Get a ray from the sample.
         
@@ -53,6 +53,7 @@ struct RaySample {
         assert(!sp.geom.infinite);
         return { sp.geom.p, wo };
     }
+#endif
 };
 
 /*!
@@ -85,6 +86,7 @@ struct RaySampleU {
     };
 };
 
+#if 0
 /*!
     \brief Sample a ray given surface point and incident direction.
     \param rng Random number generator.
@@ -181,6 +183,54 @@ static std::optional<RaySample> sample_ray(const RaySampleU& u, const Scene* sce
     }
     LM_UNREACHABLE_RETURN();
 }
+#endif
+
+/*!
+*/
+static std::optional<RaySample> sample_primary_ray(const RaySampleU& u, const Scene* scene, TransDir trans_dir) {
+    if (trans_dir == TransDir::EL) {
+        const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
+        const auto s = camera->sample_ray({u.ud});
+        if (!s) {
+            return {};
+        }
+        return RaySample{
+            SceneInteraction::make_camera_endpoint(
+                scene->camera_node(),
+                s->geom
+            ),
+            s->wo,
+            s->weight,
+            s->specular
+        };
+    }
+    else if (trans_dir == TransDir::LE) {
+        const auto [light_index, p_sel] = scene->sample_light_selection(u.upc[0]);
+        const auto light_primitive_index = scene->light_primitive_index_at(light_index);
+        const auto& node = scene->node_at(light_primitive_index.index);
+        const auto* light = node.primitive.light;
+        const auto s = light->sample_ray({u.up,u.upc[1],u.ud}, light_primitive_index.global_transform);
+        if (!s) {
+            return {};
+        }
+        return RaySample{
+            SceneInteraction::make_light_endpoint(
+                light_primitive_index.index,
+                s->geom
+            ),
+            s->wo,
+            s->weight,
+            s->specular
+        };
+    }
+    LM_UNREACHABLE_RETURN();
+}
+
+/*!
+*/
+static std::optional<RaySample> sample_primary_ray(Rng& rng, const Scene* scene, TransDir trans_dir) {
+    return sample_primary_ray(rng.next<RaySampleU>(), scene, trans_dir);
+}
 
 #pragma endregion
 
@@ -238,6 +288,13 @@ static std::optional<PositionSample> sample_position(const PositionSampleU& u, c
     }
     LM_UNREACHABLE_RETURN();
 }
+
+/*!
+*/
+static std::optional<PositionSample> sample_position(Rng& rng, const Scene* scene, TransDir trans_dir) {
+    return sample_position(rng.next<PositionSampleU>(), scene, trans_dir);
+}
+
 #pragma endregion
 
 // ------------------------------------------------------------------------------------------------
@@ -314,6 +371,12 @@ static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u
     }
     LM_UNREACHABLE_RETURN();  
 };
+
+/*!
+*/
+static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
+    return sample_direction(rng.next<DirectionSampleU>(), scene, sp, wi, trans_dir);
+}
 
 /*!
     \brief Evaluate pdf for direction sampling.
@@ -412,6 +475,12 @@ static std::optional<RaySample> sample_direct_light(const RaySampleU& u, const S
 
 /*!
 */
+static std::optional<RaySample> sample_direct_light(Rng& rng, const Scene* scene, const SceneInteraction& sp) {
+    return sample_direct_light(rng.next<RaySampleU>(), scene, sp);
+}
+
+/*!
+*/
 static std::optional<RaySample> sample_direct_camera(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp) {
     const auto& primitive = scene->node_at(scene->camera_node()).primitive;
     const auto s = primitive.camera->sample_direct({u.ud}, sp.geom);
@@ -427,6 +496,12 @@ static std::optional<RaySample> sample_direct_camera(const RaySampleU& u, const 
         s->weight,
         s->specular
     };
+}
+
+/*!
+*/
+static std::optional<RaySample> sample_direct_camera(Rng& rng, const Scene* scene, const SceneInteraction& sp) {
+    return sample_direct_camera(rng.next<RaySampleU>(), scene, sp);
 }
 
 /*!

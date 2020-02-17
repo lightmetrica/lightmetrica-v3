@@ -18,7 +18,21 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class PSSMLTState {
 private:
     // Variable type used to represent the state of subpaths
-    using SubpathSampleU = std::vector<path::RaySampleU>;
+    struct VertSampleU {
+        union {
+            struct {
+                Vec2 u;
+                Vec2 uc;
+            };
+            Float data[4];
+        };
+
+        template <typename T>
+        T as() const {
+            return T{ u, uc };
+        }
+    };
+    using SubpathSampleU = std::vector<VertSampleU>;
 
 private:
     int min_verts_;         // Minimum number of path vertices
@@ -35,39 +49,39 @@ public:
     {
         usL_.assign(max_verts_, {});
         usE_.assign(max_verts_, {});
-        for (auto& u : usE_) u = rng.next<path::RaySampleU>();
-        for (auto& u : usL_) u = rng.next<path::RaySampleU>();
+        for (auto& u : usE_) u = rng.next<VertSampleU>();
+        for (auto& u : usL_) u = rng.next<VertSampleU>();
     }
 
 private:
     // Map a subpath from the state
-    Path map_subpath(const SubpathSampleU& us, const Scene* scene, TransDir trans_dir, const SceneInteraction& sp_term) const {
+    Path map_subpath(const SubpathSampleU& us, const Scene* scene, TransDir trans_dir) const {
         // Perform random walk
-        Vec3 wi{};
-        SceneInteraction sp = sp_term;
         Path path;
-        for (int i = 0;; i++) {
-            // Sample a ray
-            const auto s = path::sample_ray(us[i], scene, sp, wi, trans_dir);
-            if (!s || math::is_zero(s->weight)) {
+        const auto s_ep = path::sample_position(us[0].as<path::PositionSampleU>(), scene, trans_dir);
+        path.vs.push_back({s_ep->sp, false});   
+        while (path.num_verts() < max_verts_) {
+            // Sample direction
+            const int i = path.num_verts() - 1;
+            auto* v_curr = path.subpath_vertex_at(i);
+            auto* v_prev = path.subpath_vertex_at(i-1);
+            const auto wi = path.direction(v_curr, v_prev);
+            const auto s = path::sample_direction(us[i+1].as<path::DirectionSampleU>(), scene, v_curr->sp, wi, trans_dir);
+            if (!s) {
                 break;
             }
 
-            // Add vertex
-            path.vs.push_back({ s->sp, s->specular });
-            if (path.num_verts() >= max_verts_) {
-                break;
-            }
+            // Update the specular flag
+            v_curr->specular = s->specular;
 
             // Intersection to next surface
-            const auto hit = scene->intersect(s->ray());
+            const auto hit = scene->intersect({ v_curr->sp.geom.p, s->wo });
             if (!hit) {
                 break;
             }
 
-            // Update
-            wi = -s->wo;
-            sp = *hit;
+            // Add a vertex
+            path.vs.push_back({ *hit, path::is_specular_any(scene, *hit) });
         }
         return path;
     }
@@ -90,10 +104,8 @@ public:
     };
     CachedPaths map(const Scene* scene) const {
         // Map subpaths
-        const auto subpathE = map_subpath(usE_, scene, TransDir::EL,
-            SceneInteraction::make_camera_term());
-        const auto subpathL = map_subpath(usL_, scene, TransDir::LE,
-            SceneInteraction::make_light_term());
+        const auto subpathE = map_subpath(usE_, scene, TransDir::EL);
+        const auto subpathL = map_subpath(usL_, scene, TransDir::LE);
 
         // Number of vertices in each subpath
         const int nE = subpathE.num_verts();
@@ -166,7 +178,7 @@ public:
         };
 
         // Number of states necessary for a vertex
-        const int N = sizeof(path::RaySampleU) / sizeof(Float);
+        const int N = sizeof(VertSampleU) / sizeof(Float);
 
         // Perturb a subpath
         const auto perturb_subpath = [&](SubpathSampleU& prop_us, const SubpathSampleU& curr_us) {
@@ -209,7 +221,7 @@ public:
         scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
         scene_->camera()->set_aspect_ratio(film_->aspect());
-        min_verts_ = json::value<int>(prop, "min_verts");
+        min_verts_ = json::value<int>(prop, "min_verts", 2);
         max_verts_ = json::value<int>(prop, "max_verts");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
         const auto sched_name = json::value<std::string>(prop, "scheduler");

@@ -26,7 +26,47 @@ def scenes_small():
 def load(scene, scene_path, name):
     return globals()[name](scene, scene_path)
 
+def plane_emitter(scene, scene_path):
+    """
+    A scene containing only a single area light.
+    The scene is useful to test the most simpelst configuration.
+    """
+    camera = lm.load_camera('camera', 'pinhole', {
+        'position': [0,0,5],
+        'center': [0,0,0],
+        'up': [0,1,0],
+        'vfov': 30
+    })
+    mesh = lm.load_mesh('mesh', 'raw', {
+        'ps': [-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1],
+        'ns': [0,0,1],
+        'ts': [0,0,1,0,1,1,0,1],
+        'fs': {
+            'p': [0,1,2,0,2,3],
+            'n': [0,0,0,0,0,0],
+            't': [0,1,2,0,2,3]
+        }
+    })
+    material = lm.load_material('mat_black', 'diffuse', {
+        'Kd': [0,0,0]
+    })
+    light = lm.load_light('light', 'area', {
+        'Ke': [1,1,1],
+        'mesh': mesh.loc()
+    })
+    scene.add_primitive({
+        'camera': camera.loc()
+    })
+    scene.add_primitive({
+        'mesh': mesh.loc(),
+        'material': material.loc(),
+        'light': light.loc()
+    })
+
 def fireplace_room(scene, scene_path):
+    """
+    Fireplace room by Wig42.
+    """
     camera = lm.load_camera('camera_main', 'pinhole', {
         'position': [5.101118, 1.083746, -2.756308],
         'center': [4.167568, 1.078925, -2.397892],
@@ -43,7 +83,31 @@ def fireplace_room(scene, scene_path):
         'model': model.loc()
     })
 
+def cornell_box_empty_white(scene, scene_path):
+    """
+    Cornell box only with white walls.
+    """
+    camera = lm.load_camera('camera_main', 'pinhole', {
+        'position': [0,1,5],
+        'center': [0,1,0],
+        'up': [0,1,0],
+        'vfov': 30,
+        'preferred_aspect': 1
+    })
+    model = lm.load_model('model_obj', 'wavefrontobj', {
+        'path': os.path.join(scene_path, 'cornell_box/CornellBox-Empty-White.obj')
+    })
+    scene.add_primitive({
+        'camera': camera.loc()
+    })
+    scene.add_primitive({
+        'model': model.loc()
+    })
+
 def cornell_box_sphere(scene, scene_path):
+    """
+    Cornell box with specular spheres.
+    """
     camera = lm.load_camera('camera_main', 'pinhole', {
         'position': [0,1,5],
         'center': [0,1,0],

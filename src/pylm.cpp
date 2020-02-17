@@ -502,13 +502,10 @@ static void bind_surface(pybind11::module& m) {
 
     pybind11::enum_<SceneInteraction::Type>(m, "SceneInteractionType")
         .value("None", SceneInteraction::None)
-        .value("CameraTerm", SceneInteraction::CameraTerm)
-        .value("LightTerm", SceneInteraction::LightTerm)
         .value("CameraEndpoint", SceneInteraction::CameraEndpoint)
         .value("LightEndpoint", SceneInteraction::LightEndpoint)
         .value("SurfaceInteraction", SceneInteraction::SurfaceInteraction)
         .value("MediumInteraction", SceneInteraction::MediumInteraction)
-        .value("Terminator", SceneInteraction::Terminator)
         .value("Endpoint", SceneInteraction::Endpoint)
         .value("Midpoint", SceneInteraction::Midpoint)
         .export_values();

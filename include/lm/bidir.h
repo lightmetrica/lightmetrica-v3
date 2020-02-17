@@ -276,7 +276,7 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
     
     // Sample initial vertex
     if (path.num_verts() == 0) {
-        const auto s = path::sample_position(rng.next<PositionSampleU>(), scene, trans_dir);
+        const auto s = path::sample_position(rng, scene, trans_dir);
         if (!s) {
             return;
         }
@@ -284,12 +284,12 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
     }
     // Perform random walk
     while (path.num_verts() < max_verts) {
-        // Sample a direction
+        // Sample direction
         const int i = path.num_verts() - 1;
         auto* v_curr = path.subpath_vertex_at(i);
         auto* v_prev = path.subpath_vertex_at(i-1);
         const auto wi = path.direction(v_curr, v_prev);
-        const auto s = path::sample_direction(rng.next<DirectionSampleU>(), scene, v_curr->sp, wi, trans_dir);
+        const auto s = path::sample_direction(rng, scene, v_curr->sp, wi, trans_dir);
         if (!s) {
             break;
         }

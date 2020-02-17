@@ -28,7 +28,7 @@ public:
         scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
         scene_->camera()->set_aspect_ratio(film_->aspect());
-        min_verts_ = json::value<int>(prop, "min_verts");
+        min_verts_ = json::value<int>(prop, "min_verts", 2);
         max_verts_ = json::value<int>(prop, "max_verts");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
         const auto sched_name = json::value<std::string>(prop, "scheduler");

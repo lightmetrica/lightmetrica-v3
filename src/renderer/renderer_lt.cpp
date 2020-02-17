@@ -18,13 +18,13 @@ class Renderer_LT_NEE : public Renderer {
 private:
     Scene* scene_;                                  // Reference to scene asset
     Film* film_;                                    // Reference to film asset for output
-    int max_length_;                                // Maximum number of path length
+    int max_verts_;                                 // Maximum number of path vertices
     std::optional<unsigned int> seed_;              // Random seed
     Component::Ptr<scheduler::Scheduler> sched_;    // Scheduler for parallel processing
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(scene_, film_, max_length_, seed_, sched_);
+        ar(scene_, film_, max_verts_, seed_, sched_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
@@ -38,7 +38,7 @@ public:
         scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
         scene_->camera()->set_aspect_ratio(film_->aspect());
-        max_length_ = json::value<int>(prop, "max_length");
+        max_verts_ = json::value<int>(prop, "max_verts");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
 
         // Scheduler is fixed to image space scheduler
@@ -58,7 +58,7 @@ public:
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
             // Sample primary ray
-            const auto s_primary = path::sample_ray(rng.next<path::RaySampleU>(), scene_, SceneInteraction::make_light_term(), {}, TransDir::LE);
+            const auto s_primary = path::sample_primary_ray(rng, scene_, TransDir::LE);
 
             // Intersection to next surface
             const auto hit_primary = scene_->intersect(s_primary->ray());
@@ -74,9 +74,9 @@ public:
             Vec3 wi = -s_primary->wo;
 
             // Perform random walk
-            for (int length = 1; length < max_length_; length++) {
+            for (int num_verts = 2; num_verts < max_verts_; num_verts++) {
                 // Sample a direction based on current scene interaction
-                const auto s = path::sample_direction(rng.next<path::DirectionSampleU>(), scene_, sp, wi, TransDir::LE);
+                const auto s = path::sample_direction(rng, scene_, sp, wi, TransDir::LE);
                 if (!s || math::is_zero(s->weight)) {
                     break;
                 }
@@ -84,7 +84,7 @@ public:
                 // Sample a NEE edge
                 [&]{
                     // Sample a camera
-                    const auto sE = path::sample_direct_camera(rng.next<path::RaySampleU>(), scene_, sp);
+                    const auto sE = path::sample_direct_camera(rng, scene_, sp);
                     if (!sE) {
                         return;
                     }
@@ -115,7 +115,7 @@ public:
                 throughput *= s->weight;
 
                 // Russian roulette
-                if (length > 3) {
+                if (num_verts > 5) {
                     const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));
                     if (rng.u() < q) {
                         break;
@@ -136,6 +136,6 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Renderer_LT_NEE, "renderer::lt_nee");
+LM_COMP_REG_IMPL(Renderer_LT_NEE, "renderer::lt");
 
 LM_NAMESPACE_END(LM_NAMESPACE)

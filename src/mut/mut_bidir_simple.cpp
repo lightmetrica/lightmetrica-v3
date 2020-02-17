@@ -19,7 +19,7 @@ private:
 public:
     virtual void construct(const Json& prop) override {
         scene_ = json::comp_ref<Scene>(prop, "scene");
-        min_verts_ = json::value<int>(prop, "min_verts");
+        min_verts_ = json::value<int>(prop, "min_verts", 2);
         max_verts_ = json::value<int>(prop, "max_verts");
     }
 

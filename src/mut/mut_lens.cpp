@@ -8,7 +8,7 @@
 #include <lm/mut.h>
 
 // Poll failed connections
-#define MUT_LENS_POLL_FAILED_CONNECTION 1
+#define MUT_LENS_POLL_FAILED_CONNECTION 0
 
 #if MUT_LENS_POLL_FAILED_CONNECTION
 #include <lm/debug.h>
