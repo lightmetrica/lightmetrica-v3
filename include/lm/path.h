@@ -40,7 +40,6 @@ struct RaySample {
     Vec3 weight;            //!< Contribution divided by probability.
     bool specular;          //!< Sampled from specular distribution.
 
-#if 1
     /*!
         \brief Get a ray from the sample.
         
@@ -53,7 +52,6 @@ struct RaySample {
         assert(!sp.geom.infinite);
         return { sp.geom.p, wo };
     }
-#endif
 };
 
 /*!
@@ -86,7 +84,6 @@ struct RaySampleU {
     };
 };
 
-#if 0
 /*!
     \brief Sample a ray given surface point and incident direction.
     \param rng Random number generator.
@@ -109,83 +106,6 @@ struct RaySampleU {
     or the case when the early return is possible for instance when 
     the evaluated contribution of the sampled direction is zero.
     \endrst
-*/
-static std::optional<RaySample> sample_ray(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
-    if (sp.is_type(SceneInteraction::CameraTerm)) {
-        const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
-        const auto s = camera->sample_ray({u.ud});
-        if (!s) {
-            return {};
-        }
-        return RaySample{
-            SceneInteraction::make_camera_endpoint(
-                scene->camera_node(),
-                s->geom
-            ),
-            s->wo,
-            s->weight,
-            s->specular
-        };
-    }
-    else if (sp.is_type(SceneInteraction::LightTerm)) {
-        const auto [light_index, p_sel] = scene->sample_light_selection(u.upc[0]);
-        const auto light_primitive_index = scene->light_primitive_index_at(light_index);
-        const auto& node = scene->node_at(light_primitive_index.index);
-        const auto* light = node.primitive.light;
-        const auto s = light->sample_ray({u.up,u.upc[1],u.ud}, light_primitive_index.global_transform);
-        if (!s) {
-            return {};
-        }
-        return RaySample{
-            SceneInteraction::make_light_endpoint(
-                light_primitive_index.index,
-                s->geom
-            ),
-            s->wo,
-            s->weight,
-            s->specular
-        };
-    }
-    else if (sp.is_type(SceneInteraction::MediumInteraction)) {
-        const auto& node = scene->node_at(sp.primitive);
-        const auto& primitive = node.primitive;
-        const auto s = primitive.medium->phase()->sample_direction({u.ud}, sp.geom, wi);
-        if (!s) {
-            return {};
-        }
-        return RaySample{
-            sp,
-            s->wo,
-            s->weight,
-            s->specular
-        };
-    }
-    else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
-        const auto& node = scene->node_at(sp.primitive);
-        const auto& primitive = node.primitive;
-        if (!primitive.material) {
-            return {};
-        }
-        const auto s = primitive.material->sample_direction({u.ud,u.udc}, sp.geom, wi, (Material::TransDir)(trans_dir));
-        if (!s) {
-            return {};
-        }
-        const auto sn_corr = surface::shading_normal_correction(sp.geom, wi, s->wo, trans_dir);
-        return RaySample{
-            SceneInteraction::make_surface_interaction(
-                sp.primitive,
-                sp.geom
-            ),
-            s->wo,
-            s->weight * sn_corr,
-            s->specular
-        };
-    }
-    LM_UNREACHABLE_RETURN();
-}
-#endif
-
-/*!
 */
 static std::optional<RaySample> sample_primary_ray(const RaySampleU& u, const Scene* scene, TransDir trans_dir) {
     if (trans_dir == TransDir::EL) {
