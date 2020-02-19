@@ -34,6 +34,7 @@ This documentation includes **guide**, **examples and tests**, and **references*
     build
     managing_experiment
     basic_rendering
+    extending_framework
     
 .. toctree::
     :maxdepth: 2
