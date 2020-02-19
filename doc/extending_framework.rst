@@ -7,6 +7,10 @@ In this section, we will explain how to extend the features of Lightmetrica.
 
     This section focuses on describing the concepts rather than providing actual working codes to implement the extensions. For this, you can refer to :ref:`example`.
 
+.. note::
+
+    This section covers only basic concepts to extend the framework. You will find more detailed discussion about the component object system used in the framework in :ref:`component`.
+
 Component interface
 ==========================
 
@@ -52,7 +56,7 @@ Once you identify the component interface that you want to extend, the next step
 
 .. code-block:: cpp
 
-    #include <lm/renderer>
+    #include <lm/renderer.h>
     // ...
 
     class Renderer_Blank final : public Renderer {
@@ -94,8 +98,14 @@ In this example, :cpp:func:`lm::json::value` function checks ``color`` key in th
 :cpp:func:`lm::Renderer::render` function implements the core logic of the renderering technique.
 In this example, it just iterates through every pixel in the given film and set it to a constant color.
 
+.. note::
+
+    All built-in features of Lightmetrica are also implemented as extensions,
+    which would be useful references for your implementation.
+    You can find them in ``src/<interface_name>`` directories.
+
 Using extended feature from Python API
------------------------------------------ 
+==================================================== 
 
 In the case of :cpp:class:`lm::Renderer` class, the instance creation of the class corresponds to ``lm.load_renderer()`` function in Python API. The following code creates a renderer using the identifier (``blank``) which corresponds to the second half of the identifier used for the registration (``renderer::blank``).
 
@@ -112,5 +122,18 @@ In the case of :cpp:class:`lm::Renderer` class, the instance creation of the cla
 
 .. note::
 
-    Actual usage of the implemented component depends on the interface. Many of the class representing scene assets (e.g., material, light, camera, etc.) can be created by ``lm.load_*`` function, but some interfaces uses different interface or even used implicitly in the framework. 
-    For the full detail about the component object system of the framework, including the API to create an instance from C++ side, please refer to :ref:`Component`.
+    Actual usage of the implemented component depends on the interface. Many of the class representing scene assets (e.g., material, light, camera, etc.) can be created by ``lm.load_*`` function, but some interfaces might use different API or might be used implicitly in the framework. 
+
+On advanced topics
+==========================
+
+This section doesn't fully cover the entire feature of the component object system of the framework.
+For the full detail, please refer to :ref:`Component`, where we will discuss about the following  advanced concepts:
+
+- Instance creation in C++
+- Different types of instances (owned, weak)
+- Managing component object tree
+- Supporting locator lookup
+- Supporting serialization
+
+
