@@ -165,6 +165,37 @@ The following table shows where each operation is implemented.
     * - :math:`p_{\sigma^\bot \mathrm{phase}}(\omega\mid\mathbf{x})`
       - :cpp:func:`lm::Phase::pdf_direction`
 
+Direct endpoint sampling
+-------------------------------------
+
+- Sampling: :cpp:func:`lm::path::sample_direct`
+- PDF: :cpp:func:`lm::path::pdf_direct`
+
+The function samples a direction :math:`\omega` directly toward an endpoint based on the current position :math:`\mathbf{x}`. This sampling strategy is mainly used to implement next event estimation.
+
+.. math::
+
+  \omega \sim
+  \begin{cases}
+    p_{\sigma^\bot \mathrm{directL}}(\cdot\mid\mathbf{x})    & \text{if transport direction is } E\to L \\
+    p_{\sigma^\bot \mathrm{directE}}(\cdot\mid\mathbf{x})    & \text{if transport direction is } L\to E.
+  \end{cases}
+
+The following table shows where each operation is implemented.
+
+.. list-table::
+    :header-rows: 1
+
+    * - Operation
+      - Implemented in
+    * - :math:`\omega \sim p_{\sigma^\bot \mathrm{directL}}(\cdot\mid\mathbf{x})`
+      - :cpp:func:`lm::Light::sample_direct`
+    * - :math:`p_{\sigma^\bot \mathrm{directL}}(\omega\mid\mathbf{x})`
+      - :cpp:func:`lm::Light::pdf_direct`
+    * - :math:`\omega \sim p_{\sigma^\bot \mathrm{directE}}(\cdot\mid\mathbf{x})`
+      - :cpp:func:`lm::Camera::sample_direct`
+    * - :math:`p_{\sigma^\bot \mathrm{directE}}(\omega\mid\mathbf{x})`
+      - :cpp:func:`lm::Camera::pdf_direct`
 
 Evaluating directional components
 -------------------------------------
@@ -206,6 +237,7 @@ The following table shows where each operation is implemented.
   :math:`\omega_i` is not used when :math:`\mathbf{x}` is endpoint.
   Also, :math:`\omega_o` always represents outgoing direction irrespective to the transport directions,
   that is, the same direction as the transport direction.
+
 
 Global path sampling
 ===========================
