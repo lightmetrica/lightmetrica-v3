@@ -175,17 +175,16 @@ Infinitely distant point
 
 ``geom.infinite`` representing a virtual point far distant from a surface in certain direction :math:`\omega`. The point does not represent an actual point associated with a certain position in the scene. Also in this case, the normal and tangent vectors are undefined. Specifically in this case, ``geom.wo`` represents the direction toward the distant point. Notation: :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{inf}}`. Since the point is characterized by a direction :math:`\omega` we sometime denote the point as :math:`\mathbf{x}(\omega)\in\mathcal{S}_{\mathrm{inf}}`.
 
-Scene intersection query
+Ray-scene intersection query
 ================================
 
-Scene intersection query is a basic building block of the rendering technique.
-Our API supports two types of the scene intersection queries: *ray casting* and *visibility check*. 
+Ray-scene intersection query is a basic building block of the rendering technique.
+Our API supports two types of the ray-scene intersection queries: *ray casting* and *visibility check*. 
 
 Ray casting
 -------------------------------------
 
-- Function: :cpp:func:`lm::Scene::intersect`
-
+The query is implemented in :cpp:func:`lm::Scene::intersect` function.
 *Ray casting* is an operation to find the closest next surface point :math:`\mathbf{x}_\mathcal{M}(\mathcal{x},\omega) \in \mathcal{M}_S` along with a direction :math:`\omega` from a point :math:`\mathbf{x}` within the range of the distance :math:`[t_{\mathrm{min}},t_{\mathrm{max}}]`, where
 
 .. math::
@@ -205,8 +204,7 @@ Note that :math:`\mathbf{x}_\mathcal{M}(\mathbf{x},\omega, t_{\mathrm{min}},\inf
 Checking visibility
 -------------------------------------
 
-- Function: :cpp:func:`lm::Scene::visible`
-
+The query is implemented in :cpp:func:`lm::Scene::visible` function.
 The function evaluates the *visibility function* defined as
 
 .. math::
@@ -353,6 +351,7 @@ The function samples a direction :math:`\omega` originated from a current positi
 .. math::
 
   \omega \sim
+  p_{\sigma^* \to}(\cdot\mid\mathbf{x}) =
   \begin{cases}
     p_{\sigma^* L}(\cdot\mid\mathbf{x})    &   \text{if } \mathbf{x} \in \mathcal{M}_L \\
     p_{\sigma^* E}(\cdot\mid\mathbf{x})    &   \text{if } \mathbf{x} \in \mathcal{M}_E \\
@@ -425,7 +424,7 @@ The function evaluates directional component of path integral :math:`f(\mathbf{x
 
 .. math::
 
-  f(\mathbf{x},\omega_i,\omega_o) :=
+  f(\mathbf{x},\omega_i,\omega_o) =
   \begin{cases}
     L_e(\mathbf{x}, \omega_o)         & \mathbf{x}\in\mathcal{M}_L \\
     W_e(\mathbf{x}, \omega_o)         & \mathbf{x}\in\mathcal{M}_E \\
@@ -489,7 +488,7 @@ To achieve the transformation of densities from aggregated solid angle to area m
 .. math::
 
   G(\mathbf{x}, \mathbf{x}) &=
-    \frac{D(\mathbf{x}, \mathbf{y}) D(\mathbf{y}, \mathbf{x})}{\| \mathbf{x} - \mathbf{y} \|^2}, \\
+    \frac{D(\mathbf{x}, \mathbf{y}) V(\mathbf{x}, \mathbf{y}) D(\mathbf{y}, \mathbf{x})}{\| \mathbf{x} - \mathbf{y} \|^2}, \\
   D(\mathbf{x}, \mathbf{y}) &=
     \begin{cases}
       \left| \mathbf{n}(\mathbf{x}) \cdot \omega_{\mathbf{x} \to \mathbf{y}} \right|
@@ -497,7 +496,7 @@ To achieve the transformation of densities from aggregated solid angle to area m
       1 & \mathbf{x}\in\mathcal{S}_{\mathrm{deg}}.
     \end{cases}
 
-:cpp:func:`lm::surface::geometry_term` function evaluates the term.
+:cpp:func:`lm::surface::geometry_term` function evaluates the term, but assuming that :math:`\mathbf{x}` and :math:`\mathbf{y}` are mutually visible (thus :math:`V(\mathbf{x}, \mathbf{y})=1`).
 :cpp:func:`lm::surface::convert_pdf_projSA_to_area` function internally uses this function to implement the conversion of the densities, which allows to convert the densities according to the point geometry type:
 
 .. math::
@@ -514,6 +513,10 @@ To achieve the transformation of densities from aggregated solid angle to area m
     \end{cases}
 
 This is especially useful when the conversion function is used in conjunction with the PDF evaluated with ``lm::path::pdf_*()`` function, which evaluates the density with aggregated solid angle measure.
+
+
+
+
 
 Bidirectional path sampling
 ===========================
@@ -610,16 +613,52 @@ The correspondence between notations and the operations over the path structure 
 Sampling subpath
 -------------------------------------
 
-- Function: :cpp:func:`lm::path::sample_subpath`
+:cpp:func:`lm::path::sample_subpath` function samples a subpath up to the given maximum number of vertices ``max_verts``. The type of subpath can be configured by the argument ``trans_dir``. In math notations, this process can be written as
 
-The function samples a subpath up to the given maximum number of vertices ``max_verts``. The type of subpath can be configured by the argument ``trans_dir``.
+.. math::
+
+  \bar{x} = \mathbf{x}_{0}\mathbf{x}_{1}\dots\mathbf{x}_{l-1} \sim
+  \begin{cases}
+    p_E(\cdot)  & \text{if transport direction is } E\to L \\
+    p_L(\cdot)  & \text{if transport direction is } L\to E,
+  \end{cases}
+
+where :math:`l` is the maximum number of vertices.
+Each vertex is sampled sequentially
+
+.. math::
+
+  (\mathbf{x}_0, \mathbf{x}_1) \sim p_{A^2\Sigma}(\cdot,\cdot), \quad
+  \mathbf{x}_i \sim p_{A\to}(\cdot\mid\mathbf{x}_{i-1}),
+
+where :math:`i=2,\dots,(l-1)` and :math:`\Sigma\in\{ L,E \}`.
+
+The above equation abstracts the actual sampling process which iteratively samples directions and applys ray casting to find the next intersected points:
+
+.. math::
+
+  \begin{alignat}{3}
+    (\mathbf{x}_0, \omega_0) &\sim p_{A\sigma^* \Sigma}(\cdot,\cdot),\;
+    & \mathbf{x}_1 &= \mathbf{x}_\mathcal{M}(\mathbf{x}_0, \omega_0), \\
+    \omega_i &\sim p_{\sigma^* \to}(\cdot\mid\mathbf{x}_{i-1}),\;
+    & \mathbf{x}_i &= \mathbf{x}_\mathcal{M}(\mathbf{x}_{i-1}, \omega_i).
+  \end{alignat}
 
 
- 
+Note that the first two vertices are always sampled from the joint distribution.
+If :math:`\mathbf{x}_0` and :math:`\mathbf{x}_1` are independent, the sampling process is equivalent to
 
-Bidirectional path sampling
+.. math::
+
+  \mathbf{x}_0 \sim p_{A\Sigma}(\cdot), \quad
+  \mathbf{x}_i \sim p_{A\to}(\cdot\mid\mathbf{x}_{i-1}),
+
+where :math:`i=1,\dots,(l-1)`.
+
+Connecting subpaths
 -------------------------------------
 
+:cpp:func:`lm::path::connect_subpaths` function can combine light and eye subpaths with a given number of vertices :math:`s` and :math:`t` in each subpath respectively. This process amounts to sampling a full path with the strategy :math:`(s,t)`.
 
 Computing raster position
 -------------------------------------
