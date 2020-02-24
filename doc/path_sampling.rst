@@ -71,6 +71,8 @@ The structure contains a type of the interaction ``sp.type``, the geometry infor
 
 The primitive index is mainly used internally to query the information of the scene from :cpp:class:`lm::Scene` class. Many of the sampling and evaluation functions under ``lm::path`` namespace use this index.
 
+.. _path_sampling_scene_interaction_type:
+
 Scene interaction type
 -------------------------------------
 
@@ -162,6 +164,8 @@ Point geometry type
 
 A point geometry has special flags representing specific configuration of the point.
 
+.. _path_sampling_degenerated_point:
+
 Degenerated point
 """"""""""""""""""""""""""""
 
@@ -169,6 +173,8 @@ Degenerated point
 
 .. note::
   Points in a volume is always degenerated: :math:`\mathcal{V}\subseteq\mathcal{S}_{\mathrm{deg}}`.
+
+.. _path_sampling_infinitely_distant_point:
 
 Infinitely distant point
 """"""""""""""""""""""""""""
@@ -420,18 +426,19 @@ Evaluating directional components
 
 - Function: :cpp:func:`lm::path::eval_contrb_direction`
 
-The function evaluates directional component of path integral :math:`f(\mathbf{x}, \omega_i,\omega_o)`, where
+The function evaluates directional component of path integral :math:`f_{s\Sigma}(\mathbf{x}, \omega_i,\omega_o)`, where
 
 .. math::
 
-  f(\mathbf{x},\omega_i,\omega_o) =
+  f_{s\Sigma}(\mathbf{x},\omega_i,\omega_o) =
   \begin{cases}
     L_e(\mathbf{x}, \omega_o)         & \mathbf{x}\in\mathcal{M}_L \\
     W_e(\mathbf{x}, \omega_o)         & \mathbf{x}\in\mathcal{M}_E \\
-    f_s(\mathbf{x},\omega_i,\omega_o) & \mathbf{x}\in\mathcal{M}_S \\
-    \mu_s(\mathbf{x}) f_p(\mathbf{x},\omega_i,\omega_o) & \mathbf{x}\in\mathcal{V}.
+    f_{\mathrm{bsdf}\Sigma}(\mathbf{x},\omega_i,\omega_o) & \mathbf{x}\in\mathcal{M}_S \\
+    \mu_s(\mathbf{x}) f_{\mathrm{phase}}(\mathbf{x},\omega_i,\omega_o) & \mathbf{x}\in\mathcal{V},
   \end{cases}
 
+where :math:`\Sigma\in\{ L,E \}`. :math:`\Sigma` corresponds to the transport direction, which is necessary to handle non-symmetric scattering described in Chapter 5 of Veach's thesis.
 The following table shows where each operation is implemented.
 
 .. list-table::
@@ -443,11 +450,13 @@ The following table shows where each operation is implemented.
       - :cpp:func:`lm::Light::eval`
     * - :math:`W_e(\mathbf{x}, \omega_o)`
       - :cpp:func:`lm::Camera::eval`
-    * - :math:`f_s(\mathbf{x},\omega_i,\omega_o)`
-      - :cpp:func:`lm::Material::eval`
+    * - :math:`f_{\mathrm{bsdf}L}(\mathbf{x},\omega_i,\omega_o)`
+      - :cpp:func:`lm::Material::eval` with ``trans_dir = LE``
+    * - :math:`f_{\mathrm{bsdf}E}(\mathbf{x},\omega_i,\omega_o)`
+      - :cpp:func:`lm::Material::eval` with ``trans_dir = EL``
     * - :math:`\mu_s(\mathbf{x})`
       - N/A
-    * - :math:`f_p(\mathbf{x},\omega_i,\omega_o)`
+    * - :math:`f_{\mathrm{phase}}(\mathbf{x},\omega_i,\omega_o)`
       - :cpp:func:`lm::Phase::eval`
 
 .. note::
@@ -455,14 +464,6 @@ The following table shows where each operation is implemented.
   :math:`\omega_i` is not used when :math:`\mathbf{x}` is endpoint.
   Also, :math:`\omega_o` always represents outgoing direction irrespective to the transport directions,
   that is, the same direction as the transport direction.
-
-.. note::
-
-  :cpp:func:`lm::path::eval_contrb_direction` takes ``trans_dir`` as an argument, which is used to handle non-symmetric scattering described in Chapter 5 of Veach's thesis.
-
-
-
-
 
 Transforming probability densities
 ======================================================
@@ -545,10 +546,10 @@ Notations
     * - :math:`\bar{x}`
       - Light transport path (or just path)
       - ``Path``
-    * - :math:`\bar{x}_L`
+    * - :math:`\bar{x}_L` or :math:`\bar{y}`
       - Light subpath
       - ``Path``
-    * - :math:`\bar{x}_E`
+    * - :math:`\bar{x}_E` or :math:`\bar{z}`
       - Eye subpath
       - ``Path``
     * - :math:`(s,t)`
@@ -571,8 +572,10 @@ We often omit the subscript :math:`k` depending on the context.
 - A path is *full path* if the path constitutes of a complete light transport path, where :math:`\mathbf{x}_0\in\mathcal{M}_L`, :math:`\mathbf{x}_{k-1}\in\mathcal{M}_E`. In the context without ambiguity, we call a *full path* as merely a *path*.
 - A path is *subpath* if the path starts but not ends its vertices on the endpoints. Note that the subpath always starts from an endpoint, irrespective to the type of the endpoint. If :math:`\mathbf{x}_0\in\mathcal{M}_L`, the subpath is called *light subpath*. If :math:`\mathbf{x}_0\in\mathcal{M}_E`, the subpath is called *eye subpath*.
 
+.. _path_sampling_specular_vertex:
+
 In the framework, :cpp:class:`lm::Path` structure represents a path, which holds a vector ``.vs``  of :cpp:class:`lm::Vert` representing a path vertex.
-A path vertex structure is a tuple of surface interaction ``.sp`` and ``.specular`` flag representing whether the vertex type is specular. 
+A path vertex structure is a tuple of surface interaction ``.sp`` and ``.specular`` flag representing whether the vertex type is specular. Notation: :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{spec}}`.
 
 .. note::
 
@@ -624,14 +627,20 @@ Sampling subpath
   \end{cases}
 
 where :math:`l` is the maximum number of vertices.
-Each vertex is sampled sequentially
+In fact, each vertex is sampled sequentially
 
 .. math::
 
   (\mathbf{x}_0, \mathbf{x}_1) \sim p_{A^2\Sigma}(\cdot,\cdot), \quad
   \mathbf{x}_i \sim p_{A\to}(\cdot\mid\mathbf{x}_{i-1}),
 
-where :math:`i=2,\dots,(l-1)` and :math:`\Sigma\in\{ L,E \}`.
+where :math:`i=2,\dots,(l-1)` and :math:`\Sigma\in\{ L,E \}`. Thus the PDF for subpath sampling can be written as
+
+.. math::
+
+  p_\Sigma(\bar{x}) =
+    p_{A^2\Sigma}(\mathbf{x}_0,\mathbf{x}_1)
+    \prod_{i=2}^{l-1} p_{A\to}(\mathbf{x}_{i}\mid\mathbf{x}_{i-1}).
 
 The above equation abstracts the actual sampling process which iteratively samples directions and applys ray casting to find the next intersected points:
 
@@ -655,38 +664,149 @@ If :math:`\mathbf{x}_0` and :math:`\mathbf{x}_1` are independent, the sampling p
 
 where :math:`i=1,\dots,(l-1)`.
 
+.. note::
+
+  The number of vertiecs sampled with :cpp:func:`lm::path::sample_subpath` function might not always same as ``max_verts`` due to the early termination of the subpath. The early termination happens for instance when the ray doesn't hit with any objects before sampling ``max_verts`` vertices.
+
+.. note::
+
+  For simplicity, we don't use Russian roulette in :cpp:func:`lm::path::sample_subpath` function.
+  You need to define your own subpath sampling function to support that.
+
 Connecting subpaths
 -------------------------------------
 
-:cpp:func:`lm::path::connect_subpaths` function can combine light and eye subpaths with a given number of vertices :math:`s` and :math:`t` in each subpath respectively. This process amounts to sampling a full path with the strategy :math:`(s,t)`.
+:cpp:func:`lm::path::connect_subpaths` function can combine light subpath :math:`\bar{y}` and eye subpath :math:`\bar{z}` with a given number of vertices :math:`s` and :math:`t` in each subpath respectively. This process amounts to sampling a full path with the strategy :math:`(s,t)`. If the subpaths are not *connectable*, the connection process will be failed and the function returns ``std::nullopt``.
+For the strategy index :math:`(s,t)` where :math:`s+t\geq 1`, the subpaths are connectable according to the following conditions:
 
-Computing raster position
--------------------------------------
+- if :math:`s=0`, :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{deg}}`,
+- if :math:`t=0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{deg}}`,
+- if :math:`s=1`, :math:`\mathbf{y}_0\in\mathcal{S}_{\mathrm{conn}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{t-1}) = 0`,
+- if :math:`t=1`, :math:`\mathbf{z}_0\in\mathcal{S}_{\mathrm{conn}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{t-1}) = 0`,
+- if :math:`s>0` and :math:`t>0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{t-1}) = 0`.
 
+.. _path_sampling_connectable_endpoint:
 
+The endpoint :math:`\mathbf{x}` is *connectable* if corresponding positional and directional PDFs can be evaluated independently. We use the notation :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{conn}}`. For instance, the endpoint is connectable if the first two subpath vertices are independent. This condition is checked using :cpp:func:`lm::path::connectable_endpoint()` function.
 
+.. note::
 
+  An endpoint can be connectable even if :math:`\bar{x}_{\Sigma,0}` and :math:`\bar{x}_{\Sigma,1}` are not independent as long as we can compute the marginals of the joint distribution analytically.
 
+Evaluating bidirectional path contribution
+-----------------------------------------------
 
+:cpp:func:`lm::Path::eval_measurement_contrb_bidir` function evaluates the *bidirectional measurement contribution function* defined by
 
-Evaluating path contribution
--------------------------------------
+.. math::
+
+  f_{s,t}(\bar{x}) &= f_L(\bar{y}) c_{s,t}(\bar{y}, \bar{z}) f_E(\bar{z}),  \\
+  f_L(\bar{y}) &=
+    \begin{cases}
+      1   & s = 0 \\
+      \prod_{i=0}^{s-2} f_{sL}(\mathbf{y}_{i-1},\mathbf{y}_{i},\mathbf{y}_{i+1}) & \text{otherwise},
+    \end{cases} \\
+  f_L(\bar{z}) &=
+    \begin{cases}
+      1   & t = 0 \\
+      \prod_{i=0}^{t-2} f_{sE}(\mathbf{z}_{i-1},\mathbf{z}_{i},\mathbf{z}_{i+1}) & \text{otherwise},
+    \end{cases} \\
+  c_{s,t}(\bar{y}, \bar{z}) &=
+    \begin{cases}
+      f_{sL}(\mathbf{y}_0,\mathbf{y}_1)   & s = 0 \\
+      f_{sE}(\mathbf{z}_0,\mathbf{z}_1)   & t = 0 \\
+      f_{sL}(\mathbf{y}_{s-2},\mathbf{y}_{s-1},\mathbf{y}_{t-1})
+      G(\mathbf{x}_{t-1}, \mathbf{x}_{s-1})
+      f_{sE}(\mathbf{z}_{t-2},\mathbf{z}_{t-1},\mathbf{z}_{s-1})
+        & \text{otherwise}.
+    \end{cases}
+
+.. note::
+
+  The original measurement contribution function does not take strategy index
+  since the scattering term :math:`f_s` is assumed to be symmetrical. 
+  This difference comes from the handling of asymmetric scattering in :cpp:func:`lm::path::eval_contrb_direction` function.
 
 Evaluating bidirectional path PDF
 -------------------------------------
 
-Evaluating MIS weight
--------------------------------------
+:cpp:func:`lm::Path::pdf_bidir` function evaluates the *bidirectional path PDF* defined by
 
-Evaluating sampling weight
--------------------------------------
+.. math::
 
-Subpath contribution
--------------------------------------
+  p_{s,t}(\bar{x}) &=
+    \begin{cases}
+      p_L(\bar{y}) p_E(\bar{z})
+        & \bar{x} \text{ is samplable by the strategy } (s,t) \\
+      0 
+        & \text{otherwise},
+    \end{cases} \\
+  p_L(\bar{y}) &=
+    \begin{cases}
+      1
+          & s = 0 \\
+      p_{AL}(\mathbf{y}_0)
+          & s = 1 \\
+      p_{A^2L}(\mathbf{y}_0, \mathbf{y}_1)
+        \prod_{i=2}^{s-1} p_{A\to}(\mathbf{y}_i\mid\mathbf{y}_{i-1}) 
+          & s > 1,
+    \end{cases}\\
+  p_E(\bar{z}) &=
+    \begin{cases}
+      1
+          & s = 0 \\
+      p_{AE}(\mathbf{z}_0)
+          & s = 1 \\
+      p_{A^2E}(\mathbf{z}_0, \mathbf{z}_1)
+        \prod_{i=2}^{s-1} p_{A\to}(\mathbf{z}_i\mid\mathbf{z}_{i-1}) 
+          & s > 1.
+    \end{cases}
 
-Connection term
--------------------------------------
+:math:`\bar{x}` is samplable by the strategy :math:`(s,t)` with the following conditions:
 
-Unweighted contribution
--------------------------------------
+- if :math:`s=0`, :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{deg}}`,
+- if :math:`t=0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{deg}}`,
+- if :math:`s=1`, :math:`\mathbf{y}_0\in\mathcal{S}_{\mathrm{conn}}`,
+- if :math:`t=1`, :math:`\mathbf{z}_0\in\mathcal{S}_{\mathrm{conn}}`,
+- if :math:`s>0` and :math:`t>0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{spec}}`.
 
+
+
+
+Summary of notations
+===========================
+
+The path sampling interface defines various properties associated to the point to the scene :math:`\mathbf{x}`. The following table summarizes the notations introduced in this section.
+
+.. list-table::
+    :widths: 20 40 40
+    :header-rows: 1
+
+    * - Notation
+      - Description
+      - Code
+
+    * - :math:`\mathbf{x} \in \mathcal{M}_E`
+      - :math:`\mathbf{x}` is :ref:`camera endpoint<path_sampling_scene_interaction_type>`
+      - ``sp.is_type(CameraEndpoint)``
+    * - :math:`\mathbf{x} \in \mathcal{M}_L`
+      - :math:`\mathbf{x}` is :ref:`light endpoint<path_sampling_scene_interaction_type>`
+      - ``sp.is_type(LightEndpoint)``
+    * - :math:`\mathbf{x} \in \mathcal{M}_S`
+      - :math:`\mathbf{x}` is :ref:`surface interaction<path_sampling_scene_interaction_type>`
+      - ``sp.is_type(SurfaceInteraction)``
+    * - :math:`\mathbf{x} \in \mathcal{V}`
+      - :math:`\mathbf{x}` is :ref:`medium interaction<path_sampling_scene_interaction_type>`
+      - ``sp.is_type(MediumInteraction)``
+    * - :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{deg}}`
+      - :math:`\mathbf{x}` is :ref:`degenerated<path_sampling_degenerated_point>`
+      - ``geom.degenerated``
+    * - :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{inf}}`
+      - :math:`\mathbf{x}` is :ref:`infinitely distant point<path_sampling_infinitely_distant_point>`
+      - ``geom.infinite``
+    * - :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{spec}}`
+      - :math:`\mathbf{x}` is :ref:`specular<path_sampling_specular_vertex>`
+      - ``v.specular``
+    * - :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{conn}}`
+      - :math:`\mathbf{x}` is :ref:`connectable endpoint<path_sampling_connectable_endpoint>`
+      - ``lm::path::connectable_endpoint(sp)``
