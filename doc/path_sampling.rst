@@ -598,10 +598,10 @@ The correspondence between notations and the operations over the path structure 
       - :cpp:func:`lm::Path::num_edges`
     * - :math:`\mathbf{x}_i`
       - :math:`i`-th path vertex from :math:`\mathbf{x}_0`
-      - :cpp:func:`lm::Path::vertex_at` with ``trans_dir=LE``
+      - :cpp:func:`lm::Path::vertex_at` with ``trans_dir = LE``
     * - :math:`\mathbf{x}_{k-1-i}`
       - :math:`i`-th path vertex from :math:`\mathbf{x}_{k-1}`
-      - :cpp:func:`lm::Path::vertex_at` with ``trans_dir=EL``
+      - :cpp:func:`lm::Path::vertex_at` with ``trans_dir = EL``
     * - :math:`\mathbf{x}_i`
       - :math:`i`-th path vertex from :math:`\mathbf{x}_0`
       - :cpp:func:`lm::Path::subpath_vertex_at`
