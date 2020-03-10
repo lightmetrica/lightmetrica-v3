@@ -36,4 +36,21 @@ public:
     virtual Float eval_Q(const Path& x, const Path& y, const Subspace& subspace) const = 0;
 };
 
+// ------------------------------------------------------------------------------------------------
+
+LM_NAMESPACE_BEGIN(path)
+
+// Perturb a direction using trucated reciprocal distribution
+Vec3 perturb_direction_truncated_reciprocal(Rng& rng, Vec3 wo, Float s1, Float s2) {
+    // Consider local coordinates around the base direction
+    const auto theta = s2 * std::exp(-std::log(s2 / s1) * rng.u());
+    const auto phi = 2_f * Pi * rng.u();
+    const auto [u, v] = math::orthonormal_basis(wo);
+    const auto to_world = Mat3(u, v, wo);
+    const auto perturbed_wo = to_world * math::spherical_to_cartesian(theta, phi);
+    return perturbed_wo;
+}
+
+LM_NAMESPACE_END(path)
+
 LM_NAMESPACE_END(LM_NAMESPACE)

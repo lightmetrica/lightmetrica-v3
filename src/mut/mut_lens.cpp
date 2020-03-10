@@ -32,17 +32,6 @@ public:
     }
 
 private:
-    // Perturb a direction using reciprocal distribution
-    Vec3 perturb_direction_reciprocal(Rng& rng, Vec3 wo) const {
-        // Consider local coordinates around the base direction
-        const auto theta = s2_ * std::exp(-std::log(s2_ / s1_) * rng.u());
-        const auto phi = 2_f * Pi * rng.u();
-        const auto [u, v] = math::orthonormal_basis(wo);
-        const auto to_world = Mat3(u, v, wo);
-        const auto perturbed_wo = to_world * math::spherical_to_cartesian(theta, phi);
-        return perturbed_wo;
-    }
-
     // Find the index of first non-S vertex from camera
     int find_first_non_s(const Path& path) const {
         const int n = path.num_verts();
@@ -92,7 +81,7 @@ public:
             const auto prop_primary_wo = [&] {
                 const auto wo = curr.direction(
                     curr.vertex_at(0, TransDir::EL), curr.vertex_at(1, TransDir::EL));
-                const auto prop_wo = perturb_direction_reciprocal(rng, wo);
+                const auto prop_wo = path::perturb_direction_truncated_reciprocal(rng, wo, s1_, s2_);
                 return prop_wo;
             }();
 
