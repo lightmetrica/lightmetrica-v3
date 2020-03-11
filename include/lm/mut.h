@@ -41,7 +41,7 @@ public:
 LM_NAMESPACE_BEGIN(path)
 
 // Perturb a direction using trucated reciprocal distribution
-Vec3 perturb_direction_truncated_reciprocal(Rng& rng, Vec3 wo, Float s1, Float s2) {
+static Vec3 perturb_direction_truncated_reciprocal(Rng& rng, Vec3 wo, Float s1, Float s2) {
     // Consider local coordinates around the base direction
     const auto theta = s2 * std::exp(-std::log(s2 / s1) * rng.u());
     const auto phi = 2_f * Pi * rng.u();

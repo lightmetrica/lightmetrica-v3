@@ -11,15 +11,12 @@
 #include <lm/scheduler.h>
 #include <lm/parallel.h>
 #include <lm/mut.h>
+#include <lm/debug.h>
 
 // Record acceptance ratio (overall and per-strategy)
 #define MLT_STAT_ACCEPTANCE_RATIO 1
-// Poll paths
+// Poll mutated paths
 #define MLT_POLL_PATHS 1
-
-#if MLT_POLL_PATHS
-#include <lm/debug.h>
-#endif
 
 // ------------------------------------------------------------------------------------------------
 
@@ -149,7 +146,9 @@ public:
         const auto size = film_->size();
 
         // Random number generator for initialization
-        Rng init_rng(seed_ ? *seed_ : math::rng_seed());
+        const auto seed = seed_ ? *seed_ : math::rng_seed();
+        LM_INFO("Seed: {}", seed);
+        Rng init_rng(seed);
 
         // ----------------------------------------------------------------------------------------
 
