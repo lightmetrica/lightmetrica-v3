@@ -144,7 +144,7 @@ public:
         This function evaluates the reflectance function of the underlying material if exists.
         \endrst
     */
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const = 0;
+    virtual Vec3 reflectance(const PointGeometry& geom) const = 0;
 };
 
 /*!

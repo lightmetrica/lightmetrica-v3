@@ -60,7 +60,7 @@ public:
         return ref_->eval(geom, wi, wo, comp, trans_dir, eval_delta);
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
+    virtual Vec3 reflectance(const PointGeometry& geom) const override {
         return ref_->reflectance(geom);
     }
 

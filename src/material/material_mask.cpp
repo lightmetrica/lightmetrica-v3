@@ -50,7 +50,7 @@ public:
         return eval_delta ? Vec3(0_f) : Vec3(1_f);
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
+    virtual Vec3 reflectance(const PointGeometry&) const override {
         return Vec3(0_f);
     }
 

@@ -836,8 +836,8 @@ static void bind_material(pybind11::module& m) {
         virtual bool is_specular_component(int comp) const override {
             PYBIND11_OVERLOAD_PURE(bool, Material, is_specular_component, comp);
         }
-        virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Material, reflectance, geom);
+        virtual Vec3 reflectance(const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Material, reflectance, geom);
         }
     };
     pybind11::class_<Material, Material_Py, Component, Component::Ptr<Material>>(m, "Material")

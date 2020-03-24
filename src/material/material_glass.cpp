@@ -188,7 +188,7 @@ public:
         }
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
+    virtual Vec3 reflectance(const PointGeometry&) const override {
         return Vec3(0_f);
     }
 

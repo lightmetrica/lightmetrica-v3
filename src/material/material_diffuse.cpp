@@ -75,7 +75,7 @@ public:
         };
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
+    virtual Vec3 reflectance(const PointGeometry& geom) const override {
         return mapKd_ ? mapKd_->eval(geom.t) : Kd_;
     }
 
