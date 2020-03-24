@@ -88,9 +88,11 @@ public:
             for (int num_verts = 1; num_verts < max_verts_; num_verts++) {
                 // Sample direction
                 const auto s = path::sample_direction(rng, scene_, sp, wi, TransDir::EL);
+#if 0
                 if (!s) {
                     break;
                 }
+#endif
 
                 // --------------------------------------------------------------------------------
 
@@ -151,9 +153,22 @@ public:
                     }();
 
                     // Accumulate contribution
+#if 1
                     const auto C = throughput * fs * sL->weight * mis_w;
+#else
+                    const auto G = surface::geometry_term(sp.geom, sL->sp.geom);
+                    const auto Le = path::eval_contrb_direction(scene_, sL->sp, {}, sL->wo, TransDir::LE, true);
+                    const auto pA = path::pdf_position(scene_, sL->sp);
+                    const auto C = fs * G * Le / pA;
+                    //const auto C = Vec3(1_f);
+#endif
                     film_->splat(rp, C);
                 }();
+
+
+                if (!s) {
+                    break;
+                }
 
                 // --------------------------------------------------------------------------------
 

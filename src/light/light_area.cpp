@@ -163,7 +163,10 @@ public:
         };
     }
 
-    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const override {
+        if (glm::dot(wo, geomL.n) <= 0_f) {
+            return 0_f;
+        }
         const auto G = surface::geometry_term(geom, geomL);
         return G == 0_f ? 0_f : tranformed_invA(transform) / G;
     }

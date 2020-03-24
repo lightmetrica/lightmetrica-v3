@@ -77,9 +77,11 @@ public:
             for (int num_verts = 2; num_verts < max_verts_; num_verts++) {
                 // Sample a direction based on current scene interaction
                 const auto s = path::sample_direction(rng, scene_, sp, wi, TransDir::LE);
+#if 0
                 if (!s || math::is_zero(s->weight)) {
                     break;
                 }
+#endif
 
                 // Sample a NEE edge
                 [&]{
@@ -104,6 +106,10 @@ public:
                     const auto C = throughput * fs * sE->weight;
                     film_->splat(*rp, C);
                 }();
+
+                if (!s || math::is_zero(s->weight)) {
+                    break;
+                }
 
                 // Intersection to next surface
                 const auto hit = scene_->intersect({ sp.geom.p, s->wo });

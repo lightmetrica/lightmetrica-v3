@@ -69,18 +69,13 @@ public:
                     continue;
                 }
 
-                // Evaluate contribution and probability
-                const auto f = path->eval_measurement_contrb_bidir(scene_, 0);
-                if (math::is_zero(f)) {
-                    continue;
-                }
-                const auto p = path->pdf_bidir(scene_, 0);
-                if (p == 0_f) {
+                // Evaluate contribution
+                const auto C = path->eval_unweighted_contrb_bidir(scene_, 0);
+                if (math::is_zero(C)) {
                     continue;
                 }
 
                 // Accumulate contribution
-                const auto C = f / p;
                 const auto rp = path->raster_position(scene_);
                 film_->splat(rp, C);
             }
@@ -144,18 +139,13 @@ public:
                     continue;
                 }
 
-                // Evaluate contribution and probability
-                const auto f = path->eval_measurement_contrb_bidir(scene_, s);
-                if (math::is_zero(f)) {
-                    continue;
-                }
-                const auto p = path->pdf_bidir(scene_, s);
-                if (p == 0_f) {
+                // Evaluate contribution
+                const auto C = path->eval_unweighted_contrb_bidir(scene_, s);
+                if (math::is_zero(C)) {
                     continue;
                 }
 
                 // Accumulate contribution
-                const auto C = f / p;
                 const auto rp = path->raster_position(scene_);
                 film_->splat(rp, C);
             }
