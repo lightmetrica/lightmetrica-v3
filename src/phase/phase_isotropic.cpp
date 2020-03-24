@@ -23,8 +23,7 @@ public:
         assert(geom.degenerated);
         return DirectionSample{
             math::sample_uniform_sphere(us.ud),
-            Vec3(1_f),
-            false
+            Vec3(1_f)
         };
     }
 

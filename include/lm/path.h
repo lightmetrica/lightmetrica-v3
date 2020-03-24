@@ -120,8 +120,7 @@ static std::optional<RaySample> sample_primary_ray(const RaySampleU& u, const Sc
                 s->geom
             ),
             s->wo,
-            s->weight,
-            s->specular
+            s->weight
         };
     }
     else if (trans_dir == TransDir::LE) {
@@ -139,8 +138,7 @@ static std::optional<RaySample> sample_primary_ray(const RaySampleU& u, const Sc
                 s->geom
             ),
             s->wo,
-            s->weight,
-            s->specular
+            s->weight
         };
     }
     LM_UNREACHABLE_RETURN();
@@ -150,6 +148,42 @@ static std::optional<RaySample> sample_primary_ray(const RaySampleU& u, const Sc
 */
 static std::optional<RaySample> sample_primary_ray(Rng& rng, const Scene* scene, TransDir trans_dir) {
     return sample_primary_ray(rng.next<RaySampleU>(), scene, trans_dir);
+}
+
+#pragma endregion
+
+// ------------------------------------------------------------------------------------------------
+
+#pragma region Component sampling
+
+/*!
+*/
+struct ComponentSample {
+    int comp;
+    Float weight;
+};
+
+/*!
+*/
+struct ComponentSampleU {
+    Vec2 uc;
+};
+
+/*!
+*/
+static ComponentSample sample_component(const ComponentSampleU& u, const Scene* scene, const SceneInteraction& sp) {
+    if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
+        const auto* material = scene->node_at(sp.primitive).primitive.material;
+        const auto s = material->sample_component({u.uc}, sp.geom);
+        return { s.comp, s.weight };
+    }
+    return { 0, 1_f };
+}
+
+/*! 
+*/
+static ComponentSample sample_component(Rng& rng, const Scene* scene, const SceneInteraction& sp) {
+    return sample_component(rng.next<ComponentSampleU>(), scene, sp);
 }
 
 #pragma endregion
@@ -230,7 +264,6 @@ static std::optional<PositionSample> sample_position(Rng& rng, const Scene* scen
 struct DirectionSample {
     Vec3 wo;
     Vec3 weight;
-    bool specular;
 };
 
 /*!
@@ -242,7 +275,7 @@ struct DirectionSampleU {
 
 /*!
 */
-static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
+static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, int comp, TransDir trans_dir) {
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     if (sp.is_type(SceneInteraction::CameraEndpoint)) {
         const auto s = primitive.camera->sample_direction({ u.ud });
@@ -251,8 +284,7 @@ static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u
         }
         return DirectionSample{
             s->wo,
-            s->weight,
-            s->specular
+            s->weight
         };
     }
     else if (sp.is_type(SceneInteraction::LightEndpoint)) {
@@ -262,8 +294,7 @@ static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u
         }
         return DirectionSample{
             s->wo,
-            s->weight,
-            s->specular
+            s->weight
         };
     }
     else if (sp.is_type(SceneInteraction::MediumInteraction)) {
@@ -273,20 +304,18 @@ static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u
         }
         return DirectionSample{
             s->wo,
-            s->weight,
-            s->specular
+            s->weight
         };
     }
     else if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
-        const auto s = primitive.material->sample_direction({u.ud,u.udc}, sp.geom, wi, static_cast<Material::TransDir>(trans_dir));
+        const auto s = primitive.material->sample_direction({u.ud,u.udc}, sp.geom, wi, comp, static_cast<Material::TransDir>(trans_dir));
         if (!s) {
             return {};
         }
         const auto sn_corr = surface::shading_normal_correction(sp.geom, wi, s->wo, trans_dir);
         return DirectionSample{
             s->wo,
-            s->weight * sn_corr,
-            s->specular
+            s->weight * sn_corr
         };
     }
     LM_UNREACHABLE_RETURN();  
@@ -294,8 +323,8 @@ static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u
 
 /*!
 */
-static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* scene, const SceneInteraction& sp, Vec3 wi, TransDir trans_dir) {
-    return sample_direction(rng.next<DirectionSampleU>(), scene, sp, wi, trans_dir);
+static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* scene, const SceneInteraction& sp, Vec3 wi, int comp, TransDir trans_dir) {
+    return sample_direction(rng.next<DirectionSampleU>(), scene, sp, wi, comp, trans_dir);
 }
 
 /*!
@@ -312,7 +341,7 @@ static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* sc
     utlizing corresponding densities from which the direction is sampled.
     \endrst
 */
-static Float pdf_direction(const Scene* scene, const SceneInteraction& sp, Vec3 wi, Vec3 wo, bool eval_delta) {
+static Float pdf_direction(const Scene* scene, const SceneInteraction& sp, Vec3 wi, Vec3 wo, int comp, bool eval_delta) {
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     switch (sp.type) {
         case SceneInteraction::CameraEndpoint:
@@ -322,7 +351,7 @@ static Float pdf_direction(const Scene* scene, const SceneInteraction& sp, Vec3 
         case SceneInteraction::MediumInteraction:
             return primitive.medium->phase()->pdf_direction(sp.geom, wi, wo);
         case SceneInteraction::SurfaceInteraction:
-            return primitive.material->pdf_direction(sp.geom, wi, wo, eval_delta);
+            return primitive.material->pdf_direction(sp.geom, wi, wo, comp, eval_delta);
     }
     LM_UNREACHABLE_RETURN();
 }
@@ -388,8 +417,7 @@ static std::optional<RaySample> sample_direct_light(const RaySampleU& u, const S
             s->geom
         ),
         s->wo,
-        s->weight / p_sel,
-        s->specular
+        s->weight / p_sel
     };
 }
 
@@ -413,8 +441,7 @@ static std::optional<RaySample> sample_direct_camera(const RaySampleU& u, const 
             s->geom
         ),
         s->wo,
-        s->weight,
-        s->specular
+        s->weight
     };
 }
 
@@ -556,11 +583,10 @@ static Vec3 eval_transmittance(Rng& rng, const Scene* scene, const SceneInteract
 
 /*!
 */
-static bool is_specular_any(const Scene* scene, const SceneInteraction& sp) {
-    const auto& primitive = scene->node_at(sp.primitive).primitive;
-    switch (sp.type) {
-        case SceneInteraction::SurfaceInteraction:
-            return primitive.material->is_specular_any();
+static bool is_specular_component(const Scene* scene, const SceneInteraction& sp, int comp) {
+    if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
+        const auto& primitive = scene->node_at(sp.primitive).primitive;
+        return primitive.material->is_specular_component(comp);
     }
     LM_UNREACHABLE_RETURN();
 }
@@ -606,7 +632,7 @@ static std::optional<Vec2> raster_position(const Scene* scene, Vec3 wo) {
     to enforce an evaluation as an endpoint.
     \endrst
 */
-static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) {
+static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp, Vec3 wi, Vec3 wo, int comp, TransDir trans_dir, bool eval_delta) {
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     switch (sp.type) {
         case SceneInteraction::CameraEndpoint:
@@ -616,7 +642,7 @@ static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp
         case SceneInteraction::MediumInteraction:
             return primitive.medium->phase()->eval(sp.geom, wi, wo);
         case SceneInteraction::SurfaceInteraction:
-            return primitive.material->eval(sp.geom, wi, wo, (Material::TransDir)(trans_dir), eval_delta) *
+            return primitive.material->eval(sp.geom, wi, wo, comp, (Material::TransDir)(trans_dir), eval_delta) *
                    surface::shading_normal_correction(sp.geom, wi, wo, trans_dir);
     }
     LM_UNREACHABLE_RETURN();

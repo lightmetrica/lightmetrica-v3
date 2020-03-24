@@ -105,8 +105,7 @@ public:
         return RaySample{
             geomL,
             wo_world,
-            contrb,
-            false
+            contrb
         };
     }
 
@@ -120,8 +119,7 @@ public:
         const auto contrb = Le / pD_projSA;
         return DirectionSample{
             wo_world,
-            contrb,
-            false
+            contrb
         };
     }
 
@@ -158,8 +156,7 @@ public:
         return RaySample{
             geomL,
             wo,
-            Le / pL,
-            false
+            Le / pL
         };
     }
 

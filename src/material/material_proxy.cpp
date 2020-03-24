@@ -40,24 +40,32 @@ public:
         ref_ = json::comp_ref<Material>(prop, "ref");
     }
 
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
-        return ref_->sample_direction(u, geom, wi, trans_dir);
+    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom) const override {
+        return ref_->sample_component(u, geom);
     }
 
-    Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const override {
-        return ref_->pdf_direction(geom, wi, wo, eval_delta);
+    virtual Float pdf_component(int comp, const PointGeometry& geom) const override {
+        return ref_->pdf_component(comp, geom);
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
-        return ref_->eval(geom, wi, wo, trans_dir, eval_delta);
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, int comp, TransDir trans_dir) const override {
+        return ref_->sample_direction(u, geom, wi, comp, trans_dir);
+    }
+
+    Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, int comp, bool eval_delta) const override {
+        return ref_->pdf_direction(geom, wi, wo, comp, eval_delta);
+    }
+
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int comp, TransDir trans_dir, bool eval_delta) const override {
+        return ref_->eval(geom, wi, wo, comp, trans_dir, eval_delta);
     }
 
     virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
         return ref_->reflectance(geom);
     }
 
-    virtual bool is_specular_any() const override {
-        return ref_->is_specular_any();
+    virtual bool is_specular_component(int comp) const override {
+        return ref_->is_specular_component(comp);
     }
 };
 

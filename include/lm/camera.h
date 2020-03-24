@@ -99,7 +99,6 @@ public:
         PointGeometry geom;     //!< Sampled geometry information.
         Vec3 wo;                //!< Sampled direction.
         Vec3 weight;            //!< Contribution divided by probability.
-        bool specular;          //!< Sampled component is specular.
     };
 
     /*!
@@ -140,7 +139,6 @@ public:
     struct DirectionSample {
         Vec3 wo;
         Vec3 weight;
-        bool specular;
     };
 
     /*!

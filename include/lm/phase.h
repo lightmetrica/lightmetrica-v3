@@ -26,7 +26,6 @@ public:
     struct DirectionSample {
         Vec3 wo;            //!< Sampled direction.
         Vec3 weight;        //!< Contribution divided by probability.
-        bool specular;      //!< Sampled component is specular.
     };
 
     /*!

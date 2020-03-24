@@ -812,24 +812,29 @@ static void bind_material(pybind11::module& m) {
     pybind11::class_<Material::DirectionSample>(m, "Material_DirectionSample")
         .def(pybind11::init<>())
         .def_readwrite("wo", &Material::DirectionSample::wo)
-        .def_readwrite("weight", &Material::DirectionSample::weight)
-        .def_readwrite("specular", &Material::DirectionSample::specular);
+        .def_readwrite("weight", &Material::DirectionSample::weight);
 
     class Material_Py final : public Material {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Material, construct, prop);
         }
-        virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Material, sample_direction, u, geom, wi, trans_dir);
+        virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(ComponentSample, Material, sample_component, u, geom);
         }
-        virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_direction, geom, wi, wo, eval_delta);
+        virtual Float pdf_component(int comp, const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_component, comp, geom);
         }
-        virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, wi, wo, trans_dir, eval_delta);
+        virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, int comp, TransDir trans_dir) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Material, sample_direction, u, geom, wi, comp, trans_dir);
         }
-        virtual bool is_specular_any() const override {
-            PYBIND11_OVERLOAD_PURE(bool, Material, is_specular_any);
+        virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, int comp, bool eval_delta) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_direction, geom, wi, wo, comp, eval_delta);
+        }
+        virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int comp, TransDir trans_dir, bool eval_delta) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Material, eval, geom, wi, wo, comp, trans_dir, eval_delta);
+        }
+        virtual bool is_specular_component(int comp) const override {
+            PYBIND11_OVERLOAD_PURE(bool, Material, is_specular_component, comp);
         }
         virtual std::optional<Vec3> reflectance(const PointGeometry& geom) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<Vec3>, Material, reflectance, geom);
@@ -840,7 +845,7 @@ static void bind_material(pybind11::module& m) {
         .def("sample_direction", &Material::sample_direction)
         .def("pdf_direction", &Material::pdf_direction)
         .def("eval", &Material::eval)
-        .def("is_specular_any", &Material::is_specular_any)
+        .def("is_specular_component", &Material::is_specular_component)
         .def("reflectance", &Material::reflectance)
         .PYLM_DEF_COMP_BIND(Material);
 }
@@ -852,8 +857,7 @@ static void bind_phase(pybind11::module& m) {
 	pybind11::class_<Phase::DirectionSample>(m, "Phase_DirectionSample")
 		.def(pybind11::init<>())
 		.def_readwrite("wo", &Phase::DirectionSample::wo)
-		.def_readwrite("weight", &Phase::DirectionSample::weight)
-        .def_readwrite("specular", &Phase::DirectionSample::specular);
+		.def_readwrite("weight", &Phase::DirectionSample::weight);
 
 	class Phase_Py final : public Phase {
 		virtual void construct(const Json& prop) override {
@@ -943,14 +947,12 @@ static void bind_camera(pybind11::module& m) {
         .def(pybind11::init<>())
         .def_readonly("geom", &Camera::RaySample::geom)
         .def_readonly("wo", &Camera::RaySample::wo)
-        .def_readonly("weight", &Camera::RaySample::weight)
-        .def_readonly("specular", &Camera::RaySample::specular);
+        .def_readonly("weight", &Camera::RaySample::weight);
 
     pybind11::class_<Camera::DirectionSample>(m, "Camera_DirectionSample")
         .def(pybind11::init<>())
         .def_readonly("wo", &Camera::DirectionSample::wo)
-        .def_readonly("weight", &Camera::DirectionSample::weight)
-        .def_readonly("specular", &Camera::DirectionSample::specular);
+        .def_readonly("weight", &Camera::DirectionSample::weight);
 
     class Camera_Py final : public Camera {
         virtual void construct(const Json& prop) override {
@@ -1032,8 +1034,7 @@ static void bind_light(pybind11::module& m) {
         .def(pybind11::init<>())
         .def_readwrite("geom", &Light::RaySample::geom)
         .def_readwrite("wo", &Light::RaySample::wo)
-        .def_readwrite("weight", &Light::RaySample::weight)
-        .def_readwrite("specular", &Light::RaySample::specular);
+        .def_readwrite("weight", &Light::RaySample::weight);
 
     class Light_Py final : public Light {
         virtual void construct(const Json& prop) override {

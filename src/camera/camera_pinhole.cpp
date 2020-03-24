@@ -161,16 +161,14 @@ public:
         return RaySample{
             PointGeometry::make_degenerated(position_),
             primary_ray(u.ud).d,
-            Vec3(1_f),
-            false
+            Vec3(1_f)
         };
     }
 
     virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u) const override {
         return DirectionSample{
             primary_ray(u.ud).d,
-            Vec3(1_f),
-            false
+            Vec3(1_f)
         };
     }
 
@@ -207,8 +205,7 @@ public:
         return RaySample{
             geomE,
             wo,
-            We / p,
-            false
+            We / p
         };
     }
 

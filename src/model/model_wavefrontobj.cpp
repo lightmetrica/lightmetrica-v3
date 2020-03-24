@@ -14,7 +14,7 @@
 #include <lm/light.h>
 #include <lm/surface.h>
 
-#define NO_MIXTURE_MATERIAL 0
+#define NO_MIXTURE_MATERIAL 1
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -308,6 +308,12 @@ public:
 LM_COMP_REG_IMPL(Mesh_WavefrontObj, "mesh::wavefrontobj");
 
 // ------------------------------------------------------------------------------------------------
+
+
+
+// ------------------------------------------------------------------------------------------------
+
+#if 0
 
 // Mixtured material without alpha texture
 class Material_WavefrontObj_Mixture_Without_Alpha final : public Material {
@@ -739,5 +745,7 @@ public:
 };
 
 LM_COMP_REG_IMPL(Material_WavefrontObj_Mixture, "material::wavefrontobj_mixture");
+
+#endif
 
 LM_NAMESPACE_END(LM_NAMESPACE)

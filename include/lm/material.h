@@ -37,6 +37,31 @@ public:
         EL
     };
 
+    // --------------------------------------------------------------------------------------------
+
+    /*!
+    */
+    struct ComponentSample {
+        int comp;
+        Float weight;
+    };
+
+    /*!
+    */
+    struct ComponentSampleU {
+        Vec2 uc;
+    };
+
+    /*!
+    */
+    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom) const = 0;
+    
+    /*!
+    */
+    virtual Float pdf_component(int comp, const PointGeometry& geom) const = 0;
+
+    // --------------------------------------------------------------------------------------------
+
     /*!
         \brief Result of direction sampling.
 
@@ -48,7 +73,6 @@ public:
     struct DirectionSample {
         Vec3 wo;        //!< Sampled direction.
         Vec3 weight;    //!< Contribution divided by probability (including probability of component selection).
-        bool specular;  //!< Sampled component is specular.
     };
 
     /*!
@@ -76,7 +100,7 @@ public:
         Note that the evaluated weight doesn't contain the evaluation of the pdf of component selection.
         \endrst
     */
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, int comp, TransDir trans_dir) const = 0;
 
     /*!
         \brief Evaluate pdf in projected solid angle measure.
@@ -90,7 +114,9 @@ public:
         Note that the evaluated pdf doesn't contain the probabilty of component selection.
         \endrst
     */
-    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const = 0;
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, int comp, bool eval_delta) const = 0;
+
+    // --------------------------------------------------------------------------------------------
 
     /*!
         \brief Evaluate BSDF.
@@ -103,11 +129,11 @@ public:
         This function evaluates underlying BSDF of the material.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const = 0;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int comp, TransDir trans_dir, bool eval_delta) const = 0;
 
     /*!
     */
-    virtual bool is_specular_any() const = 0;
+    virtual bool is_specular_component(int comp) const = 0;
 
     /*!
         \brief Evaluate reflectance.

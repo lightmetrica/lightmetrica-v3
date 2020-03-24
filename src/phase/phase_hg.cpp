@@ -46,7 +46,7 @@ public:
         const auto local_wo = Vec3(sinT*cosP, sinT*sinP, cosT);
         const auto [u, v] = math::orthonormal_basis(-wi);
         const auto wo = Mat3(u, v, -wi) * local_wo;
-        return DirectionSample{ wo, Vec3(1_f), false };
+        return DirectionSample{ wo, Vec3(1_f) };
     }
 
     virtual Float pdf_direction(const PointGeometry&, Vec3 wi, Vec3 wo) const override {

@@ -48,7 +48,15 @@ private:
     }
 
 public:
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
+    virtual ComponentSample sample_component(const ComponentSampleU&, const PointGeometry&) const override {
+        return { 0, 1_f };
+    }
+
+    virtual Float pdf_component(int, const PointGeometry&) const override {
+        return 1_f;
+    }
+
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& geom, Vec3 wi, int, TransDir trans_dir) const override {
         const auto [n, u, v] = geom.orthonormal_basis_twosided(wi);
         const auto u1 = us.ud[0] * 2_f * Pi;
         const auto u2 = us.ud[1];
@@ -58,12 +66,11 @@ public:
         if (geom.opposite(wi, wo)) {
             return {};
         }
-        const auto f = eval(geom, wi, wo, trans_dir, {});
-        const auto p = pdf_direction(geom, wi, wo, {});
+        const auto f = eval(geom, wi, wo, 0, trans_dir, {});
+        const auto p = pdf_direction(geom, wi, wo, 0, {});
         return DirectionSample{
             wo,
-            f / p,
-            false
+            f / p
         };
     }
 
@@ -71,7 +78,7 @@ public:
         return Ks_;
     }
 
-    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, bool) const override {
         if (geom.opposite(wi, wo)) {
             return 0_f;
         }
@@ -80,7 +87,7 @@ public:
         return normal_dist(wh,u,v,n)*glm::dot(wh,n)/(4_f*glm::dot(wo, wh)*glm::dot(wo, n));
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir, bool) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, TransDir, bool) const override {
         if (geom.opposite(wi, wo)) {
             return {};
         }
@@ -90,168 +97,11 @@ public:
         return Ks_*Fr*(normal_dist(wh,u,v,n)*shadowG(wi,wo,u,v,n)/(4_f*dot(wi,n)*dot(wo,n)));
     }
 
-    virtual bool is_specular_any() const override {
+    virtual bool is_specular_component(int) const override {
         return false;
     }
 };
 
 LM_COMP_REG_IMPL(Material_Glossy, "material::glossy");
-
-// ------------------------------------------------------------------------------------------------
-
-#if 0
-// Taken from lmv2 for debugging
-class Material_Glossy2 final : public Material {
-private:
-    Vec3 R_;
-    Vec3 eta_;
-    Vec3 k_;
-    Float roughness_;
-
-public:
-    virtual void construct(const Json& prop) override {
-        const auto Ks = json::value<Vec3>(prop, "Ks");
-        const auto ax = json::value<Float>(prop, "ax");
-        const auto ay = json::value<Float>(prop, "ay");
-
-        R_ = Ks;
-        eta_ = Vec3(0.140000_f, 0.129000_f, 0.158500_f);
-        k_ = Vec3(4.586250_f, 3.348125_f, 2.329375_f);
-        roughness_ = .5_f;
-    }
-
-private:
-    Vec3 sample_GGX(Rng& rng) const
-    {
-        // Input u \in [0,1]^2
-        const auto to_open_open = [](Float u) -> Float {
-            return (1_f - 2_f * Eps) * u + Eps;
-        };
-        const auto to_open_closed = [](Float u) -> Float {
-            return (1_f - Eps) * u + Eps;
-        };
-
-        // u0 \in (0,1]
-        const auto u0 = to_open_closed(rng.u());
-        // u1 \in (0,1)
-        const auto u1 = to_open_open(rng.u());
-
-        // Robust way of computation
-        const auto cos_theta = [&]() -> Float {
-            const auto v1 = math::safe_sqrt(1_f - u0);
-            const auto v2 = math::safe_sqrt(1_f - (1_f - roughness_ * roughness_) * u0);
-            return v1 / v2;
-        }();
-        const auto sin_theta = [&]() -> Float {
-            const auto v1 = math::safe_sqrt(u0);
-            const auto v2 = math::safe_sqrt(1_f - (1_f - roughness_ * roughness_) * u0);
-            return roughness_ * (v1 / v2);
-        }();
-        const auto phi = Pi * (2_f * u1 - 1_f);
-        return Vec3(
-            sin_theta * glm::cos(phi),
-            sin_theta * glm::sin(phi),
-            cos_theta);
-    }
-
-    Float evaluate_GGX(const Vec3& H) const {
-        const auto cosH = math::local_cos(H);
-        const auto tanH = math::local_tan(H);
-        if (cosH <= 0_f) return 0_f;
-        const Float t1 = roughness_ * roughness_;
-        const Float t2 = [&]() {
-            const Float t = roughness_ * roughness_ + tanH * tanH;
-            return Pi * cosH * cosH * cosH * cosH * t * t;
-        }();
-        return t1 / t2;
-    }
-
-    Float evalaute_shadow_masking(const Vec3& wi, const Vec3& wo, const Vec3& H) const
-    {
-        const auto n_dot_H = math::local_cos(H);
-        const auto n_dot_wo = math::local_cos(wo);
-        const auto n_dot_wi = math::local_cos(wi);
-        const auto wo_dot_H = std::abs(glm::dot(wo, H));
-        const auto wi_dot_H = std::abs(glm::dot(wo, H));
-        return std::min(1_f, std::min(2_f * n_dot_H * n_dot_wo / wo_dot_H, 2_f * n_dot_H * n_dot_wi / wi_dot_H));
-    }
-
-    Vec3 evaluate_fresnel_conductor(Float cos_theta_i) const
-    {
-        const auto tmp = (eta_*eta_ + k_ * k_) * (cos_theta_i * cos_theta_i);
-        const auto rParl2 =
-            (tmp - (eta_ * Vec3(2_f * cos_theta_i)) + Vec3(1_f)) /
-            (tmp + (eta_ * Vec3(2_f * cos_theta_i)) + Vec3(1_f));
-        const auto tmpF = eta_ * eta_ + k_ * k_;
-        const auto rPerp2 =
-            (tmpF - (eta_ * (2_f * cos_theta_i)) + cos_theta_i * cos_theta_i) /
-            (tmpF + (eta_ * (2_f * cos_theta_i)) + cos_theta_i * cos_theta_i);
-        return (rParl2 + rPerp2) * .5_f;
-    }
-
-public:
-    virtual bool is_specular(const PointGeometry&, int) const override {
-        return false;
-    }
-
-    virtual std::optional<DirectionSample> sample_direction(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-        const auto local_wi = geom.to_local * wi;
-        if (math::local_cos(local_wi) <= 0_f) {
-            return {};
-        }
-
-        const auto H = sample_GGX(rng);
-        const auto local_wo = -local_wi - 2_f * glm::dot(-local_wi, H) * H;
-        if (math::local_cos(local_wo) <= 0_f) {
-            return {};
-        }
-
-        const auto wo = geom.to_world * local_wo;
-        const auto f = eval(geom, {}, wi, wo);
-        const auto p = pdf_direction(geom, {}, wi, wo);
-        return DirectionSample{
-            wo,
-            SurfaceComp::DontCare,
-            f / p
-        };
-    }
-
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng&, const PointGeometry&, int, Vec3) const override {
-        return {};
-    }
-
-    virtual std::optional<Vec3> reflectance(const PointGeometry&, int) const override {
-        return R_;
-    }
-
-    virtual Float pdf_direction(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
-        const auto local_wi = geom.to_local * wi;
-        const auto local_wo = geom.to_local * wo;
-        if (math::local_cos(local_wi) <= 0_f || math::local_cos(local_wo) <= 0_f) {
-            return 0_f;
-        }
-
-        const auto H = glm::normalize(local_wi + local_wo);
-        const auto D = evaluate_GGX(H);
-        return D * math::local_cos(H) / (4_f * glm::dot(local_wo, H)) / math::local_cos(local_wo);
-    }
-
-    virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
-        const auto local_wi = geom.to_local * wi;
-        const auto local_wo = geom.to_local * wo;
-        if (math::local_cos(local_wi) <= 0_f || math::local_cos(local_wo) <= 0_f) {
-            return Vec3(0_f);
-        }
-
-        const auto H = glm::normalize(local_wi + local_wo);
-        const auto D = evaluate_GGX(H);
-        const auto G = evalaute_shadow_masking(local_wi, local_wo, H);
-        const auto  F = evaluate_fresnel_conductor(glm::dot(local_wi, H));
-        return R_ * D * G * F / (4_f * math::local_cos(local_wi)) / math::local_cos(local_wo);
-    }
-};
-
-//LM_COMP_REG_IMPL(Material_Glossy2, "material::glossy");
-#endif
 
 LM_NAMESPACE_END(LM_NAMESPACE)

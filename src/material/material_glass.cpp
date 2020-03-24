@@ -111,7 +111,15 @@ public:
         Ni_ = json::value<Float>(prop, "Ni");
     }
 
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
+    virtual ComponentSample sample_component(const ComponentSampleU&, const PointGeometry&) const override {
+        return { 0, 1_f };
+    }
+
+    virtual Float pdf_component(int, const PointGeometry&) const override {
+        return 1_f;
+    }
+
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, int, TransDir trans_dir) const override {
         const bool in = glm::dot(wi, geom.n) > 0_f;
         const auto n = in ? geom.n : -geom.n;
         const auto eta = in ? 1_f / Ni_ : Ni_;
@@ -124,8 +132,7 @@ public:
             const auto C = Vec3(1_f);
             return DirectionSample{
                 wo,
-                C,
-                true
+                C
             };
         }
         else {
@@ -134,13 +141,12 @@ public:
             const auto C = Vec3(refr_correction(eta, trans_dir));
             return DirectionSample{
                 wt,
-                C,
-                true
+                C
             };
         }
     }
 
-    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, bool eval_delta) const override {
         if (eval_delta) {
             return 0_f;
         }
@@ -162,7 +168,7 @@ public:
         }
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, TransDir trans_dir, bool eval_delta) const override {
         if (eval_delta) {
             return Vec3(0_f);
         }
@@ -186,7 +192,7 @@ public:
         return Vec3(0_f);
     }
 
-    virtual bool is_specular_any() const override {
+    virtual bool is_specular_component(int) const override {
         return true;
     }
 };

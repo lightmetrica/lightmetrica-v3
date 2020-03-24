@@ -77,8 +77,10 @@ public:
 
             // Sample initial vertex
             const auto sE = path::sample_position(rng, scene_, TransDir::EL);
+            const auto sE_comp = path::sample_component(rng, scene_, sE->sp);
             auto sp = sE->sp;
-            auto throughput = sE->weight;
+            int comp = sE_comp.comp;
+            auto throughput = sE->weight * sE_comp.weight;
 
             // ------------------------------------------------------------------------------------
 
@@ -86,23 +88,6 @@ public:
             Vec3 wi{};
             Vec2 raster_pos{};
             for (int num_verts = 1; num_verts < max_verts_; num_verts++) {
-                // Sample direction
-                const auto s = path::sample_direction(rng, scene_, sp, wi, TransDir::EL);
-#if 0
-                if (!s) {
-                    break;
-                }
-#endif
-
-                // --------------------------------------------------------------------------------
-
-                // Compute and cache raster position
-                if (num_verts == 1) {
-                    raster_pos = *path::raster_position(scene_, s->wo);
-                }
-
-                // --------------------------------------------------------------------------------
-
                 // Sample NEE edge
                 [&]{
                     // Skip if sampling mode is naive
@@ -129,7 +114,7 @@ public:
 
                     // Evaluate BSDF
                     const auto wo = -sL->wo;
-                    const auto fs = path::eval_contrb_direction(scene_, sp, wi, wo, TransDir::EL, true);
+                    const auto fs = path::eval_contrb_direction(scene_, sp, wi, wo, comp, TransDir::EL, true);
 
                     // Evaluate MIS weight
                     const auto mis_w = [&]() -> Float {
@@ -141,33 +126,36 @@ public:
                         // When the light is not samplable by BSDF sampling, we will use only NEE.
                         // This includes, for instance, the light sampling for
                         // directional light, environment light, point light, etc.
-                        const bool is_samplable_by_bsdf_sampling = !s->specular && !sL->sp.geom.degenerated;
+                        const bool is_samplable_by_bsdf_sampling
+                            = !path::is_specular_component(scene_, sp, comp) && !sL->sp.geom.degenerated;
                         if (!is_samplable_by_bsdf_sampling) {
                             return 1_f;
                         }
 
                         // MIS weight using balance heuristic
                         const auto p_light = path::pdf_direct(scene_, sp, sL->sp, sL->wo);
-                        const auto p_bsdf = path::pdf_direction(scene_, sp, wi, wo, true);
+                        const auto p_bsdf = path::pdf_direction(scene_, sp, wi, wo, comp, true);
                         return math::balance_heuristic(p_light, p_bsdf);
                     }();
 
                     // Accumulate contribution
-#if 1
                     const auto C = throughput * fs * sL->weight * mis_w;
-#else
-                    const auto G = surface::geometry_term(sp.geom, sL->sp.geom);
-                    const auto Le = path::eval_contrb_direction(scene_, sL->sp, {}, sL->wo, TransDir::LE, true);
-                    const auto pA = path::pdf_position(scene_, sL->sp);
-                    const auto C = fs * G * Le / pA;
-                    //const auto C = Vec3(1_f);
-#endif
                     film_->splat(rp, C);
                 }();
 
+                // --------------------------------------------------------------------------------
 
+                // Sample direction
+                const auto s = path::sample_direction(rng, scene_, sp, wi, comp, TransDir::EL);
                 if (!s) {
                     break;
+                }
+
+                // --------------------------------------------------------------------------------
+
+                // Compute and cache raster position
+                if (num_verts == 1) {
+                    raster_pos = *path::raster_position(scene_, s->wo);
                 }
 
                 // --------------------------------------------------------------------------------
@@ -192,7 +180,7 @@ public:
                         // This happens when the direction is sampled from delta distribution.
                         // Note that this include the case where the surface has multi-component material
                         // containing delta component and the direction is sampled from the component.
-                        const auto samplable_by_nee = !s->specular;
+                        const auto samplable_by_nee = !path::is_specular_component(scene_, sp, comp);
                         if (samplable_by_nee) {
                             return;
                         }
@@ -206,7 +194,7 @@ public:
                     // Compute contribution from the direct hit
                     const auto spL = hit->as_type(SceneInteraction::LightEndpoint);
                     const auto woL = -s->wo;
-                    const auto fs = path::eval_contrb_direction(scene_, spL, {}, woL, TransDir::LE, {});
+                    const auto fs = path::eval_contrb_direction(scene_, spL, {}, woL, comp, TransDir::LE, {});
                     const auto mis_w = [&]() -> Float {
                         // Skip if sampling mode is naive
                         if (sampling_mode_ == SamplingMode::Naive) {
@@ -214,13 +202,13 @@ public:
                         }
 
                         // If the light is not samplable by NEE, we will use only BSDF sampling.
-                        const auto is_samplable_by_nee = !s->specular;
+                        const auto is_samplable_by_nee = !path::is_specular_component(scene_, sp, comp);
                         if (!is_samplable_by_nee) {
                             return 1_f;
                         }
 
                         // MIS weight using balance heuristic
-                        const auto pdf_bsdf = path::pdf_direction(scene_, sp, wi, s->wo, true);
+                        const auto pdf_bsdf = path::pdf_direction(scene_, sp, wi, s->wo, comp, true);
                         const auto pdf_light = path::pdf_direct(scene_, sp, spL, woL);
                         return math::balance_heuristic(pdf_bsdf, pdf_light);
                     }();
@@ -243,9 +231,16 @@ public:
 
                 // --------------------------------------------------------------------------------
 
+                // Sample component
+                const auto s_comp = path::sample_component(rng, scene_, *hit);
+                throughput *= s_comp.weight;
+
+                // --------------------------------------------------------------------------------
+
                 // Update information
                 wi = -s->wo;
                 sp = *hit;
+                comp = s_comp.comp;
             }
         });
 
