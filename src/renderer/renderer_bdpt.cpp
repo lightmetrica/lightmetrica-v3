@@ -123,9 +123,12 @@ public:
                 // use (0,k) strategy instead.
                 int s = 1;
                 int t = n-1;
-                if (subpathE.vs[t-1].specular) {
-                    s = 0;
-                    t = n;
+                {
+                    const auto& v = subpathE.vs[t-1];
+                    if (path::is_specular_component(scene_, v.sp, v.comp)) {
+                        s = 0;
+                        t = n;
+                    }
                 }
 
                 // Selected strategy is not sampled due to the early rejection

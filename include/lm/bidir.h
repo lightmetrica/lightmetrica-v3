@@ -12,9 +12,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // Path vertex
 struct Vert {
     SceneInteraction sp;    // Surface interaction.
-    bool specular;          // Direction originalted from sp is sampled from delta distribution.
-                            // This flag is necessary to keep track of whether
-                            // the direction is sampled from delta distribution.
+    int comp;               // Component index.
 };
 
 // Light transportation path
@@ -75,7 +73,7 @@ struct Path {
     }
 
     // Return true if the path is samplable by the strategy (s,t)
-    bool is_samplable_bidir(int s) const {
+    bool is_samplable_bidir(const Scene* scene, int s) const {
         const int n = num_verts();
         const int t = n - s;
         if (s == 0 && t > 0) {
@@ -89,7 +87,8 @@ struct Path {
             // Otherwise check if two vertices can be connected
             const auto* vL = vertex_at(s-1, TransDir::LE);
             const auto* vE = vertex_at(t-1, TransDir::EL);
-            if (vL->specular || vE->specular) {
+            if (path::is_specular_component(scene, vL->sp, vL->comp) ||
+                path::is_specular_component(scene, vE->sp, vL->comp)) {
                 return false;
             }
             return true;
@@ -103,19 +102,22 @@ struct Path {
             return Vec3(1_f);
         }
         const auto v0 = vertex_at(0, trans_dir);
-        auto alpha = path::eval_contrb_position(scene, v0->sp) / path::pdf_position(scene, v0->sp);
+        auto alpha = path::eval_contrb_position(scene, v0->sp)
+            / path::pdf_position(scene, v0->sp)
+            / path::pdf_component(scene, v0->sp, v0->comp);
         for (int i = 0; i < l - 1; i++) {            
             const auto* v      = vertex_at(i,   trans_dir);
             const auto* v_prev = vertex_at(i-1, trans_dir);
             const auto* v_next = vertex_at(i+1, trans_dir);
             const auto wi = direction(v, v_prev);
             const auto wo = direction(v, v_next);
-            const auto f = path::eval_contrb_direction(scene, v->sp, wi, wo, trans_dir, false);
+            const auto f = path::eval_contrb_direction(scene, v->sp, wi, wo, v->comp, trans_dir, false);
             if (math::is_zero(f)) {
                 return Vec3(0_f);
             }
-            const auto p_projSA = path::pdf_direction(scene, v->sp, wi, wo, false);
-            alpha *= f / p_projSA;
+            const auto p_comp = path::pdf_component(scene, v_next->sp, v_next->comp);
+            const auto p_projSA = path::pdf_direction(scene, v->sp, wi, wo, v->comp, false);
+            alpha *= f / p_projSA / p_comp;
         }
         return alpha;
     }
@@ -129,21 +131,21 @@ struct Path {
             const auto* v      = vertex_at(0, TransDir::LE);
             const auto* v_next = vertex_at(1, TransDir::LE);
             cst = path::eval_contrb_position(scene, v->sp) *
-                  path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), TransDir::LE, false);
+                  path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::LE, false);
         }
         else if (s > 0 && t == 0) {
             const auto* v      = vertex_at(0, TransDir::EL);
             const auto* v_next = vertex_at(1, TransDir::EL);
             cst = path::eval_contrb_position(scene, v->sp) *
-                  path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), TransDir::EL, false);
+                  path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::EL, false);
         }
         else if (s > 0 && t > 0) {
             const auto* vL      = vertex_at(s-1, TransDir::LE);
             const auto* vL_prev = vertex_at(s-2, TransDir::LE);
             const auto* vE      = vertex_at(t-1, TransDir::EL);
             const auto* vE_prev = vertex_at(t-2, TransDir::EL);
-            const auto fsL = path::eval_contrb_direction(scene, vL->sp, direction(vL, vL_prev), direction(vL, vE), TransDir::LE, true);
-            const auto fsE = path::eval_contrb_direction(scene, vE->sp, direction(vE, vE_prev), direction(vE, vL), TransDir::EL, true);
+            const auto fsL = path::eval_contrb_direction(scene, vL->sp, direction(vL, vL_prev), direction(vL, vE), vL->comp, TransDir::LE, true);
+            const auto fsE = path::eval_contrb_direction(scene, vE->sp, direction(vE, vE_prev), direction(vE, vL), vE->comp, TransDir::EL, true);
             const auto G = surface::geometry_term(vL->sp.geom, vE->sp.geom);
             cst = fsL * G * fsE;
         }
@@ -189,7 +191,7 @@ struct Path {
                 const auto* v_next = vertex_at(i+1, trans_dir);
                 const auto wi = direction(v, v_prev);
                 const auto wo = direction(v, v_next);
-                f_prod *= path::eval_contrb_direction(scene, v->sp, wi, wo, trans_dir, false);
+                f_prod *= path::eval_contrb_direction(scene, v->sp, wi, wo, v->comp, trans_dir, false);
                 f_prod *= surface::geometry_term(v->sp.geom, v_next->sp.geom);
             }
             return f_prod;
@@ -211,7 +213,7 @@ struct Path {
         const int t = n - s;
         
         // If the path is not samplable by the strategy (s,t), return zero.
-        if (!is_samplable_bidir(s)) {
+        if (!is_samplable_bidir(scene, s)) {
             return 0_f;
         }
         
@@ -227,8 +229,9 @@ struct Path {
                 const auto* v_next = vertex_at(i+1, trans_dir);
                 const auto wi = direction(v, v_prev);
                 const auto wo = direction(v, v_next);
-                const auto p_projSA = path::pdf_direction(scene, v->sp, wi, wo, false);
-                p *= surface::convert_pdf_projSA_to_area(p_projSA, v->sp.geom, v_next->sp.geom);
+                const auto p_comp = path::pdf_component(scene, v_next->sp, v_next->comp);
+                const auto p_projSA = path::pdf_direction(scene, v->sp, wi, wo, v->comp, false);
+                p *= p_comp * surface::convert_pdf_projSA_to_area(p_projSA, v->sp.geom, v_next->sp.geom);
             }
             return p;
         };
@@ -280,7 +283,8 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
         if (!s) {
             return;
         }
-        path.vs.push_back({ s->sp, false });
+        const auto s_comp = path::sample_component(rng, scene, s->sp);
+        path.vs.push_back({ s->sp, s_comp.comp });
     }
     // Perform random walk
     while (path.num_verts() < max_verts) {
@@ -289,24 +293,22 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
         auto* v_curr = path.subpath_vertex_at(i);
         auto* v_prev = path.subpath_vertex_at(i-1);
         const auto wi = path.direction(v_curr, v_prev);
-        const auto s = path::sample_direction(rng, scene, v_curr->sp, wi, trans_dir);
+        const auto s = path::sample_direction(rng, scene, v_curr->sp, wi, v_curr->comp, trans_dir);
         if (!s) {
             break;
         }
-
-        // Update the specular flag
-        v_curr->specular = s->specular;
 
         // Intersection to next surface
         const auto hit = scene->intersect({ v_curr->sp.geom.p, s->wo });
         if (!hit) {
             break;
         }
+
+        // Sample component
+        const auto s_comp = path::sample_component(rng, scene, *hit);
         
         // Add a vertex
-        // In this time, the component is not yet to be selected.
-        // We set specular flag if the surface contains at least one delta component.
-        path.vs.push_back({ *hit, path::is_specular_any(scene, *hit) });
+        path.vs.push_back({ *hit, s_comp.comp });
     }
 }
 

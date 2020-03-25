@@ -51,7 +51,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/phase.h"
     "${_INCLUDE_DIR}/volume.h"
     "${_INCLUDE_DIR}/path.h"
-    # "${_INCLUDE_DIR}/bidir.h"
+    "${_INCLUDE_DIR}/bidir.h"
     # "${_INCLUDE_DIR}/mut.h"
     )
 set(_SOURCE_FILES 
@@ -92,7 +92,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_raycast.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
     "${_SOURCE_DIR}/renderer/renderer_lt.cpp"
-    # "${_SOURCE_DIR}/renderer/renderer_bdpt.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_bdpt.cpp"
     # "${_SOURCE_DIR}/renderer/renderer_pssmlt.cpp"
     # "${_SOURCE_DIR}/renderer/renderer_mlt.cpp"
     # "${_SOURCE_DIR}/renderer/renderer_volpt.cpp"

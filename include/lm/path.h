@@ -186,6 +186,16 @@ static ComponentSample sample_component(Rng& rng, const Scene* scene, const Scen
     return sample_component(rng.next<ComponentSampleU>(), scene, sp);
 }
 
+/*!
+*/
+static Float pdf_component(const Scene* scene, const SceneInteraction& sp, int comp) {
+    if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
+        const auto* material = scene->node_at(sp.primitive).primitive.material;
+        return material->pdf_component(comp, sp.geom);
+    }
+    return 1_f;
+}
+
 #pragma endregion
 
 // ------------------------------------------------------------------------------------------------
