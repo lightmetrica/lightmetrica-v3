@@ -6,7 +6,10 @@
 #pragma once
 
 #include <lm/logger.h>
+#pragma warning(push)
+#pragma warning(disable:4324)   // structure was padded due to alignment specifier
 #include <embree3/rtcore.h>
+#pragma warning(pop)
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 static void handle_embree_error(void*, RTCError code, const char* str = nullptr) {
@@ -31,7 +34,7 @@ static void handle_embree_error(void*, RTCError code, const char* str = nullptr)
         LM_ERROR(str);
     }
 
-    throw std::runtime_error(codestr);
+    LM_THROW_EXCEPTION(Error::None, codestr);
 }
 
 void from_json(const lm::Json& j, RTCSceneFlags& sf);
