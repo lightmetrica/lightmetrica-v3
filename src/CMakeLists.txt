@@ -91,7 +91,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_blank.cpp"
     "${_SOURCE_DIR}/renderer/renderer_raycast.cpp"
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
-    # "${_SOURCE_DIR}/renderer/renderer_lt.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_lt.cpp"
     # "${_SOURCE_DIR}/renderer/renderer_bdpt.cpp"
     # "${_SOURCE_DIR}/renderer/renderer_pssmlt.cpp"
     # "${_SOURCE_DIR}/renderer/renderer_mlt.cpp"

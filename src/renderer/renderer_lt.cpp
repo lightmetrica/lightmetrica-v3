@@ -57,6 +57,8 @@ public:
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
+            // ------------------------------------------------------------------------------------
+
             // Sample primary ray
             const auto s_primary = path::sample_primary_ray(rng, scene_, TransDir::LE);
 
@@ -66,23 +68,24 @@ public:
                 return;
             }
 
+            // ------------------------------------------------------------------------------------
+
             // Path throughput
             Vec3 throughput = s_primary->weight;
+
+            // Current component
+            const auto s_comp_primary_hit = path::sample_component(rng, scene_, *hit_primary);
+            throughput *= s_comp_primary_hit.weight;
 
             // Current scene interaction and incident ray direction
             SceneInteraction sp = *hit_primary;
             Vec3 wi = -s_primary->wo;
+            int comp = s_comp_primary_hit.comp;
+
+            // ------------------------------------------------------------------------------------
 
             // Perform random walk
             for (int num_verts = 2; num_verts < max_verts_; num_verts++) {
-                // Sample a direction based on current scene interaction
-                const auto s = path::sample_direction(rng, scene_, sp, wi, TransDir::LE);
-#if 0
-                if (!s || math::is_zero(s->weight)) {
-                    break;
-                }
-#endif
-
                 // Sample a NEE edge
                 [&]{
                     // Sample a camera
@@ -102,14 +105,20 @@ public:
 
                     // Evaluate and accumulate contribution
                     const auto wo = -sE->wo;
-                    const auto fs = path::eval_contrb_direction(scene_, sp, wi, wo, TransDir::LE, true);
+                    const auto fs = path::eval_contrb_direction(scene_, sp, wi, wo, comp, TransDir::LE, true);
                     const auto C = throughput * fs * sE->weight;
                     film_->splat(*rp, C);
                 }();
 
-                if (!s || math::is_zero(s->weight)) {
+                // --------------------------------------------------------------------------------
+
+                // Sample a direction based on current scene interaction
+                const auto s = path::sample_direction(rng, scene_, sp, wi, comp, TransDir::LE);
+                if (!s) {
                     break;
                 }
+
+                // --------------------------------------------------------------------------------
 
                 // Intersection to next surface
                 const auto hit = scene_->intersect({ sp.geom.p, s->wo });
@@ -117,8 +126,12 @@ public:
                     break;
                 }
 
+                // --------------------------------------------------------------------------------
+
                 // Update throughput
                 throughput *= s->weight;
+
+                // --------------------------------------------------------------------------------
 
                 // Russian roulette
                 if (num_verts > 5) {
@@ -129,9 +142,18 @@ public:
                     throughput /= 1_f - q;
                 }
 
+                // --------------------------------------------------------------------------------
+
+                // Sample component
+                const auto s_comp = path::sample_component(rng, scene_, *hit);
+                throughput *= s_comp.weight;
+
+                // --------------------------------------------------------------------------------
+
                 // Update
                 wi = -s->wo;
                 sp = *hit;
+                comp = s_comp.comp;
             }
         });
 
