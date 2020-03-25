@@ -33,9 +33,28 @@ class Accel_Embree final : public Accel {
 private:
     RTCDevice device_ = nullptr;
     RTCScene scene_ = nullptr;
+    RTCBuildArguments settings_;
+    RTCSceneFlags sf_;
     std::vector<FlattenedPrimitiveNode> flattened_nodes_;
 
 public:
+
+     virtual void construct(const Json& prop) override {
+        settings_ = rtcDefaultBuildArguments();
+        from_json(prop,settings_);
+
+        from_json(prop,sf_);
+
+        Json j;
+        to_json(j,settings_);
+        LM_INFO(j.dump());
+        j.clear();
+        
+        to_json(j,sf_);
+        LM_INFO( j.dump() );
+        
+        }
+
     Accel_Embree() {
         device_ = rtcNewDevice("");
         handle_embree_error(nullptr, rtcGetDeviceError(device_));
@@ -66,6 +85,9 @@ public:
 
         reset();
         scene_ = rtcNewScene(device_);
+
+        rtcSetSceneFlags(scene_, sf_);
+        rtcSetSceneBuildQuality(scene_, settings_.buildQuality);
 
         // Flatten the scene graph and setup geometries
         LM_INFO("Flattening scene");

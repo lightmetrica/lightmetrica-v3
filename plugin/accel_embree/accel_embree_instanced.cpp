@@ -36,9 +36,28 @@ class Accel_Embree_Instanced final : public Accel {
 private:
     RTCDevice device_ = nullptr;
     RTCScene scene_ = nullptr;
+    RTCBuildArguments settings_;
+    RTCSceneFlags sf_;
     std::vector<FlattenedScene> flattened_scenes_;    // Flattened scenes (index 0: root)
 
 public:
+    
+     virtual void construct(const Json& prop) override {
+        settings_ = rtcDefaultBuildArguments();
+        from_json(prop,settings_);
+
+        from_json(prop,sf_);
+
+        Json j;
+        to_json(j,settings_);
+        LM_INFO(j.dump());
+        j.clear();
+        
+        to_json(j,sf_);
+        LM_INFO( j.dump() );
+        
+        }
+
     Accel_Embree_Instanced() {
         device_ = rtcNewDevice("");
         handle_embree_error(nullptr, rtcGetDeviceError(device_));
@@ -159,6 +178,8 @@ public:
             // Create a new embree scene
             auto& rtcscene = rtcscenes[i];
             rtcscene = rtcNewScene(device_);
+            rtcSetSceneFlags(rtcscene, sf_);
+            rtcSetSceneBuildQuality(rtcscene, settings_.buildQuality);
 
             // Create triangle meshes
             for (const auto& fnode : fscene) {

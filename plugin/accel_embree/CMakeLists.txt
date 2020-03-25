@@ -22,6 +22,7 @@ if (embree_FOUND)
         SOURCES
             "embree.h"
             "accel_embree.cpp"
+            "embree.cpp"
             "accel_embree_instanced.cpp")
 
     # Custom command to copy dynamic libraries
