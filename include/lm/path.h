@@ -598,7 +598,7 @@ static bool is_specular_component(const Scene* scene, const SceneInteraction& sp
         const auto& primitive = scene->node_at(sp.primitive).primitive;
         return primitive.material->is_specular_component(comp);
     }
-    LM_UNREACHABLE_RETURN();
+    return false;
 }
 
 /*!
