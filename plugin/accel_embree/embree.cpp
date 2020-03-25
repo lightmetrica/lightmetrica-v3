@@ -18,7 +18,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
     void from_json(const lm::Json& j, RTCSceneFlags& sf)
     {
         bool rtcsf[5]= {false};
-        //j.at("none").get_to(rtcsf[0]);
 
         tryAt(j,"dynamic",rtcsf[1]);
         tryAt(j,"compact",rtcsf[2]);

@@ -50,11 +50,11 @@ public:
 
         Json j;
         to_json(j,settings_);
-        LM_INFO(j.dump());
+        LM_DEBUG(j.dump());
         j.clear();
         
         to_json(j,sf_);
-        LM_INFO( j.dump() );
+        LM_DEBUG(j.dump() );
         
         }
 

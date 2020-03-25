@@ -53,14 +53,16 @@ inline std::string RTCtoStr(const RTCBuildArguments& rtc, const RTCSceneFlags& s
         "maxLeafSize:\t{}\n"
         "traversalCost:\t{}\n"
         "intersectionCost:\t{}\n",
-        rtc.buildQuality, rtc.maxBranchingFactor, rtc.maxDepth, rtc.sahBlockSize, rtc.minLeafSize,
-        rtc.maxLeafSize, rtc.traversalCost, rtc.intersectionCost);
-        /*
         "dynamic:\t{}\n"
         "compact:\t{}\n"
         "robust:\t{}\n"
         "filter:\t{}\n",
-        sf & (1<<0),sf &(1<<1),sf&(1<<2),sf&(1<<3));*/
+        rtc.buildQuality, rtc.maxBranchingFactor, rtc.maxDepth, rtc.sahBlockSize, rtc.minLeafSize,
+        rtc.maxLeafSize, rtc.traversalCost, rtc.intersectionCost,
+        sf & (1<<0),sf &(1<<1),sf&(1<<2),sf&(1<<3));
+        
+       
+        
         return str;
     }
 LM_NAMESPACE_END(LM_NAMESPACE)
