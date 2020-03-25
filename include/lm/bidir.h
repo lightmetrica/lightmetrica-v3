@@ -88,7 +88,7 @@ struct Path {
             const auto* vL = vertex_at(s-1, TransDir::LE);
             const auto* vE = vertex_at(t-1, TransDir::EL);
             if (path::is_specular_component(scene, vL->sp, vL->comp) ||
-                path::is_specular_component(scene, vE->sp, vL->comp)) {
+                path::is_specular_component(scene, vE->sp, vE->comp)) {
                 return false;
             }
             return true;
@@ -222,7 +222,8 @@ struct Path {
             if (l == 0) {
                 return 1_f;
             }
-            Float p = path::pdf_position(scene, vertex_at(0, trans_dir)->sp);
+            const auto* v0 = vertex_at(0, trans_dir);
+            Float p = path::pdf_position(scene, v0->sp) * path::pdf_component(scene, v0->sp, v0->comp);
             for (int i = 0; i < l - 1; i++) {
                 const auto* v      = vertex_at(i,   trans_dir);
                 const auto* v_prev = vertex_at(i-1, trans_dir);
@@ -231,7 +232,7 @@ struct Path {
                 const auto wo = direction(v, v_next);
                 const auto p_comp = path::pdf_component(scene, v_next->sp, v_next->comp);
                 const auto p_projSA = path::pdf_direction(scene, v->sp, wi, wo, v->comp, false);
-                p *= p_comp * surface::convert_pdf_projSA_to_area(p_projSA, v->sp.geom, v_next->sp.geom);
+                p *= (p_comp * surface::convert_pdf_projSA_to_area(p_projSA, v->sp.geom, v_next->sp.geom));
             }
             return p;
         };
