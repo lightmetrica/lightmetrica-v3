@@ -603,6 +603,24 @@ static Float local_tan2(Vec3 local_d) {
 #pragma region Sampling related
 
 /*!
+    \brief Uniform sampling on unit disk.
+*/
+static Vec2 sample_uniform_disk(Vec2 u) {
+    const auto r = safe_sqrt(u[0]);
+    const auto t = 2_f * Pi * u[1];
+    const auto x = r * std::cos(t);
+    const auto y = r * std::sin(t);
+    return { x, y };
+}
+
+/*!
+    \brief PDF of uniform distribution on unit disk.
+*/
+static constexpr Float pdf_uniform_disk() {
+    return 1_f / Pi;
+}
+
+/*!
     \brief Cosine-weighted direction sampling.
     \param rng Random number generator.
     \return Sampled value.

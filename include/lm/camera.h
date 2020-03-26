@@ -136,6 +136,12 @@ public:
 
     /*!
     */
+    virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo) const = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    /*!
+    */
     struct DirectionSample {
         Vec3 wo;
         Vec3 weight;
@@ -158,6 +164,8 @@ public:
         \return Evaluated pdf.
     */
     virtual Float pdf_direction(Vec3 wo) const = 0;
+
+    // --------------------------------------------------------------------------------------------
 
     /*!
     */

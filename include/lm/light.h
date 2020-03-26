@@ -27,28 +27,9 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Light : public Component {
 public:
     /*!
-        \brief Check if the light source is inifite distant light.
-
-        \rst
-        This function checks if the light source is inifite distant light
-        such as environment light or directional light.
-        \endrst
+        \brief Set scene bound.
     */
-    virtual bool is_infinite() const = 0;
-
-    // --------------------------------------------------------------------------------------------
-
-    /*!
-        \brief Evaluate luminance.
-        \param geom Point geometry on the light source.
-        \param comp Component index.
-        \param wo Outgoing direction from the point of the light source.
-
-        \rst
-        This function evaluates luminance function :math:`L_e` of the light source.
-        \endrst
-    */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const = 0;
+    virtual void set_scene_bound(const Bound& bound) {}
 
     // --------------------------------------------------------------------------------------------
 
@@ -80,6 +61,12 @@ public:
 
     /*!
     */
+    virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo, const Transform& transform) const = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    /*!
+    */
     struct DirectionSample {
         Vec3 wo;
         Vec3 weight;
@@ -98,6 +85,8 @@ public:
     /*!
     */
     virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const = 0;
+
+    // --------------------------------------------------------------------------------------------
 
     /*!
     */
@@ -161,6 +150,20 @@ public:
         \endrst
     */
     virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    /*!
+        \brief Evaluate luminance.
+        \param geom Point geometry on the light source.
+        \param comp Component index.
+        \param wo Outgoing direction from the point of the light source.
+
+        \rst
+        This function evaluates luminance function :math:`L_e` of the light source.
+        \endrst
+    */
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const = 0;
 };
 
 /*!

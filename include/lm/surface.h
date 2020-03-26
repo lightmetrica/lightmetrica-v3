@@ -93,6 +93,19 @@ struct PointGeometry {
     }
 
     /*!
+        \brief Make a point at infinity.
+        \param wo Direction from a point at infinity.
+        \param p Rrepresentative distant point (e.g., a point outside the scene bound).
+    */
+    static PointGeometry make_infinite(Vec3 wo, Vec3 p) {
+        PointGeometry geom;
+        geom.degenerated = false;
+        geom.infinite = true;
+        geom.wo = wo;
+        geom.p = p;
+    }
+
+    /*!
         \brief Make a point on surface.
         \param p Position.
         \param n Shading normal.

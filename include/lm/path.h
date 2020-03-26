@@ -150,6 +150,23 @@ static std::optional<RaySample> sample_primary_ray(Rng& rng, const Scene* scene,
     return sample_primary_ray(rng.next<RaySampleU>(), scene, trans_dir);
 }
 
+/*!
+*/
+static Float pdf_primary_ray(const Scene* scene, const SceneInteraction& sp, Vec3 wo) {
+    const auto& primitive = scene->node_at(sp.primitive).primitive;
+    if (sp.is_type(SceneInteraction::CameraEndpoint)) {
+        return primitive.camera->pdf_ray(sp.geom, wo);
+    }
+    else if (sp.is_type(SceneInteraction::LightEndpoint)) {
+        const auto light_index = scene->light_index_at(sp.primitive);
+        const auto light_primitive_index = scene->light_primitive_index_at(light_index);
+        const auto pL_sel = scene->pdf_light_selection(light_index);
+        const auto pL_ray = primitive.light->pdf_ray(sp.geom, wo, light_primitive_index.global_transform);
+        return pL_sel * pL_ray;
+    }
+    LM_UNREACHABLE_RETURN();
+}
+
 #pragma endregion
 
 // ------------------------------------------------------------------------------------------------

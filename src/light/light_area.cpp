@@ -75,16 +75,6 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual bool is_infinite() const override {
-        return false;
-    }
-
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
-        return glm::dot(wo, geom.n) <= 0_f ? Vec3(0_f) : Ke_;
-    }
-
-    // --------------------------------------------------------------------------------------------
-
     virtual std::optional<RaySample> sample_ray(const RaySampleU& us, const Transform& transform) const override {
         // Sample position
         const auto geomL = sample_position_on_triangle_mesh(us.up, us.upc, transform);
@@ -109,6 +99,8 @@ public:
         };
     }
 
+    // --------------------------------------------------------------------------------------------
+
     virtual std::optional<DirectionSample> sample_direction(const PointGeometry& geom, const DirectionSampleU& us) const override {
         const auto wo_local = math::sample_cosine_weighted(us.ud);
         const auto [u, v] = math::orthonormal_basis(geom.n);
@@ -129,6 +121,8 @@ public:
         }
         return math::pdf_cosine_weighted_projSA();
     }
+
+    // --------------------------------------------------------------------------------------------
 
     virtual std::optional<PositionSample> sample_position(const PositionSampleU& us, const Transform& transform) const override {
         const auto geomL = sample_position_on_triangle_mesh(us.up, us.upc, transform);
@@ -166,6 +160,12 @@ public:
         }
         const auto G = surface::geometry_term(geom, geomL);
         return G == 0_f ? 0_f : tranformed_invA(transform) / G;
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
+        return glm::dot(wo, geom.n) <= 0_f ? Vec3(0_f) : Ke_;
     }
 };
 
