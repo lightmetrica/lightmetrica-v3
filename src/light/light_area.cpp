@@ -99,6 +99,12 @@ public:
         };
     }
 
+    virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo, const Transform& transform) const override {
+        const auto pA = pdf_position(geom, transform);
+        const auto pD = pdf_direction(geom, wo);
+        return pA * pD;
+    }
+
     // --------------------------------------------------------------------------------------------
 
     virtual std::optional<DirectionSample> sample_direction(const PointGeometry& geom, const DirectionSampleU& us) const override {
@@ -163,6 +169,10 @@ public:
     }
 
     // --------------------------------------------------------------------------------------------
+
+    virtual bool is_infinite() const override {
+        return false;
+    }
 
     virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
         return glm::dot(wo, geom.n) <= 0_f ? Vec3(0_f) : Ke_;

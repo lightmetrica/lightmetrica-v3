@@ -103,6 +103,7 @@ struct PointGeometry {
         geom.infinite = true;
         geom.wo = wo;
         geom.p = p;
+        return geom;
     }
 
     /*!

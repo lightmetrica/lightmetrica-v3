@@ -490,7 +490,8 @@ static void bind_surface(pybind11::module& m) {
         .def_readwrite("u", &PointGeometry::u)
         .def_readwrite("v", &PointGeometry::v)
         .def_static("make_degenerated", &PointGeometry::make_degenerated)
-        .def_static("make_infinite", &PointGeometry::make_infinite)
+        .def_static("make_infinite", (PointGeometry(*)(Vec3)) & PointGeometry::make_infinite)
+        .def_static("make_infinite", (PointGeometry(*)(Vec3, Vec3))&PointGeometry::make_infinite)
         .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3, Vec3, Vec2))&PointGeometry::make_on_surface)
         .def_static("make_on_surface", (PointGeometry(*)(Vec3, Vec3, Vec3))&PointGeometry::make_on_surface)
         .def("opposite", &PointGeometry::opposite)
@@ -970,25 +971,23 @@ static void bind_camera(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Mat4, Camera, projection_matrix);
         }
         // ----------------------------------------------------------------------------------------
-        virtual std::optional<Vec2> raster_position(Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Camera, raster_position, wo);
-        }
-        virtual Vec3 eval(Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Camera, eval, wo);
-        }
-        // ----------------------------------------------------------------------------------------
         virtual Ray primary_ray(Vec2 rp) const override {
             PYBIND11_OVERLOAD_PURE(Ray, Camera, primary_ray, rp);
         }
         virtual std::optional<RaySample> sample_ray(const RaySampleU& u) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Camera, sample_ray, u);
         }
+        virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_ray, geom, wo);
+        }
+        // ----------------------------------------------------------------------------------------
         virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Camera, sample_direction, u);
         }
         virtual Float pdf_direction(Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_direction, wo);
         }
+        // ----------------------------------------------------------------------------------------
         virtual std::optional<PositionSample> sample_position() const override {
             PYBIND11_OVERLOAD_PURE(std::optional<PositionSample>, Camera, sample_position);
         }
@@ -1001,6 +1000,13 @@ static void bind_camera(pybind11::module& m) {
         }
         virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomE, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_direct, geom, geomE, wo);
+        }
+        // ----------------------------------------------------------------------------------------
+        virtual std::optional<Vec2> raster_position(Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Camera, raster_position, wo);
+        }
+        virtual Vec3 eval(Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Camera, eval, wo);
         }
     };
     pybind11::class_<Camera, Camera_Py, Component, Component::Ptr<Camera>>(m, "Camera")
@@ -1040,24 +1046,21 @@ static void bind_light(pybind11::module& m) {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Light, construct, prop);
         }
-        // ---------------------------------------------------------------------------------------
-        virtual bool is_infinite() const override {
-            PYBIND11_OVERLOAD_PURE(bool, Light, is_infinite);
-        }
-        // ----------------------------------------------------------------------------------------
-        virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Light, eval, geom, wo);
-        }
         // ----------------------------------------------------------------------------------------
         virtual std::optional<RaySample> sample_ray(const RaySampleU& u, const Transform& transform) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<RaySample>, Light, sample_ray, u, transform);
         }
+        virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo, const Transform& transform) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Light, pdf_ray, geom, wo, transform);
+        }
+        // ----------------------------------------------------------------------------------------
         virtual std::optional<DirectionSample> sample_direction(const PointGeometry& geom, const DirectionSampleU& u) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Light, sample_direction, geom, u);
         }
         virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Light, pdf_direction, geom, wo);
         }
+        // ----------------------------------------------------------------------------------------
         virtual std::optional<PositionSample> sample_position(const PositionSampleU& u, const Transform& transform) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<PositionSample>, Light, sample_position, u, transform);
         }
@@ -1070,6 +1073,13 @@ static void bind_light(pybind11::module& m) {
         }
         virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Light, pdf_direct, geom, geomL, transform, wo);
+        }
+        // ---------------------------------------------------------------------------------------
+        virtual bool is_infinite() const override {
+            PYBIND11_OVERLOAD_PURE(bool, Light, is_infinite);
+        }
+        virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Vec3, Light, eval, geom, wo);
         }
     };
     pybind11::class_<Light, Light_Py, Component, Component::Ptr<Light>>(m, "Light")

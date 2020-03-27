@@ -53,27 +53,6 @@ public:
     // --------------------------------------------------------------------------------------------
 
     /*!
-        \brief Compute a raster position.
-        \param wo Primary ray direction.
-        \param aspect Aspect ratio of the film.
-        \return Raster position.
-    */
-    virtual std::optional<Vec2> raster_position(Vec3 wo) const = 0;
-
-    /*!
-        \brief Evaluate sensitivity.
-        \param wo Outgoing direction.
-        \param aspect Aspect ratio of the film.
-
-        \rst
-        Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.
-        \endrst
-    */
-    virtual Vec3 eval(Vec3 wo) const = 0;
-
-    // --------------------------------------------------------------------------------------------
-
-    /*!
         \brief Generate a primary ray with the corresponding raster position.
         \param rp Raster position.
         \param aspect Aspect ratio of the film.
@@ -191,6 +170,27 @@ public:
     /*!
     */
     virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomE, Vec3 wo) const = 0;
+
+    // --------------------------------------------------------------------------------------------
+
+    /*!
+        \brief Compute a raster position.
+        \param wo Primary ray direction.
+        \param aspect Aspect ratio of the film.
+        \return Raster position.
+    */
+    virtual std::optional<Vec2> raster_position(Vec3 wo) const = 0;
+
+    /*!
+        \brief Evaluate sensitivity.
+        \param wo Outgoing direction.
+        \param aspect Aspect ratio of the film.
+
+        \rst
+        Evaluates sensitivity function :math:`W_e(\mathbf{x}, \omega)` of the camera.
+        \endrst
+    */
+    virtual Vec3 eval(Vec3 wo) const = 0;
 };
 
 /*!

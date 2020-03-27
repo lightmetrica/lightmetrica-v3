@@ -29,7 +29,9 @@ public:
     /*!
         \brief Set scene bound.
     */
-    virtual void set_scene_bound(const Bound& bound) {}
+    virtual void set_scene_bound(const Bound& bound) {
+        LM_UNUSED(bound);
+    }
 
     // --------------------------------------------------------------------------------------------
 
@@ -152,6 +154,15 @@ public:
     virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const = 0;
 
     // --------------------------------------------------------------------------------------------
+
+    /*!
+        \brief Check if the light source is inifite distant light.
+        \rst
+        This function checks if the light source is inifite distant light
+        such as environment light or directional light.
+        \endrst
+    */
+    virtual bool is_infinite() const = 0;
 
     /*!
         \brief Evaluate luminance.

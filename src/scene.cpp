@@ -292,7 +292,7 @@ public:
             if (!node.primitive.mesh) {
                 return;
             }
-            node.primitive.mesh->foreach_triangle([&](int face, const Mesh::Tri& tri) {
+            node.primitive.mesh->foreach_triangle([&](int, const Mesh::Tri& tri) {
                 const auto p1 = global_transform * Vec4(tri.p1.p, 1_f);
                 const auto p2 = global_transform * Vec4(tri.p2.p, 1_f);
                 const auto p3 = global_transform * Vec4(tri.p3.p, 1_f);

@@ -220,6 +220,11 @@ public:
                 
                 // --------------------------------------------------------------------------------
 
+                // Termination when there's no hit
+                if (hit->geom.infinite) {
+                    break;
+                }
+
                 // Russian roulette
                 if (num_verts > 5) {
                     const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));

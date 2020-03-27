@@ -71,7 +71,7 @@ public:
         };
     }
 
-    virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo, const Transform&) const override {
+    virtual Float pdf_ray(const PointGeometry&, Vec3, const Transform&) const override {
         const auto pD = math::pdf_uniform_sphere();
         const auto pA = 1_f / (Pi * sphere_bound_.radius * sphere_bound_.radius);
         return pD * pA;
@@ -81,73 +81,56 @@ public:
 
     // Direction and position sampling is disabled
     // since they are only sampled from the joint distribution.
-    virtual std::optional<DirectionSample> sample_direction(const PointGeometry& geom, const DirectionSampleU& u) const override {
+    virtual std::optional<DirectionSample> sample_direction(const PointGeometry&, const DirectionSampleU&) const override {
         LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
     }
 
-    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const override {
-        LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
-    }
-
-    // --------------------------------------------------------------------------------------------
-
-    virtual std::optional<PositionSample> sample_position(const PositionSampleU& u, const Transform& transform) const override {
-        LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
-    }
-
-    virtual Float pdf_position(const PointGeometry& geom, const Transform& transform) const override {
+    virtual Float pdf_direction(const PointGeometry&, Vec3) const override {
         LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
     }
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<RaySample> sample_direct(const RaySampleU& u, const PointGeometry& geom, const Transform& transform) const override {
-        
+    virtual std::optional<PositionSample> sample_position(const PositionSampleU&, const Transform&) const override {
+        LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
     }
 
-    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const override {
-        
+    virtual Float pdf_position(const PointGeometry&, const Transform&) const override {
+        LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
     }
 
     // --------------------------------------------------------------------------------------------
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
-        
-    }
-
-#if 0
-    virtual std::optional<LightRaySample> sample_direct(Rng& rng, const PointGeometry& geom, const Transform&) const override {
-        const auto wo = math::sample_uniform_sphere(rng);
+    virtual std::optional<RaySample> sample_direct(const RaySampleU& u, const PointGeometry& geom, const Transform&) const override {
+        const auto wo = math::sample_uniform_sphere(u.ud);
         const auto geomL = PointGeometry::make_infinite(wo);
-        const auto pL = pdf_direct(geom, geomL, 0, {}, wo);
+        const auto Le = eval(geomL, wo);
+        const auto pL = pdf_direct(geom, geomL, {}, wo);
         if (pL == 0_f) {
             return {};
         }
-        return LightRaySample{
+        const auto C = Le / pL;
+        return RaySample{
             geomL,
             wo,
-            0,
-            Le_ / pL
+            Le / pL
         };
     }
 
-    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform&, Vec3) const override {
         const auto d = -geomL.wo;
-        return surface::convert_SA_to_projSA(math::pdf_uniform_sphere(), geom, d);
+        return surface::convert_pdf_SA_to_projSA(math::pdf_uniform_sphere(), geom, d);
     }
 
-    virtual bool is_specular(const PointGeometry&, int) const override {
-        return false;
-    }
+    // --------------------------------------------------------------------------------------------
 
     virtual bool is_infinite() const override {
         return true;
     }
 
-    virtual Vec3 eval(const PointGeometry&, int, Vec3) const override {
+    virtual Vec3 eval(const PointGeometry&, Vec3) const override {
         return Le_;
     }
-#endif
 };
 
 LM_COMP_REG_IMPL(Light_EnvConst, "light::envconst");

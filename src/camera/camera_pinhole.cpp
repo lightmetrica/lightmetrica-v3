@@ -121,36 +121,6 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<Vec2> raster_position(Vec3 wo) const override {
-        // Convert to camera space
-        const auto to_eye = glm::transpose(Mat3(u_, v_, w_));
-        const auto wo_eye = to_eye * wo;
-        if (wo_eye.z >= 0) {
-            // wo is directed to the opposition direction
-            return {};
-        }
-
-        // Calculate raster position
-        const auto rp = Vec2(
-            -wo_eye.x/wo_eye.z/tf_/aspect_,
-            -wo_eye.y/wo_eye.z/tf_)*.5_f + .5_f;
-        if (rp.x < 0_f || rp.x > 1_f || rp.y < 0_f || rp.y > 1_f) {
-            // wo is not in the view frustum
-            return {};
-        }
-        
-        return rp;
-    }
-
-    virtual Vec3 eval(Vec3 wo) const override {
-        if (!raster_position(wo)) {
-            return Vec3(0_f);
-        }
-        return Vec3(J(wo));
-    }
-
-    // --------------------------------------------------------------------------------------------
-
     virtual Ray primary_ray(Vec2 rp) const override {
         rp = 2_f*rp - 1_f;
         const auto d = glm::normalize(Vec3(aspect_*tf_*rp.x, tf_*rp.y, -1_f));
@@ -164,6 +134,14 @@ public:
             Vec3(1_f)
         };
     }
+
+    virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo) const override {
+        const auto pD = pdf_direction(wo);
+        const auto pA = pdf_position(geom);
+        return pD * pA;
+    }
+
+    // --------------------------------------------------------------------------------------------
 
     virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u) const override {
         return DirectionSample{
@@ -212,6 +190,36 @@ public:
     virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomE, Vec3) const override {
         const auto G = surface::geometry_term(geom, geomE);
         return G == 0_f ? 0_f : 1_f / G;
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    virtual std::optional<Vec2> raster_position(Vec3 wo) const override {
+        // Convert to camera space
+        const auto to_eye = glm::transpose(Mat3(u_, v_, w_));
+        const auto wo_eye = to_eye * wo;
+        if (wo_eye.z >= 0) {
+            // wo is directed to the opposition direction
+            return {};
+        }
+
+        // Calculate raster position
+        const auto rp = Vec2(
+            -wo_eye.x / wo_eye.z / tf_ / aspect_,
+            -wo_eye.y / wo_eye.z / tf_) * .5_f + .5_f;
+        if (rp.x < 0_f || rp.x > 1_f || rp.y < 0_f || rp.y > 1_f) {
+            // wo is not in the view frustum
+            return {};
+        }
+
+        return rp;
+    }
+
+    virtual Vec3 eval(Vec3 wo) const override {
+        if (!raster_position(wo)) {
+            return Vec3(0_f);
+        }
+        return Vec3(J(wo));
     }
 };
 
