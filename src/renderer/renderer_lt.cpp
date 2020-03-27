@@ -67,6 +67,9 @@ public:
             if (!hit_primary) {
                 return;
             }
+            if (hit_primary->geom.infinite) {
+                return;
+            }
 
             // ------------------------------------------------------------------------------------
 
@@ -132,6 +135,11 @@ public:
                 throughput *= s->weight;
 
                 // --------------------------------------------------------------------------------
+                
+                // Termination on a hit with environment
+                if (hit->geom.infinite) {
+                    break;
+                }
 
                 // Russian roulette
                 if (num_verts > 5) {

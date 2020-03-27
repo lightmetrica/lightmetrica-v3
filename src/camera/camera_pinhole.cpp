@@ -172,7 +172,10 @@ public:
     // --------------------------------------------------------------------------------------------
 
     virtual std::optional<RaySample> sample_direct(const RaySampleU&, const PointGeometry& geom) const override {
-        assert(!geom.infinite);
+        if (geom.infinite) {
+            // Direct connection from the infinitely-distant point
+            return {};
+        }
         const auto geomE = PointGeometry::make_degenerated(position_);
         const auto wo = glm::normalize(geom.p - position_);
         const auto We = Vec3(J(wo));
@@ -188,6 +191,9 @@ public:
     }
 
     virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomE, Vec3) const override {
+        if (geom.infinite) {
+            return 0_f;
+        }
         const auto G = surface::geometry_term(geom, geomE);
         return G == 0_f ? 0_f : 1_f / G;
     }

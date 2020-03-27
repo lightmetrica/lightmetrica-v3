@@ -220,7 +220,7 @@ public:
                 
                 // --------------------------------------------------------------------------------
 
-                // Termination when there's no hit
+                // Termination on a hit with environment
                 if (hit->geom.infinite) {
                     break;
                 }

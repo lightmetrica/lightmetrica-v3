@@ -49,7 +49,6 @@ struct RaySample {
         \endrst
     */
     Ray ray() const {
-        assert(!sp.geom.infinite);
         return { sp.geom.p, wo };
     }
 };
