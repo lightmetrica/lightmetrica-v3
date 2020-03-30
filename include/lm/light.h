@@ -165,6 +165,10 @@ public:
     virtual bool is_infinite() const = 0;
 
     /*!
+    */
+    virtual bool is_connectable(const PointGeometry& geom) const = 0;
+
+    /*!
         \brief Evaluate luminance.
         \param geom Point geometry on the light source.
         \param comp Component index.

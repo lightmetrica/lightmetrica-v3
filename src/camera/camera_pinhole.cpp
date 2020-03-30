@@ -221,6 +221,10 @@ public:
         return rp;
     }
 
+    virtual bool is_connectable(const PointGeometry&) const override {
+        return true;
+    }
+
     virtual Vec3 eval(Vec3 wo) const override {
         if (!raster_position(wo)) {
             return Vec3(0_f);

@@ -182,6 +182,10 @@ public:
     virtual std::optional<Vec2> raster_position(Vec3 wo) const = 0;
 
     /*!
+    */
+    virtual bool is_connectable(const PointGeometry& geom) const = 0;
+
+    /*!
         \brief Evaluate sensitivity.
         \param wo Outgoing direction.
         \param aspect Aspect ratio of the film.

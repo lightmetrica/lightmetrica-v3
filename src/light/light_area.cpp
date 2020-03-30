@@ -174,6 +174,10 @@ public:
         return false;
     }
 
+    virtual bool is_connectable(const PointGeometry&) const override {
+        return true;
+    }
+
     virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
         return glm::dot(wo, geom.n) <= 0_f ? Vec3(0_f) : Ke_;
     }

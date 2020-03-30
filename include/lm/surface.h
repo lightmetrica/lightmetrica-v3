@@ -89,6 +89,7 @@ struct PointGeometry {
         geom.degenerated = false;
         geom.infinite = true;
         geom.wo = wo;
+        geom.n = geom.gn = wo;
         return geom;
     }
 
@@ -103,6 +104,7 @@ struct PointGeometry {
         geom.infinite = true;
         geom.wo = wo;
         geom.p = p;
+        geom.n = geom.gn = wo;
         return geom;
     }
 

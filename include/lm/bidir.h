@@ -60,7 +60,16 @@ struct Path {
         if (v_from == nullptr || v_to == nullptr) {
             return {};
         }
-        return glm::normalize(v_to->sp.geom.p - v_from->sp.geom.p);
+        assert(!v_from->sp.geom.infinite || !v_to->sp.geom.infinite);
+        if (v_from->sp.geom.infinite) {
+            return v_from->sp.geom.wo;
+        }
+        else if (v_to->sp.geom.infinite) {
+            return -v_to->sp.geom.wo;
+        }
+        else {
+            return glm::normalize(v_to->sp.geom.p - v_from->sp.geom.p);
+        }
     }
 
     // --------------------------------------------------------------------------------------------
@@ -76,24 +85,32 @@ struct Path {
     bool is_samplable_bidir(const Scene* scene, int s) const {
         const int n = num_verts();
         const int t = n - s;
-        if (s == 0 && t > 0) {
+        if (s == 0) {
             // If the vertex is not degenerated, the endpoint is samplable
             return !vertex_at(0, TransDir::LE)->sp.geom.degenerated;
         }
-        else if (s > 0 && t == 0) {
+        else if (t == 0) {
+            // If the vertex is not degenerated, the endpoint is samplable
             return !vertex_at(0, TransDir::EL)->sp.geom.degenerated;
         }
-        else if (s > 0 && t > 0) {
-            // Otherwise check if two vertices can be connected
+        else {
             const auto* vL = vertex_at(s-1, TransDir::LE);
             const auto* vE = vertex_at(t-1, TransDir::EL);
+            if (s == 1 && !path::is_connectable_endpoint(scene, vL->sp)) {
+                // Not samplebale if the endpoint is not connectable
+                return false;
+            }
+            else if (t == 1 && !path::is_connectable_endpoint(scene, vE->sp)) {
+                // Not samplebale if the endpoint is not connectable
+                return false;
+            }
+            // Not samplable if either vL or vE is specular component
             if (path::is_specular_component(scene, vL->sp, vL->comp) ||
                 path::is_specular_component(scene, vE->sp, vE->comp)) {
                 return false;
             }
             return true;
         }
-        LM_UNREACHABLE_RETURN();
     }
 
     // Evaluate subpath contribution (a.k.a. alpha function)
@@ -101,11 +118,31 @@ struct Path {
         if (l == 0) {
             return Vec3(1_f);
         }
+
+        int i = 0;
+        Vec3 alpha(0_f);
         const auto v0 = vertex_at(0, trans_dir);
-        auto alpha = path::eval_contrb_position(scene, v0->sp)
-            / path::pdf_position(scene, v0->sp)
-            / path::pdf_component(scene, v0->sp, v0->comp);
-        for (int i = 0; i < l - 1; i++) {            
+        if (path::is_connectable_endpoint(scene, v0->sp)) {
+            const auto pA = path::pdf_position(scene, v0->sp);
+            const auto p_comp = path::pdf_component(scene, v0->sp, v0->comp);
+            alpha = Vec3(1_f) / (pA * p_comp);
+        }
+        else {
+            assert(l != 1);
+            const auto v1 = vertex_at(1, trans_dir);
+            const auto d01 = direction(v0, v1);
+            const auto f = path::eval_contrb_direction(scene, v0->sp, {}, d01, v0->comp, trans_dir, false);
+            if (math::is_zero(f)) {
+                return Vec3(0_f);
+            }
+            const auto p_comp_v0 = path::pdf_component(scene, v0->sp, v0->comp);
+            const auto p_comp_v1 = path::pdf_component(scene, v1->sp, v1->comp);
+            const auto p_ray = path::pdf_primary_ray(scene, v0->sp, d01);
+            alpha = f / (p_ray * p_comp_v0 * p_comp_v1);
+            i++;
+        }
+
+        for (; i < l - 1; i++) {            
             const auto* v      = vertex_at(i,   trans_dir);
             const auto* v_prev = vertex_at(i-1, trans_dir);
             const auto* v_next = vertex_at(i+1, trans_dir);
@@ -130,14 +167,12 @@ struct Path {
         if (s == 0 && t > 0) {
             const auto* v      = vertex_at(0, TransDir::LE);
             const auto* v_next = vertex_at(1, TransDir::LE);
-            cst = path::eval_contrb_position(scene, v->sp) *
-                  path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::LE, false);
+            cst = path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::LE, false);
         }
         else if (s > 0 && t == 0) {
             const auto* v      = vertex_at(0, TransDir::EL);
             const auto* v_next = vertex_at(1, TransDir::EL);
-            cst = path::eval_contrb_position(scene, v->sp) *
-                  path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::EL, false);
+            cst = path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::EL, false);
         }
         else if (s > 0 && t > 0) {
             const auto* vL      = vertex_at(s-1, TransDir::LE);
@@ -184,7 +219,7 @@ struct Path {
             if (l == 0) {
                 return Vec3(1_f);
             }
-            auto f_prod = path::eval_contrb_position(scene, vertex_at(0, trans_dir)->sp);
+            auto f_prod = Vec3(1_f);
             for (int i = 0; i < l - 1; i++) {
                 const auto* v      = vertex_at(i,   trans_dir);
                 const auto* v_prev = vertex_at(i-1, trans_dir);
@@ -222,9 +257,26 @@ struct Path {
             if (l == 0) {
                 return 1_f;
             }
+
+            int i = 0;
+            Float p = 0_f;
             const auto* v0 = vertex_at(0, trans_dir);
-            Float p = path::pdf_position(scene, v0->sp) * path::pdf_component(scene, v0->sp, v0->comp);
-            for (int i = 0; i < l - 1; i++) {
+            if (path::is_connectable_endpoint(scene, v0->sp)) {
+                const auto pA = path::pdf_position(scene, v0->sp);
+                const auto p_comp = path::pdf_component(scene, v0->sp, v0->comp);
+                p = pA * p_comp;
+            }
+            else {
+                const auto* v1 = vertex_at(1, trans_dir);
+                const auto d01 = direction(v0, v1);
+                const auto p_ray = path::pdf_primary_ray(scene, v0->sp, d01);
+                const auto p_comp_v0 = path::pdf_component(scene, v0->sp, v0->comp);
+                const auto p_comp_v1 = path::pdf_component(scene, v1->sp, v1->comp);
+                p = surface::convert_pdf_projSA_to_area(p_ray, v0->sp.geom, v1->sp.geom) * p_comp_v0 * p_comp_v1;
+                i++;
+            }
+
+            for (; i < l - 1; i++) {
                 const auto* v      = vertex_at(i,   trans_dir);
                 const auto* v_prev = vertex_at(i-1, trans_dir);
                 const auto* v_next = vertex_at(i+1, trans_dir);
@@ -271,6 +323,62 @@ struct Path {
 LM_NAMESPACE_BEGIN(path)
 
 // Sample path vertices from the endpoint
+#if 1
+static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scene, int max_verts, TransDir trans_dir) {
+    // If the requested number of vertices are zero, return immediately.
+    // Otherwise the initial vertex would be sampled.
+    if (max_verts == 0) {
+        return;
+    }
+
+    // Sample initial and secondary vertices
+    if (path.num_verts() == 0) {
+        const auto s = path::sample_primary_ray(rng, scene, trans_dir);
+        if (!s) {
+            return;
+        }
+        const auto hit = scene->intersect(s->ray());
+        if (!hit) {
+            return;
+        }
+        const auto s_comp = path::sample_component(rng, scene, *hit);
+        path.vs.push_back({ s->sp, 0 });
+        path.vs.push_back({ *hit, s_comp.comp });
+        if (hit->geom.infinite) {
+            return;
+        }
+    }
+    // Perform random walk
+    while (path.num_verts() < max_verts) {
+        // Sample direction
+        const int i = path.num_verts() - 1;
+        auto* v_curr = path.subpath_vertex_at(i);
+        auto* v_prev = path.subpath_vertex_at(i - 1);
+        const auto wi = path.direction(v_curr, v_prev);
+        const auto s = path::sample_direction(rng, scene, v_curr->sp, wi, v_curr->comp, trans_dir);
+        if (!s) {
+            break;
+        }
+
+        // Intersection to next surface
+        const auto hit = scene->intersect({ v_curr->sp.geom.p, s->wo });
+        if (!hit) {
+            break;
+        }
+
+        // Sample component
+        const auto s_comp = path::sample_component(rng, scene, *hit);
+
+        // Add a vertex
+        path.vs.push_back({ *hit, s_comp.comp });
+
+        // Termination
+        if (hit->geom.infinite) {
+            break;
+        }
+    }
+}
+#else
 static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scene, int max_verts, TransDir trans_dir) {
     // If the requested number of vertices are zero, return immediately.
     // Otherwise the initial vertex would be sampled.
@@ -312,6 +420,7 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
         path.vs.push_back({ *hit, s_comp.comp });
     }
 }
+#endif
 
 // Sample a subpath
 static Path sample_subpath(Rng& rng, const Scene* scene, int max_verts, TransDir trans_dir) {
@@ -326,19 +435,25 @@ static std::optional<Path> connect_subpaths(const Scene* scene, const Path& subp
     assert(!(s == 0 && t == 0));
 
     // Connect two subpaths
+    // Returns nullopt if the subpaths are not connectable.
     Path path;
-    if (s == 0 && t > 0) {
+    if (s == 0) {
+        if (subpathE.subpath_vertex_at(t-1)->sp.geom.degenerated) {
+            return {};
+        }
         // Reverse and copy subpathE 
         path.vs.insert(path.vs.end(), subpathE.vs.rend() - t, subpathE.vs.rend());
     }
-    else if (s > 0 && t == 0) {
+    else if (t == 0) {
+        if (subpathL.subpath_vertex_at(s-1)->sp.geom.degenerated) {
+            return {};
+        }
         // Copy subpathL as it is
         path.vs.insert(path.vs.end(), subpathL.vs.begin(), subpathL.vs.begin() + s);
     }
     else {
-        // Check unconnectable cases and copy vertices
-        const auto& vL = subpathL.vs[s-1];
-        const auto& vE = subpathE.vs[t-1];
+        const auto& vL = subpathL.vs[s - 1];
+        const auto& vE = subpathE.vs[t - 1];
         if (vL.sp.geom.infinite || vE.sp.geom.infinite) {
             return {};
         }

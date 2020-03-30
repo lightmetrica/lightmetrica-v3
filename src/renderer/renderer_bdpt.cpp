@@ -10,6 +10,26 @@
 #include <lm/film.h>
 #include <lm/scheduler.h>
 #include <lm/bidir.h>
+#include <lm/debug.h>
+
+// Poll mutated paths
+#define BDPT_POLL_PATHS 1
+
+#if BDPT_POLL_PATHS
+LM_NAMESPACE_BEGIN(nlohmann)
+// Specialize adl_serializer for one-way automatic conversion from path to Json type
+template <>
+struct adl_serializer<lm::Path> {
+    static void to_json(lm::Json& j, const lm::Path& path) {
+        for (const auto& v : path.vs) {
+            j.push_back(v.sp.geom.p);
+        }
+    }
+};
+LM_NAMESPACE_END(nlohmann)
+#endif
+
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -48,7 +68,7 @@ public:
         const auto size = film_->size();
 
         // Execute parallel process
-        const auto processed = sched_->run([&](long long, long long, int threadid) {
+        const auto processed = sched_->run([&](long long, long long sample_index, int threadid) {
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
@@ -68,6 +88,16 @@ public:
                 if (!path) {
                     continue;
                 }
+
+                #if BDPT_POLL_PATHS
+                if (threadid == 0) {
+                    debug::poll({
+                        {"id", "path"},
+                        {"sample_index", sample_index},
+                        {"path", *path}
+                    });
+                }
+                #endif
 
                 // Evaluate contribution
                 const auto C = path->eval_unweighted_contrb_bidir(scene_, 0);
@@ -174,7 +204,7 @@ public:
         const auto size = film_->size();
 
         // Execute parallel process
-        const auto processed = sched_->run([&](long long, long long, int threadid) {
+        const auto processed = sched_->run([&](long long, long long sample_index, int threadid) {
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
@@ -201,6 +231,23 @@ public:
                     continue;
                 }
 
+                #if BDPT_POLL_PATHS
+                if (threadid == 0) {
+                    debug::poll({
+                        {"id", "path"},
+                        {"sample_index", sample_index},
+                        {"path", *path}
+                    });
+                }
+                #endif
+
+                #if 1
+                // Evaluate contribution
+                const auto C = path->eval_unweighted_contrb_bidir(scene_, s);
+                if (math::is_zero(C)) {
+                    continue;
+                }
+                #else
                 // Evaluate contribution and probability
                 const auto f = path->eval_measurement_contrb_bidir(scene_, s);
                 if (math::is_zero(f)) {
@@ -210,9 +257,10 @@ public:
                 if (p == 0_f) {
                     continue;
                 }
+                const auto C = f / p;
+                #endif
 
                 // Accumulate contribution
-                const auto C = f / p;
                 const auto rp = path->raster_position(scene_);
                 film_->splat(rp, C);
             }

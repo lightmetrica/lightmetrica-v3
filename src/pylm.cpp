@@ -1005,6 +1005,9 @@ static void bind_camera(pybind11::module& m) {
         virtual std::optional<Vec2> raster_position(Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<Vec2>, Camera, raster_position, wo);
         }
+        virtual bool is_connectable(const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(bool, Camera, is_connectable, geom);
+        }
         virtual Vec3 eval(Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Camera, eval, wo);
         }
@@ -1017,9 +1020,6 @@ static void bind_camera(pybind11::module& m) {
         .def("view_matrix", &Camera::view_matrix)
         .def("projection_matrix", &Camera::projection_matrix)
         //
-        .def("raster_position", &Camera::raster_position)
-        .def("eval", &Camera::eval)
-        //
         .def("primary_ray", &Camera::primary_ray)
         .def("sample_ray", &Camera::sample_ray)
         .def("sample_direction", &Camera::sample_direction)
@@ -1029,6 +1029,10 @@ static void bind_camera(pybind11::module& m) {
         //
         .def("sample_direct", &Camera::sample_direct)
         .def("pdf_direct", &Camera::pdf_direct)
+        //
+        .def("raster_position", &Camera::raster_position)
+        .def("is_connectable", &Camera::is_connectable)
+        .def("eval", &Camera::eval)
         .PYLM_DEF_COMP_BIND(Camera);
 }
 
@@ -1078,6 +1082,9 @@ static void bind_light(pybind11::module& m) {
         virtual bool is_infinite() const override {
             PYBIND11_OVERLOAD_PURE(bool, Light, is_infinite);
         }
+        virtual bool is_connectable(const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(bool, Light, is_connectable, geom);
+        }
         virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Light, eval, geom, wo);
         }
@@ -1085,8 +1092,6 @@ static void bind_light(pybind11::module& m) {
     pybind11::class_<Light, Light_Py, Component, Component::Ptr<Light>>(m, "Light")
         .def(pybind11::init<>())
         .def("is_infinite", &Light::is_infinite)
-        //
-        .def("eval", &Light::eval)
         //
         .def("sample_ray", &Light::sample_ray)
         .def("sample_direction", &Light::sample_direction)
@@ -1096,6 +1101,9 @@ static void bind_light(pybind11::module& m) {
         //
         .def("sample_direct", &Light::sample_direct)
         .def("pdf_direct", &Light::pdf_direct)
+        //
+        .def("is_connectable", &Light::is_connectable)
+        .def("eval", &Light::eval)
         .PYLM_DEF_COMP_BIND(Light);
 }
 

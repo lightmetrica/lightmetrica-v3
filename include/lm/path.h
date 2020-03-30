@@ -618,6 +618,19 @@ static bool is_specular_component(const Scene* scene, const SceneInteraction& sp
 }
 
 /*!
+*/
+static bool is_connectable_endpoint(const Scene* scene, const SceneInteraction& sp) {
+    const auto& primitive = scene->node_at(sp.primitive).primitive;
+    if (sp.is_type(SceneInteraction::CameraEndpoint)) {
+        return primitive.camera->is_connectable(sp.geom);
+    }
+    else if (sp.is_type(SceneInteraction::LightEndpoint)) {
+        return primitive.light->is_connectable(sp.geom);
+    }
+    LM_UNREACHABLE_RETURN();
+}
+
+/*!
     \brief Compute a raster position.
     \param wo Primary ray direction.
     \param aspect Aspect ratio of the film.
@@ -672,19 +685,6 @@ static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp
                    surface::shading_normal_correction(sp.geom, wi, wo, trans_dir);
     }
     LM_UNREACHABLE_RETURN();
-}
-
-/*!
-    \brief Evaluate positional contribution of the endpoint.
-*/
-static Vec3 eval_contrb_position(const Scene* scene, const SceneInteraction& sp) {
-    if (!sp.is_type(SceneInteraction::Endpoint)) {
-        LM_THROW_EXCEPTION(Error::Unsupported,
-            "eval_contrb_position() function only supports endpoint interactions.");
-    }
-    // Always 1 for now
-    LM_UNUSED(scene);
-    return Vec3(1_f);
 }
 
 /*!

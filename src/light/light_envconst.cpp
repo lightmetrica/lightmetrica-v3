@@ -128,6 +128,10 @@ public:
         return true;
     }
 
+    virtual bool is_connectable(const PointGeometry&) const override {
+        return false;
+    }
+
     virtual Vec3 eval(const PointGeometry&, Vec3) const override {
         return Le_;
     }
