@@ -224,6 +224,9 @@ public:
                 // Strategy index
                 const int s = n - 1;
                 const int t = 1;
+                if (s >= nL || t >= nE) {
+                    continue;
+                }
 
                 // Connect subpaths
                 const auto path = path::connect_subpaths(scene_, subpathL, subpathE, s, t);
