@@ -88,7 +88,6 @@ public:
 
         rtcSetSceneFlags(scene_, sf_);
         rtcSetSceneBuildQuality(scene_, settings_.buildQuality);
-        rtc_AT_SetNextBVHArguments(scene_, settings_);
 
         // Flatten the scene graph and setup geometries
         LM_INFO("Flattening scene");
@@ -103,6 +102,7 @@ public:
             // Record flattened primitive
             const int flatten_node_index = int(flattened_nodes_.size());
             flattened_nodes_.push_back({ Transform(global_transform), node.index });
+
             // Create triangle mesh
             auto geom = rtcNewGeometry(device_, RTC_GEOMETRY_TYPE_TRIANGLE);
             const int num_triangles = node.primitive.mesh->num_triangles();
