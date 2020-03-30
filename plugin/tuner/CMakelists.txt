@@ -1,0 +1,42 @@
+#
+#   Lightmetrica - Copyright (c) 2019 Hisanari Otsu
+#   Distributed under MIT license. See LICENSE file for details.
+#
+
+#libtuning https://code.ipd.kit.edu/pfaffe/libtuning/tree/master
+
+option(LM_BUILD_TESTS "" OFF)
+option(LM_BUILD_EXAMPLES "" OFF)
+
+project(lm3_tuner)
+add_library(libtuning INTERFACE)
+target_link_libraries(libtuning INTERFACE "${LIBTUNING_LIBRARIES}")
+target_include_directories(libtuning INTERFACE "${LIBTUNING_INCLUDE_DIRS}")
+
+set(_INTERFACE_DEFINED 1)
+add_library(tuner_interface INTERFACE)
+add_library(tuner::interface ALIAS tuner_interface)
+target_include_directories(tuner_interface
+    INTERFACE "$<BUILD_INTERFACE:${LIBTUNING_INCLUDE_DIRS}>")
+
+add_library(tuner SHARED  "tuner.h" "classic_tuner.cpp")
+target_link_libraries(tuner
+    PRIVATE
+        liblm
+        $<${_INTERFACE_DEFINED}:tuner_interface>
+        libtuning)
+target_compile_definitions(tuner PRIVATE -DLM_TUNER_EXPORTS)
+set_target_properties(tuner PROPERTIES PREFIX "")
+set_target_properties(tuner PROPERTIES DEBUG_POSTFIX "-debug")
+set_target_properties(tuner PROPERTIES FOLDER "lm/plugin")
+set_target_properties(tuner PROPERTIES
+ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+find_package(pybind11 REQUIRED)
+add_library(py_tuner MODULE "py_tuner.cpp")
+target_link_libraries(py_tuner PRIVATE liblm pybind11::module tuner)
+set_target_properties(py_tuner PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
+set_target_properties(py_tuner PROPERTIES FOLDER "lm/plugin")
+set_target_properties(py_tuner PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

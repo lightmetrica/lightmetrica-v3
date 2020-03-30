@@ -7,6 +7,7 @@ include(LmAddPlugin)
 
 # embree
 # https://github.com/embree/embree
+
 find_package(embree 3.0)
 if (embree_FOUND)
     # Create embree target
