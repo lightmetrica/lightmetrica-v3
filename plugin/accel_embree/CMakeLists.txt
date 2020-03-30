@@ -21,8 +21,9 @@ if (embree_FOUND)
         INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
         LIBRARIES embree
         SOURCES
-            "embree_params.h"
+            "embree.h"
             "accel_embree.cpp"
+            "embree.cpp"
             "accel_embree_instanced.cpp")
 
     # Custom command to copy dynamic libraries

@@ -7,7 +7,7 @@
 #include <lm/scene.h>
 #include <lm/mesh.h>
 #include <lm/exception.h>
-#include "embree_params.h"
+#include "embree.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -42,16 +42,18 @@ private:
 
 public:
     
-     virtual void construct(const Json& prop) override {        
-        settings_ = prop;
-        sf_ = prop;
-        
-        //check actual values used for building
+     virtual void construct(const Json& prop) override {
+        settings_ = rtcDefaultBuildArguments();
+        from_json(prop,settings_);
+
+        from_json(prop,sf_);
+
         Json j;
-        j = settings_;    
+        to_json(j,settings_);
         LM_DEBUG(j.dump());
         j.clear();
-        j = sf_;
+        
+        to_json(j,sf_);
         LM_DEBUG(j.dump() );
         
         }
