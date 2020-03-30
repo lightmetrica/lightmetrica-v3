@@ -323,7 +323,6 @@ struct Path {
 LM_NAMESPACE_BEGIN(path)
 
 // Sample path vertices from the endpoint
-#if 1
 static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scene, int max_verts, TransDir trans_dir) {
     // If the requested number of vertices are zero, return immediately.
     // Otherwise the initial vertex would be sampled.
@@ -331,37 +330,33 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
         return;
     }
 
-    // Sample initial and secondary vertices
-    if (path.num_verts() == 0) {
-        const auto s = path::sample_primary_ray(rng, scene, trans_dir);
-        if (!s) {
-            return;
-        }
-        const auto hit = scene->intersect(s->ray());
-        if (!hit) {
-            return;
-        }
-        const auto s_comp = path::sample_component(rng, scene, *hit);
-        path.vs.push_back({ s->sp, 0 });
-        path.vs.push_back({ *hit, s_comp.comp });
-        if (hit->geom.infinite) {
-            return;
-        }
-    }
     // Perform random walk
     while (path.num_verts() < max_verts) {
-        // Sample direction
-        const int i = path.num_verts() - 1;
-        auto* v_curr = path.subpath_vertex_at(i);
-        auto* v_prev = path.subpath_vertex_at(i - 1);
-        const auto wi = path.direction(v_curr, v_prev);
-        const auto s = path::sample_direction(rng, scene, v_curr->sp, wi, v_curr->comp, trans_dir);
-        if (!s) {
-            break;
+        Ray ray;
+        if (path.num_verts() == 0) {
+            // Sample primary ray
+            const auto s = path::sample_primary_ray(rng, scene, trans_dir);
+            if (!s) {
+                return;
+            }
+            path.vs.push_back({ s->sp, 0 });
+            ray = { s->sp.geom.p, s->wo };
+        }
+        else {
+            // Sample direction
+            const int i = path.num_verts() - 1;
+            auto* v_curr = path.subpath_vertex_at(i);
+            auto* v_prev = path.subpath_vertex_at(i - 1);
+            const auto wi = path.direction(v_curr, v_prev);
+            const auto s = path::sample_direction(rng, scene, v_curr->sp, wi, v_curr->comp, trans_dir);
+            if (!s) {
+                break;
+            }
+            ray = { v_curr->sp.geom.p, s->wo };
         }
 
         // Intersection to next surface
-        const auto hit = scene->intersect({ v_curr->sp.geom.p, s->wo });
+        const auto hit = scene->intersect(ray);
         if (!hit) {
             break;
         }
@@ -378,49 +373,6 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
         }
     }
 }
-#else
-static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scene, int max_verts, TransDir trans_dir) {
-    // If the requested number of vertices are zero, return immediately.
-    // Otherwise the initial vertex would be sampled.
-    if (max_verts == 0) {
-        return;
-    }
-    
-    // Sample initial vertex
-    if (path.num_verts() == 0) {
-        const auto s = path::sample_position(rng, scene, trans_dir);
-        if (!s) {
-            return;
-        }
-        const auto s_comp = path::sample_component(rng, scene, s->sp);
-        path.vs.push_back({ s->sp, s_comp.comp });
-    }
-    // Perform random walk
-    while (path.num_verts() < max_verts) {
-        // Sample direction
-        const int i = path.num_verts() - 1;
-        auto* v_curr = path.subpath_vertex_at(i);
-        auto* v_prev = path.subpath_vertex_at(i-1);
-        const auto wi = path.direction(v_curr, v_prev);
-        const auto s = path::sample_direction(rng, scene, v_curr->sp, wi, v_curr->comp, trans_dir);
-        if (!s) {
-            break;
-        }
-
-        // Intersection to next surface
-        const auto hit = scene->intersect({ v_curr->sp.geom.p, s->wo });
-        if (!hit) {
-            break;
-        }
-
-        // Sample component
-        const auto s_comp = path::sample_component(rng, scene, *hit);
-        
-        // Add a vertex
-        path.vs.push_back({ *hit, s_comp.comp });
-    }
-}
-#endif
 
 // Sample a subpath
 static Path sample_subpath(Rng& rng, const Scene* scene, int max_verts, TransDir trans_dir) {
