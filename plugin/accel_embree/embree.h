@@ -65,6 +65,4 @@ inline std::string RTCtoStr(const RTCBuildArguments& rtc, const RTCSceneFlags& s
         
         return str;
     }
-
-
 LM_NAMESPACE_END(LM_NAMESPACE)

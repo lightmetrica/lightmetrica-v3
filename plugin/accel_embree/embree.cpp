@@ -1,12 +1,12 @@
 #include "embree.h"
 #include <lm/json.h>
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-LM_NAMESPACE_BEGIN(nlohmann)
-template<>
-struct adl_serializer<RTCSceneFlags> {
-void to_json(lm::Json &j, const RTCSceneFlags& sf)
+#define tryAt(j,str,v) try{j.at(str).get_to(v);}catch(...){ v=v;}
+
+    void to_json(lm::Json &j, const RTCSceneFlags& sf)
     {
-        j = lm::Json(
+        j= lm::Json(
             {
                 {"dynamic",bool(sf & (1<<0))},
                 {"compact",bool(sf & (1<<1))},
@@ -15,15 +15,15 @@ void to_json(lm::Json &j, const RTCSceneFlags& sf)
             }
         );
     }
-void from_json(const lm::Json& j, RTCSceneFlags& sf)
+    void from_json(const lm::Json& j, RTCSceneFlags& sf)
     {
-        bool rtcsf[5] = {false};
+        bool rtcsf[5]= {false};
 
-        rtcsf[1] = lm::json::value<bool>(j,"dynamic",false);
-        rtcsf[2] = lm::json::value<bool>(j,"compact",false);
-        rtcsf[3] = lm::json::value<bool>(j,"robust",false);
-        rtcsf[4] = lm::json::value<bool>(j,"filter",false);
-
+        tryAt(j,"dynamic",rtcsf[1]);
+        tryAt(j,"compact",rtcsf[2]);
+        tryAt(j,"robust",rtcsf[3]);
+        tryAt(j,"filter",rtcsf[4]);
+        
         if(rtcsf[1])
             sf=RTC_SCENE_FLAG_DYNAMIC;
         if(rtcsf[2])
@@ -35,24 +35,21 @@ void from_json(const lm::Json& j, RTCSceneFlags& sf)
         if(!(rtcsf[0] || rtcsf[1] || rtcsf[2] || rtcsf[3])) // if no flag is set...
             sf=RTC_SCENE_FLAG_NONE;
     }
-};
-
-template<>
-struct adl_serializer<RTCBuildArguments> {
+    
 void from_json(const lm::Json& j, RTCBuildArguments& rtc)
     {
-        rtc.buildQuality = RTCBuildQuality(lm::json::value<int>(j,"quality",1));
-        rtc.maxDepth = lm::json::value<unsigned int>(j,"maxDepth",18);
-        rtc.maxBranchingFactor = lm::json::value<unsigned int>(j,"maxBranchingFactor",2);
-        rtc.sahBlockSize = lm::json::value<unsigned int>(j,"sahBlockSize",1);
-        rtc.minLeafSize = lm::json::value<unsigned int>(j,"minLeafSize",1);
-        rtc.maxLeafSize = lm::json::value<unsigned int>(j,"maxLeafSize",32);
-        rtc.traversalCost = lm::json::value<float>(j,"travcost",1.0f);
-        rtc.intersectionCost = lm::json::value<float>(j,"intcost",1.0f);
+        tryAt(j,"quality",rtc.buildQuality);
+        tryAt(j,"maxDepth",rtc.maxDepth);
+        tryAt(j,"maxBranchingFactor",rtc.maxBranchingFactor);
+        tryAt(j,"sahBlockSize",rtc.sahBlockSize);
+        tryAt(j,"minLeafSize",rtc.minLeafSize);
+        tryAt(j,"maxLeafSize",rtc.maxLeafSize);
+        tryAt(j,"travcost",rtc.traversalCost);
+        tryAt(j,"intcost",rtc.intersectionCost);
     }
 void to_json(lm::Json &j, const RTCBuildArguments& rtc)
     {
-        j = lm::Json(
+        j= lm::Json(
             {
                 {"quality",rtc.buildQuality},
                 {"maxDepth",rtc.maxDepth},
@@ -65,5 +62,5 @@ void to_json(lm::Json &j, const RTCBuildArguments& rtc)
             }
         );
     }
-};
-LM_NAMESPACE_END(nlohmann)
+
+LM_NAMESPACE_END(LM_NAMESPACE)
