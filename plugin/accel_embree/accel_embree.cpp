@@ -85,7 +85,6 @@ public:
 
         rtcSetSceneFlags(scene_, sf_);
         rtcSetSceneBuildQuality(scene_, settings_.buildQuality);
-        rtc_AT_SetNextBVHArguments(scene_, settings_);
 
         // Flatten the scene graph and setup geometries
         LM_INFO("Flattening scene");

@@ -178,7 +178,6 @@ public:
             rtcscene = rtcNewScene(device_);
             rtcSetSceneFlags(rtcscene, sf_);
             rtcSetSceneBuildQuality(rtcscene, settings_.buildQuality);
-            rtc_AT_SetNextBVHArguments(scene_, settings_);
     
             // Create triangle meshes
             for (const auto& fnode : fscene) {
