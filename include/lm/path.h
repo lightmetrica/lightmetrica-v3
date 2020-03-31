@@ -151,7 +151,7 @@ static std::optional<RaySample> sample_primary_ray(Rng& rng, const Scene* scene,
 
 /*!
 */
-static Float pdf_primary_ray(const Scene* scene, const SceneInteraction& sp, Vec3 wo) {
+static Float pdf_primary_ray(const Scene* scene, const SceneInteraction& sp, Vec3 wo, bool eval_delta) {
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     if (sp.is_type(SceneInteraction::CameraEndpoint)) {
         return primitive.camera->pdf_ray(sp.geom, wo);
@@ -160,7 +160,7 @@ static Float pdf_primary_ray(const Scene* scene, const SceneInteraction& sp, Vec
         const auto light_index = scene->light_index_at(sp.primitive);
         const auto light_primitive_index = scene->light_primitive_index_at(light_index);
         const auto pL_sel = scene->pdf_light_selection(light_index);
-        const auto pL_ray = primitive.light->pdf_ray(sp.geom, wo, light_primitive_index.global_transform);
+        const auto pL_ray = primitive.light->pdf_ray(sp.geom, wo, light_primitive_index.global_transform, eval_delta);
         return pL_sel * pL_ray;
     }
     LM_UNREACHABLE_RETURN();
@@ -490,7 +490,7 @@ static std::optional<RaySample> sample_direct_camera(Rng& rng, const Scene* scen
     Be careful ``wo`` is the outgoing direction originated from ``sp_endpoint``, not ``sp``.
     \endrst
 */
-static Float pdf_direct(const Scene* scene, const SceneInteraction& sp, const SceneInteraction& sp_endpoint, Vec3 wo) {
+static Float pdf_direct(const Scene* scene, const SceneInteraction& sp, const SceneInteraction& sp_endpoint, Vec3 wo, bool eval_delta) {
     if (!sp_endpoint.is_type(SceneInteraction::Endpoint)) {
         LM_THROW_EXCEPTION(Error::Unsupported,
             "pdf_direct() does not support non-endpoint interactions.");
@@ -505,7 +505,7 @@ static Float pdf_direct(const Scene* scene, const SceneInteraction& sp, const Sc
         const auto light_primitive_index = scene->light_primitive_index_at(light_index);
         const auto pL_sel = scene->pdf_light_selection(light_index);
         const auto pL_pos = primitive.light->pdf_direct(
-            sp.geom, sp_endpoint.geom, light_primitive_index.global_transform, wo);
+            sp.geom, sp_endpoint.geom, light_primitive_index.global_transform, wo, eval_delta);
         return pL_sel * pL_pos;
     }
 
@@ -610,9 +610,12 @@ static Vec3 eval_transmittance(Rng& rng, const Scene* scene, const SceneInteract
 /*!
 */
 static bool is_specular_component(const Scene* scene, const SceneInteraction& sp, int comp) {
+    const auto& primitive = scene->node_at(sp.primitive).primitive;
     if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
-        const auto& primitive = scene->node_at(sp.primitive).primitive;
         return primitive.material->is_specular_component(comp);
+    }
+    else if (sp.is_type(SceneInteraction::LightEndpoint)) {
+        return primitive.light->is_specular();
     }
     return false;
 }
@@ -677,7 +680,7 @@ static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp
         case SceneInteraction::CameraEndpoint:
             return primitive.camera->eval(wo);
         case SceneInteraction::LightEndpoint:
-            return primitive.light->eval(sp.geom, wo);
+            return primitive.light->eval(sp.geom, wo, eval_delta);
         case SceneInteraction::MediumInteraction:
             return primitive.medium->phase()->eval(sp.geom, wi, wo);
         case SceneInteraction::SurfaceInteraction:

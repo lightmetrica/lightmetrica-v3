@@ -88,7 +88,7 @@ public:
         const auto pD_projSA = math::pdf_cosine_weighted_projSA();
         
         // Contribution & probability
-        const auto Le = eval(geomL, wo_world);
+        const auto Le = eval(geomL, wo_world, {});
         const auto p = pA * pD_projSA;
         const auto contrb = Le / p;
 
@@ -99,7 +99,7 @@ public:
         };
     }
 
-    virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo, const Transform& transform) const override {
+    virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo, const Transform& transform, bool) const override {
         const auto pA = pdf_position(geom, transform);
         const auto pD = pdf_direction(geom, wo);
         return pA * pD;
@@ -113,7 +113,7 @@ public:
         const Mat3 to_world(u, v, geom.n);
         const auto wo_world = to_world * wo_local;
         const auto pD_projSA = math::pdf_cosine_weighted_projSA();
-        const auto Le = eval(geom, wo_world);
+        const auto Le = eval(geom, wo_world, {});
         const auto contrb = Le / pD_projSA;
         return DirectionSample{
             wo_world,
@@ -148,11 +148,11 @@ public:
     virtual std::optional<RaySample> sample_direct(const RaySampleU& us, const PointGeometry& geom, const Transform& transform) const override {
         const auto geomL = sample_position_on_triangle_mesh(us.up, us.upc, transform);
         const auto wo = glm::normalize(geom.p - geomL.p);
-        const auto pL = pdf_direct(geom, geomL, transform, wo);
+        const auto pL = pdf_direct(geom, geomL, transform, wo, {});
         if (pL == 0_f) {
             return {};
         }
-        const auto Le = eval(geomL, wo);
+        const auto Le = eval(geomL, wo, {});
         return RaySample{
             geomL,
             wo,
@@ -160,7 +160,7 @@ public:
         };
     }
 
-    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo, bool) const override {
         if (glm::dot(wo, geomL.n) <= 0_f) {
             return 0_f;
         }
@@ -170,6 +170,10 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
+    virtual bool is_specular() const override {
+        return false;
+    }
+
     virtual bool is_infinite() const override {
         return false;
     }
@@ -178,7 +182,7 @@ public:
         return true;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo, bool) const override {
         return glm::dot(wo, geom.n) <= 0_f ? Vec3(0_f) : Ke_;
     }
 };

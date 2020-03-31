@@ -115,6 +115,9 @@ public:
                     // Evaluate BSDF
                     const auto wo = -sL->wo;
                     const auto fs = path::eval_contrb_direction(scene_, sp, wi, wo, comp, TransDir::EL, true);
+                    if (math::is_zero(fs)) {
+                        return;
+                    }
 
                     // Evaluate MIS weight
                     const auto mis_w = [&]() -> Float {
@@ -126,14 +129,16 @@ public:
                         // When the light is not samplable by BSDF sampling, we will use only NEE.
                         // This includes, for instance, the light sampling for
                         // directional light, environment light, point light, etc.
-                        const bool is_samplable_by_bsdf_sampling
-                            = !path::is_specular_component(scene_, sp, comp) && !sL->sp.geom.degenerated;
+                        const bool is_samplable_by_bsdf_sampling =
+                            !path::is_specular_component(scene_, sp, comp) &&
+                            !path::is_specular_component(scene_, sL->sp, {}) &&
+                            !sL->sp.geom.degenerated;
                         if (!is_samplable_by_bsdf_sampling) {
                             return 1_f;
                         }
 
                         // MIS weight using balance heuristic
-                        const auto p_light = path::pdf_direct(scene_, sp, sL->sp, sL->wo);
+                        const auto p_light = path::pdf_direct(scene_, sp, sL->sp, sL->wo, true);
                         const auto p_bsdf = path::pdf_direction(scene_, sp, wi, wo, comp, true);
                         return math::balance_heuristic(p_light, p_bsdf);
                     }();
@@ -194,7 +199,7 @@ public:
                     // Compute contribution from the direct hit
                     const auto spL = hit->as_type(SceneInteraction::LightEndpoint);
                     const auto woL = -s->wo;
-                    const auto fs = path::eval_contrb_direction(scene_, spL, {}, woL, comp, TransDir::LE, {});
+                    const auto fs = path::eval_contrb_direction(scene_, spL, {}, woL, comp, TransDir::LE, true);
                     const auto mis_w = [&]() -> Float {
                         // Skip if sampling mode is naive
                         if (sampling_mode_ == SamplingMode::Naive) {
@@ -202,14 +207,16 @@ public:
                         }
 
                         // If the light is not samplable by NEE, we will use only BSDF sampling.
-                        const auto is_samplable_by_nee = !path::is_specular_component(scene_, sp, comp);
+                        const auto is_samplable_by_nee =
+                            !path::is_specular_component(scene_, sp, comp) &&
+                            !path::is_specular_component(scene_, spL, {});
                         if (!is_samplable_by_nee) {
                             return 1_f;
                         }
 
                         // MIS weight using balance heuristic
                         const auto pdf_bsdf = path::pdf_direction(scene_, sp, wi, s->wo, comp, true);
-                        const auto pdf_light = path::pdf_direct(scene_, sp, spL, woL);
+                        const auto pdf_light = path::pdf_direct(scene_, sp, spL, woL, true);
                         return math::balance_heuristic(pdf_bsdf, pdf_light);
                     }();
 

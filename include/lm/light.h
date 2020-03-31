@@ -63,7 +63,7 @@ public:
 
     /*!
     */
-    virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo, const Transform& transform) const = 0;
+    virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo, const Transform& transform, bool eval_delta) const = 0;
 
     // --------------------------------------------------------------------------------------------
 
@@ -151,9 +151,21 @@ public:
         If the given direction cannot be sampled, the function returns zero.
         \endrst
     */
-    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo) const = 0;
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform& transform, Vec3 wo, bool eval_delta) const = 0;
 
     // --------------------------------------------------------------------------------------------
+
+
+    /*!
+        \brief Check if the light contains delta component.
+        \param geom Surface geometry information.
+        \param comp Component index.
+        \rst
+        This function returns true if the luminance function :math:`L_e` of the light source
+        contains a component of delta function.
+        \endrst
+    */
+    virtual bool is_specular() const = 0;
 
     /*!
         \brief Check if the light source is inifite distant light.
@@ -163,6 +175,11 @@ public:
         \endrst
     */
     virtual bool is_infinite() const = 0;
+
+    /*!
+        \brief Check if the light source is environment light.
+    */
+    virtual bool is_env() const { return false; }
 
     /*!
     */
@@ -178,7 +195,7 @@ public:
         This function evaluates luminance function :math:`L_e` of the light source.
         \endrst
     */
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo) const = 0;
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wo, bool eval_delta) const = 0;
 };
 
 /*!

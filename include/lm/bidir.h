@@ -86,12 +86,16 @@ struct Path {
         const int n = num_verts();
         const int t = n - s;
         if (s == 0) {
-            // If the vertex is not degenerated, the endpoint is samplable
-            return !vertex_at(0, TransDir::LE)->sp.geom.degenerated;
+            // If the vertex is not degenerated and non-specular, the endpoint is samplable
+            const auto* vL = vertex_at(0, TransDir::LE);
+            return !vL->sp.geom.degenerated &&
+                   !path::is_specular_component(scene, vL->sp, vL->comp);
         }
         else if (t == 0) {
-            // If the vertex is not degenerated, the endpoint is samplable
-            return !vertex_at(0, TransDir::EL)->sp.geom.degenerated;
+            // If the vertex is not degenerated and non-specular, the endpoint is samplable
+            const auto* vE = vertex_at(0, TransDir::EL);
+            return !vE->sp.geom.degenerated &&
+                   !path::is_specular_component(scene, vE->sp, vE->comp);
         }
         else {
             const auto* vL = vertex_at(s-1, TransDir::LE);
@@ -137,7 +141,7 @@ struct Path {
             }
             const auto p_comp_v0 = path::pdf_component(scene, v0->sp, v0->comp);
             const auto p_comp_v1 = path::pdf_component(scene, v1->sp, v1->comp);
-            const auto p_ray = path::pdf_primary_ray(scene, v0->sp, d01);
+            const auto p_ray = path::pdf_primary_ray(scene, v0->sp, d01, false);
             alpha = f / (p_ray * p_comp_v0 * p_comp_v1);
             i++;
         }
@@ -167,12 +171,12 @@ struct Path {
         if (s == 0 && t > 0) {
             const auto* v      = vertex_at(0, TransDir::LE);
             const auto* v_next = vertex_at(1, TransDir::LE);
-            cst = path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::LE, false);
+            cst = path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::LE, true);
         }
         else if (s > 0 && t == 0) {
             const auto* v      = vertex_at(0, TransDir::EL);
             const auto* v_next = vertex_at(1, TransDir::EL);
-            cst = path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::EL, false);
+            cst = path::eval_contrb_direction(scene, v->sp, {}, direction(v, v_next), v->comp, TransDir::EL, true);
         }
         else if (s > 0 && t > 0) {
             const auto* vL      = vertex_at(s-1, TransDir::LE);
@@ -269,7 +273,7 @@ struct Path {
             else {
                 const auto* v1 = vertex_at(1, trans_dir);
                 const auto d01 = direction(v0, v1);
-                const auto p_ray = path::pdf_primary_ray(scene, v0->sp, d01);
+                const auto p_ray = path::pdf_primary_ray(scene, v0->sp, d01, false);
                 const auto p_comp_v0 = path::pdf_component(scene, v0->sp, v0->comp);
                 const auto p_comp_v1 = path::pdf_component(scene, v1->sp, v1->comp);
                 p = surface::convert_pdf_projSA_to_area(p_ray, v0->sp.geom, v1->sp.geom) * p_comp_v0 * p_comp_v1;

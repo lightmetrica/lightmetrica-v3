@@ -47,7 +47,7 @@ public:
         };
     }
 
-    virtual Float pdf_ray(const PointGeometry&, Vec3, const Transform&) const override {
+    virtual Float pdf_ray(const PointGeometry&, Vec3, const Transform&, bool) const override {
         return math::pdf_uniform_sphere();
     }
 
@@ -84,7 +84,7 @@ public:
     virtual std::optional<RaySample> sample_direct(const RaySampleU&, const PointGeometry& geom, const Transform&) const override {
         const auto wo = glm::normalize(geom.p - position_);
         const auto geomL = PointGeometry::make_degenerated(position_);
-        const auto pL = pdf_direct(geom, geomL, {}, wo);
+        const auto pL = pdf_direct(geom, geomL, {}, wo, {});
         if (pL == 0_f) {
             return {};
         }
@@ -96,12 +96,16 @@ public:
         };
     }
 
-    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform&, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform&, Vec3, bool) const override {
         const auto G = surface::geometry_term(geom, geomL);
         return G == 0_f ? 0_f : 1_f / G;
     }
 
     // --------------------------------------------------------------------------------------------
+
+    virtual bool is_specular() const override {
+        return false;
+    }
 
     virtual bool is_infinite() const override {
         return false;
@@ -111,7 +115,7 @@ public:
         return true;
     }
 
-    virtual Vec3 eval(const PointGeometry&, Vec3) const override {
+    virtual Vec3 eval(const PointGeometry&, Vec3, bool) const override {
         return Le_;
     }
 };

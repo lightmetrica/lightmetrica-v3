@@ -105,7 +105,7 @@ public:
         }
 
         // Envlight
-        if (light && light->is_infinite()) {
+        if (light && light->is_env()) {
             if (env_light_) {
                 LM_ERROR("Environment light is already registered. "
                     "You can register only one environment light in the scene.");

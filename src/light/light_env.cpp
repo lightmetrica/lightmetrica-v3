@@ -95,8 +95,8 @@ public:
         const auto geomL = PointGeometry::make_infinite(d, p_world);
 
         // Evaluate contribution
-        const auto Le = eval(geomL, d);
-        const auto p = pdf_ray(geomL, d, {});
+        const auto Le = eval(geomL, d, {});
+        const auto p = pdf_ray(geomL, d, {}, {});
         const auto C = Le / p;
 
         return RaySample{
@@ -106,7 +106,7 @@ public:
         };
     }
 
-    virtual Float pdf_ray(const PointGeometry&, Vec3, const Transform&) const override {
+    virtual Float pdf_ray(const PointGeometry&, Vec3, const Transform&, bool) const override {
         const auto pD = math::pdf_uniform_sphere();
         const auto pA = 1_f / (Pi * sphere_bound_.radius * sphere_bound_.radius);
         return pD * pA;
@@ -143,11 +143,11 @@ public:
         const auto p  = 2 * Pi * u[0] + rot_;
         const auto wo = -Vec3(st * sin(p), cos(t), st * cos(p));
         const auto geomL = PointGeometry::make_infinite(wo);
-        const auto pL = pdf_direct(geom, geomL, {}, wo);
+        const auto pL = pdf_direct(geom, geomL, {}, wo, {});
         if (pL == 0_f) {
             return {};
         }
-        const auto Le = eval(geomL, wo);
+        const auto Le = eval(geomL, wo, {});
         const auto C = Le / pL;
         return RaySample{
             geomL,
@@ -156,7 +156,7 @@ public:
         };
     }
 
-    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform&, Vec3) const override {
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform&, Vec3, bool) const override {
         const auto d  = -geomL.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);
@@ -175,7 +175,15 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
+    virtual bool is_specular() const override {
+        return false;
+    }
+
     virtual bool is_infinite() const override {
+        return true;
+    }
+
+    virtual bool is_env() const {
         return true;
     }
 
@@ -183,7 +191,7 @@ public:
         return false;
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3, bool) const override {
         const auto d = -geom.wo;
         const auto at = [&]() {
             const auto at = std::atan2(d.x, d.z);
