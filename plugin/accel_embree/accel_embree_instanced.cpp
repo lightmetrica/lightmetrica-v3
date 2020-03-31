@@ -7,7 +7,7 @@
 #include <lm/scene.h>
 #include <lm/mesh.h>
 #include <lm/exception.h>
-#include "embree.h"
+#include "embree_params.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -36,9 +36,26 @@ class Accel_Embree_Instanced final : public Accel {
 private:
     RTCDevice device_ = nullptr;
     RTCScene scene_ = nullptr;
+    RTCBuildArguments settings_;
+    RTCSceneFlags sf_;
     std::vector<FlattenedScene> flattened_scenes_;    // Flattened scenes (index 0: root)
 
 public:
+    
+     virtual void construct(const Json& prop) override {        
+        settings_ = prop;
+        sf_ = prop;
+        
+        //check actual values used for building
+        Json j;
+        j = settings_;    
+        LM_DEBUG(j.dump());
+        j.clear();
+        j = sf_;
+        LM_DEBUG(j.dump() );
+        
+        }
+
     Accel_Embree_Instanced() {
         device_ = rtcNewDevice("");
         handle_embree_error(nullptr, rtcGetDeviceError(device_));
@@ -159,7 +176,9 @@ public:
             // Create a new embree scene
             auto& rtcscene = rtcscenes[i];
             rtcscene = rtcNewScene(device_);
-
+            rtcSetSceneFlags(rtcscene, sf_);
+            rtcSetSceneBuildQuality(rtcscene, settings_.buildQuality);
+    
             // Create triangle meshes
             for (const auto& fnode : fscene) {
                 // Primitive
