@@ -153,6 +153,9 @@ public:
                 // use (0,k) strategy instead.
                 int s = 1;
                 int t = n-1;
+                if (s >= nL || t >= nE) {
+                    continue;
+                }
                 {
                     const auto& v = subpathE.vs[t-1];
                     if (path::is_specular_component(scene_, v.sp, v.comp)) {
