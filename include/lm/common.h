@@ -239,6 +239,13 @@ inline void unused(Args&&...) {}
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(LM_NAMESPACE)
 
+// Prevents the variable from optimized away
+#define LM_KEEP_UNUSED(x) \
+    LM_PRAGMA(warning(push)) \
+    LM_PRAGMA(warning(disable:4189)) \
+    { void* volatile dummy = &x; } \
+    LM_PRAGMA(warning(pop))
+
 // ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -246,7 +253,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // Forward declarations
 struct ComponentDeleter;  // component.h
 class Component;
-class AssetGroup;             // assets.h
+class AssetGroup;         // assetgroup.h
 class Mesh;               // mesh.h
 class Texture;            // texture.h
 class Material;           // material.h

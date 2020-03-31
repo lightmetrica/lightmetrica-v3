@@ -89,7 +89,6 @@ struct PointGeometry {
         geom.degenerated = false;
         geom.infinite = true;
         geom.wo = wo;
-        geom.n = geom.gn = wo;
         return geom;
     }
 
@@ -104,7 +103,6 @@ struct PointGeometry {
         geom.infinite = true;
         geom.wo = wo;
         geom.p = p;
-        geom.n = geom.gn = wo;
         return geom;
     }
 
@@ -316,11 +314,20 @@ LM_NAMESPACE_BEGIN(surface)
     \endrst
 */
 static Float geometry_term(const PointGeometry& s1, const PointGeometry& s2) {
-    Vec3 d = s2.p - s1.p;
-    const Float L2 = glm::dot(d, d);
-    d = d / std::sqrt(L2);
-    const auto cos1 = s1.degenerated ? 1_f : glm::abs(glm::dot(s1.n, d));
-    const auto cos2 = s2.degenerated ? 1_f : glm::abs(glm::dot(s2.n, -d));
+    assert(!(s1.infinite && s2.infinite));
+    Vec3 d;
+    Float L2;
+    if (s1.infinite || s2.infinite) {
+        d = s1.infinite ? s1.wo : -s2.wo;
+        L2 = 1_f;
+    }
+    else {
+        d = s2.p - s1.p;
+        L2 = glm::dot(d, d);
+        d = d / std::sqrt(L2);
+    }
+    const auto cos1 = s1.degenerated || s1.infinite ? 1_f : glm::abs(glm::dot(s1.n, d));
+    const auto cos2 = s2.degenerated || s2.infinite ? 1_f : glm::abs(glm::dot(s2.n, -d));
     return cos1 * cos2 / L2;
 }
 

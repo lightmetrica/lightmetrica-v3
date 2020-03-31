@@ -324,7 +324,9 @@ public:
         const auto size = film_->size();
 
         // Execute parallel process
-        const auto processed = sched_->run([&](long long, long long, int threadid) {
+        const auto processed = sched_->run([&](long long, long long sample_index, int threadid) {
+            LM_KEEP_UNUSED(sample_index);
+
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
