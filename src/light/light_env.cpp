@@ -28,6 +28,7 @@ private:
     SphereBound sphere_bound_;
     Component::Ptr<Texture> envmap_;    // Environment map
     Float rot_;                         // Rotation of the environment map around (0,1,0)
+    Float scale_;                       // Scale multilied to stored luminance
     Dist2 dist_;                        // For sampling directions
 
 public:
@@ -59,12 +60,13 @@ public:
         }
         #endif
         rot_ = glm::radians(json::value(prop, "rot", 0_f));
+        scale_ = json::value(prop, "scale", 1_f);
         const auto [w, h] = envmap_->size();
         std::vector<Float> ls(w * h);
         for (int i = 0; i < w*h; i++) {
             const int x = i % w;
             const int y = i / w;
-            const auto v = envmap_->eval_by_pixel_coords(x, y);
+            const auto v = envmap_->eval_by_pixel_coords(x, y) * scale_;
             ls[i] = glm::compMax(v) * std::sin(Pi * (Float(i) / w + .5_f) / h);
         }
         dist_.init(ls, w, h);
@@ -188,7 +190,7 @@ public:
             return at < 0_f ? at + 2_f * Pi : at;
         }();
         const auto t = (at - rot_) * .5_f / Pi;
-        return envmap_->eval({ t - floor(t), acos(d.y) / Pi });
+        return envmap_->eval({ t - floor(t), acos(d.y) / Pi }) * scale_;
     }
 };
 
