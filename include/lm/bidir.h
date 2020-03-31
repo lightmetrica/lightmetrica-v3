@@ -304,10 +304,6 @@ struct Path {
         const auto ps = pdf_bidir(scene, s);
         assert(ps > 0_f);
 
-        if (ps == 0_f) {
-            __debugbreak();
-        }
-
         Float inv_w = 0_f;
         for (int s2 = 0; s2 <= n; s2++) {
             const auto pi = pdf_bidir(scene, s2);
@@ -316,10 +312,6 @@ struct Path {
             }
             const auto r = pi / ps;
             inv_w += r*r;
-        }
-
-        if (inv_w == 0_f) {
-            __debugbreak();
         }
 
         return 1_f / inv_w;
