@@ -178,6 +178,21 @@ struct Bound {
     }
 };
 
+/*!
+    \brief Sphere bound.
+*/
+struct SphereBound {
+    Vec3 center;        //!< Center of the sphere.
+    Float radius;       //!< Radius of the sphere.
+
+    //! \cond
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(center, radius);
+    }
+    //! \endcond
+};
+
 #pragma endregion
 
 // ------------------------------------------------------------------------------------------------

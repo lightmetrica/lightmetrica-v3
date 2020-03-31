@@ -21,15 +21,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 class Light_EnvConst final : public Light {
 private:
     Vec3 Le_;
-    struct SphereBound {
-        Vec3 center;
-        Float radius;
-    };
     SphereBound sphere_bound_;
     
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(Le_);
+        ar(Le_, sphere_bound_);
     }
     
 public:
