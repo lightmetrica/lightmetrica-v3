@@ -74,7 +74,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/camera/camera_pinhole.cpp"
     "${_SOURCE_DIR}/light/light_area.cpp"
     # "${_SOURCE_DIR}/light/light_directional.cpp"
-    # "${_SOURCE_DIR}/light/light_point.cpp"
+    "${_SOURCE_DIR}/light/light_point.cpp"
     "${_SOURCE_DIR}/light/light_env.cpp"
     "${_SOURCE_DIR}/light/light_envconst.cpp"
     # "${_SOURCE_DIR}/light/light_envportal.cpp"

@@ -155,7 +155,8 @@ public:
                 // use (0,k) strategy instead.
                 int s = 1;
                 int t = n-1;
-                if (s >= nL || t >= nE) {
+                // Selected strategy is not sampled due to the early rejection
+                if (s > nL || t > nE) {
                     continue;
                 }
                 {
@@ -164,11 +165,6 @@ public:
                         s = 0;
                         t = n;
                     }
-                }
-
-                // Selected strategy is not sampled due to the early rejection
-                if (s > nL || t > nE) {
-                    continue;
                 }
 
                 // Connect subpaths
@@ -231,7 +227,7 @@ public:
                 // Strategy index
                 const int s = n - 1;
                 const int t = 1;
-                if (s >= nL || t >= nE) {
+                if (s > nL || t > nE) {
                     continue;
                 }
 
