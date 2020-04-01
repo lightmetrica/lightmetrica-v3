@@ -313,13 +313,40 @@ class Material_Mixture_WavefrontObj final : public Material {
 private:
     Component::Ptr<Material> diffuse_;
     Component::Ptr<Material> glossy_;
-    std::vector<Material*> materials_;
     Texture* mask_tex_ = nullptr;
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(diffuse_, glossy_, mask_tex_);
+    }
+
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        comp::visit(visit, diffuse_);
+        comp::visit(visit, glossy_);
+        comp::visit(visit, mask_tex_);
+    }
+
+    virtual Component* underlying(const std::string& name) const override {
+        if (name == "diffuse")
+            return diffuse_.get();
+        else if (name == "glossy")
+            return glossy_.get();
+        return nullptr;
+    }
 
 private:
     // Evaluate alpha value
     Float eval_alpha(const PointGeometry& geom) const {
         return !mask_tex_ ? 1_f : mask_tex_->eval_alpha(geom.t);
+    }
+
+    // Get material by index
+    const Material* material_by_index(int index) const {
+        if (index == 0)
+            return diffuse_.get();
+        else if (index == 1)
+            return glossy_.get();
+        return nullptr;
     }
 
 public:
@@ -337,7 +364,6 @@ public:
                 {"Kd", Kd},
                 {"mapKd", mapKd}
             });
-        materials_.push_back(diffuse_.get());
 
         // Glossy material
         glossy_ = comp::create<Material>(
@@ -346,7 +372,6 @@ public:
                 {"ax", ax},
                 {"ay", ay}
             });
-        materials_.push_back(glossy_.get());
 
         // Alpha mask
         const bool no_alpha_mask = json::value<bool>(prop, "no_alpha_mask");
@@ -395,7 +420,7 @@ public:
             }();
 
             // Sample direction
-            const auto* material = materials_[comp_in_group];
+            const auto* material = material_by_index(comp_in_group);
             const auto s = material->sample_direction(us, geom, wi, {}, trans_dir);
             if (!s) {
                 return {};

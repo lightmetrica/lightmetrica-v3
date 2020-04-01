@@ -15,9 +15,25 @@ private:
     struct Entry {
         Material* material;
         Float weight;
+
+        template <typename Archive>
+        void serialize(Archive& ar) {
+            ar(material, weight);
+        }
     };
     std::vector<Entry> materials_;
     Dist dist_;
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(materials_, dist_);
+    }
+
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        for (auto& e : materials_) {
+            comp::visit(visit, e.material);
+        }
+    }
 
 public:
     virtual void construct(const Json& prop) override {
@@ -84,12 +100,35 @@ private:
         struct Entry {
             Material* material;
             Float weight;
+
+            template <typename Archive>
+            void serialize(Archive& ar) {
+                ar(material, weight);
+            }
         };
         std::vector<Entry> entries;
         Dist dist;
+
+        template <typename Archive>
+        void serialize(Archive& ar) {
+            ar(entries, dist);
+        }
     };
     std::vector<MaterialGroup> material_groups_;
     Dist dist_;
+
+public:
+    LM_SERIALIZE_IMPL(ar) {
+        ar(material_groups_, dist_);
+    }
+
+    virtual void foreach_underlying(const ComponentVisitor& visit) override {
+        for (auto& material_group : material_groups_) {
+            for (auto& e : material_group.entries) {
+                comp::visit(visit, e.material);
+            }
+        }
+    }
 
 public:
     virtual void construct(const Json& prop) override {
