@@ -21,13 +21,19 @@ private:
         MIS,
     };
 
+    enum class PrimaryRaySampleMode {
+        Pixel,
+        Image,
+    };
+
 private:
-    Scene* scene_;                                  // Reference to scene asset
-    Film* film_;                                    // Reference to film asset for output
-    int max_verts_;                                 // Maximum number of path vertices
-    std::optional<unsigned int> seed_;              // Random seed
-    SamplingMode sampling_mode_;                    // Sampling mode
-    Component::Ptr<scheduler::Scheduler> sched_;    // Scheduler for parallel processing
+    Scene* scene_;                                      // Reference to scene asset
+    Film* film_;                                        // Reference to film asset for output
+    int max_verts_;                                     // Maximum number of path vertices
+    std::optional<unsigned int> seed_;                  // Random seed
+    SamplingMode sampling_mode_;                        // Sampling mode
+    PrimaryRaySampleMode primary_ray_sampling_mode_;    // Sampling mode of the primary ray
+    Component::Ptr<scheduler::Scheduler> sched_;        // Scheduler for parallel processing
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -54,9 +60,19 @@ public:
             else if (s == "mis") sampling_mode_ = SamplingMode::MIS;
         }
         {
-            const auto sched_name = json::value<std::string>(prop, "scheduler");
-            sched_ = comp::create<scheduler::Scheduler>(
-                "scheduler::spi::" + sched_name, make_loc("scheduler"), prop);
+
+            const auto name = json::value<std::string>(prop, "scheduler");
+            const auto s = json::value<std::string>(prop, "primary_ray_sampling_mode", "pixel");
+            if (s == "pixel") {
+                primary_ray_sampling_mode_ = PrimaryRaySampleMode::Pixel;
+                sched_ = comp::create<scheduler::Scheduler>(
+                    "scheduler::spp::" + name, make_loc("scheduler"), prop);
+            }
+            else if (s == "image") {
+                primary_ray_sampling_mode_ = PrimaryRaySampleMode::Image;
+                sched_ = comp::create<scheduler::Scheduler>(
+                    "scheduler::spi::" + name, make_loc("scheduler"), prop);
+            }
         }
     }
 
@@ -69,9 +85,25 @@ public:
         const auto size = film_->size();
 
         // Execute parallel process
-        const auto processed = sched_->run([&](long long, long long, int threadid) {
+        const auto processed = sched_->run([&](long long pixel_index, long long, int threadid) {
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
+
+            // ------------------------------------------------------------------------------------
+
+            // Sample window
+            const auto window = [&]() -> Vec4 {
+                if (primary_ray_sampling_mode_ == PrimaryRaySampleMode::Pixel) {
+                    const int x = int(pixel_index % size.w);
+                    const int y = int(pixel_index / size.w);
+                    const auto dx = 1_f / size.w;
+                    const auto dy = 1_f / size.h;
+                    return { dx * x, dy * y, dx, dy };
+                }
+                else {
+                    return { 0_f, 0_f, 1_f, 1_f };
+                }
+            }();
 
             // ------------------------------------------------------------------------------------
 
@@ -89,12 +121,24 @@ public:
             Vec2 raster_pos{};
             for (int num_verts = 1; num_verts < max_verts_; num_verts++) {
                 // Sample NEE edge
-                [&]{
-                    // Skip if sampling mode is naive
-                    if (sampling_mode_ == SamplingMode::Naive) {
-                        return;
-                    }
 
+                // Flag indicating if the nee edge is samplable
+                const bool samplable_by_nee = [&]() {
+                    if (sampling_mode_ == SamplingMode::Naive) {
+                        // Skip if sampling mode is naive
+                        return false;
+                    }
+                    const auto is_specular = path::is_specular_component(scene_, sp, comp);
+                    if (primary_ray_sampling_mode_ == PrimaryRaySampleMode::Pixel) {
+                        // In pixel sampling mode, the nee edge is only samplable when nv>1
+                        return num_verts > 1 && !is_specular;
+                    }
+                    else {
+                        return !is_specular;
+                    }
+                }();
+
+                if (samplable_by_nee) [&]{
                     // Sample a light
                     const auto sL = path::sample_direct_light(rng, scene_, sp);
                     if (!sL) {
@@ -129,11 +173,9 @@ public:
                         // When the light is not samplable by BSDF sampling, we will use only NEE.
                         // This includes, for instance, the light sampling for
                         // directional light, environment light, point light, etc.
-                        const bool is_samplable_by_bsdf_sampling =
-                            !path::is_specular_component(scene_, sp, comp) &&
-                            !path::is_specular_component(scene_, sL->sp, {}) &&
-                            !sL->sp.geom.degenerated;
-                        if (!is_samplable_by_bsdf_sampling) {
+                        const bool is_specular_L = path::is_specular_component(scene_, sL->sp, {});
+                        const bool samplable_by_bsdf = !is_specular_L && !sL->sp.geom.degenerated;
+                        if (!samplable_by_bsdf) {
                             return 1_f;
                         }
 
@@ -151,7 +193,16 @@ public:
                 // --------------------------------------------------------------------------------
 
                 // Sample direction
-                const auto s = path::sample_direction(rng, scene_, sp, wi, comp, TransDir::EL);
+                const auto s = [&]() -> std::optional<path::DirectionSample> {
+                    if (num_verts == 1) {
+                        const auto [x, y, w, h] = window.data.data;
+                        const auto ud = Vec2(x+w*rng.u(), y+h*rng.u());
+                        return path::sample_direction({ ud, rng.next<Vec2>() }, scene_, sp, wi, comp, TransDir::EL);
+                    }
+                    else {
+                        return path::sample_direction(rng, scene_, sp, wi, comp, TransDir::EL);
+                    }
+                }();
                 if (!s) {
                     break;
                 }
@@ -179,23 +230,19 @@ public:
                 // --------------------------------------------------------------------------------
 
                 // Contribution from direct hit against a light
-                [&]{
+
+                // Flag indicating if the light can be samplable by direct hit
+                const bool samplable_by_direct_hit = [&]() {
                     if (sampling_mode_ == SamplingMode::NEE) {
-                        // Accumulate contribution from light only when a NEE edge is not samplable.
-                        // This happens when the direction is sampled from delta distribution.
-                        // Note that this include the case where the surface has multi-component material
-                        // containing delta component and the direction is sampled from the component.
-                        const auto samplable_by_nee = !path::is_specular_component(scene_, sp, comp);
-                        if (samplable_by_nee) {
-                            return;
-                        }
+                        // Accumulate contribution from the direct hit only when a NEE edge is not samplable
+                        return !samplable_by_nee;
                     }
-
-                    // Check hit with a light
-                    if (!scene_->is_light(*hit)) {
-                        return;
+                    else {
+                        return true;
                     }
+                }();
 
+                if (samplable_by_direct_hit && scene_->is_light(*hit)) [&]{
                     // Compute contribution from the direct hit
                     const auto spL = hit->as_type(SceneInteraction::LightEndpoint);
                     const auto woL = -s->wo;
@@ -206,11 +253,8 @@ public:
                             return 1_f;
                         }
 
-                        // If the light is not samplable by NEE, we will use only BSDF sampling.
-                        const auto is_samplable_by_nee =
-                            !path::is_specular_component(scene_, sp, comp) &&
-                            !path::is_specular_component(scene_, spL, {});
-                        if (!is_samplable_by_nee) {
+                        // The weight is one if the hit cannot be sampled by nee
+                        if (!samplable_by_nee) {
                             return 1_f;
                         }
 
@@ -259,7 +303,12 @@ public:
         // ----------------------------------------------------------------------------------------
         
         // Rescale film
-        film_->rescale(Float(size.w * size.h) / processed);
+        if (primary_ray_sampling_mode_ == PrimaryRaySampleMode::Pixel) {
+            film_->rescale(1_f / processed);
+        }
+        else {
+            film_->rescale(Float(size.w * size.h) / processed);
+        }
 
         return { {"processed", processed} };
     }

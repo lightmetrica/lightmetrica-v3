@@ -166,6 +166,9 @@ public:
                         t = n;
                     }
                 }
+                if (s > nL || t > nE) {
+                    continue;
+                }
 
                 // Connect subpaths
                 const auto path = path::connect_subpaths(scene_, subpathL, subpathE, s, t);
