@@ -558,6 +558,9 @@ static std::optional<DistanceSample> sample_distance(Rng& rng, const Scene* scen
     }
     else {
         // Surface interaction
+        if (!hit) {
+            return {};
+        }
         return DistanceSample{
             *hit,
             ds ? ds->weight : Vec3(1_f)

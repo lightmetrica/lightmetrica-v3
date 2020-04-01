@@ -10,8 +10,7 @@
 #include <lm/film.h>
 #include <lm/scheduler.h>
 #include <lm/debug.h>
-
-#define VOLPT_IMAGE_SAMPLNG 0
+#include <lm/path.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -19,14 +18,14 @@ class Renderer_VolPTNaive final : public Renderer {
 private:
     Scene* scene_;
     Film* film_;
-    int max_length_;
+    int max_verts_;
     Float rr_prob_;
     std::optional<unsigned int> seed_;
     Component::Ptr<scheduler::Scheduler> sched_;
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(scene_, film_, max_length_, rr_prob_, sched_);
+        ar(scene_, film_, max_verts_, rr_prob_, sched_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
@@ -39,64 +38,50 @@ public:
     virtual void construct(const Json& prop) override {
         scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
-        max_length_ = json::value<int>(prop, "max_length");
+        scene_->camera()->set_aspect_ratio(film_->aspect());
+        max_verts_ = json::value<int>(prop, "max_verts");
         rr_prob_ = json::value<Float>(prop, "rr_prob", .2_f);
         const auto sched_name = json::value<std::string>(prop, "scheduler");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
-        #if VOLPT_IMAGE_SAMPLNG
         sched_ = comp::create<scheduler::Scheduler>(
-            "scheduler::spi::" + sched_name, makeLoc("scheduler"), prop);
-        #else
-        sched_ = comp::create<scheduler::Scheduler>(
-            "scheduler::spp::" + sched_name, make_loc("scheduler"), prop);
-        #endif
+            "scheduler::spi::" + sched_name, make_loc("scheduler"), prop);
     }
 
-    virtual void render() const override {
+    virtual Json render() const override {
 		scene_->require_renderable();
 
         film_->clear();
         const auto size = film_->size();
-        const auto processed = sched_->run([&](long long pixel_index, long long, int threadid) {
+        const auto processed = sched_->run([&](long long, long long sample_index, int threadid) {
+            LM_KEEP_UNUSED(sample_index);
+
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
-            #if VOLPT_IMAGE_SAMPLNG
-            LM_UNUSED(pixelIndex);
-            const Vec4 window(0_f, 0_f, 1_f, 1_f);
-            #else
-            // Pixel positions
-            const int x = int(pixel_index % size.w);
-            const int y = int(pixel_index / size.w);
-            const auto dx = 1_f / size.w;
-            const auto dy = 1_f / size.h;
-            const Vec4 window(dx * x, dy * y, dx, dy);
-            #endif
-
-            // Path throughput
-            Vec3 throughput(1_f);
-
-            // Incident direction and current surface point
-            Vec3 wi = {};
-            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect());
+            // Sample initial vertex
+            const auto sE = path::sample_position(rng, scene_, TransDir::EL);
+            const auto sE_comp = path::sample_component(rng, scene_, sE->sp);
+            auto sp = sE->sp;
+            int comp = sE_comp.comp;
+            auto throughput = sE->weight * sE_comp.weight;
 
             // Perform random walk
-            Vec3 L(0_f);
-            Vec2 rasterPos{};
-            for (int length = 0; length < max_length_; length++) {
-                // Sample a ray
-                const auto s = scene_->sample_ray(rng, sp, wi);
-                if (!s || math::is_zero(s->weight)) {
+            Vec3 wi{};
+            Vec2 raster_pos{};
+            for (int num_verts = 1; num_verts < max_verts_; num_verts++) {
+                // Sample direction
+                const auto s = path::sample_direction(rng, scene_, sp, wi, comp, TransDir::EL);
+                if (!s) {
                     break;
                 }
 
-                // Compute raster position for the primary ray
-                if (length == 0) {
-                    rasterPos = *scene_->raster_position(s->wo, film_->aspect());
+                // Compute and cache raster position
+                if (num_verts == 1) {
+                    raster_pos = *path::raster_position(scene_, s->wo);
                 }
 
                 // Sample next scene interaction
-                const auto sd = scene_->sample_distance(rng, s->sp, s->wo);
+                const auto sd = path::sample_distance(rng, scene_, sp, s->wo);
                 if (!sd) {
                     break;
                 }
@@ -106,12 +91,20 @@ public:
 
                 // Accumulate contribution from emissive interaction
                 if (scene_->is_light(sd->sp)) {
-                    const auto C = throughput * scene_->eval_contrb_endpoint(sd->sp, -s->wo);
-                    L += C;
+                    const auto spL = sd->sp.as_type(SceneInteraction::LightEndpoint);
+                    const auto woL = -s->wo;
+                    const auto Le = path::eval_contrb_direction(scene_, spL, {}, woL, comp, TransDir::LE, true);
+                    const auto C = throughput * Le;
+                    film_->splat(raster_pos, C);
+                }
+
+                // Termination on a hit with environment
+                if (sd->sp.geom.infinite) {
+                    break;
                 }
 
                 // Russian roulette
-                if (length > 3) {
+                if (num_verts > 5) {
                     const auto q = glm::max(rr_prob_, 1_f - glm::compMax(throughput));
                     if (rng.u() < q) {
                         break;
@@ -119,20 +112,21 @@ public:
                     throughput /= 1_f - q;
                 }
 
-                // Update
+                // Sample component
+                const auto s_comp = path::sample_component(rng, scene_, sd->sp);
+                throughput *= s_comp.weight;
+
+                // Update information
                 wi = -s->wo;
                 sp = sd->sp;
+                comp = s_comp.comp;
             }
-
-            // Accumulate contribution
-            film_->splat(rasterPos, L);
         });
 
-        #if VOLPT_IMAGE_SAMPLNG
+        // Rescale film
         film_->rescale(Float(size.w * size.h) / processed);
-        #else
-        film_->rescale(1_f / processed);
-        #endif
+
+        return { {"processed", processed} };
     }
 };
 

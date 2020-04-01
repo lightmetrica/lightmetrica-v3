@@ -50,7 +50,7 @@ private:
     Float vfov_;      // Vertical field of view
     Float tf_;        // Half of the screen height at 1 unit forward from the position
 
-    Float aspect_;              // Aspect raio (height / width)
+    Float aspect_ = 0_f;        // Aspect raio (height / width)
     Float preferred_aspect_;    // Preferred aspect ratio
 
 public:
@@ -201,6 +201,8 @@ public:
     // --------------------------------------------------------------------------------------------
 
     virtual std::optional<Vec2> raster_position(Vec3 wo) const override {
+        assert(aspect_ != 0_f);
+
         // Convert to camera space
         const auto to_eye = glm::transpose(Mat3(u_, v_, w_));
         const auto wo_eye = to_eye * wo;
