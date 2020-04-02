@@ -1,12 +1,13 @@
 # ---
 # jupyter:
 #   jupytext:
+#     cell_metadata_json: true
 #     formats: ipynb,py:light
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.4
+#       format_version: '1.5'
+#       jupytext_version: 1.3.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -51,6 +52,10 @@ lm.progress.init('jupyter')
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_nanort'))
 
+if not lm.Release:
+    lm.parallel.init('openmp', {'num_threads': 1})
+    lm.debug.attach_to_debugger()
+
 # + {"code_folding": []}
 # Create a sphere geometry with triangle mesh
 r = 1
@@ -87,6 +92,10 @@ for i in range(1,numTheta+1):
             idx += 1
 
 # + {"code_folding": []}
+accel = lm.load_accel('accel', 'nanort', {})
+scene = lm.load_scene('scene', 'default', {
+    'accel': accel.loc()
+})
 mesh = lm.load_mesh('mesh_sphere', 'raw', {
     'ps': vs.flatten().tolist(),
     'ns': ns.flatten().tolist(),
@@ -97,29 +106,20 @@ mesh = lm.load_mesh('mesh_sphere', 'raw', {
         'n': fs.flatten().tolist()
     }
 })
-
 camera = lm.load_camera('camera_main', 'pinhole', {
     'position': [0,0,50],
     'center': [0,0,0],
     'up': [0,1,0],
-    'vfov': 30
+    'vfov': 30,
+    'aspect': 16/9
 })
-
 material = lm.load_material('material_white', 'diffuse', {
     'Kd': [1,1,1]
 })
-
 film = lm.load_film('film_output', 'bitmap', {
     'w': 1920,
     'h': 1080
 })
-
-accel = lm.load_accel('accel', 'nanort', {})
-
-scene = lm.load_scene('scene', 'default', {
-    'accel': accel.loc()
-})
-
 renderer = lm.load_renderer('renderer', 'raycast', {
     'scene': scene.loc(),
     'output': film.loc(),

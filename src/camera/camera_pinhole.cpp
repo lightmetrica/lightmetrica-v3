@@ -42,20 +42,19 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Camera_Pinhole final : public Camera {
 private:
-    Vec3 position_;   // Camera position
-    Vec3 center_;     // Lookat position
-    Vec3 up_;         // Up vector
+    Vec3 position_;     // Camera position
+    Vec3 center_;       // Lookat position
+    Vec3 up_;           // Up vector
 
-    Vec3 u_, v_, w_;  // Basis for camera coordinates
-    Float vfov_;      // Vertical field of view
-    Float tf_;        // Half of the screen height at 1 unit forward from the position
+    Vec3 u_, v_, w_;    // Basis for camera coordinates
+    Float vfov_;        // Vertical field of view
+    Float tf_;          // Half of the screen height at 1 unit forward from the position
 
-    Float aspect_ = 0_f;        // Aspect raio (height / width)
-    Float preferred_aspect_;    // Preferred aspect ratio
+    Float aspect_;      // Aspect raio (height / width)
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(position_, center_, up_, u_, v_, w_, vfov_, tf_);
+        ar(position_, center_, up_, u_, v_, w_, vfov_, tf_, aspect_);
     }
 
 public:
@@ -65,7 +64,7 @@ public:
             {"center", center_},
             {"up", up_},
             {"vfov", vfov_},
-            {"preferred_aspect", preferred_aspect_}
+            {"aspect", aspect_}
         };
     }
 
@@ -89,7 +88,7 @@ public:
         }
         vfov_ = json::value<Float>(prop, "vfov");        // Vertical FoV
         tf_ = tan(vfov_ * Pi / 180_f * .5_f);            // Precompute half of screen height
-        preferred_aspect_ = json::value<Float>(prop, "preferred_aspect", 1_f);
+        aspect_ = json::value<Float>(prop, "aspect");
     }
 
 private:
@@ -201,8 +200,6 @@ public:
     // --------------------------------------------------------------------------------------------
 
     virtual std::optional<Vec2> raster_position(Vec3 wo) const override {
-        assert(aspect_ != 0_f);
-
         // Convert to camera space
         const auto to_eye = glm::transpose(Mat3(u_, v_, w_));
         const auto wo_eye = to_eye * wo;

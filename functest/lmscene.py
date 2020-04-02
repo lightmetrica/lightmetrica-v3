@@ -35,7 +35,8 @@ def plane_emitter(scene, scene_path):
         'position': [0,0,5],
         'center': [0,0,0],
         'up': [0,1,0],
-        'vfov': 30
+        'vfov': 30,
+        'aspect': 16/9
     })
     mesh = lm.load_mesh('mesh', 'raw', {
         'ps': [-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1],
@@ -71,7 +72,8 @@ def fireplace_room(scene, scene_path):
         'position': [5.101118, 1.083746, -2.756308],
         'center': [4.167568, 1.078925, -2.397892],
         'up': [0,1,0],
-        'vfov': 43.001194
+        'vfov': 43.001194,
+        'aspect': 16/9
     })
     model = lm.load_model('model_obj', 'wavefrontobj', {
         'path': os.path.join(scene_path, 'fireplace_room/fireplace_room.obj')
@@ -92,7 +94,7 @@ def cornell_box_empty_white(scene, scene_path):
         'center': [0,1,0],
         'up': [0,1,0],
         'vfov': 30,
-        'preferred_aspect': 1
+        'aspect': 16/9
     })
     model = lm.load_model('model_obj', 'wavefrontobj', {
         'path': os.path.join(scene_path, 'cornell_box/CornellBox-Empty-White.obj')
@@ -112,7 +114,8 @@ def cornell_box_sphere(scene, scene_path):
         'position': [0,1,5],
         'center': [0,1,0],
         'up': [0,1,0],
-        'vfov': 30
+        'vfov': 30,
+        'aspect': 16/9
     })
     model = lm.load_model('model_obj', 'wavefrontobj', {
         'path': os.path.join(scene_path, 'cornell_box/CornellBox-Sphere.obj')
@@ -248,7 +251,8 @@ def cube(scene, scene_path):
         'position': [2, 2, 2],
         'center': [0, 0, 0],
         'up': [0,1,0],
-        'vfov': 30
+        'vfov': 30,
+        'aspect': 16/9
     })
     model = lm.load_model('model_obj', 'wavefrontobj', {
         'path': os.path.join(scene_path, 'cube/cube.obj')

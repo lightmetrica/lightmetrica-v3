@@ -28,7 +28,6 @@ def run_functests(output_dir, lmenv_path):
         'example_raycast',
         'example_pt',
         'example_cpp',
-        'example_custom_material',
         'example_custom_renderer',
         'example_serialization',
         'func_render_all',

@@ -124,7 +124,7 @@ static void bind_component(pybind11::module& m) {
             PYBIND11_OVERLOAD(void, Component, construct, prop);
         }
     };
-    using make_loc_func_ptr = std::string(Component::*)(const std::string&) const;
+    using make_loc_func_ptr = const std::string(Component::*)(const std::string&) const;
     pybind11::class_<Component, Component_Py, Component::Ptr<Component>>(m, "Component")
         .def(pybind11::init<>())
         .def("key", &Component::key)

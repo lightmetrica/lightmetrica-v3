@@ -72,15 +72,10 @@ static Ray primary_ray(const Scene* scene, Vec2 rp) {
 /*!
 */
 struct RaySampleU {
-    union {
-        struct {
-            Vec2 up;    // For position
-            Vec2 upc;   // For positional component
-            Vec2 ud;    // For direction
-            Vec2 udc;   // For directional component
-        };
-        Float data[8];
-    };
+    Vec2 up;    // For position
+    Vec2 upc;   // For positional component
+    Vec2 ud;    // For direction
+    Vec2 udc;   // For directional component
 };
 
 /*!

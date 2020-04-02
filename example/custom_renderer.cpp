@@ -22,7 +22,6 @@ public:
     virtual void construct(const Json& prop) override {
         scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
-        scene_->camera()->set_aspect_ratio(film_->aspect());
         spp_ = json::value<long long>(prop, "spp");
     }
 
@@ -93,12 +92,15 @@ int main(int argc, char** argv) {
         });
 
         // Pinhole camera
+        const lm::Float w = opt["w"];
+        const lm::Float h = opt["h"];
         const auto* camera = lm::load<lm::Camera>("camera1", "camera::pinhole", {
             {"film", film->loc()},
             {"position", opt["eye"]},
             {"center", opt["lookat"]},
             {"up", {0,1,0}},
-            {"vfov", opt["vfov"]}
+            {"vfov", opt["vfov"]},
+            {"aspect", w / h}
         });
 
         // OBJ model

@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.3.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -60,7 +60,8 @@ camera = lm.load_camera('camera', 'pinhole', {
     'position': [0,0,5],
     'center': [0,0,0],
     'up': [0,1,0],
-    'vfov': 30
+    'vfov': 30,
+    'aspect': 16/9
 })
 
 # Load mesh with raw vertex data

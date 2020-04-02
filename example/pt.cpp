@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
             "obj": "{}",
             "out": "{}",
             "spp": {},
-            "len": {},
+            "max_verts": {},
             "w": {},
             "h": {},
             "eye": [{},{},{}],
@@ -52,12 +52,15 @@ int main(int argc, char** argv) {
         });
 
         // Pinhole camera
+        const lm::Float w = opt["w"];
+        const lm::Float h = opt["h"];
         const auto* camera = lm::load<lm::Camera>("camera1", "camera::pinhole", {
             {"film", film->loc()},
             {"position", opt["eye"]},
             {"center", opt["lookat"]},
             {"up", {0,1,0}},
-            {"vfov", opt["vfov"]}
+            {"vfov", opt["vfov"]},
+            {"aspect", w/h}
         });
 
         // OBJ model
@@ -92,7 +95,7 @@ int main(int argc, char** argv) {
             {"scene", scene->loc()},
             {"scheduler", "sample"},
             {"spp", opt["spp"]},
-            {"max_length", opt["len"]}
+            {"max_verts", opt["max_verts"]}
         });
         renderer->render();
 

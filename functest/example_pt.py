@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.3.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -53,7 +53,8 @@ camera = lm.load_camera('camera1', 'pinhole', {
     'position': [5.101118, 1.083746, -2.756308],
     'center': [4.167568, 1.078925, -2.397892],
     'up': [0,1,0],
-    'vfov': 43.001194
+    'vfov': 43.001194,
+    'aspect': 16/9
 })
 
 # OBJ model
@@ -78,8 +79,8 @@ renderer = lm.load_renderer('renderer', 'pt', {
     'scene': scene.loc(),
     'output': film.loc(),
     'scheduler': 'sample',
-    'spp': 10,
-    'max_length': 20
+    'spp': 5,
+    'max_verts': 20
 })
 renderer.render()
 
