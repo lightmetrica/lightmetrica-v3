@@ -139,7 +139,7 @@ public:
 
                 if (samplable_by_nee) [&]{
                     // Sample a light
-                    const auto sL = path::sample_direct_light(rng, scene_, sp);
+                    const auto sL = path::sample_direct(rng, scene_, sp, TransDir::LE);
                     if (!sL) {
                         return;
                     }

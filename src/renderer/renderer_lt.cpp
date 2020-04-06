@@ -91,7 +91,7 @@ public:
                 // Sample a NEE edge
                 [&]{
                     // Sample a camera
-                    const auto sE = path::sample_direct_camera(rng, scene_, sp);
+                    const auto sE = path::sample_direct(rng, scene_, sp, TransDir::EL);
                     if (!sE) {
                         return;
                     }
