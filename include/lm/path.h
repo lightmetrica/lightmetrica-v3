@@ -21,19 +21,8 @@ LM_NAMESPACE_BEGIN(path)
 */
 
 #pragma region Ray sampling
-/*
-    Samples the joint distribution of the scene interaction x and the direction wo
-    originated from x. (x, wo) ~ p(x, wo).
-*/
 
-/*!
-    \brief Result of ray sampling.
-
-    \rst
-    This structure represents the result of ray sampling
-    used by the functions of :cpp:class:`lm::Scene` class.
-    \endrst
-*/
+//! Result of ray sampling.
 struct RaySample {
     SceneInteraction sp;    //!< Sampled scene interaction.
     Vec3 wo;                //!< Sampled direction.
@@ -69,8 +58,7 @@ static Ray primary_ray(const Scene* scene, Vec2 rp) {
     return camera->primary_ray(rp);
 }
 
-/*!
-*/
+//! Random number input for ray sampling.
 struct RaySampleU {
     Vec2 up;    // For position
     Vec2 upc;   // For positional component
@@ -79,26 +67,19 @@ struct RaySampleU {
 };
 
 /*!
-    \brief Sample a ray given surface point and incident direction.
-    \param rng Random number generator.
-    \param sp Surface interaction.
-    \param wi 
+    \brief Primary ray sampling.
+    \param u Random number input.
+    \param scene Scene.
+    \param trans_dir Transport direction.
 
     \rst
-    This function samples a ray given the scene interaction.
-    According to the types of scene interaction, this function samples a different
-    types of the ray from the several distributions.
-
-    (1) If the scene interaction is ``terminator``, this function samples a primary ray
-        according type types of the terminator (camera or light). ``wi`` is ignored in this case.
-
-    (2) If the scene interaction is not ``terminator``, this function samples
-        a ray from the associated distribution to BSDF or phase function
-        given the interaction event ``sp`` and incident ray direction ``wi``.
-
+    This function samples a primary ray according the transport direction.
+    If the transport direction is ``LE``, the function generates a primary ray from a light.
+    If the transport direction is ``EL``, the function generates a primary ray from a camera.
     In both cases, this function returns ``nullopt`` if the sampling failed,
     or the case when the early return is possible for instance when 
     the evaluated contribution of the sampled direction is zero.
+    For detail, please refer to :ref:`path_sampling_primary_ray_sampling`.
     \endrst
 */
 static std::optional<RaySample> sample_primary_ray(const RaySampleU& u, const Scene* scene, TransDir trans_dir) {
@@ -139,12 +120,31 @@ static std::optional<RaySample> sample_primary_ray(const RaySampleU& u, const Sc
 }
 
 /*!
+    \brief Primary ray sampling.
+    \param rng Random number generator.
+    \param scene Scene.
+    \param trans_dir Transport direction.
+
+    \rst
+    This function samples a primary ray according the transport direction.
+    This version takes random number generator instead of arbitrary random numbers.
+    \endrst
 */
 static std::optional<RaySample> sample_primary_ray(Rng& rng, const Scene* scene, TransDir trans_dir) {
     return sample_primary_ray(rng.next<RaySampleU>(), scene, trans_dir);
 }
 
 /*!
+    \brief Evaluate PDF for primary ray sampling.
+    \param scene Scene.
+    \param sp Sampled scene interaction.
+    \param wo Sampled outgoing direction.
+    \param eval_delta If true, evaluate delta function.
+
+    \rst
+    This function evaluate the PDF correcponding to :cpp:func:`sample_primary_ray` function.
+    For detail, please refer to :ref:`path_sampling_primary_ray_sampling`.
+    \endrst
 */
 static Float pdf_primary_ray(const Scene* scene, const SceneInteraction& sp, Vec3 wo, bool eval_delta) {
     const auto& primitive = scene->node_at(sp.primitive).primitive;
@@ -167,20 +167,27 @@ static Float pdf_primary_ray(const Scene* scene, const SceneInteraction& sp, Vec
 
 #pragma region Component sampling
 
-/*!
-*/
+//! Result of component sampling.
 struct ComponentSample {
     int comp;
     Float weight;
 };
 
-/*!
-*/
+//! Result of component sampling.
 struct ComponentSampleU {
     Vec2 uc;
 };
 
 /*!
+    \brief Component sampling.
+    \param u Random number input.
+    \param scene Scene.
+    \param sp Scene interaction.
+    
+    \rst
+    This function samples a component of the scene interaction accroding to its type.
+    For detail, please refer to :ref:`path_sampling_component_sampling`.
+    \endrst
 */
 static ComponentSample sample_component(const ComponentSampleU& u, const Scene* scene, const SceneInteraction& sp) {
     if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
@@ -191,13 +198,31 @@ static ComponentSample sample_component(const ComponentSampleU& u, const Scene* 
     return { 0, 1_f };
 }
 
-/*! 
+/*!
+    \brief Component sampling.
+    \param rng Random number generator.
+    \param scene Scene.
+    \param sp Scene interaction.
+
+    \rst
+    This function samples a component of the scene interaction accroding to its type.
+    This version takes random number generator instead of arbitrary random numbers.
+    \endrst
 */
 static ComponentSample sample_component(Rng& rng, const Scene* scene, const SceneInteraction& sp) {
     return sample_component(rng.next<ComponentSampleU>(), scene, sp);
 }
 
 /*!
+    \param Evaluate PDF for component sampling.
+    \param scene Scene.
+    \param sp Scene interaction.
+    \param comp Sampled component index.
+
+    \rst
+    This function evaluate the PDF correcponding to :cpp:func:`sample_component` function.
+    For detail, please refer to :ref:`path_sampling_component_sampling`.
+    \endrst
 */
 static Float pdf_component(const Scene* scene, const SceneInteraction& sp, int comp) {
     if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
@@ -213,21 +238,30 @@ static Float pdf_component(const Scene* scene, const SceneInteraction& sp, int c
 
 #pragma region Position sampling
 
-/*!
-*/
+//! Result of endpint sampling.
 struct PositionSample {
     SceneInteraction sp;
     Vec3 weight;
 };
 
-/*!
-*/
+//! Random number input for endpoint sampling.
 struct PositionSampleU {
     Vec2 up;
     Vec2 upc;
 };
 
 /*!
+    \brief Endpoint sampling.
+    \param u Random number input.
+    \param scene Scene.
+    \param trans_dir Transport direction.
+
+    \rst
+    This function samples an endpoint either on light or camera.
+    If the transport direction is ``LE``, an endpoint is sampled from light.
+    If the transport direction is ``EL``, an endpoint is sampled from camera.
+    For detail, please refer to :ref:`path_sampling_endpoint_sampling`.
+    \endrst
 */
 static std::optional<PositionSample> sample_position(const PositionSampleU& u, const Scene* scene, TransDir trans_dir) {
     if (trans_dir == TransDir::EL) {
@@ -265,9 +299,47 @@ static std::optional<PositionSample> sample_position(const PositionSampleU& u, c
 }
 
 /*!
+    \brief Endpoint sampling.
+    \param rng Random number generator.
+    \param scene Scene.
+    \param trans_dir Transport direction.
+
+    \rst
+    This function samples an endpoint either on light or camera.
+    This version takes random number generator instead of arbitrary random numbers.
+    \endrst
 */
 static std::optional<PositionSample> sample_position(Rng& rng, const Scene* scene, TransDir trans_dir) {
     return sample_position(rng.next<PositionSampleU>(), scene, trans_dir);
+}
+
+/*!
+    \brief Evaluate PDF for endpoint sampling.
+    \param scene Scene.
+    \param sp Sampled scene interaction.
+
+    \rst
+    This function evaluate the PDF correcponding to :cpp:func:`sample_position` function.
+    For detail, please refer to :ref:`path_sampling_endpoint_sampling`.
+    \endrst
+*/
+static Float pdf_position(const Scene* scene, const SceneInteraction& sp) {
+    if (!sp.is_type(SceneInteraction::Endpoint)) {
+        LM_THROW_EXCEPTION(Error::Unsupported,
+            "pdf_position() does not support non-endpoint interactions.");
+    }
+    const auto& primitive = scene->node_at(sp.primitive).primitive;
+    if (sp.is_type(SceneInteraction::CameraEndpoint)) {
+        return primitive.camera->pdf_position(sp.geom);
+    }
+    else if (sp.is_type(SceneInteraction::LightEndpoint)) {
+        const auto light_index = scene->light_index_at(sp.primitive);
+        const auto light_primitive_index = scene->light_primitive_index_at(light_index);
+        const auto pL_sel = scene->pdf_light_selection(light_index);
+        const auto pL_pos = primitive.light->pdf_position(sp.geom, light_primitive_index.global_transform);
+        return pL_sel * pL_pos;
+    }
+    LM_UNREACHABLE_RETURN();
 }
 
 #pragma endregion
@@ -276,25 +348,31 @@ static std::optional<PositionSample> sample_position(Rng& rng, const Scene* scen
 
 #pragma region Direction sampling
 
-/*
-    Samples a direction wo ~ p_{\sigma^\bot}(wo).
-*/
-
-/*!
-*/
+//! Result of direction sampling.
 struct DirectionSample {
     Vec3 wo;
     Vec3 weight;
 };
 
-/*!
-*/
+//! Random number input for direction sampling.
 struct DirectionSampleU {
     Vec2 ud;
     Vec2 udc;
 };
 
 /*!
+    \brief Direction sampling.
+    \param u Random number input. 
+    \param scene Scene.
+    \param sp Scene interaction.
+    \param wi Incident direction.
+    \param comp Component index.
+    \param trans_dir Transport direction.
+
+    \rst
+    This function samples a direction given a scene interaciton point and incident direction from the point.
+    For detail, please refer to :ref:`path_sapmling_direction_sampling`.
+    \endrst
 */
 static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, int comp, TransDir trans_dir) {
     const auto& primitive = scene->node_at(sp.primitive).primitive;
@@ -343,6 +421,18 @@ static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u
 };
 
 /*!
+    \brief Direction sampling.
+    \param u Random number generator. 
+    \param scene Scene.
+    \param sp Scene interaction.
+    \param wi Incident direction.
+    \param comp Component index.
+    \param trans_dir Transport direction.
+
+    \rst
+    This function samples a direction given a scene interaciton point and incident direction from the point.
+    This version takes random number generator instead of arbitrary random numbers.
+    \endrst
 */
 static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* scene, const SceneInteraction& sp, Vec3 wi, int comp, TransDir trans_dir) {
     return sample_direction(rng.next<DirectionSampleU>(), scene, sp, wi, comp, trans_dir);
@@ -357,9 +447,8 @@ static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* sc
     \return Evaluated pdf.
 
     \rst
-    This function evaluates pdf according to *projected solid angme measure* if ``sp.geom.degenerated=false``
-    and *solid angme measure* if ``sp.geom.degenerated=true``
-    utlizing corresponding densities from which the direction is sampled.
+    This function evaluate the PDF correcponding to :cpp:func:`sample_direction` function.
+    For detail, please refer to :ref:`path_sapmling_direction_sampling`.
     \endrst
 */
 static Float pdf_direction(const Scene* scene, const SceneInteraction& sp, Vec3 wi, Vec3 wo, int comp, bool eval_delta) {
@@ -377,99 +466,80 @@ static Float pdf_direction(const Scene* scene, const SceneInteraction& sp, Vec3 
     LM_UNREACHABLE_RETURN();
 }
 
-/*!
-*/
-static Float pdf_position(const Scene* scene, const SceneInteraction& sp) {
-    if (!sp.is_type(SceneInteraction::Endpoint)) {
-        LM_THROW_EXCEPTION(Error::Unsupported,
-            "pdf_position() does not support non-endpoint interactions.");
-    }
-    const auto& primitive = scene->node_at(sp.primitive).primitive;
-    if (sp.is_type(SceneInteraction::CameraEndpoint)) {
-        return primitive.camera->pdf_position(sp.geom);
-    }
-    else if (sp.is_type(SceneInteraction::LightEndpoint)) {
-        const auto light_index = scene->light_index_at(sp.primitive);
-        const auto light_primitive_index = scene->light_primitive_index_at(light_index);
-        const auto pL_sel = scene->pdf_light_selection(light_index);
-        const auto pL_pos = primitive.light->pdf_position(sp.geom, light_primitive_index.global_transform);
-        return pL_sel * pL_pos;
-    }
-    LM_UNREACHABLE_RETURN();
-}
-
 #pragma endregion
 
 // ------------------------------------------------------------------------------------------------
 
 #pragma region Direct endpoint sampling
 
-/*
-    Samples a direction to a light or a sensor given a current x.
-    wo ~ p_{\sigma^\bot}(wo | x)
-*/
-
 /*!
-    \brief Sample direction to a light given a scene interaction.
-    \param rng Random number generator.
+    \brief Direct endpoint sampling.
+    \param u Random number input.
+    \param scene Scene.
     \param sp Scene interaction.
+    \param trans_dir Transport direction.
 
     \rst
-    This function samples a ray to the light given a scene interaction.
+    This function samples a ray from the light to the given scene interaction.
     Be careful not to confuse the sampled ray with the ray sampled via :cpp:func:`Scene::sample_ray`
     function from a light source. Both rays are sampled from the different distributions
     and if you want to evaluate densities you want to use different functions.
+    For detail, please refer to :ref:`path_sampling_direct_endpoint_sampling`.
     \endrst
 */
-static std::optional<RaySample> sample_direct_light(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp) {
-    // Sample a light
-    const auto [light_index, p_sel] = scene->sample_light_selection(u.upc[0]);
-
-    // Sample a position on the light
-    const auto light_primitive_index = scene->light_primitive_index_at(light_index);
-    const auto& primitive = scene->node_at(light_primitive_index.index).primitive;
-    const auto s = primitive.light->sample_direct({u.up,u.upc[1],u.ud}, sp.geom, light_primitive_index.global_transform);
-    if (!s) {
-        return {};
+static std::optional<RaySample> sample_direct(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp, TransDir trans_dir) {
+    if (trans_dir == TransDir::EL) {
+        const auto& primitive = scene->node_at(scene->camera_node()).primitive;
+        const auto s = primitive.camera->sample_direct({u.ud}, sp.geom);
+        if (!s) {
+            return {};
+        }
+        return RaySample{
+            SceneInteraction::make_camera_endpoint(
+                scene->camera_node(),
+                s->geom
+            ),
+            s->wo,
+            s->weight
+        };
     }
-    return RaySample{
-        SceneInteraction::make_light_endpoint(
-            light_primitive_index.index,
-            s->geom
-        ),
-        s->wo,
-        s->weight / p_sel
-    };
-}
+    else if (trans_dir == TransDir::LE) {
+        // Sample a light
+        const auto [light_index, p_sel] = scene->sample_light_selection(u.upc[0]);
 
-/*!
-*/
-static std::optional<RaySample> sample_direct_light(Rng& rng, const Scene* scene, const SceneInteraction& sp) {
-    return sample_direct_light(rng.next<RaySampleU>(), scene, sp);
-}
-
-/*!
-*/
-static std::optional<RaySample> sample_direct_camera(const RaySampleU& u, const Scene* scene, const SceneInteraction& sp) {
-    const auto& primitive = scene->node_at(scene->camera_node()).primitive;
-    const auto s = primitive.camera->sample_direct({u.ud}, sp.geom);
-    if (!s) {
-        return {};
+        // Sample a position on the light
+        const auto light_primitive_index = scene->light_primitive_index_at(light_index);
+        const auto& primitive = scene->node_at(light_primitive_index.index).primitive;
+        const auto s = primitive.light->sample_direct({u.up,u.upc[1],u.ud}, sp.geom, light_primitive_index.global_transform);
+        if (!s) {
+            return {};
+        }
+        return RaySample{
+            SceneInteraction::make_light_endpoint(
+                light_primitive_index.index,
+                s->geom
+            ),
+            s->wo,
+            s->weight / p_sel
+        };
     }
-    return RaySample{
-        SceneInteraction::make_camera_endpoint(
-            scene->camera_node(),
-            s->geom
-        ),
-        s->wo,
-        s->weight
-    };
+    LM_UNREACHABLE_RETURN();
 }
 
 /*!
+    \brief Direct endpoint sampling.
+    \param rng Random number generator.
+    \param scene Scene.
+    \param sp Scene interaction.
+    \param trans_dir Transport direction.
+
+    \rst
+    This function samples a ray from the light to the given scene interaction.
+    This version takes random number generator instead of arbitrary random numbers.
+    \endrst
 */
-static std::optional<RaySample> sample_direct_camera(Rng& rng, const Scene* scene, const SceneInteraction& sp) {
-    return sample_direct_camera(rng.next<RaySampleU>(), scene, sp);
+static std::optional<RaySample> sample_direct(Rng& rng, const Scene* scene, const SceneInteraction& sp, TransDir trans_dir) {
+    return sample_direct(rng.next<RaySampleU>(), scene, sp, trans_dir);
 }
 
 /*!
@@ -483,6 +553,7 @@ static std::optional<RaySample> sample_direct_camera(Rng& rng, const Scene* scen
     This function evaluate pdf for the ray sampled via :cpp:func:`Scene::sample_direct_light`
     or :cpp:func:`Scene::sample_direct_camera`.
     Be careful ``wo`` is the outgoing direction originated from ``sp_endpoint``, not ``sp``.
+    For detail, please refer to :ref:`path_sampling_direct_endpoint_sampling`.
     \endrst
 */
 static Float pdf_direct(const Scene* scene, const SceneInteraction& sp, const SceneInteraction& sp_endpoint, Vec3 wo, bool eval_delta) {
@@ -513,9 +584,7 @@ static Float pdf_direct(const Scene* scene, const SceneInteraction& sp, const Sc
 
 #pragma region Distance sampling
 
-/*!
-    \brief Result of distance sampling.
-*/
+//! Result of distance sampling.
 struct DistanceSample {
     SceneInteraction sp;    //!< Sampled interaction point.
     Vec3 weight;            //!< Contribution divided by probability.
@@ -529,8 +598,8 @@ struct DistanceSample {
 
     \rst
     This function samples either a point in a medium or a point on the surface.
-    Note that we don't provide corresponding pdf function because
-    some underlying distance sampling technique might not have the analitical representation.
+    Note that we don't provide corresponding PDF function because
+    some underlying distance sampling technique might not have the analytical representation.
     \endrst
 */
 static std::optional<DistanceSample> sample_distance(Rng& rng, const Scene* scene, const SceneInteraction& sp, Vec3 wo) {
@@ -606,6 +675,16 @@ static Vec3 eval_transmittance(Rng& rng, const Scene* scene, const SceneInteract
 #pragma region Evaluating contribution
 
 /*!
+    \param Check if the scene intersection is specular.
+    \param scene Scene.
+    \param sp Scene interaction.
+    \param comp Component index.
+    
+    \rst
+    This function checks if the directional component :math:`f_{s\Sigma}(\mathbf{x},j,\omega_i,\omega_o)`
+    contains a delta function. If contains, this function returns true.
+    For detail, please refer to :ref:`path_sampling_specular_vertex`.
+    \endrst
 */
 static bool is_specular_component(const Scene* scene, const SceneInteraction& sp, int comp) {
     const auto& primitive = scene->node_at(sp.primitive).primitive;
@@ -619,6 +698,14 @@ static bool is_specular_component(const Scene* scene, const SceneInteraction& sp
 }
 
 /*!
+    \brief Check if the endpoint is connectable.
+    \param scene Scene.
+    \param sp Scene interaction.
+
+    \rst
+    This function checks if the endpoint can be connectable from another point in the scene.
+    For detail, please refer to :ref:`path_sampling_connectable_endpoint`.
+    \endrst
 */
 static bool is_connectable_endpoint(const Scene* scene, const SceneInteraction& sp) {
     const auto& primitive = scene->node_at(sp.primitive).primitive;
@@ -643,7 +730,7 @@ static std::optional<Vec2> raster_position(const Scene* scene, Vec3 wo) {
 }
 
 /*!
-    \brief Evaluate directional contribution.
+    \brief Evaluate directional components.
     \param sp Scene interaction.
 	\param comp Component index.
     \param wi Incident ray direction.
@@ -651,24 +738,14 @@ static std::optional<Vec2> raster_position(const Scene* scene, Vec3 wo) {
     \return Evaluated contribution.
 
     \rst
-    This function evaluate directional contribution according to the scene interaction type.
-        
-    (1) If the scene interaction is endpoint and on a light,
-        this function evaluates luminance function.
-
-    (2) If the scene interaction is endpoint and on a sensor,
-        this function evaluates importance function.
-        
-    (3) If the scene interaction is not endpoint and on a surface,
-        this function evaluates BSDF.
-
-    (4) If the scene interaction is in a medium,
-        this function evaluate phase function.
+    The function evaluates directional component of path integral.
+    This function generalizes several functions according to the type of scene interaction.
+    For detail, please refer to :ref:`path_evaluating_directional_components`.
 
     Note that the scene interaction obtained from :cpp:func:`Scene::intersect` or 
     :cpp:func:`Scene::sample_distance` is not an endpont
     even if it might represent either a light or a sensor.
-    In this case, you want to use :cpp:func:`Scene::eval_contrb_position`
+    In this case, you want to use :cpp:func:`lm::SceneInteraction::as_type`
     to enforce an evaluation as an endpoint.
     \endrst
 */

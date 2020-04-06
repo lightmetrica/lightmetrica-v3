@@ -326,6 +326,8 @@ Similarly, the joint PDF can be defined as
     p_A(\mathbf{x}) p_{\sigma^\bot}(\omega\mid\mathbf{x}) & \mathbf{x}\notin\mathcal{S}_{\mathrm{inf}} \land \mathbf{x}\notin\mathcal{S}_{\mathrm{deg}}.
   \end{cases}
 
+.. _path_sampling_component_sampling:
+
 Component sampling
 -------------------------------------
 
@@ -358,6 +360,8 @@ The following table shows where the operation is implemented.
       - :cpp:func:`lm::Material::sample_component`
     * - :math:`p_{c,\mathrm{bsdf}}(j\mid\mathbf{x})`
       - :cpp:func:`lm::Material::pdf_component`
+
+.. _path_sampling_primary_ray_sampling:
 
 Primary ray sampling
 -------------------------------------
@@ -394,6 +398,8 @@ The following table shows where each operation is implemented.
     * - :math:`p_{\mu^* E}(\mathbf{x}, \omega)`
       - :cpp:func:`lm::Camera::pdf_ray`
 
+.. _path_sampling_endpoint_sampling:
+
 Endpoint sampling
 -------------------------------------
 
@@ -425,6 +431,8 @@ The following table shows where each operation is implemented.
       - :cpp:func:`lm::Camera::sample_position`
     * - :math:`p_{AE}(\mathbf{x})`
       - :cpp:func:`lm::Camera::pdf_position`
+
+.. _path_sapmling_direction_sampling:
 
 Direction sampling
 -------------------------------------
@@ -469,6 +477,8 @@ The following table shows where each operation is implemented.
     * - :math:`p_{\sigma^* \mathrm{phase}}(\omega\mid\mathbf{x})`
       - :cpp:func:`lm::Phase::pdf_direction`
 
+.. _path_sampling_direct_endpoint_sampling:
+
 Direct endpoint sampling
 -------------------------------------
 
@@ -493,13 +503,15 @@ The following table shows where each operation is implemented.
     * - Operation
       - Implemented in
     * - :math:`\omega \sim p_{\sigma^* \mathrm{directL}}(\cdot\mid\mathbf{x})`
-      - :cpp:func:`lm::Light::sample_direct`
+      - :cpp:func:`lm::Light::sample_direct` with ``trans_dir = LE``
     * - :math:`p_{\sigma^* \mathrm{directL}}(\omega\mid\mathbf{x})`
-      - :cpp:func:`lm::Light::pdf_direct`
+      - :cpp:func:`lm::Light::pdf_direct` with ``trans_dir = LE``
     * - :math:`\omega \sim p_{\sigma^* \mathrm{directE}}(\cdot\mid\mathbf{x})`
-      - :cpp:func:`lm::Camera::sample_direct`
+      - :cpp:func:`lm::Camera::sample_direct` with ``trans_dir = EL``
     * - :math:`p_{\sigma^* \mathrm{directE}}(\omega\mid\mathbf{x})`
-      - :cpp:func:`lm::Camera::pdf_direct`
+      - :cpp:func:`lm::Camera::pdf_direct` with ``trans_dir = EL``
+
+.. _path_evaluating_directional_components:
 
 Evaluating directional components
 -------------------------------------
@@ -688,8 +700,6 @@ We often omit the subscript :math:`k` depending on the context.
 - A path is *full path* if the path constitutes of a complete light transport path, where :math:`\mathbf{x}_0\in\mathcal{M}_L`, :math:`\mathbf{x}_{k-1}\in\mathcal{M}_E`. In the context without ambiguity, we call a *full path* as merely a *path*.
 - A path is *subpath* if the path starts but not ends its vertices on the endpoints. Note that the subpath always starts from an endpoint, irrespective to the type of the endpoint. If :math:`\mathbf{x}_0\in\mathcal{M}_L`, the subpath is called *light subpath*. If :math:`\mathbf{x}_0\in\mathcal{M}_E`, the subpath is called *eye subpath*.
 
-.. _path_sampling_specular_vertex:
-
 In the framework, :cpp:class:`lm::Path` structure represents a path, which holds a vector ``.vs``  of :cpp:class:`lm::Vert` representing a path vertex.
 A path vertex structure is a tuple of a surface interaction ``.sp`` and an integer ``.comp`` representing the component index associated to the scene interaction.
 We denote the component index associated to the vertex :math:`\mathbf{x}_i` as :math:`j_i`.
@@ -816,6 +826,8 @@ For the strategy index :math:`(s,t)` where :math:`s+t\geq 1`, the subpaths are c
 - if :math:`s=1`, :math:`\mathbf{y}_0\in\mathcal{S}_{\mathrm{conn}}`  and :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{0}, \mathbf{z}_{t-1}) = 0`,
 - if :math:`t=1`, :math:`\mathbf{z}_0\in\mathcal{S}_{\mathrm{conn}}` and :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{0}) = 0`,
 - if :math:`s>0` and :math:`t>0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{t-1}) = 0`.
+
+.. _path_sampling_specular_vertex:
 
 The vertex :math:`\mathbf{x}` is *specular* if the directional component includes a delta function.
 We use the notation :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{spec}}` to denote the property of the vertex. 

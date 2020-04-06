@@ -175,6 +175,7 @@ public:
         \param comp Component index.
         \param transform Transformation of the light source.
         \param wo Outgoing direction from the point of the light source.
+        \param eval_delta If true, evaluate delta function.
 
         \rst
         This function evalutes the PDF :math:`p_{\sigma^* \mathrm{directL}}(\omega\mid\mathbf{x})`.
@@ -201,6 +202,7 @@ public:
         \param geom Point geometry on the light source.
         \param comp Component index.
         \param wo Outgoing direction from the point of the light source.
+        \param eval_delta If true, evaluate delta function.
 
         \rst
         This function evaluates luminance function :math:`L_e`.

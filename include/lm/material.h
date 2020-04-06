@@ -91,7 +91,7 @@ public:
         \brief Direction sampling.
         \param u Random number input.
         \param geom Point geometry.
-        \param wi Incident ray direction.
+        \param wi Incident direction.
         \param comp Component index.
         \param trans_dir Transport direction.
 		\return Sampled direction with associated information. nullopt for invalid sample.
