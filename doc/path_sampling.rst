@@ -61,7 +61,7 @@ Notations
       -
 
 
-
+.. _path_sampling_scene_interaction_point:
 
 Scene interaction point
 ================================
@@ -123,7 +123,7 @@ For instance, this function is useful when you want to enforce the scene interac
 
 
 
-
+.. _path_sampling_point_geometry:
 
 Point geometry
 ================================
@@ -354,9 +354,9 @@ The following table shows where the operation is implemented.
 
     * - Operation
       - Implemented in
-    * - :math:`j \sim p_{c,\mathrm{sel}}(\cdot\mid\mathbf{x})`
+    * - :math:`j \sim p_{c,\mathrm{bsdf}}(\cdot\mid\mathbf{x})`
       - :cpp:func:`lm::Material::sample_component`
-    * - :math:`p_{c,\mathrm{sel}}(j\mid\mathbf{x})`
+    * - :math:`p_{c,\mathrm{bsdf}}(j\mid\mathbf{x})`
       - :cpp:func:`lm::Material::pdf_component`
 
 Primary ray sampling
@@ -530,7 +530,7 @@ The following table shows where each operation is implemented.
       - :cpp:func:`lm::Light::eval`
     * - :math:`W_e(\mathbf{x},\omega_o)`
       - :cpp:func:`lm::Camera::eval`
-    * - :math:`f_{\mathrm{bsdf}L}(\mathbf{x},\omega_i,\omega_o)`
+    * - :math:`f_{\mathrm{bsdf}L}(\mathbf{x},j,\omega_i,\omega_o)`
       - :cpp:func:`lm::Material::eval` with ``trans_dir = LE``
     * - :math:`f_{\mathrm{bsdf}E}(\mathbf{x},j,\omega_i,\omega_o)`
       - :cpp:func:`lm::Material::eval` with ``trans_dir = EL``
@@ -561,8 +561,12 @@ Solid angle to projected solid angle
     = \left| \frac{d\sigma}{d\sigma^\bot} \right| p_{\sigma}(\omega\mid\mathbf{x})
     = \frac{p_{\sigma}(\omega)}{\| \mathbf{n}(\mathbf{x}) \cdot \omega \|}.
 
+.. _path_sampling_aggregated_solid_angle_to_area:
+
 Aggregated solid angle to area
 -------------------------------------
+
+.. _path_sampling_extended_geometry_term:
 
 To achieve the transformation of densities from aggregated solid angle to area measure according to the point geometry types transparently, we define the *extended geometry term* as
 
@@ -602,6 +606,8 @@ To achieve the transformation of densities from aggregated solid angle to area m
 
 where :math:`\omega = \omega_{\mathbf{x}\to\mathbf{y}}`.
 This is especially useful when the conversion function is used in conjunction with the PDF evaluated with ``lm::path::pdf_*()`` function, which evaluates the density with aggregated solid angle measure.
+
+.. _path_sampling_aggregated_throughput:
 
 Conversion of aggregated throughput
 -------------------------------------
@@ -811,13 +817,13 @@ For the strategy index :math:`(s,t)` where :math:`s+t\geq 1`, the subpaths are c
 - if :math:`t=1`, :math:`\mathbf{z}_0\in\mathcal{S}_{\mathrm{conn}}` and :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{0}) = 0`,
 - if :math:`s>0` and :math:`t>0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{t-1}) = 0`.
 
-.. _path_sampling_connectable_endpoint:
-
 The vertex :math:`\mathbf{x}` is *specular* if the directional component includes a delta function.
 We use the notation :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{spec}}` to denote the property of the vertex. 
 For instance, perfect specular reflection is specular. 
 A specular vertex needs special treatment since its support cannot be sampled without deterministic selection.
 This condition can be checked using :cpp:func:`lm::path::is_specular_component` function.
+
+.. _path_sampling_connectable_endpoint:
 
 The endpoint :math:`\mathbf{x}` is *connectable* if corresponding positional and directional PDFs can be evaluated independently. We use the notation :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{conn}}`. For instance, the endpoint is connectable if the first two subpath vertices are independent. This condition can be checked using :cpp:func:`lm::path::connectable_endpoint` function.
 

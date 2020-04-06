@@ -619,6 +619,8 @@ static Float local_tan2(Vec3 local_d) {
 
 /*!
     \brief Uniform sampling on unit disk.
+    \param u Random variable in [0,1]^2.
+    \return Sampled value.
 */
 static Vec2 sample_uniform_disk(Vec2 u) {
     const auto r = safe_sqrt(u[0]);
@@ -630,6 +632,7 @@ static Vec2 sample_uniform_disk(Vec2 u) {
 
 /*!
     \brief PDF of uniform distribution on unit disk.
+    \return Evaluated PDF.
 */
 static constexpr Float pdf_uniform_disk() {
     return 1_f / Pi;
@@ -637,7 +640,7 @@ static constexpr Float pdf_uniform_disk() {
 
 /*!
     \brief Cosine-weighted direction sampling.
-    \param rng Random number generator.
+    \param u Random variable in [0,1]^2.
     \return Sampled value.
 */
 static Vec3 sample_cosine_weighted(Vec2 u) {
@@ -649,8 +652,8 @@ static Vec3 sample_cosine_weighted(Vec2 u) {
 }
 
 /*!
-    \brief PDF of cosine-weighted distribution on a sphere in projected solid angle measure.
-    \return Evaluated density.
+    \brief Evauate PDF of cosine-weighted distribution on a sphere in projected solid angle measure.
+    \return Evaluated PDF.
 */
 static constexpr Float pdf_cosine_weighted_projSA() {
     return 1_f / Pi;
@@ -658,7 +661,7 @@ static constexpr Float pdf_cosine_weighted_projSA() {
 
 /*!
     \brief Uniformly sample a direction from a sphere.
-    \param rng Random number generator.
+    \param u Random variable in [0,1]^2.
     \return Sampled value.
 */
 static Vec3 sample_uniform_sphere(Vec2 u) {

@@ -888,18 +888,18 @@ static void bind_phase(pybind11::module& m) {
 
 // Bind medium.h
 static void bind_medium(pybind11::module& m) {
-    pybind11::class_<MediumDistanceSample>(m, "MediumDistanceSample")
+    pybind11::class_<Medium::DistanceSample>(m, "Medium_DistanceSample")
         .def(pybind11::init<>())
-        .def_readwrite("p", &MediumDistanceSample::p)
-        .def_readwrite("weight", &MediumDistanceSample::weight)
-        .def_readwrite("medium", &MediumDistanceSample::medium);
+        .def_readwrite("p", &Medium::DistanceSample::p)
+        .def_readwrite("weight", &Medium::DistanceSample::weight)
+        .def_readwrite("medium", &Medium::DistanceSample::medium);
 
     class Medium_Py final : public Medium {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Medium, construct, prop);
         }
-        virtual std::optional<MediumDistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<MediumDistanceSample>, Medium, sample_distance, rng, ray, tmin, tmax);
+        virtual std::optional<DistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DistanceSample>, Medium, sample_distance, rng, ray, tmin, tmax);
         }
         virtual Vec3 eval_transmittance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
             PYBIND11_OVERLOAD_PURE(Vec3, Medium, eval_transmittance, rng, ray, tmin, tmax);
@@ -993,6 +993,11 @@ static void bind_camera(pybind11::module& m) {
         .def_readonly("wo", &Camera::DirectionSample::wo)
         .def_readonly("weight", &Camera::DirectionSample::weight);
 
+    pybind11::class_<Camera::PositionSample>(m, "Camera_PositionSample")
+        .def(pybind11::init<>())
+        .def_readonly("geom", &Camera::PositionSample::geom)
+        .def_readonly("weight", &Camera::PositionSample::weight);
+
     class Camera_Py final : public Camera {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Camera, construct, prop);
@@ -1019,15 +1024,15 @@ static void bind_camera(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_ray, geom, wo);
         }
         // ----------------------------------------------------------------------------------------
-        virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Camera, sample_direction, u);
+        virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Camera, sample_direction, u, geom);
         }
-        virtual Float pdf_direction(Vec3 wo) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_direction, wo);
+        virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_direction, geom, wo);
         }
         // ----------------------------------------------------------------------------------------
-        virtual std::optional<PositionSample> sample_position() const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<PositionSample>, Camera, sample_position);
+        virtual std::optional<PositionSample> sample_position(const PositionSampleU& u) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<PositionSample>, Camera, sample_position, u);
         }
         virtual Float pdf_position(const PointGeometry& geom) const override {
             PYBIND11_OVERLOAD_PURE(Float, Camera, pdf_position, geom);
@@ -1096,8 +1101,8 @@ static void bind_light(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Float, Light, pdf_ray, geom, wo, transform, eval_delta);
         }
         // ----------------------------------------------------------------------------------------
-        virtual std::optional<DirectionSample> sample_direction(const PointGeometry& geom, const DirectionSampleU& u) const override {
-            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Light, sample_direction, geom, u);
+        virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom) const override {
+            PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Light, sample_direction, u, geom);
         }
         virtual Float pdf_direction(const PointGeometry& geom, Vec3 wo) const override {
             PYBIND11_OVERLOAD_PURE(Float, Light, pdf_direction, geom, wo);

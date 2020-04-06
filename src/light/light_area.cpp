@@ -107,7 +107,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<DirectionSample> sample_direction(const PointGeometry& geom, const DirectionSampleU& us) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& geom) const override {
         const auto wo_local = math::sample_cosine_weighted(us.ud);
         const auto [u, v] = math::orthonormal_basis(geom.n);
         const Mat3 to_world(u, v, geom.n);

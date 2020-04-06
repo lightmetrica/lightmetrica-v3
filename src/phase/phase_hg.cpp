@@ -23,12 +23,6 @@ public:
     }
 
 public:
-#if 0
-    virtual bool is_specular(const PointGeometry&) const override {
-        return false;
-    }
-#endif
-
     virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry&, Vec3 wi) const override {
         const auto cosT = [&]() -> Float {
             if (std::abs(g_) < Eps) {

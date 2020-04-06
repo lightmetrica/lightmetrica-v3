@@ -20,16 +20,13 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Phase : public Component {
 public:
-    /*!
-        \brief Result of direction sampling.
-    */
+    //! Result of direction sampling.
     struct DirectionSample {
         Vec3 wo;            //!< Sampled direction.
         Vec3 weight;        //!< Contribution divided by probability.
     };
 
-    /*!
-    */
+    //! Random number input for direction sampling.
     struct DirectionSampleU {
         Vec2 ud;
     };

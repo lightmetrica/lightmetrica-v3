@@ -74,7 +74,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<DirectionSample> sample_direction(const PointGeometry&, const DirectionSampleU&) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& , const PointGeometry&) const override {
         LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
     }
 

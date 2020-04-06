@@ -232,7 +232,7 @@ struct PositionSampleU {
 static std::optional<PositionSample> sample_position(const PositionSampleU& u, const Scene* scene, TransDir trans_dir) {
     if (trans_dir == TransDir::EL) {
         const auto* camera = scene->node_at(scene->camera_node()).primitive.camera;
-        const auto s = camera->sample_position();
+        const auto s = camera->sample_position({ u.up });
         if (!s) {
             return {};
         }
@@ -299,7 +299,7 @@ struct DirectionSampleU {
 static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi, int comp, TransDir trans_dir) {
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     if (sp.is_type(SceneInteraction::CameraEndpoint)) {
-        const auto s = primitive.camera->sample_direction({ u.ud });
+        const auto s = primitive.camera->sample_direction({ u.ud }, sp.geom);
         if (!s) {
             return {};
         }
@@ -309,7 +309,7 @@ static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u
         };
     }
     else if (sp.is_type(SceneInteraction::LightEndpoint)) {
-        const auto s = primitive.light->sample_direction(sp.geom, { u.ud });
+        const auto s = primitive.light->sample_direction({ u.ud }, sp.geom);
         if (!s) {
             return {};
         }
@@ -366,7 +366,7 @@ static Float pdf_direction(const Scene* scene, const SceneInteraction& sp, Vec3 
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     switch (sp.type) {
         case SceneInteraction::CameraEndpoint:
-            return primitive.camera->pdf_direction(wo);
+            return primitive.camera->pdf_direction(sp.geom, wo);
         case SceneInteraction::LightEndpoint:
             return primitive.light->pdf_direction(sp.geom, wo);
         case SceneInteraction::MediumInteraction:

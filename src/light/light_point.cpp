@@ -53,7 +53,7 @@ public:
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<DirectionSample> sample_direction(const PointGeometry&, const DirectionSampleU& us) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& ) const override {
         const auto d = math::sample_uniform_sphere(us.ud);
         const auto C = Le_ / math::pdf_uniform_sphere();
         return DirectionSample{

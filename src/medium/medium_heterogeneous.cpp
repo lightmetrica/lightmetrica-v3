@@ -30,7 +30,7 @@ public:
         phase_ = json::comp_ref<Phase>(prop, "phase");
     }
 
-    virtual std::optional<MediumDistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+    virtual std::optional<DistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range between the ray and the volume
         if (!volume_density_->bound().isect_range(ray, tmin, tmax)) {
             // No intersection with the volume, use surface interaction
@@ -57,7 +57,7 @@ public:
             if (density * inv_max_density > rng.u()) {
                 // Scattering collision
                 const auto albedo = volme_albedo_->eval_color(p);
-                return MediumDistanceSample{
+                return DistanceSample{
                     ray.o + ray.d*t,
                     albedo,     // T_{\bar{\mu}}(t) / p_{\bar{\mu}}(t) * \mu_s(t)
                                 // = 1/\mu_t(t) * \mu_s(t) = albedo(t)

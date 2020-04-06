@@ -135,21 +135,21 @@ public:
     }
 
     virtual Float pdf_ray(const PointGeometry& geom, Vec3 wo) const override {
-        const auto pD = pdf_direction(wo);
+        const auto pD = pdf_direction(geom, wo);
         const auto pA = pdf_position(geom);
         return pD * pA;
     }
 
     // --------------------------------------------------------------------------------------------
 
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry&) const override {
         return DirectionSample{
             primary_ray(u.ud).d,
             Vec3(1_f)
         };
     }
 
-    virtual Float pdf_direction(Vec3 wo) const override {
+    virtual Float pdf_direction(const PointGeometry&, Vec3 wo) const override {
         // Given directions is not samplable if raster position is not in [0,1]^2
         if (!raster_position(wo)) {
             return 0_f;
@@ -157,7 +157,7 @@ public:
         return J(wo);
     }
 
-    virtual std::optional<PositionSample> sample_position() const override {
+    virtual std::optional<PositionSample> sample_position(const PositionSampleU&) const override {
         return PositionSample{
             PointGeometry::make_degenerated(position_),
             Vec3(1_f)

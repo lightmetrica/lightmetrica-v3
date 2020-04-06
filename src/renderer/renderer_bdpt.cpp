@@ -101,7 +101,7 @@ public:
                 #endif
 
                 // Evaluate contribution
-                const auto C = path->eval_unweighted_contrb_bidir(scene_, 0);
+                const auto C = path->eval_sampling_weight_bidir(scene_, 0);
                 if (math::is_zero(C)) {
                     continue;
                 }
@@ -176,7 +176,7 @@ public:
                 }
 
                 // Evaluate contribution
-                const auto C = path->eval_unweighted_contrb_bidir(scene_, s);
+                const auto C = path->eval_sampling_weight_bidir(scene_, s);
                 if (math::is_zero(C)) {
                     continue;
                 }
@@ -251,7 +251,7 @@ public:
 
                 #if 1
                 // Evaluate contribution
-                const auto C = path->eval_unweighted_contrb_bidir(scene_, s);
+                const auto C = path->eval_sampling_weight_bidir(scene_, s);
                 if (math::is_zero(C)) {
                     continue;
                 }
@@ -369,7 +369,7 @@ public:
                     const auto C_unweighted = f / p;
                     #else
                     // Unweighted contribution
-                    const auto C_unweighted = path->eval_unweighted_contrb_bidir(scene_, s);
+                    const auto C_unweighted = path->eval_sampling_weight_bidir(scene_, s);
                     if (math::is_zero(C_unweighted)) {
                         continue;
                     }

@@ -77,7 +77,7 @@ public:
 
     // Direction and position sampling is disabled
     // since they are only sampled from the joint distribution.
-    virtual std::optional<DirectionSample> sample_direction(const PointGeometry&, const DirectionSampleU&) const override {
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& , const PointGeometry&) const override {
         LM_THROW_EXCEPTION_DEFAULT(Error::Unsupported);
     }
 

@@ -9,19 +9,27 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*!
+    \addtogroup scene
+    @{
+*/
+
+//! Scene node type.
 enum class SceneNodeType {
-    Primitive,
-    Group,
+    Primitive,  //!< Scene node type is a prmitive.
+    Group,      //!< Scene node type is a group.
 };
 
 /*!
-    \brief Scene primitive.
+    \brief Scene node.
 
     \rst
-    This structure represents a scene primitive. The scene is described by a set of primitives
-    and a primitive describes an object in the scene,
+    This structure represents a scene node. The scene is described by a set of nodes.
+    The scene node is categorized by two types (a) *primitive* and (b) *group*. 
+
+    (a) A *primitive* describes a concrete object in the scene
     which associates various scene components like mesh or material.
-    A primitive can represent three types of scene objects.
+    A primitive can represent four types of scene objects.
 
     (1) *Scene geometry*.
         If ``mesh != nullptr`` and ``material != nullptr``,
@@ -38,11 +46,17 @@ enum class SceneNodeType {
         Note that a camera and a light cannot be the same primitive,
         that is, ``light`` and ``camera`` cannot be non-``nullptr`` in the same time.
 
-    A set of primitives is managed internally by the implementation of :cpp:class:`lm::Scene`
-    and the class exposes a facade for the sampling and evaluation functions
-    for the underlying component interfaces.
-    Thus the users usually do not need to explicitly access the underlying
-    component interfaces of a primitive.
+    (4) *Medium*.
+        If ``medium != nullptr``, the structure describes a medium in the scene.
+
+    A set of primitives is managed internally by the functions in ``lm::path`` namespace.
+    Thus the users usually do not need to explicitly access the underlying interfaces of a primitive.
+    
+    (b) A *group* is a collection of the multiple nodes which can represent an agrgegated scene object.
+    A group node can have a transformation being locally applied to the primitives in the child nodes.
+    A typical usage of the group node is to specify the instance group.
+    An instance group is a collection of scene object that the acceleration structure
+    is shared between different part of the scene (up to transformation).
     \endrst
 */
 struct SceneNode {
@@ -132,5 +146,9 @@ struct SceneNode {
         return p;
     }
 };
+
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(LM_NAMESPACE)
