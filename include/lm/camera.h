@@ -28,6 +28,7 @@ class Camera : public Component {
 public:
     /*!
         \brief Set aspect ratio.
+        \param aspect Aspect ratio (width / height).
 
         \rst
         This function sets the aspect ratio of the film to be rendered.
@@ -61,7 +62,7 @@ public:
         This function deterministically generates a ray from the given raster position in :math:`[0,1]^2`
         corresponding to width and height of the screen, leaf-to-right and bottom-to-top.
         This function is useful in the application that the primary ray is fixed (e.g., ray casting).
-        Use :cpp:func:`samplePrimaryRay` when the primary ray is generated randomly.
+        Use :cpp:func:`sample_ray` when the primary ray is generated randomly.
         \endrst
     */
     virtual Ray primary_ray(Vec2 rp) const = 0;

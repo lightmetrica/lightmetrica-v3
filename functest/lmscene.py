@@ -280,3 +280,105 @@ def cube(scene, scene_path):
 #     lm.primitive(lm.identity(), {
 #         'model': lm.asset('model_obj')
 #     })
+
+def mitsuba_knob_base(scene, scene_path, **kwargs):
+    # Camera
+    camera = lm.load_camera('camera_main', 'pinhole', {
+        'position': [0,4,5],
+        'center': [0,0,-1],
+        'up': [0,1,0],
+        'vfov': 30,
+        'aspect': 16/9
+        #'vfov': 100
+    })
+    scene.add_primitive({
+        'camera': camera.loc()
+    })
+    
+    # Model
+    model = lm.load_model('model_obj', 'wavefrontobj', {
+        'path': os.path.join(scene_path, 'mitsuba_knob', 'mitsuba.obj')
+    })
+    mat_diffuse_white = lm.load_material('mat_diffuse_white', 'diffuse', {
+        'Kd': [.8,.8,.8]
+    })
+    scene.add_primitive({
+        'mesh': model.make_loc('mesh_4'),
+        #'material': mat_diffuse_white.loc()
+        'material': model.make_loc('backdrop')
+    })
+    if 'mat_knob' in kwargs:
+        scene.add_primitive({
+            'mesh': model.make_loc('mesh_5'),
+            'material': kwargs['mat_inside'] if 'mat_inside' in kwargs else mat_diffuse_white.loc()
+        })
+        scene.add_primitive({
+            'mesh': model.make_loc('mesh_6'),
+            'material': kwargs['mat_knob']
+        })
+
+def mitsuba_knob_with_area_light(scene, scene_path, **kwargs):
+    mitsuba_knob_base(scene, scene_path, **kwargs)
+    
+    # Area light
+    Ke = 10
+    model_light = lm.load_model('model_light', 'wavefrontobj', {
+        'path': os.path.join(scene_path, 'mitsuba_knob', 'light.obj')
+    })
+    mat_black = lm.load_material('mat_black', 'diffuse', {'Kd': [0,0,0]})
+    light = lm.load_light('light', 'area', {
+        'Ke': [Ke,Ke,Ke],
+        'mesh': model_light.make_loc('mesh_1')
+    })
+    scene.add_primitive({
+        'mesh':  model_light.make_loc('mesh_1'),
+        'material': mat_black.loc(),
+        'light': light.loc()
+    })
+
+def mitsuba_knob_with_env_light_const(scene, scene_path, **kwargs):
+    mitsuba_knob_base(scene, scene_path, **kwargs)
+    
+    # Environment light
+    Le = 1
+    light_env = lm.load_light('light_env', 'envconst', {
+        'Le': [Le,Le,Le] 
+    })
+    scene.add_primitive({
+        'light': light_env.loc()
+    })
+
+def mitsuba_knob_with_env_light(scene, scene_path, **kwargs):
+    mitsuba_knob_base(scene, scene_path, **kwargs)
+
+    # Environment light
+    light_env = lm.load_light('light_env', 'env', kwargs)
+    scene.add_primitive({
+        'light': light_env.loc()
+    })
+
+def mitsuba_knob_with_point_light(scene, scene_path, **kwargs):
+    mitsuba_knob_base(scene, scene_path, **kwargs)
+
+    # Point light
+    Le = 100
+    light_point = lm.load_light('light_point', 'point', {
+        'Le': [Le,Le,Le],
+        'position': [5,5,5]
+    })
+    scene.add_primitive({
+        'light': light_point.loc()
+    })
+
+def mitsuba_knob_with_directional_light(scene, scene_path, **kwargs):
+    mitsuba_knob_base(scene, scene_path, **kwargs)
+
+    # Directional light
+    Le = 2
+    light_directional = lm.load_light('light_directional', 'directional', {
+        'Le': [Le,Le,Le],
+        'direction': [-1,-1,-1]
+    })
+    scene.add_primitive({
+        'light': light_directional.loc()
+    })

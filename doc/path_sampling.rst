@@ -181,6 +181,23 @@ Infinitely distant point
 
 ``geom.infinite`` representing a virtual point far distant from a surface in certain direction :math:`\omega`. The point does not represent an actual point associated with a certain position in the scene. Also in this case, the normal and tangent vectors are undefined. Specifically in this case, ``geom.wo`` represents the direction toward the distant point. Notation: :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{inf}}`. Since the point is characterized by a direction :math:`\omega` we sometime denote the point as :math:`\mathbf{x}(\omega)\in\mathcal{S}_{\mathrm{inf}}`.
 
+
+Component index
+================================
+
+A scene interaction can be associated with a *component* information,
+which is used to differentiate the behavior of the sampling and evaluation related to the interaction.
+A component is denoted by a *component index*, an integer value that specify the index of the component of the interaction.
+For instance, this feature can be used to implement sampling and evaluation of multiple component materials.
+Furthermore, the handling of perfect specular materials can be implemented using this feature.
+In the code, we denote the component index as ``comp``.
+Later we will discuss about the detail of the usage in the API.
+
+.. note::
+
+  The component index is not included in the information accessible as :cpp:class:`lm::SceneInteraction` structure, since we want to handle the scene information without components being selected, e.g., the intersected surface point via ray casting.
+
+
 Ray-scene intersection query
 ================================
 
@@ -244,30 +261,27 @@ More precisely, we use the extended version of the function incorporating the pr
 
 
 
-
-
-
 Local ray/direction sampling
 ================================
 
 A path construction comprises a combination of local sampling based on the point in a scene, which is important especially when you want to handle the path generation and evaluation implicitly, e.g., when you want to implement path tracing.
 
-Aggregated solid angle measure
--------------------------------------
+Aggregated solid angle measure for direction sampling
+-------------------------------------------------------
 
 The framework defines various direction sampling techniques, many of which take samples from conditional distribution given a point :math:`\mathbf{x}`. The density function of the conditional distribution is either defined over solid angle measure or projected solid angle measure according to the type of the point geometry. 
 
-To generalize the two cases and simplify the interface, we define *aggregated solid angle measure* :math:`\sigma^*` which alternates the measure by the degeneracy of the point geometry:
+To generalize the two cases and simplify the interface, we define *aggregated solid angle measure* :math:`d\sigma^*` which alternates the measure by the degeneracy of the point geometry:
 
 .. math::
 
-  \sigma^*(D\mid\mathbf{x}) =
+  d\sigma^*(\omega\mid\mathbf{x}) =
   \begin{cases}
-    \sigma(D\mid\mathbf{x})       & \mathbf{x}\in\mathcal{S}_{\mathrm{deg}}, \\
-    \sigma^\bot(D\mid\mathbf{x})  & \mathbf{x}\notin\mathcal{S}_{\mathrm{deg}},
+    d\sigma(\omega\mid\mathbf{x})       & \mathbf{x}\in\mathcal{S}_{\mathrm{deg}}, \\
+    d\sigma^\bot(\omega\mid\mathbf{x})  & \mathbf{x}\notin\mathcal{S}_{\mathrm{deg}},
   \end{cases}
 
-where :math:`D\subset\mathcal{S}^2`. Using this measure, we can define the aggregated PDF:
+Using this measure, we can define the aggregated PDF:
 
 .. math::
 
@@ -277,7 +291,73 @@ where :math:`D\subset\mathcal{S}^2`. Using this measure, we can define the aggre
     p_{\sigma^\bot}(\omega\mid\mathbf{x})    &   \mathbf{x}\notin\mathcal{S}_{\mathrm{deg}}.
   \end{cases}
 
-Similar discussion can be applied to joint distribution but we omit it.
+Aggregated throughput measure for primary ray sampling
+-----------------------------------------------------
+
+The primary ray is sampled from the joint distribution. 
+Similarly to the previous case, we want to define the generalized measure to support various use-cases of the primary ray sampling. We categorize the measure by two types according to the type of the endpoint being sampled from the joint distribution.
+
+.. math::
+
+  d\mu^*(\mathbf{x},\omega) &=
+  \begin{cases}
+    d\sigma(\omega) dA^\bot(\mathbf{x}\mid\omega)   & \mathbf{x}\in\mathcal{S}_{\mathrm{inf}} \\
+    dA(\mathbf{x}) d\sigma^*(\omega\mid\mathbf{x})    & \mathbf{x}\notin\mathcal{S}_{\mathrm{inf}}
+  \end{cases} \\
+  &=
+  \begin{cases}
+    d\sigma(\omega) dA^\bot(\mathbf{x}\mid\omega)     & \mathbf{x}\in\mathcal{S}_{\mathrm{inf}} \\
+    dA(\mathbf{x}) d\sigma(\omega\mid\mathbf{x})      & \mathbf{x}\notin\mathcal{S}_{\mathrm{inf}} \land \mathbf{x}\in\mathcal{S}_{\mathrm{deg}} \\
+    dA(\mathbf{x}) d\sigma^\bot(\omega\mid\mathbf{x}) & \mathbf{x}\notin\mathcal{S}_{\mathrm{inf}} \land \mathbf{x}\notin\mathcal{S}_{\mathrm{deg}},
+  \end{cases}
+  
+where :math:`\mu^*` is a *throughput measure* [Veach 1998, Chapter 4.1] defined for the space of rays :math:`\mathcal{M}\times\mathcal{S}^2`. The second line expands the definition of the aggregated solid angle measure, which enable to support the cases where the ray originated from the degenerated point (e.g., pinhole camera).
+
+Note that in the case of :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{inf}}`, the position sampling happens on the virtual plane perpendicular to the ray direction, which is reflected by the projected area measure :math:`dA^\bot`.
+
+Similarly, the joint PDF can be defined as
+
+.. math::
+
+  p_{\mu^*}(\mathbf{x},\omega) &=
+  \begin{cases}
+    p_{\sigma}(\omega) p_{A^\bot}(\mathbf{x}\mid\omega)     & \mathbf{x}\in\mathcal{S}_{\mathrm{inf}} \\
+    p_A(\mathbf{x}) p_\sigma(\omega\mid\mathbf{x})      & \mathbf{x}\notin\mathcal{S}_{\mathrm{inf}} \land \mathbf{x}\in\mathcal{S}_{\mathrm{deg}} \\
+    p_A(\mathbf{x}) p_{\sigma^\bot}(\omega\mid\mathbf{x}) & \mathbf{x}\notin\mathcal{S}_{\mathrm{inf}} \land \mathbf{x}\notin\mathcal{S}_{\mathrm{deg}}.
+  \end{cases}
+
+Component sampling
+-------------------------------------
+
+- Sampling: :cpp:func:`lm::path::sample_component`
+- PDF: :cpp:func:`lm::path::pdf_component`
+
+The function samples a component index :math:`j`.
+
+.. math::
+
+  j \sim
+  p_c(\cdot) =
+  \begin{cases}
+    p_{c,L}(\cdot\mid\mathbf{x})     & \text{if } \mathbf{x} \in \mathcal{M}_L \\
+    p_{c,E}(\cdot\mid\mathbf{x})     & \text{if } \mathbf{x} \in \mathcal{M}_E \\
+    p_{c,\mathrm{bsdf}}(\cdot\mid\mathbf{x})     & \text{if } \mathbf{x} \in \mathcal{M}_S \\
+    p_{c,\mathrm{phase}}(\cdot\mid\mathbf{x})     & \text{if } \mathbf{x} \in \mathcal{V}.
+  \end{cases}
+
+Currently component sampling is only supported for the surface interactions.
+In other cases the component index is fixed to 0 (with probability 1).
+The following table shows where the operation is implemented.
+
+.. list-table::
+    :header-rows: 1
+
+    * - Operation
+      - Implemented in
+    * - :math:`j \sim p_{c,\mathrm{sel}}(\cdot\mid\mathbf{x})`
+      - :cpp:func:`lm::Material::sample_component`
+    * - :math:`p_{c,\mathrm{sel}}(j\mid\mathbf{x})`
+      - :cpp:func:`lm::Material::pdf_component`
 
 Primary ray sampling
 -------------------------------------
@@ -291,8 +371,8 @@ The function samples a primary ray :math:`(\mathbf{x}, \omega)`.
 
   (\mathbf{x}, \omega) \sim
   \begin{cases}
-    p_{A\sigma^* L}(\cdot,\cdot)   & \text{if transport direction is } L\to E \\
-    p_{A\sigma^* E}(\cdot,\cdot)   & \text{if transport direction is } E\to L.
+    p_{\mu^* L}(\cdot,\cdot)   & \text{if transport direction is } L\to E \\
+    p_{\mu^* E}(\cdot,\cdot)   & \text{if transport direction is } E\to L.
   \end{cases}
 
 If :math:`\mathbf{x}` and :math:`\omega` are independent,
@@ -305,13 +385,13 @@ The following table shows where each operation is implemented.
 
     * - Operation
       - Implemented in
-    * - :math:`(\mathbf{x}, \omega) \sim p_{A\sigma^* L}(\cdot,\cdot)`
+    * - :math:`(\mathbf{x}, \omega) \sim p_{\mu^* L}(\cdot,\cdot)`
       - :cpp:func:`lm::Light::sample_ray`
-    * - :math:`p_{A\sigma^* L}(\mathbf{x}, \omega)`
+    * - :math:`p_{\mu^* L}(\mathbf{x}, \omega)`
       - :cpp:func:`lm::Light::pdf_ray`
-    * - :math:`(\mathbf{x}, \omega) \sim p_{A\sigma^* E}(\cdot,\cdot)`
+    * - :math:`(\mathbf{x}, \omega) \sim p_{\mu^* E}(\cdot,\cdot)`
       - :cpp:func:`lm::Camera::sample_ray`
-    * - :math:`p_{A\sigma^* E}(\mathbf{x}, \omega)`
+    * - :math:`p_{\mu^* E}(\mathbf{x}, \omega)`
       - :cpp:func:`lm::Camera::pdf_ray`
 
 Endpoint sampling
@@ -352,16 +432,16 @@ Direction sampling
 - Sampling: :cpp:func:`lm::path::sample_direction`
 - PDF: :cpp:func:`lm::path::pdf_direction`
 
-The function samples a direction :math:`\omega` originated from a current position :math:`\mathbf{x}`:
+The function samples a direction :math:`\omega` originated from a current position :math:`\mathbf{x}` with the component index :math:`j`:
 
 .. math::
 
   \omega \sim
-  p_{\sigma^* \to}(\cdot\mid\mathbf{x}) =
+  p_{\sigma^* \to}(\cdot\mid\mathbf{x},j) =
   \begin{cases}
     p_{\sigma^* L}(\cdot\mid\mathbf{x})    &   \text{if } \mathbf{x} \in \mathcal{M}_L \\
     p_{\sigma^* E}(\cdot\mid\mathbf{x})    &   \text{if } \mathbf{x} \in \mathcal{M}_E \\
-    p_{\sigma^* \mathrm{bsdf}}(\cdot\mid\mathbf{x})  &   \text{if } \mathbf{x} \in \mathcal{M}_S \\
+    p_{\sigma^* \mathrm{bsdf}}(\cdot\mid\mathbf{x},j)  &   \text{if } \mathbf{x} \in \mathcal{M}_S \\
     p_{\sigma^* \mathrm{phase}}(\cdot\mid\mathbf{x}) &   \text{if } \mathbf{x} \in \mathcal{V}.
   \end{cases}
 
@@ -380,9 +460,9 @@ The following table shows where each operation is implemented.
       - :cpp:func:`lm::Camera::sample_direction`
     * - :math:`p_{\sigma^* E}(\omega\mid\mathbf{x})`
       - :cpp:func:`lm::Camera::pdf_direction`
-    * - :math:`\omega \sim p_{\sigma^* \mathrm{bsdf}}(\cdot\mid\mathbf{x})`
+    * - :math:`\omega \sim p_{\sigma^* \mathrm{bsdf}}(\cdot\mid\mathbf{x},j)`
       - :cpp:func:`lm::Material::sample_direction`
-    * - :math:`p_{\sigma^* \mathrm{bsdf}}(\omega\mid\mathbf{x})`
+    * - :math:`p_{\sigma^* \mathrm{bsdf}}(\omega\mid\mathbf{x},j)`
       - :cpp:func:`lm::Material::pdf_direction`
     * - :math:`\omega \sim p_{\sigma^* \mathrm{phase}}(\cdot\mid\mathbf{x})`
       - :cpp:func:`lm::Phase::sample_direction`
@@ -426,15 +506,15 @@ Evaluating directional components
 
 - Function: :cpp:func:`lm::path::eval_contrb_direction`
 
-The function evaluates directional component of path integral :math:`f_{s\Sigma}(\mathbf{x}, \omega_i,\omega_o)`, where
+The function evaluates directional component of path integral :math:`f_{s\Sigma}(\mathbf{x},j, \omega_i,\omega_o)`, where
 
 .. math::
 
-  f_{s\Sigma}(\mathbf{x},\omega_i,\omega_o) =
+  f_{s\Sigma}(\mathbf{x},j,\omega_i,\omega_o) =
   \begin{cases}
     L_e(\mathbf{x}, \omega_o)         & \mathbf{x}\in\mathcal{M}_L \\
     W_e(\mathbf{x}, \omega_o)         & \mathbf{x}\in\mathcal{M}_E \\
-    f_{\mathrm{bsdf}\Sigma}(\mathbf{x},\omega_i,\omega_o) & \mathbf{x}\in\mathcal{M}_S \\
+    f_{\mathrm{bsdf}\Sigma}(\mathbf{x},j,\omega_i,\omega_o) & \mathbf{x}\in\mathcal{M}_S \\
     \mu_s(\mathbf{x}) f_{\mathrm{phase}}(\mathbf{x},\omega_i,\omega_o) & \mathbf{x}\in\mathcal{V},
   \end{cases}
 
@@ -446,13 +526,13 @@ The following table shows where each operation is implemented.
 
     * - Operation
       - Implemented in
-    * - :math:`L_e(\mathbf{x}, \omega_o)`
+    * - :math:`L_e(\mathbf{x},\omega_o)`
       - :cpp:func:`lm::Light::eval`
-    * - :math:`W_e(\mathbf{x}, \omega_o)`
+    * - :math:`W_e(\mathbf{x},\omega_o)`
       - :cpp:func:`lm::Camera::eval`
     * - :math:`f_{\mathrm{bsdf}L}(\mathbf{x},\omega_i,\omega_o)`
       - :cpp:func:`lm::Material::eval` with ``trans_dir = LE``
-    * - :math:`f_{\mathrm{bsdf}E}(\mathbf{x},\omega_i,\omega_o)`
+    * - :math:`f_{\mathrm{bsdf}E}(\mathbf{x},j,\omega_i,\omega_o)`
       - :cpp:func:`lm::Material::eval` with ``trans_dir = EL``
     * - :math:`\mu_s(\mathbf{x})`
       - N/A
@@ -488,13 +568,20 @@ To achieve the transformation of densities from aggregated solid angle to area m
 
 .. math::
 
-  G(\mathbf{x}, \mathbf{x}) &=
-    \frac{D(\mathbf{x}, \mathbf{y}) V(\mathbf{x}, \mathbf{y}) D(\mathbf{y}, \mathbf{x})}{\| \mathbf{x} - \mathbf{y} \|^2}, \\
+  G(\mathbf{x}, \mathbf{y}) &=
+    \frac{D(\mathbf{x}, \mathbf{y}) V(\mathbf{x}, \mathbf{y}) D(\mathbf{y}, \mathbf{x})}
+         {d^2(\mathbf{x}, \mathbf{y})}, \\
   D(\mathbf{x}, \mathbf{y}) &=
     \begin{cases}
       \left| \mathbf{n}(\mathbf{x}) \cdot \omega_{\mathbf{x} \to \mathbf{y}} \right|
         & \mathbf{x}\notin\mathcal{S}_{\mathrm{deg}} \\
-      1 & \mathbf{x}\in\mathcal{S}_{\mathrm{deg}}.
+      1 & \mathbf{x}\in\mathcal{S}_{\mathrm{deg}},
+    \end{cases} \\
+  d^2(\mathbf{x}, \mathbf{y}) &=
+    \begin{cases}
+      \| \mathbf{x} - \mathbf{y} \|^2
+        & \mathbf{x}\notin\mathcal{S}_{\mathrm{inf}} \land \mathbf{y}\notin\mathcal{S}_{\mathrm{inf}} \\
+      1 & \text{otherwise}.
     \end{cases}
 
 :cpp:func:`lm::surface::geometry_term` function evaluates the term, but assuming that :math:`\mathbf{x}` and :math:`\mathbf{y}` are mutually visible (thus :math:`V(\mathbf{x}, \mathbf{y})=1`).
@@ -510,14 +597,35 @@ To achieve the transformation of densities from aggregated solid angle to area m
       \left| \frac{d\sigma}{dA} \right|      p_{\sigma}(\omega\mid\mathbf{x})
         & \mathbf{x}\in\mathcal{S}_{\mathrm{deg}}, \\
       \left| \frac{d\sigma^\bot}{dA} \right| p_{\sigma^\bot}(\omega\mid\mathbf{x})
-        & \mathbf{x}\notin\mathcal{S}_{\mathrm{deg}}.
+        & \mathbf{x}\notin\mathcal{S}_{\mathrm{deg}},
     \end{cases}
 
+where :math:`\omega = \omega_{\mathbf{x}\to\mathbf{y}}`.
 This is especially useful when the conversion function is used in conjunction with the PDF evaluated with ``lm::path::pdf_*()`` function, which evaluates the density with aggregated solid angle measure.
 
+Conversion of aggregated throughput
+-------------------------------------
 
+The joint PDF for the primary ray sampling is also bound to be used for the measure conversion.
+We can also use the extended geometry term for the conversion:
 
+.. math::
 
+  p_{\mu^*}(\mathbf{x},\omega) G(\mathbf{x}, \mathbf{y}) =
+  p_{A^{2*}}(\mathbf{x},\mathbf{y}) :=
+  \begin{cases}
+    p_{\sigma}(\omega_{\mathbf{x}\to\mathbf{y}}) p_A(\mathbf{y}\mid\omega_{\mathbf{x}\to\mathbf{y}})    & \mathbf{x}\in\mathcal{S}_{\mathrm{inf}} \\
+    p_A(\mathbf{x}) p_A(\mathbf{y}\mid\mathbf{x})   & \mathbf{x}\notin\mathcal{S}_{\mathrm{inf}}.
+  \end{cases}
+
+Note that in the case of :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{inf}}`, the conversion happens for the projected area measure, since the differential area around :math:`\mathbf{x}` are orthogonally projected to the surface around :math:`\mathbf{y}`:
+
+.. math::
+
+  p_{A}(\mathbf{x})
+    = \underbrace{ \left| \mathbf{n}(\mathbf{x}) \cdot \omega_{\mathbf{x} \to \mathbf{y}} \right| }_{G(\mathbf{x},\mathbf{y})} p_{A^\bot}(\mathbf{y}).
+
+We also note that in this case the converted measure is *not* a product area measure :math:`dA^2` but :math:`d\sigma dA`. We denote the converted aggregate measure as :math:`dA^{2*}`.
 
 Bidirectional path sampling
 ===========================
@@ -562,6 +670,8 @@ Notations
       - Number of vertices in eye subpath
       - ``int``
 
+.. _path_sampling_light_transport_path:
+
 Light transport path
 -------------------------------------
 
@@ -575,7 +685,8 @@ We often omit the subscript :math:`k` depending on the context.
 .. _path_sampling_specular_vertex:
 
 In the framework, :cpp:class:`lm::Path` structure represents a path, which holds a vector ``.vs``  of :cpp:class:`lm::Vert` representing a path vertex.
-A path vertex structure is a tuple of surface interaction ``.sp`` and ``.specular`` flag representing whether the vertex type is specular. Notation: :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{spec}}`.
+A path vertex structure is a tuple of a surface interaction ``.sp`` and an integer ``.comp`` representing the component index associated to the scene interaction.
+We denote the component index associated to the vertex :math:`\mathbf{x}_i` as :math:`j_i`.
 
 .. note::
 
@@ -612,6 +723,7 @@ The correspondence between notations and the operations over the path structure 
   a pointer to a path vertex and ``nullptr`` if the index is out of bound,
   which is intentional to simplify the implementation.
 
+.. _path_sampling_sampling_subpath:
 
 Sampling subpath
 -------------------------------------
@@ -631,26 +743,33 @@ In fact, each vertex is sampled sequentially
 
 .. math::
 
-  (\mathbf{x}_0, \mathbf{x}_1) \sim p_{A^2\Sigma}(\cdot,\cdot), \quad
-  \mathbf{x}_i \sim p_{A\to}(\cdot\mid\mathbf{x}_{i-1}),
+  (\mathbf{x}_0, \mathbf{x}_1) &\sim p_{A^{2*}\Sigma}(\cdot,\cdot), \\
+  j_0 &\sim p_{c}(\cdot\mid\mathbf{x}_0), \\
+  j_1 &\sim p_{c}(\cdot\mid\mathbf{x}_1), \\
+  \mathbf{x}_i &\sim p_{A\to}(\cdot\mid\mathbf{x}_{i-1},j_{i-1}), \\
+  j_i &\sim p_{c}(\cdot\mid\mathbf{x}_i)
 
 where :math:`i=2,\dots,(l-1)` and :math:`\Sigma\in\{ L,E \}`. Thus the PDF for subpath sampling can be written as
 
 .. math::
 
   p_\Sigma(\bar{x}) =
-    p_{A^2\Sigma}(\mathbf{x}_0,\mathbf{x}_1)
-    \prod_{i=2}^{l-1} p_{A\to}(\mathbf{x}_{i}\mid\mathbf{x}_{i-1}).
+    p_{A^{2*}\Sigma}(\mathbf{x}_0,\mathbf{x}_1)
+    p_{c}(j_0\mid\mathbf{x}_0)
+    p_{c}(j_1\mid\mathbf{x}_1)
+    \prod_{i=2}^{l-1}
+      p_{A\to}(\mathbf{x}_{i}\mid\mathbf{x}_{i-1})
+      p_{c}(j_i\mid\mathbf{x}_i).
 
-The above equation abstracts the actual sampling process which iteratively samples directions and applys ray casting to find the next intersected points:
+The above equation abstracts the actual sampling process which iteratively samples directions and applies ray casting to find the next intersected points:
 
 .. math::
 
   \begin{alignat}{3}
-    (\mathbf{x}_0, \omega_0) &\sim p_{A\sigma^* \Sigma}(\cdot,\cdot),\;
-    & \mathbf{x}_1 &= \mathbf{x}_\mathcal{M}(\mathbf{x}_0, \omega_0), \\
-    \omega_i &\sim p_{\sigma^* \to}(\cdot\mid\mathbf{x}_{i-1}),\;
-    & \mathbf{x}_i &= \mathbf{x}_\mathcal{M}(\mathbf{x}_{i-1}, \omega_i).
+    (\mathbf{x}_0, \omega_0) &\sim p_{\mu^* \Sigma}(\cdot,\cdot),\\
+    \mathbf{x}_1 &= \mathbf{x}_\mathcal{M}(\mathbf{x}_0, \omega_0), \\
+    \omega_i &\sim p_{\sigma^* \to}(\cdot\mid\mathbf{x}_{i-1},j_{i-1}), \\
+    \mathbf{x}_i &= \mathbf{x}_\mathcal{M}(\mathbf{x}_{i-1}, \omega_i).
   \end{alignat}
 
 
@@ -659,8 +778,8 @@ If :math:`\mathbf{x}_0` and :math:`\mathbf{x}_1` are independent, the sampling p
 
 .. math::
 
-  \mathbf{x}_0 \sim p_{A\Sigma}(\cdot), \quad
-  \mathbf{x}_i \sim p_{A\to}(\cdot\mid\mathbf{x}_{i-1}),
+  \mathbf{x}_0 &\sim p_{A\Sigma}(\cdot), \\
+  \mathbf{x}_i &\sim p_{A\to}(\cdot\mid\mathbf{x}_{i-1},j_{i-1}),
 
 where :math:`i=1,\dots,(l-1)`.
 
@@ -673,6 +792,13 @@ where :math:`i=1,\dots,(l-1)`.
   For simplicity, we don't use Russian roulette in :cpp:func:`lm::path::sample_subpath` function.
   You need to define your own subpath sampling function to support that.
 
+Sampling subpath from endpoint
+-------------------------------------
+
+:cpp:func:`sample_subpath_from_endpoint` function can continue to sample the path vertices from the last vertex of the existing subpath. If the given path is empty, this function is equivalent to :cpp:func:`lm::path::sample_subpath`.
+
+.. _path_sampling_connecting_subpaths:
+
 Connecting subpaths
 -------------------------------------
 
@@ -681,22 +807,34 @@ For the strategy index :math:`(s,t)` where :math:`s+t\geq 1`, the subpaths are c
 
 - if :math:`s=0`, :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{deg}}`,
 - if :math:`t=0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{deg}}`,
-- if :math:`s=1`, :math:`\mathbf{y}_0\in\mathcal{S}_{\mathrm{conn}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{t-1}) = 0`,
-- if :math:`t=1`, :math:`\mathbf{z}_0\in\mathcal{S}_{\mathrm{conn}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{t-1}) = 0`,
+- if :math:`s=1`, :math:`\mathbf{y}_0\in\mathcal{S}_{\mathrm{conn}}`  and :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{0}, \mathbf{z}_{t-1}) = 0`,
+- if :math:`t=1`, :math:`\mathbf{z}_0\in\mathcal{S}_{\mathrm{conn}}` and :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{0}) = 0`,
 - if :math:`s>0` and :math:`t>0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{t-1}) = 0`.
 
 .. _path_sampling_connectable_endpoint:
 
-The endpoint :math:`\mathbf{x}` is *connectable* if corresponding positional and directional PDFs can be evaluated independently. We use the notation :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{conn}}`. For instance, the endpoint is connectable if the first two subpath vertices are independent. This condition is checked using :cpp:func:`lm::path::connectable_endpoint()` function.
+The vertex :math:`\mathbf{x}` is *specular* if the directional component includes a delta function.
+We use the notation :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{spec}}` to denote the property of the vertex. 
+For instance, perfect specular reflection is specular. 
+A specular vertex needs special treatment since its support cannot be sampled without deterministic selection.
+This condition can be checked using :cpp:func:`lm::path::is_specular_component` function.
+
+The endpoint :math:`\mathbf{x}` is *connectable* if corresponding positional and directional PDFs can be evaluated independently. We use the notation :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{conn}}`. For instance, the endpoint is connectable if the first two subpath vertices are independent. This condition can be checked using :cpp:func:`lm::path::connectable_endpoint` function.
+
+Given an strategy :math:`s`, we call the subpaths satisfying the above condition being *connectable subpaths by the strategy* :math:`s` and the connected full path being *samplable by the strategy* :math:`s`. 
+This condition can be checked by :cpp:func:`lm::Path::is_samplable_bidir` function,
+assuming the visibility function in the definition is assumed to be one.
 
 .. note::
 
   An endpoint can be connectable even if :math:`\bar{x}_{\Sigma,0}` and :math:`\bar{x}_{\Sigma,1}` are not independent as long as we can compute the marginals of the joint distribution analytically.
 
-Evaluating bidirectional path contribution
+.. _path_sampling_measurement_contribution:
+
+Evaluating measurement contribution
 -----------------------------------------------
 
-:cpp:func:`lm::Path::eval_measurement_contrb_bidir` function evaluates the *bidirectional measurement contribution function* defined by
+:cpp:func:`lm::Path::eval_measurement_contrb_bidir` function evaluates the *measurement contribution function* defined by
 
 .. math::
 
@@ -704,12 +842,16 @@ Evaluating bidirectional path contribution
   f_L(\bar{y}) &=
     \begin{cases}
       1   & s = 0 \\
-      \prod_{i=0}^{s-2} f_{sL}(\mathbf{y}_{i-1},\mathbf{y}_{i},\mathbf{y}_{i+1}) & \text{otherwise},
+      \prod_{i=0}^{s-2} f_{sL}(\mathbf{y}_{i-1},\mathbf{y}_{i},\mathbf{y}_{i+1})
+                          G(\mathbf{y}_{i},\mathbf{y}_{i+1})
+        & \text{otherwise},
     \end{cases} \\
   f_L(\bar{z}) &=
     \begin{cases}
       1   & t = 0 \\
-      \prod_{i=0}^{t-2} f_{sE}(\mathbf{z}_{i-1},\mathbf{z}_{i},\mathbf{z}_{i+1}) & \text{otherwise},
+      \prod_{i=0}^{t-2} f_{sE}(\mathbf{z}_{i-1},\mathbf{z}_{i},\mathbf{z}_{i+1})
+                          G(\mathbf{z}_{i},\mathbf{z}_{i+1})
+        & \text{otherwise},
     \end{cases} \\
   c_{s,t}(\bar{y}, \bar{z}) &=
     \begin{cases}
@@ -721,11 +863,15 @@ Evaluating bidirectional path contribution
         & \text{otherwise}.
     \end{cases}
 
+Here, :math:`c_{s,t}(\bar{y}, \bar{z})` is called the *connection term*, which can be evaluated by :cpp:func:`lm::Path::eval_connection_term` function. 
+
 .. note::
 
   The original measurement contribution function does not take strategy index
   since the scattering term :math:`f_s` is assumed to be symmetrical. 
   This difference comes from the handling of asymmetric scattering in :cpp:func:`lm::path::eval_contrb_direction` function.
+
+.. _path_sampling_bidirectional_path_pdf:
 
 Evaluating bidirectional path PDF
 -------------------------------------
@@ -747,31 +893,62 @@ Evaluating bidirectional path PDF
           & s = 0 \\
       p_{AL}(\mathbf{y}_0)
           & s = 1 \\
-      p_{A^2L}(\mathbf{y}_0, \mathbf{y}_1)
+      p_{A^{2*}L}(\mathbf{y}_0, \mathbf{y}_1)
         \prod_{i=2}^{s-1} p_{A\to}(\mathbf{y}_i\mid\mathbf{y}_{i-1}) 
           & s > 1,
     \end{cases}\\
   p_E(\bar{z}) &=
     \begin{cases}
       1
-          & s = 0 \\
+          & t = 0 \\
       p_{AE}(\mathbf{z}_0)
-          & s = 1 \\
-      p_{A^2E}(\mathbf{z}_0, \mathbf{z}_1)
-        \prod_{i=2}^{s-1} p_{A\to}(\mathbf{z}_i\mid\mathbf{z}_{i-1}) 
-          & s > 1.
+          & t = 1 \\
+      p_{A^{2*}E}(\mathbf{z}_0, \mathbf{z}_1)
+        \prod_{i=2}^{t-1} p_{A\to}(\mathbf{z}_i\mid\mathbf{z}_{i-1}) 
+          & t > 1.
     \end{cases}
 
-:math:`\bar{x}` is samplable by the strategy :math:`(s,t)` with the following conditions:
+.. _path_sampling_evaluating_sampling_weight:
 
-- if :math:`s=0`, :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{deg}}`,
-- if :math:`t=0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{deg}}`,
-- if :math:`s=1`, :math:`\mathbf{y}_0\in\mathcal{S}_{\mathrm{conn}}`,
-- if :math:`t=1`, :math:`\mathbf{z}_0\in\mathcal{S}_{\mathrm{conn}}`,
-- if :math:`s>0` and :math:`t>0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{spec}}`.
+Evaluating sampling weight
+-------------------------------------
 
+For convenience, the path structure provides a function :cpp:func:`lm::Path::eval_sampling_weight_bidir` to compute sampling weight :math:`f_{s,t}(\bar{x})/p_{s,t}(\bar{x})`.  We assume the input of the function is samplable by the strategy :math:`(s,t)`. Specifically, the sampling weight is defined as
 
+.. math::
 
+  C^*_{s,t}(\bar{x}) &= \alpha_L(\bar{y}) c_{s,t}(\bar{y}, \bar{z}) \alpha_E(\bar{z}), \\
+  \alpha_L(\bar{y}) &=
+    \begin{cases}
+      1
+        & s = 0 \\
+      \frac{1}{p_{AL}(\mathbf{y}_0)}
+        & s = 1 \\
+      \frac{f_{sL}(\mathbf{y}_0,\mathbf{y}_1)}{p_{A^{2*}L}(\mathbf{y}_0, \mathbf{y}_1)}
+        \prod_{i=2}^{s-1}
+          \frac{f_{sL}(\mathbf{y}_{i-1},\mathbf{y}_{i},\mathbf{y}_{i+1})}{p_{\sigma^*\to}(\mathbf{y}_i\mid\mathbf{y}_{i-1})}
+        & s > 1,
+    \end{cases} \\
+  \alpha_E(\bar{z}) &=
+    \begin{cases}
+      1
+        & t = 0 \\
+      \frac{1}{p_{AL}(\mathbf{z}_0)}
+        & t = 1 \\
+      \frac{f_{sL}(\mathbf{z}_0,\mathbf{z}_1)}{p_{A^{2*}L}(\mathbf{z}_0, \mathbf{z}_1)}
+        \prod_{i=2}^{t-1}
+          \frac{f_{sL}(\mathbf{z}_{i-1},\mathbf{z}_{i},\mathbf{z}_{i+1})}{p_{\sigma^*\to}(\mathbf{z}_i\mid\mathbf{z}_{i-1})}
+        & t > 1,
+    \end{cases}
+
+where :math:`\alpha_L(\bar{y})` or :math:`\alpha_E(\bar{z})` is called *subpath sampling weight*, which can be computed by :cpp:func:`lm::Path::eval_subpath_sampling_weight` function. 
+
+.. _path_sampling_mis_weight:
+
+Evaluating MIS weight
+-------------------------------------
+
+:cpp:func:`lm::Path::eval_mis_weight` function evaluates MIS weight via power heuristic. 
 
 Summary of notations
 ===========================
@@ -806,7 +983,7 @@ The path sampling interface defines various properties associated to the point t
       - ``geom.infinite``
     * - :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{spec}}`
       - :math:`\mathbf{x}` is :ref:`specular<path_sampling_specular_vertex>`
-      - ``v.specular``
+      - ``lm::path::is_specular_component(sp,comp)``
     * - :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{conn}}`
       - :math:`\mathbf{x}` is :ref:`connectable endpoint<path_sampling_connectable_endpoint>`
       - ``lm::path::connectable_endpoint(sp)``

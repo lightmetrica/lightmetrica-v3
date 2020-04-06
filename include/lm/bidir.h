@@ -9,53 +9,124 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// Path vertex
+/*!
+    \addtogroup path
+    @{
+*/
+
+/*!
+    \brief Path vertex.
+
+    \rst
+    Represents a path vertex of the light transport path.
+    \endrst
+ */
 struct Vert {
-    SceneInteraction sp;    // Surface interaction.
-    int comp;               // Component index.
+    SceneInteraction sp;    //!< Surface interaction.
+    int comp;               //!< Component index.
 };
 
-// Light transportation path
+/*!
+    \brief Light transport path.
+
+    \rst
+    Represents a light transport path (or just *path*). 
+    This structure can represents two types of paths: *subpath* or *fullpath*. 
+    For detail, please refer to :ref:`path_sampling_light_transport_path`.
+    \endrst
+*/
 struct Path {
-    // Path vertices
+    //! Path vertices.
     std::vector<Vert> vs;
 
     // --------------------------------------------------------------------------------------------
 
-    // Number of vertices
+    //! Get number of vertices of the path.
     int num_verts() const {
         return (int)(vs.size());
     }
 
-    // Path length
+    //! Get path length.
     int num_edges() const {
         return num_verts() - 1;
     }
 
-    // Compute index to access vertex array according to the transport direction
+    /*!
+        \brief Compute index to access vertex array according to the transport direction.
+        \param i Index of the subpath.
+        \param trans_dir Transport direction.
+
+        \rst
+        This function returns the index of the path vertex vector ``vs``
+        counted from the endpoint of the path according to the transport direction.
+        If the transport direction is ``EL``, the function returns the index of i-th vertex
+        counted from the light vertex.
+        If the transport direction is ``LE``, the function returns the index of i-th vertex
+        counted from the eye vertex.
+        This function is only valid when the path is a full path.
+        \endrst
+    */
     int index(int i, TransDir trans_dir) const {
         return trans_dir == TransDir::LE ? i : num_verts() - 1 - i;
     }
 
-    // Get a pointer to a path vertex according to an index of the subpath
-    // If index is out of range, this function returns nullptr.
+    /*!
+        \brief Get a pointer to a path vertex (for fullpath).
+        \param Index of the subpath.
+        \param trans_dir Transport direction.
+
+        \rst
+        This function returns a pointer to a path vertex according to an index of the subpath
+        specified by the transport direction.
+        If index is out of range, the function returns nullptr.
+        This function is only valid when the path is a fullpath.
+        \endrst
+    */
     const Vert* vertex_at(int i, TransDir trans_dir) const {
         return (0 <= i && i < num_verts()) ? &vs[index(i, trans_dir)] : nullptr;
     }
 
-    // Get a point to a path vertex inside a subpath
-    // This is only valid the path is a subpath
+    /*!
+        \brief Get a pointer to a path vertex (for subpath).
+        \param Index of the subpath.
+        
+        \rst
+        This function returns a point to a path vertex inside a subpath.
+        If the index is out of range, the function returns nullptr.
+        This is only valid the path is a subpath.
+        \endrst
+    */
     const Vert* subpath_vertex_at(int i) const {
         return (0 <= i && i < num_verts()) ? &vs[i] : nullptr;
     }
 
-    // Non-const version
+    /*!
+        \brief Get a pointer to a path vertex (for subpath).
+        \param Index of the subpath.
+
+        \rst
+        This function returns a point to a path vertex inside a subpath.
+        If the index is out of range, the function returns nullptr.
+        This is only valid the path is a subpath.
+        \endrst
+    */
     Vert* subpath_vertex_at(int i) {
         return (0 <= i && i < num_verts()) ? &vs[i] : nullptr;
     }
 
-    // Compute direction from v_from to v_to
-    // If one of the given vertices is nullptr, return {}
+    /*!
+        \brief Compute direction between path vertices.
+        \param v_from Vertex as an origin.
+        \param v_to Vertex as a target.
+        
+        \rst
+        This function computes the direction from the vertex ``v_from`` to ``v_to``.
+        If either of the vertex is nullptr, the function returns invalid vector.
+        The function is useful when the vertex can be empty,
+        as a result of out-of-range access by :cpp:func:`lm::Path::vertex_at` or
+        :cpp:func:`lm::Path::subpath_vertex_at` functions.
+        \endrst
+    */
     Vec3 direction(const Vert* v_from, const Vert* v_to) const {
         if (v_from == nullptr || v_to == nullptr) {
             return {};
@@ -74,14 +145,33 @@ struct Path {
 
     // --------------------------------------------------------------------------------------------
 
-    // Compute raster position
+    /*!
+        \brief Compute raster position.
+        \param Scene scene.
+
+        \rst
+        This function computes the raster position using the primary ray from the eye vertex.
+        This function is only valid when the path is a fullpath.
+        \endrst
+    */
     Vec2 raster_position(const Scene* scene) const {
         const auto* vE      = vertex_at(0, TransDir::EL);
         const auto* vE_next = vertex_at(1, TransDir::EL);
         return *path::raster_position(scene, direction(vE, vE_next));
     }
 
-    // Return true if the path is samplable by the strategy (s,t)
+    /*!
+        \brief Check if the path is samplable.
+        \param Scene scene.
+        \param s Strategy index.
+        \return True if the path is samplable by the strategy.
+
+        \rst
+        This function checks if the path is samplable by the bidirectional path sampling strategy
+        indexed by ``s``. This function is necessary to compute bidirecitonal path PDF.
+        For detail, please refer to :ref:`path_sampling_connecting_subpaths`.
+        \endrst
+    */
     bool is_samplable_bidir(const Scene* scene, int s) const {
         const int n = num_verts();
         const int t = n - s;
@@ -117,8 +207,20 @@ struct Path {
         }
     }
 
-    // Evaluate subpath contribution (a.k.a. alpha function)
-    Vec3 eval_subpath_contrb(const Scene* scene, int l, TransDir trans_dir) const {
+    /*!
+        \brief Evaluate subpath contribution.
+        \param scene Scene.
+        \param l Number of vertices.
+        \param trans_dir Transport direction.
+
+        \rst
+        This function computes the subpath contribution.
+        :math:`\alpha_L(\bar{y})` when ``trans_dir`` is LE.
+        :math:`\alpha_E(\bar{z})` when ``trans_dir`` is EL.
+        For detail, please refer to :ref:`path_sampling_evaluating_sampling_weight`.
+        \endrst
+    */
+    Vec3 eval_subpath_sampling_weight(const Scene* scene, int l, TransDir trans_dir) const {
         if (l == 0) {
             return Vec3(1_f);
         }
@@ -163,7 +265,16 @@ struct Path {
         return alpha;
     }
 
-    // Evaluate connection term c_{s,t}
+    /*!
+        \brief Evaluate connection term.
+        \param scene Scene.
+        \param s Strategy index.
+
+        \rst
+        This function evaluates the connection term :math:`c_{s,t}`.
+        For detail, please refer to :ref:`path_sampling_measurement_contribution`.
+        \endrst
+    */
     Vec3 eval_connection_term(const Scene* scene, int s) const {
         const int n = num_verts();
         const int t = n - s;
@@ -191,18 +302,26 @@ struct Path {
         return cst;
     }
 
-    // Evaluate unweighted contribution
-    // This is equivalent to eval_measurement_contrb_bidir() / pdf_bidir()
-    Vec3 eval_unweighted_contrb_bidir(const Scene* scene, int s) const {
+    /*!
+        \brief Evaluate sampling weight.
+        \param scene Scene.
+        \param s Strategy index.
+
+        \rst
+        This function evaluates the sampling weight :math:`C^*_{s,t}(\bar{x})`.
+        For detail, please refer to :ref:`path::path_sampling_evaluating_sampling_weight`.
+        \endrst
+    */
+    Vec3 eval_sampling_weight_bidir(const Scene* scene, int s) const {
         const int n = num_verts();
         const int t = n - s;
 
         // Subpath constribution
-        const auto alphaL = eval_subpath_contrb(scene, s, TransDir::LE);
+        const auto alphaL = eval_subpath_sampling_weight(scene, s, TransDir::LE);
         if (math::is_zero(alphaL)) {
             return Vec3(0_f);
         }
-        const auto alphaE = eval_subpath_contrb(scene, t, TransDir::EL);
+        const auto alphaE = eval_subpath_sampling_weight(scene, t, TransDir::EL);
         if (math::is_zero(alphaE)) {
             return Vec3(0_f);
         }
@@ -213,7 +332,16 @@ struct Path {
         return alphaL * cst * alphaE;
     }
 
-    // Evaluate measreument contribution function
+    /*!
+        \brief Evaluate measreument contribution function.
+        \param scene Scene.
+        \param s Strategy index.
+
+        \rst
+        This function evaluates the measurement contribution function `f_{s,t}(\bar{x})`.
+        For detail, please refer to :ref:`path_sampling_measurement_contribution`.
+        \endrst
+    */
     Vec3 eval_measurement_contrb_bidir(const Scene* scene, int s) const {
         const int n = num_verts();
         const int t = n - s;
@@ -246,7 +374,16 @@ struct Path {
         return f_prod_L * cst * f_prod_E;
     }
 
-    // Evaluate PDF
+    /*!
+        \brief Evaluate bidirectional path PDF.
+        \param scene Scene.
+        \param s Strategy index.
+
+        \rst
+        This function evaluats the bidirectional path PDF :math:`p_{s,t}(\bar{x})`.
+        For detail, please refer to :ref:`path_sampling_bidirectional_path_pdf`.
+        \endrst
+    */
     Float pdf_bidir(const Scene* scene, int s) const {
         const int n = num_verts();
         const int t = n - s;
@@ -300,7 +437,16 @@ struct Path {
         return pL * pE;
     }
 
-    // Evaluate MIS weight
+    /*!
+        \brief Evaluate MIS weight.
+        \param scene Scene.
+        \param s Strategy index.
+
+        \rst
+        This function evaluates the MIS weight via power heuristic.
+        For detail, please refer to :ref:`path_sampling_mis_weight`.
+        \endrst
+    */
     Float eval_mis_weight(const Scene* scene, int s) const {
         const int n = num_verts();
         const int t = n - s;
@@ -322,11 +468,32 @@ struct Path {
     }
 };
 
+/*!
+    @}
+*/
+
 // ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(path)
 
-// Sample path vertices from the endpoint
+/*!
+    \addtogroup path
+    @{
+*/
+
+/*!
+    \brief Sample path vertices from the endpoint.
+    \param rng Random number generator.
+    \param path Subpath to be updated.
+    \param scene Scene.
+    \param max_verts Maximum number of vertices.
+    \param trans_dir Transport direction.
+
+    \rst
+    This function samples a subpath from the last vertex of the given ``path``.
+    For detail, please refer to :ref:`path_sampling_sampling_subpath`.
+    \endrst
+*/
 static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scene, int max_verts, TransDir trans_dir) {
     // If the requested number of vertices are zero, return immediately.
     // Otherwise the initial vertex would be sampled.
@@ -378,14 +545,41 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
     }
 }
 
-// Sample a subpath
+/*!
+    \brief Sample a subpath.
+    \param rng Random number generator.
+    \param scene Scene.
+    \param max_verts Maximum number of vertices.
+    \param trans_dir Transport direction.
+    \return Sampled subpath.
+
+    \rst
+    This function samples a subpath.
+    For detail, please refer to :ref:`path_sampling_sampling_subpath`.
+    \endrst
+*/
 static Path sample_subpath(Rng& rng, const Scene* scene, int max_verts, TransDir trans_dir) {
     Path path;
     sample_subpath_from_endpoint(rng, path, scene, max_verts, trans_dir);
     return path;
 }
 
-// Connect two subapths and generate a full path
+/*!
+    \brief Connect two subapths and generate a full path.
+    \param scene Scene.
+    \param subpathL Light subpath.
+    \param subpathE Eye subpath.
+    \param s Number of light subpath vertices to be used.
+    \param t Number of eye subpath vertices to be used.
+    \return Connected fullpath. nullopt if failed.
+
+    \rst
+    This function takes light and subapth and connect them to compose a fullpath by the specified
+    number of vertices from the endpoints of each subpath.
+    The function returns nullopt if the connection fails.
+    For detail, please refer to :ref:`path_sampling_connecting_subpaths`.
+    \endrst
+*/
 static std::optional<Path> connect_subpaths(const Scene* scene, const Path& subpathL, const Path& subpathE, int s, int t) {
     assert(s >= 0 && t >= 0);
     assert(!(s == 0 && t == 0));
@@ -439,11 +633,9 @@ static std::optional<Path> connect_subpaths(const Scene* scene, const Path& subp
     return path;
 }
 
-// Copmute scalar contribution
-// We use luminance function.
-LM_INLINE Float scalar_contrb(Vec3 v) {
-    return 0.212671_f * v.x + 0.715160_f * v.y + 0.072169_f * v.z;
-}
+/*!
+    @}
+*/
 
 LM_NAMESPACE_END(path)
 
