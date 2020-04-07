@@ -29,7 +29,7 @@ public:
         \param name Name of the asset.
         \param impl_key Key of component implementation in `interface::implementation` format.
         \param prop Properties.
-        \return Pointer to the created. nullptr if failed.
+        \return Pointer to the created asset. nullptr if failed.
 
         \rst
         Loads an asset from the given information and registers to the class.

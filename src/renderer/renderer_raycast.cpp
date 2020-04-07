@@ -7,9 +7,11 @@
 #include <lm/core.h>
 #include <lm/renderer.h>
 #include <lm/scene.h>
+#include <lm/camera.h>
 #include <lm/film.h>
 #include <lm/parallel.h>
 #include <lm/scheduler.h>
+#include <lm/path.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -56,7 +58,7 @@ public:
             });
     }
 
-    virtual void render() const override {
+    virtual Json render() const override {
 		scene_->require_primitive();
 		scene_->require_accel();
 		scene_->require_camera();
@@ -66,7 +68,7 @@ public:
         sched_->run([&](long long index, long long, int) {
             const int x = int(index % size.w);
             const int y = int(index / size.w);
-            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
+            const auto ray = path::primary_ray(scene_, {(x+.5_f)/size.w, (y+.5_f)/size.h});
             const auto sp = scene_->intersect(ray);
             if (!sp) {
                 film_->set_pixel(x, y, bg_color_);
@@ -76,7 +78,7 @@ public:
                 film_->set_pixel(x, y, glm::abs(sp->geom.n));
             }
             else {
-                const auto R = color_ ? *color_ : scene_->reflectance(*sp, -1);
+                const auto R = color_ ? *color_ : path::reflectance(scene_ , *sp);
                 auto C = R ? *R : Vec3();
                 if (!use_constant_color_) {
                     C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));
@@ -84,6 +86,8 @@ public:
                 film_->set_pixel(x, y, C);
             }
         });
+
+        return {};
     }
 };
 

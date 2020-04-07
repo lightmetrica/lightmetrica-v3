@@ -35,27 +35,75 @@ public:
         position_ = json::value<Vec3>(prop, "position");
     }
 
-    virtual std::optional<LightRaySample> sample(Rng&, const PointGeometry& geom, const Transform&) const override {
-        const auto wo = glm::normalize(geom.p - position_);
+    virtual std::optional<RaySample> sample_ray(const RaySampleU& us, const Transform&) const override {
+        const auto d = math::sample_uniform_sphere(us.ud);
         const auto geomL = PointGeometry::make_degenerated(position_);
-        const auto pL = pdf(geom, geomL, 0, {}, wo);
-        if (pL == 0_f) {
-            return {};
-        }
-        return LightRaySample{
+        const auto p = math::pdf_uniform_sphere();
+        const auto C = Le_ / p;
+        return RaySample{
             geomL,
-            wo,
-            0,
-            Le_ / pL
+            d,
+            C
         };
     }
 
-    virtual Float pdf(const PointGeometry& geom, const PointGeometry& geomL, int, const Transform&, Vec3) const override {
+    virtual Float pdf_ray(const PointGeometry&, Vec3, const Transform&, bool) const override {
+        return math::pdf_uniform_sphere();
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& ) const override {
+        const auto d = math::sample_uniform_sphere(us.ud);
+        const auto C = Le_ / math::pdf_uniform_sphere();
+        return DirectionSample{
+            d,
+            C
+        };   
+    }
+
+    virtual Float pdf_direction(const PointGeometry&, Vec3) const override {
+        return math::pdf_uniform_sphere();
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    virtual std::optional<PositionSample> sample_position(const PositionSampleU&, const Transform&) const override {
+        return PositionSample{
+            PointGeometry::make_degenerated(position_),
+            Vec3(1_f)
+        };
+    }
+
+    virtual Float pdf_position(const PointGeometry&, const Transform&) const override {
+        return 1_f;
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    virtual std::optional<RaySample> sample_direct(const RaySampleU&, const PointGeometry& geom, const Transform&) const override {
+        const auto wo = glm::normalize(geom.p - position_);
+        const auto geomL = PointGeometry::make_degenerated(position_);
+        const auto pL = pdf_direct(geom, geomL, {}, wo, {});
+        if (pL == 0_f) {
+            return {};
+        }
+        const auto C = Le_ / pL;
+        return RaySample{
+            geomL,
+            wo,
+            C
+        };
+    }
+
+    virtual Float pdf_direct(const PointGeometry& geom, const PointGeometry& geomL, const Transform&, Vec3, bool) const override {
         const auto G = surface::geometry_term(geom, geomL);
         return G == 0_f ? 0_f : 1_f / G;
     }
 
-    virtual bool is_specular(const PointGeometry&, int) const override {
+    // --------------------------------------------------------------------------------------------
+
+    virtual bool is_specular() const override {
         return false;
     }
 
@@ -63,7 +111,11 @@ public:
         return false;
     }
 
-    virtual Vec3 eval(const PointGeometry&, int, Vec3) const override {
+    virtual bool is_connectable(const PointGeometry&) const override {
+        return true;
+    }
+
+    virtual Vec3 eval(const PointGeometry&, Vec3, bool) const override {
         return Le_;
     }
 };

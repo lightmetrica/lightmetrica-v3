@@ -1,3 +1,5 @@
+.. _basic_rendering:
+
 Basic rendering
 ######################
 
@@ -129,6 +131,8 @@ Note that ``lm.asset()`` function returns an instance of :cpp:class:`lm::Compone
     For convenience, we will sometimes refer to a pair of asset interface and detailed asset type by ``interface::name`` format.
     For instance, ``film::bitmap`` or ``material::diffuse`` etc.
 
+.. _accessing_instance:
+
 Accessing instance
 ===============================
 
@@ -147,7 +151,7 @@ You can obtain the instance of the asset by the locator. ``lm.get_<asset_type>()
 
     film = lm.get_film('$.assets.film1')
 
-Similarly, the general ``lm.get()`` function returns an instance of :cpp:class:`lm::Component` class, similarly to `lm.create_asset` function. You thus need to cast the type before use.
+Similarly, the general ``lm.get()`` function returns an instance of :cpp:class:`lm::Component` class, similarly to ``lm.create_asset`` function. You thus need to cast the type before use.
 
 .. code-block:: python
 
@@ -155,7 +159,7 @@ Similarly, the general ``lm.get()`` function returns an instance of :cpp:class:`
 
 .. note::
 
-    The assets managed by the framework can be printed using ``lm.print_asset_tree()`` function.
+    The assets managed by the framework can be printed using ``lm.debug.print_asset_tree()`` function.
 
 Passing instance as a parameter
 ===============================

@@ -16,27 +16,20 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Result of direction sampling.
-*/
-struct PhaseDirectionSample {
-    Vec3 wo;        //!< Sampled direction.
-    Vec3 weight;    //!< Contribution divided by probability.
-};
-
-/*!
     \brief Phase function.
 */
 class Phase : public Component {
 public:
-    /*!
-        \brief Check if the phase function is specular.
-        \param geom Point geometry.
+    //! Result of direction sampling.
+    struct DirectionSample {
+        Vec3 wo;            //!< Sampled direction.
+        Vec3 weight;        //!< Contribution divided by probability.
+    };
 
-        \rst
-        This function checks if the phase function contains delta component.
-        \endrst
-    */
-    virtual bool is_specular(const PointGeometry& geom) const = 0;
+    //! Random number input for direction sampling.
+    struct DirectionSampleU {
+        Vec2 ud;
+    };
 
     /*!
         \brief Sample a direction.
@@ -45,7 +38,7 @@ public:
         \param wi Incident ray direction.
         \return Sampled direction and associated information.
     */
-    virtual std::optional<PhaseDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const = 0;
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi) const = 0;
 
     /*!
         \brief Evaluate pdf in solid angle measure.
@@ -54,7 +47,7 @@ public:
         \param wo Outgoing ray direction.
         \return Evaluated pdf.
     */
-    virtual Float pdf(const PointGeometry& geom, Vec3 wi, Vec3 wo) const = 0;
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo) const = 0;
 
     /*!
         \brief Evaluate the phase function.

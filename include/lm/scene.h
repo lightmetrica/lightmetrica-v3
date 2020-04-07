@@ -18,44 +18,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Result of ray sampling.
-
-    \rst
-    This structure represents the result of ray sampling
-    used by the functions of :cpp:class:`lm::Scene` class.
-    \endrst
-*/
-struct RaySample {
-    SceneInteraction sp;   //!< Surface point information.
-    int comp;              //!< Sampled component index.
-    Vec3 wo;               //!< Sampled direction.
-    Vec3 weight;           //!< Contribution divided by probability.
-
-    /*!
-        \brief Get a ray from the sample.
-        
-        \rst
-        This function constructs a :cpp:class:`lm::Ray`
-        structure from the ray sample.
-        \endrst
-    */
-    Ray ray() const {
-        assert(!sp.geom.infinite);
-        return { sp.geom.p, wo };
-    }
-};
-
-/*!
-    \brief Result of distance sampling.
-*/
-struct DistanceSample {
-    SceneInteraction sp;    //!< Sampled interaction point.
-    Vec3 weight;            //!< Contribution divided by probability.
-};
-
-// ------------------------------------------------------------------------------------------------
-
-/*!
     \brief Scene.
 
     \rst
@@ -79,19 +41,9 @@ public:
     */
     virtual void reset() = 0;
 
-    /*!
-        \brief Get underlying acceleration structure.
-        \return Instance.
-    */
-    virtual Accel* accel() const = 0;
-
-    /*!
-        \brief Set underlying acceleration structure.
-        \param accel_loc Locator to the accel asset.
-    */
-    virtual void set_accel(const std::string& accel_loc) = 0;
-
     // --------------------------------------------------------------------------------------------
+
+    #pragma region Scene graph manipulation and access
 
     /*!
         \brief Get index of the root node.
@@ -203,8 +155,6 @@ public:
         add_child(root_node(), t);
     }
 
-    // --------------------------------------------------------------------------------------------
-
     /*!
         \brief Callback function to traverse the scene nodes.
         \param node Current node.
@@ -262,35 +212,40 @@ public:
 	*/
 	virtual int num_nodes() const = 0;
 
-	/*!
-		\brief Get number of lights in the scene.
-	*/
+	//! Get number of lights in the scene.
 	virtual int num_lights() const = 0;
 
 	/*!
 		\brief Get camera node index.
-
-		\rst
-		This function returns -1 if there is camera in the scene.
-		\endrst
+        \return Camera node index. -1 if no camera is found in the scene.
 	*/
 	virtual int camera_node() const = 0;
 
+    /*!
+        \brief Get medium node index.
+        \return Medium node index. -1 if no medium is found in the scene.
+    */
+    virtual int medium_node() const = 0;
+
 	/*!
 		\brief Get environment map node index.
-
-		\rst
-		This function returns -1 if there is no environment light in the scene.
-		\endrst
+        \return Environment light node index. -1 if no environment light is found in the scene.
 	*/
 	virtual int env_light_node() const = 0;
 
+    //! Get camera asset associated to the scene.
+    Camera* camera() const {
+        return node_at(camera_node()).primitive.camera;
+    }
+
+    #pragma endregion
+
 	// --------------------------------------------------------------------------------------------
 
-	/*!
-		\brief Throws an exception if there is no primitive in the scene.
-	*/
-	virtual void require_primitive() const {
+    #pragma region Scene requirement checking
+
+	//! Throws an exception if there is no primitive in the scene.
+	void require_primitive() const {
 		if (num_nodes() > 1) {
 			return;
 		}
@@ -298,10 +253,8 @@ public:
 			"Missing primitives. Use lm::primitive() function to add primitives.");
 	}
 
-	/*!
-		\brief Throws an exception if there is no camera in the scene.
-	*/
-	virtual void require_camera() const {
+	//! Throws an exception if there is no camera in the scene.
+	void require_camera() const {
 		if (camera_node() != -1) {
 			return;
 		}
@@ -309,10 +262,8 @@ public:
 			"Missing camera primitive. Use lm::primitive() function to add camera primitive.");
 	}
 
-	/*!
-		\brief Throws an exception if there is no light in the scene.
-	*/
-	virtual void require_light() const {
+	//! Throws an exception if there is no light in the scene.
+	void require_light() const {
 		if (num_lights() > 0) {
 			return;
 		}
@@ -320,10 +271,8 @@ public:
 			"No light in the scene. Add at least one light sources to the scene.");
 	}
 
-	/*!
-		\brief Throws an exception if there is no accel created for the scene.
-	*/
-	virtual void require_accel() const {
+	//! Throws an exception if there is no accel created for the scene.
+	void require_accel() const {
 		if (accel()) {
 			return;
 		}
@@ -343,18 +292,29 @@ public:
 		- :cpp:func:`require_accel`
 		\endrst
 	*/
-	virtual void require_renderable() const {
+	void require_renderable() const {
 		require_primitive();
 		require_camera();
 		require_light();
 		require_accel();
 	}
 
+    #pragma endregion
+
     // --------------------------------------------------------------------------------------------
 
+    #pragma region Ray-scene intersection
+
+    //! Get underlying acceleration structure.
+    virtual Accel* accel() const = 0;
+
     /*!
-        \brief Build acceleration structure.
+        \brief Set underlying acceleration structure.
+        \param accel_loc Locator to the accel asset.
     */
+    virtual void set_accel(const std::string& accel_loc) = 0;
+
+    //! Build acceleration structure.
     virtual void build() = 0;
 
     /*!
@@ -403,230 +363,64 @@ public:
         }
     }
 
+    #pragma endregion
+
     // --------------------------------------------------------------------------------------------
 
-    /*!
-        \brief Check if given surface point is light.
-        \param sp Scene interaction.
-        \return True if scene interaction is light.
-    */
+    #pragma region Primitive type checking
+
+    //! Check if the surface point is a light.
     virtual bool is_light(const SceneInteraction& sp) const = 0;
 
-    /*!
-        \brief Check if given surface point is specular.
-        \param sp Scene intersection.
-		\param comp Component index.
-        \return True if scene interaction is specular.
+    //! Check if the surface point is a camera.
+    virtual bool is_camera(const SceneInteraction& sp) const = 0;
 
-        \rst
-        Scene interaction is specular if the material, light, or camera associated
-        with point specified by scene intersection contains delta function.
-        \endrst
-    */
-    virtual bool is_specular(const SceneInteraction& sp, int comp) const = 0;
+    #pragma endregion
 
     // --------------------------------------------------------------------------------------------
 
-    /*!
-        \brief Generate a primary ray.
-        \param rp Raster position in [0,1]^2.
-        \param aspect_ratio Aspect ratio of the film.
-        \return Generated primary ray.
+    #pragma region Light sampling
 
-        \rst
-        This function deterministically generates a primary ray
-        corresponding to the given raster position.
-        \endrst
-    */
-    virtual Ray primary_ray(Vec2 rp, Float aspect_ratio) const = 0;
+    //! Result of light sampling.
+    struct LightSelectionSample {
+        int light_index;    //!< Sampled light index (note: this is not a node index).
+        Float p_sel;        //!< Selection probability
+    };
 
-    /*!
-        \brief Compute a raster position.
-        \param wo Primary ray direction.
-        \param aspect_ratio Aspect ratio of the film.
-        \return Raster position.
-    */
-    virtual std::optional<Vec2> raster_position(Vec3 wo, Float aspect_ratio) const = 0;
+    //! Primitive index of the light and its transform.
+    struct LightPrimitiveIndex {
+        Transform global_transform;  //!< Global transform matrix
+        int index;                   //!< Primitive node index
 
-    /*!
-        \brief Sample a ray given surface point and incident direction.
-        \param rng Random number generator.
-        \param sp Surface interaction.
-        \param wi 
-
-        \rst
-        This function samples a ray given the scene interaction.
-        According to the types of scene interaction, this function samples a different
-        types of the ray from the several distributions.
-
-        (1) If the scene interaction is ``terminator``, this function samples a primary ray
-            according type types of the terminator (camera or light). ``wi`` is ignored in this case.
-
-        (2) If the scene interaction is not ``terminator``, this function samples
-            a ray from the associated distribution to BSDF or phase function
-            given the interaction event ``sp`` and incident ray direction ``wi``.
-
-        In both cases, this function returns ``nullopt`` if the sampling failed,
-        or the case when the early return is possible for instance when 
-        the evaluated contribution of the sampled direction is zero.
-        \endrst
-    */
-    virtual std::optional<RaySample> sample_ray(Rng& rng, const SceneInteraction& sp, Vec3 wi) const = 0;
+        //! \cond
+        template <typename Archive>
+        void serialize(Archive& ar) {
+            ar(global_transform, index);
+        }
+        //! \endcond
+    };
 
     /*!
-        \brief Sample direction given component.
+        \brief Light sampling.
+        \param u Random number input in [0,1].
+        return Sample light index.
     */
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
+    virtual LightSelectionSample sample_light_selection(Float u) const = 0;
 
     /*!
-        \brief Sample direction to a light given a scene interaction.
-        \param rng Random number generator.
-        \param sp Scene interaction.
-
-        \rst
-        This function samples a ray to the light given a scene interaction.
-        Be careful not to confuse the sampled ray with the ray sampled via :cpp:func:`Scene::sample_ray`
-        function from a light source. Both rays are sampled from the different distributions
-        and if you want to evaluate densities you want to use different functions.
-        \endrst
+        \brief Evaluate the PDF for light sampling.
+        \param light_index Sampled light index.
+        \return Evaluated PDF.
     */
-    virtual std::optional<RaySample> sample_direct_light(Rng& rng, const SceneInteraction& sp) const = 0;
+    virtual Float pdf_light_selection(int light_index) const = 0;
 
-    /*!
-        \brief Evaluate pdf for direction sampling.
-        \param sp Scene interaction.
-		\param comp Component index.
-        \param wi Incident ray direction.
-        \param wo Sampled outgoing ray direction.
-        \return Evaluated pdf.
+    //! Get primitive node index from light index.
+    virtual LightPrimitiveIndex light_primitive_index_at(int light_index) const = 0;
 
-        \rst
-        This function evaluates pdf according to *projected solid angme measure* if ``sp.geom.degenerated=false``
-        and *solid angme measure* if ``sp.geom.degenerated=true``
-        utlizing corresponding densities from which the direction is sampled.
-        \endrst
-    */
-    virtual Float pdf(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
+    //! Get light index from node index.
+    virtual int light_index_at(int node_index) const = 0;
 
-    /*!
-        \brief Evaluate pdf for component selection.
-        \param sp Scene interaction.
-		\param comp Component index.
-        \param wi Incident ray direction.
-    */
-    virtual Float pdf_comp(const SceneInteraction& sp, int comp, Vec3 wi) const = 0;
-
-    /*!
-        \brief Evaluate pdf for light sampling given a scene interaction.
-        \param sp Scene interaction.
-        \param spL Sampled scene interaction of the light.
-		\param compL Component index of the light.
-        \param wo Sampled outgoing ray directiom *from* the light.
-
-        \rst
-        This function evaluate pdf for the ray sampled via :cpp:func:`Scene::sample_direct_light`.
-        Be careful ``wo`` is the outgoing direction originated from ``spL``, not ``sp``.
-        \endrst
-    */
-    virtual Float pdf_direct_light(const SceneInteraction& sp, const SceneInteraction& spL, int compL, Vec3 wo) const = 0;
-
-    // --------------------------------------------------------------------------------------------
-
-    /*!
-        \brief Sample a distance in a ray direction.
-        \param rng Random number generator.
-        \param sp Scene interaction.
-        \param wo Ray direction.
-
-        \rst
-        This function samples either a point in a medium or a point on the surface.
-        Note that we don't provide corresponding pdf function because 
-        some underlying distance sampling technique might not have the analitical representation.
-        \endrst
-    */
-    virtual std::optional<DistanceSample> sample_distance(Rng& rng, const SceneInteraction& sp, Vec3 wo) const = 0;
-
-    /*!
-        \brief Evaluate transmittance.
-        \param rng Random number generator.
-        \param sp1 Scene interaction of the first point.
-        \param sp2 Scene interaction of the second point.
-        
-        \rst
-        This function evaluates transmittance between two scene interaction events.
-        This function might need a random number generator
-        because heterogeneous media needs stochastic estimation.
-        If the space between ``sp1`` and ``sp2`` is vacuum (i.e., no media),
-        this function is conceptually equivalent to :cpp:func:`Scene::visible`.
-        \endrst
-    */
-    virtual Vec3 eval_transmittance(Rng& rng, const SceneInteraction& sp1, const SceneInteraction& sp2) const = 0;
-
-    // --------------------------------------------------------------------------------------------
-
-    /*!
-        \brief Evaluate contribution.
-        \param sp Scene interaction.
-		\param comp Component index.
-        \param wi Incident ray direction.
-        \param wo Outgoing ray direction.
-        \return Evaluated contribution.
-
-        \rst
-        This function evaluate directional contribution according to the scene interaction type.
-        
-        (1) If the scene interaction is endpoint and on a light,
-            this function evaluates luminance function.
-
-        (2) If the scene interaction is endpoint and on a sensor,
-            this function evaluates importance function.
-        
-        (3) If the scene interaction is not endpoint and on a surface,
-            this function evaluates BSDF.
-
-        (4) If the scene interaction is in a medium,
-            this function evaluate phase function.
-
-        Note that the scene interaction obtained from :cpp:func:`Scene::intersect` or 
-        :cpp:func:`Scene::sample_distance` is not an endpont
-        even if it might represent either a light or a sensor.
-        In this case, you want to use :cpp:func:`Scene::eval_contrb_endpoint`
-        to enforce an evaluation as an endpoint.
-        \endrst
-    */
-    virtual Vec3 eval_contrb(const SceneInteraction& sp, int comp, Vec3 wi, Vec3 wo) const = 0;
-
-    /*!
-        \brief Evaluate endpoint contribution.
-		\param sp Surface interaction.
-		\param wo Outgoing ray direction.
-
-        \rst
-        This function evaluates
-
-        (1) If the scene interaction *contains* a light component,
-            this function evaluates luminance function.
-
-        (2) If the scene interaction *contains* a sensor component,
-            this function evaluates importance function.
-
-        That is, this function enforces the evaluation as an endpoint
-        irrespective to the value of ``sp.endpoint``.
-        \endrst
-    */
-    virtual Vec3 eval_contrb_endpoint(const SceneInteraction& sp, Vec3 wo) const = 0;
-
-    /*!
-        \brief Evaluate reflectance (if available).
-        \param sp Surface interaction.
-		\param comp Component index.
-
-        \rst
-        This function evaluate reflectance if ``sp`` is on a surface
-        and the associated material implements :cpp:func:`Material::reflectance` function.
-        \endrst
-    */
-    virtual std::optional<Vec3> reflectance(const SceneInteraction& sp, int comp) const = 0;
+    #pragma endregion
 };
 
 /*!

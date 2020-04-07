@@ -34,62 +34,118 @@ public:
             return false;
         }
 
-        // Active face indices and material index
-        int currMaterialIdx = -1;
-        std::vector<OBJMeshFaceIndex> currfs;
+        // Primitive: a pair of mesh and material
+        // Note that a group defined by 'g' command can contain multiple pairs,
+        // because obj file allows per-face material assignment.
+        // A primitive is created when the process encounters either 'g' or 'usemtl' command.
+        struct Primitive {
+            int material_index = 0;     // Refers to default material by default
+            std::vector<OBJMeshFaceIndex> fs;
+        };
+        std::vector<Primitive> primitives;
+
+        // Current material index
+        int curr_material_index = 0;
 
         // Parse .obj file line by line
         while (f.getline(l, 4096)) {
             char *t = l;
             skip_spaces(t);
+
+            // ----- Parse vertex position
             if (command(t, "v", 1)) {
                 geo.ps.emplace_back(next_vec3(t += 2));
-            } else if (command(t, "vn", 2)) {
+            }
+
+            // ----- Parse vertex normal
+            else if (command(t, "vn", 2)) {
                 geo.ns.emplace_back(next_vec3(t += 3));
-            } else if (command(t, "vt", 2)) {
+            }
+
+            // ----- Parse texture coordinates
+            else if (command(t, "vt", 2)) {
                 geo.ts.emplace_back(next_vec3(t += 3));
-            } else if (command(t, "f", 1)) {
+            } 
+
+            // ----- Parse group
+            else if (command(t, "g", 1)) {
+                t += 1;
+                primitives.emplace_back();
+                primitives.back().material_index = curr_material_index;
+            }
+
+            // ----- Parse face indices
+            else if (command(t, "f", 1)) {
                 t += 2;
-                if (ms_.empty()) {
-                    // Process the case where MTL file is missing
-                    ms_.push_back({ "default", -1, Vec3(1) });
-                    if (!process_material(ms_.back())) {
-                        return false;
-                    }
-                    currMaterialIdx = 0;
+
+                // Create a default primitive if there's no primitive
+                if (primitives.empty()) {
+                    primitives.emplace_back();
                 }
+                
+                // Current primitive
+                auto& primitive = primitives.back();
+
+                // Parse face indices
                 OBJMeshFaceIndex is[4];
                 for (auto& i : is) {
-                    if (eol(t[0])) { continue; }
+                    if (eol(t[0])) {
+                        continue;
+                    }
                     i = parse_indices(geo, t);
                 }
-                currfs.insert(currfs.end(), {is[0], is[1], is[2]});
+                primitive.fs.insert(primitive.fs.end(), {is[0], is[1], is[2]});
                 if (is[3].p != -1) {
                     // Triangulate quad
-                    currfs.insert(currfs.end(), {is[0], is[2], is[3]});
+                    primitive.fs.insert(primitive.fs.end(), {is[0], is[2], is[3]});
                 }
-            } else if (command(t, "usemtl", 6)) {
+            }
+            
+            // ----- Parse material
+            else if (command(t, "usemtl", 6)) {
                 t += 7;
                 next_string(t, name);
-                if (!currfs.empty()) {
-                    // 'usemtl' indicates end of mesh groups
-                    if (!process_mesh(currfs, ms_.at(currMaterialIdx))) {
-                        return false;
-                    }
-                    currfs.clear();
+
+                // Create a new primitive
+                // If 'usemtl' is defined immediately after 'g' command, use the last primitive.
+                if (primitives.empty() || !primitives.back().fs.empty()) {
+                    primitives.emplace_back();
                 }
-                currMaterialIdx = msmap_.at(name);
-            } else if (command(t, "mtllib", 6)) {
+
+                // Set material index
+                curr_material_index = msmap_.at(name);
+                primitives.back().material_index = curr_material_index;
+            }
+            
+            // ----- Parse material library
+            else if (command(t, "mtllib", 6)) {
                 next_string(t += 7, name);
-                if (!loadmtl((fs::path(path).remove_filename() / name).string(), process_material)) {
+                if (!loadmtl((fs::path(path).remove_filename() / name).string())) {
                     return false;
                 }
-            } else {
+            }
+            
+            // ----- Ignore all other commands
+            else {
                 continue;
             }
         }
-        if (!currfs.empty()) {
-            if (!process_mesh(currfs, ms_.at(currMaterialIdx))) {
+
+        // Create a default material if MTL file is missing
+        if (ms_.empty()) {
+            ms_.push_back({ "default", -1, Vec3(1) });
+        }
+
+        // Process parsed materials
+        for (const auto& m : ms_) {
+            if (!process_material(m)) {
+                return false;
+            }
+        }
+
+        // Process parsed primitives
+        for (const auto& primitive : primitives) {
+            if (!process_mesh(primitive.fs, ms_.at(primitive.material_index))) {
                 return false;
             }
         }
@@ -165,7 +221,7 @@ private:
     };
 
     // Parses .mtl file
-    bool loadmtl(std::string p, const ProcessMaterialFunc& process_material) {
+    bool loadmtl(std::string p) {
         LM_INFO("Loading MTL file [path='{}']", fs::path(p).filename().string());
         std::ifstream f(p);
         if (!f) {
@@ -195,12 +251,6 @@ private:
             else if (command(t, "Ke", 2))     { m.Ke = next_vec3(t += 3); }
             else if (command(t, "illum", 5))  { m.illum = next_int(t += 6); }
             else if (command(t, "map_Kd", 6)) { next_string(t += 7, name); m.mapKd = name; }
-        }
-        // Let the user to process materials
-        for (const auto& m : ms_) {
-            if (!process_material(m)) {
-                return false;
-            }
         }
         return true;
     }

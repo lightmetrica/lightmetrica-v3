@@ -22,7 +22,7 @@ public:
     /*!
         \brief Process rendering.
     */
-    virtual void render() const = 0;
+    virtual Json render() const = 0;
 };
 
 /*!

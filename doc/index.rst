@@ -34,6 +34,7 @@ This documentation includes **guide**, **examples and tests**, and **references*
     build
     managing_experiment
     basic_rendering
+    extending_framework
     
 .. toctree::
     :maxdepth: 2
@@ -42,6 +43,7 @@ This documentation includes **guide**, **examples and tests**, and **references*
     build_system
     component
     python_binding
+    path_sampling
 
 .. toctree::
     :maxdepth: 2

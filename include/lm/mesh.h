@@ -51,7 +51,6 @@ public:
         Point p3;   //!< Third vertex.
     };
 
-public:
     /*!
         \brief Callback function for processing a triangle.
         \param face Face index.
@@ -81,9 +80,19 @@ public:
     virtual Tri triangle_at(int face) const = 0;
 
     /*!
+        \brief Interpolated vertex of a triangle.
+    */
+    struct InterpolatedPoint {
+        Vec3 p;     //!< Position.
+        Vec3 n;     //!< Shading normal.
+        Vec3 gn;    //!< Geometry normal.
+        Vec2 t;     //!< Texture coordinates.
+    };
+
+    /*!
         \brief Compute surface geometry information at a point.
     */
-    virtual Point surface_point(int face, Vec2 uv) const = 0;
+    virtual InterpolatedPoint surface_point(int face, Vec2 uv) const = 0;
 
     /*!
         \brief Get number of triangles.

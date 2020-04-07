@@ -45,20 +45,6 @@ Debug
    :content-only:
    :members:
 
-Debug IO
-======================
-
-.. doxygengroup:: debugio
-   :content-only:
-   :members:
-
-Distributed
-======================
-
-.. doxygengroup:: distributed
-   :content-only:
-   :members:
-
 Json
 ======================
 
@@ -168,5 +154,12 @@ Model
 ======================
 
 .. doxygengroup:: model
+   :content-only:
+   :members:
+
+Path sampling
+======================
+
+.. doxygengroup:: path
    :content-only:
    :members:

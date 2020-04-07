@@ -40,32 +40,32 @@ public:
         ref_ = json::comp_ref<Material>(prop, "ref");
     }
 
-    virtual bool is_specular(const PointGeometry& geom, int comp) const override {
-        return ref_->is_specular(geom, comp);
+    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom) const override {
+        return ref_->sample_component(u, geom);
     }
 
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-        return ref_->sample(rng, geom, wi);
+    virtual Float pdf_component(int comp, const PointGeometry& geom) const override {
+        return ref_->pdf_component(comp, geom);
     }
 
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int comp, Vec3 wi) const override {
-        return ref_->sample_direction_given_comp(rng, geom, comp, wi);
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, int comp, TransDir trans_dir) const override {
+        return ref_->sample_direction(u, geom, wi, comp, trans_dir);
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int comp) const override {
-        return ref_->reflectance(geom, comp);
+    Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, int comp, bool eval_delta) const override {
+        return ref_->pdf_direction(geom, wi, wo, comp, eval_delta);
     }
 
-    Float pdf(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-        return ref_->pdf(geom, comp, wi, wo);
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int comp, TransDir trans_dir, bool eval_delta) const override {
+        return ref_->eval(geom, wi, wo, comp, trans_dir, eval_delta);
     }
 
-    virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3 wi) const override {
-        return ref_->pdf_comp(geom, comp, wi);
+    virtual Vec3 reflectance(const PointGeometry& geom) const override {
+        return ref_->reflectance(geom);
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, int comp, Vec3 wi, Vec3 wo) const override {
-        return ref_->eval(geom, comp, wi, wo);
+    virtual bool is_specular_component(int comp) const override {
+        return ref_->is_specular_component(comp);
     }
 };
 

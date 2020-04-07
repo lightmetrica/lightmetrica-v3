@@ -53,51 +53,45 @@ public:
 
 public:
     virtual void construct(const Json& prop) override {
-        if (auto it = prop.find("mapKd"); it != prop.end()) {
-            mapKd_ = comp::get<Texture>(*it);
-        }
-        else {
-            Kd_ = json::value(prop, "Kd", Vec3(1_f));
-        }
+        mapKd_ = json::comp_ref_or_nullptr<Texture>(prop, "mapKd");
+        Kd_ = json::value(prop, "Kd", Vec3(1_f));
     }
 
-    virtual bool is_specular(const PointGeometry&, int) const override {
-        return false;
+    virtual ComponentSample sample_component(const ComponentSampleU&, const PointGeometry&) const override {
+        return { 0, 1_f };
     }
 
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-        const auto[n, u, v] = geom.orthonormal_basis(wi);
+    virtual Float pdf_component(int, const PointGeometry&) const override {
+        return 1_f;
+    }
+
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& geom, Vec3 wi, int, TransDir) const override {
+        const auto[n, u, v] = geom.orthonormal_basis_twosided(wi);
         const auto Kd = mapKd_ ? mapKd_->eval(geom.t) : Kd_;
-        const auto d = math::sample_cosine_weighted(rng);
-        return MaterialDirectionSample{
+        const auto d = math::sample_cosine_weighted(us.ud);
+        return DirectionSample{
             u*d.x + v * d.y + n * d.z,
-            SurfaceComp::DontCare,
             Kd
         };
     }
 
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng& rng, const PointGeometry& geom, int, Vec3 wi) const override {
-        return sample(rng, geom, wi)->wo;
-    }
-
-    virtual std::optional<Vec3> reflectance(const PointGeometry& geom, int) const override {
+    virtual Vec3 reflectance(const PointGeometry& geom) const override {
         return mapKd_ ? mapKd_->eval(geom.t) : Kd_;
     }
 
-    virtual Float pdf(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, bool) const override {
         return geom.opposite(wi, wo) ? 0_f : 1_f / Pi;
     }
 
-    virtual Float pdf_comp(const PointGeometry&, int, Vec3) const override {
-        return 1_f;
-    }
-
-    virtual Vec3 eval(const PointGeometry& geom, int, Vec3 wi, Vec3 wo) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, TransDir, bool) const override {
         if (geom.opposite(wi, wo)) {
             return {};
         }
-        const auto a = (mapKd_ && mapKd_->has_alpha()) ? mapKd_->eval_alpha(geom.t) : 1_f;
-        return (mapKd_ ? mapKd_->eval(geom.t) : Kd_) * (a / Pi);
+        return (mapKd_ ? mapKd_->eval(geom.t) : Kd_) / Pi;
+    }
+
+    virtual bool is_specular_component(int) const override {
+        return false;
     }
 };
 

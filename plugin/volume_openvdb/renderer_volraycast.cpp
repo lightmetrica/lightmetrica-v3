@@ -5,11 +5,13 @@
 
 #include <lm/core.h>
 #include <lm/renderer.h>
+#include <lm/camera.h>
 #include <lm/film.h>
 #include <lm/volume.h>
 #include <lm/scene.h>
 #include <lm/phase.h>
 #include <lm/scheduler.h>
+#include <lm/path.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -51,7 +53,7 @@ public:
     
     // Assume volume stores density of the extinction coefficient and
     // densityScale_ is multipled to the evaluated density value.
-    virtual void render() const override {
+    virtual Json render() const override {
         film_->clear();
         const auto size = film_->size();
 
@@ -61,7 +63,7 @@ public:
             const int y = int(pixelIndex / size.w);
 
             // Generate primary ray
-            const auto ray = scene_->primary_ray({(x+.5_f)/size.w, (y+.5_f)/size.h}, film_->aspect_ratio());
+            const auto ray = path::primary_ray(scene_, {(x+.5_f)/size.w, (y+.5_f)/size.h});
 
             // Ray marching
             Vec3 L(0_f);
@@ -103,6 +105,8 @@ public:
             // Record to the film
             film_->set_pixel(x, y, L);
         });
+
+        return {};
     }
 };
 

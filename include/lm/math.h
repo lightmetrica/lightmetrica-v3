@@ -32,6 +32,8 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 // ------------------------------------------------------------------------------------------------
 
+#pragma region Basic types and constants
+
 // Default math types deligated to glm library
 using Vec2 = glm::tvec2<Float>;     //!< 2d vector
 using Vec3 = glm::tvec3<Float>;     //!< 3d vector
@@ -53,7 +55,11 @@ constexpr Float Inf = 1e+10_f;                  //!< Big number
 constexpr Float Eps = 1e-4_f;                   //!< Error tolerance 
 constexpr Float Pi  = 3.14159265358979323846_f; //!< Value of Pi
 
+#pragma endregion
+
 // ------------------------------------------------------------------------------------------------
+
+#pragma region Ray and bound
 
 /*!
     \brief Ray.
@@ -173,10 +179,25 @@ struct Bound {
 };
 
 /*!
-    @}
+    \brief Sphere bound.
 */
+struct SphereBound {
+    Vec3 center;        //!< Center of the sphere.
+    Float radius;       //!< Radius of the sphere.
+
+    //! \cond
+    template <typename Archive>
+    void serialize(Archive& ar) {
+        ar(center, radius);
+    }
+    //! \endcond
+};
+
+#pragma endregion
 
 // ------------------------------------------------------------------------------------------------
+
+#pragma region Random number generator
 
 LM_NAMESPACE_BEGIN(detail)
 
@@ -184,6 +205,7 @@ class RngImplBase {
 private:
     std::mt19937 eng_;
     std::uniform_real_distribution<double> dist_;  // Always use double
+    std::uniform_int_distribution<int> dist_int_;
 
 protected:
     RngImplBase() {
@@ -194,6 +216,7 @@ protected:
         eng_.seed(seed);
     }
     double u() { return dist_(eng_); }
+    int u_int() { return dist_int_(eng_); }
 };
 
 template <typename F>
@@ -205,6 +228,17 @@ public:
     RngImpl() = default;
     RngImpl(int seed) : RngImplBase(seed) {}
     using RngImplBase::u;
+    using RngImplBase::u_int;
+
+    template <typename T>
+    T next() {
+        T us;
+        const int N = sizeof(T) / sizeof(double);
+        for (int i = 0; i < N; i++) {
+            *(reinterpret_cast<double*>(&us) + i) = u();
+        }
+        return us;
+    }
 };
 
 template <>
@@ -232,14 +266,12 @@ public:
         assert(rf < 1.f);
         return rf;
     }
+
+    using RngImplBase::u_int;
 };
 
 LM_NAMESPACE_END(detail)
 
-/*!
-    \addtogroup math
-    @{
-*/
 
 /*!
     \brief Random number generator.
@@ -266,7 +298,11 @@ LM_NAMESPACE_END(detail)
 */
 using Rng = detail::RngImpl<Float>;
 
+#pragma endregion
+
 // ------------------------------------------------------------------------------------------------
+
+#pragma region Discrete distributions
 
 /*!
     \brief 1d discrete distribution.
@@ -321,8 +357,8 @@ struct Dist {
         \param rn Random number generator.
         \return Sampled index.
     */
-    int sample(Rng& rn) const {
-        const auto it = std::upper_bound(c.begin(), c.end(), rn.u());
+    int sample(Float u) const {
+        const auto it = std::upper_bound(c.begin(), c.end(), u);
         return std::clamp(int(std::distance(c.begin(), it)) - 1, 0, int(c.size()) - 2);
     }
 };
@@ -381,12 +417,14 @@ struct Dist2 {
         \param rn Random number generator.
         \return Sampled position.
     */
-    Vec2 sample(Rng& rn) const {
-        const int y = m.sample(rn);
-        const int x = ds[y].sample(rn);
-        return Vec2((x + rn.u()) / w, (y + rn.u()) / h);
+    Vec2 sample(Vec4 u) const {
+        const int y = m.sample(u[0]);
+        const int x = ds[y].sample(u[1]);
+        return Vec2((x + u[2]) / w, (y + u[3]) / h);
     }
 };
+
+#pragma endregion
 
 /*!
     @}
@@ -401,6 +439,8 @@ LM_NAMESPACE_BEGIN(math)
     @{
 */
 
+#pragma region Random number seed
+
 /*!
     \brief Generate random number for seed.
     \return Random seed.
@@ -409,37 +449,9 @@ static unsigned int rng_seed() {
     return std::random_device{}();
 }
 
-/*!
-    \brief Compute orthogonal basis.
-    \param n Normal vector.
-    
-    \rst
-    This implementation is based on the technique by Duff et al. [Duff2017]_.
+#pragma endregion
 
-    .. [Duff2017] Duff et al., Building an Orthonormal Basis, Revisited., JCGT, 2017.
-    \endrst
-*/
-static std::tuple<Vec3, Vec3> orthonormal_basis(Vec3 n) {
-    const auto s = copysign(1_f, n.z);
-    const auto a = -1_f / (s + n.z);
-    const auto b = n.x * n.y * a;
-    const Vec3 u(1_f + s * n.x * n.x * a, s * b, -s * n.x);
-    const Vec3 v(b, s + n.y * n.y * a, -n.y);
-    return { u, v };
-}
-
-/*!
-    \brief Interpolation with barycentric coordinates.
-    \param a A value associated with the first point on the triangle.
-    \param b A value associated with the second point on the triangle.
-    \param c A value associated with the third point on the triangle.
-    \param uv Ratio of interpolation in [0,1]^2.
-    \return Interpolated value.
-*/
-template <typename VecT>
-static VecT mix_barycentric(VecT a, VecT b, VecT c, Vec2 uv) {
-    return a * (1_f - uv.x - uv.y) + b * uv.x + c * uv.y;
-}
+#pragma region Basic math functions
 
 /*!
     \brief Check if components of a vector are all zeros.
@@ -504,49 +516,55 @@ static RefractionResult refraction(Vec3 wi, Vec3 n, Float eta) {
     return {eta*(n*t-wi)-n*safe_sqrt(t2), false};
 }
 
+#pragma endregion
+
+#pragma region Geometry related
+
 /*!
-    \brief Cosine-weighted direction sampling.
-    \param rng Random number generator.
-    \return Sampled value.
+    \brief Compute orthogonal basis.
+    \param n Normal vector.
+    
+    \rst
+    This implementation is based on the technique by Duff et al. [Duff2017]_.
+
+    .. [Duff2017] Duff et al., Building an Orthonormal Basis, Revisited., JCGT, 2017.
+    \endrst
 */
-static Vec3 sample_cosine_weighted(Rng& rng) {
-    const auto r = safe_sqrt(rng.u());
-    const auto t = 2_f * Pi * rng.u();
-    const auto x = r * std::cos(t);
-    const auto y = r * std::sin(t);
-    return { x, y, safe_sqrt(1_f - x*x - y*y) };
+static std::tuple<Vec3, Vec3> orthonormal_basis(Vec3 n) {
+    const auto s = copysign(1_f, n.z);
+    const auto a = -1_f / (s + n.z);
+    const auto b = n.x * n.y * a;
+    const Vec3 u(1_f + s * n.x * n.x * a, s * b, -s * n.x);
+    const Vec3 v(b, s + n.y * n.y * a, -n.y);
+    return { u, v };
 }
 
 /*!
-    \brief Uniformly sample a direction from an sphere.
-    \param rng Random number generator.
-    \return Sampled value.
+    \brief Compute geometry normal.
+    \param p1 First point.
+    \param p2 Second point.
+    \param p3 Third point.
+    \return Geometry normal.
+
+    \rst
+    Note that the three points must be given in counter-clockwised order.
+    \endrst
 */
-static Vec3 sample_uniform_sphere(Rng& rng) {
-    const auto z = 1_f - 2_f*rng.u();
-    const auto r = safe_sqrt(1_f - z*z);
-    const auto t = 2_f * Pi * rng.u();
-    const auto x = r * std::cos(t);
-    const auto y = r * std::sin(t);
-    return { x, y, z };
+static Vec3 geometry_normal(Vec3 p1, Vec3 p2, Vec3 p3) {
+    return glm::normalize(glm::cross(p2 - p1, p3 - p1));
 }
 
 /*!
-    \brief Pdf of uniformly sampled directions from an sphere in solid angle measure.
-    \return Evaluated density.
+    \brief Interpolation with barycentric coordinates.
+    \param a A value associated with the first point on the triangle.
+    \param b A value associated with the second point on the triangle.
+    \param c A value associated with the third point on the triangle.
+    \param uv Ratio of interpolation in [0,1]^2.
+    \return Interpolated value.
 */
-static constexpr Float pdf_uniform_sphere() {
-    return 1_f / (4_f * Pi);
-}
-
-/*!
-    \brief Balance heuristics.
-*/
-static Float balance_heuristic(Float p1, Float p2) {
-    if (p1 == 0_f && p2 == 0_f) {
-        return 0_f;
-    }
-    return p1 / (p1 + p2);
+template <typename VecT>
+static VecT mix_barycentric(VecT a, VecT b, VecT c, Vec2 uv) {
+    return a * (1_f - uv.x - uv.y) + b * uv.x + c * uv.y;
 }
 
 /*!
@@ -562,6 +580,123 @@ static Vec3 spherical_to_cartesian(Float theta, Float phi) {
 }
 
 /*!
+    \brief Compute sin in local shading coordinates.
+*/
+static Float local_sin(Vec3 local_d) {
+    return safe_sqrt(1_f - local_d.z * local_d.z);
+}
+
+/*!
+    \brief Compute cos in local shading coordinates.
+*/
+static Float local_cos(Vec3 local_d) {
+    return local_d.z;
+}
+
+/*!
+    \brief Compute tan in local shading coordinates.
+*/
+static Float local_tan(Vec3 local_d) {
+    const auto t = 1_f - local_d.z * local_d.z;
+    return t <= 0_f ? 0_f : std::sqrt(t) / local_d.z;
+}
+
+/*!
+    \brief Compute tan^2 in local shading coordinates.
+*/
+static Float local_tan2(Vec3 local_d) {
+    if (local_d.z == 0_f) {
+        return Inf;
+    }
+    const auto cos2 = local_d.z * local_d.z;
+    const auto sin2 = 1_f - cos2;
+    return sin2 <= 0_f ? 0_f : sin2 / cos2;
+}
+
+#pragma endregion
+
+#pragma region Sampling related
+
+/*!
+    \brief Uniform sampling on unit disk.
+    \param u Random variable in [0,1]^2.
+    \return Sampled value.
+*/
+static Vec2 sample_uniform_disk(Vec2 u) {
+    const auto r = safe_sqrt(u[0]);
+    const auto t = 2_f * Pi * u[1];
+    const auto x = r * std::cos(t);
+    const auto y = r * std::sin(t);
+    return { x, y };
+}
+
+/*!
+    \brief PDF of uniform distribution on unit disk.
+    \return Evaluated PDF.
+*/
+static constexpr Float pdf_uniform_disk() {
+    return 1_f / Pi;
+}
+
+/*!
+    \brief Cosine-weighted direction sampling.
+    \param u Random variable in [0,1]^2.
+    \return Sampled value.
+*/
+static Vec3 sample_cosine_weighted(Vec2 u) {
+    const auto r = safe_sqrt(u[0]);
+    const auto t = 2_f * Pi * u[1];
+    const auto x = r * std::cos(t);
+    const auto y = r * std::sin(t);
+    return { x, y, safe_sqrt(1_f - x*x - y*y) };
+}
+
+/*!
+    \brief Evauate PDF of cosine-weighted distribution on a sphere in projected solid angle measure.
+    \return Evaluated PDF.
+*/
+static constexpr Float pdf_cosine_weighted_projSA() {
+    return 1_f / Pi;
+}
+
+/*!
+    \brief Uniformly sample a direction from a sphere.
+    \param u Random variable in [0,1]^2.
+    \return Sampled value.
+*/
+static Vec3 sample_uniform_sphere(Vec2 u) {
+    const auto z = 1_f - 2_f * u[0];
+    const auto r = safe_sqrt(1_f - z*z);
+    const auto t = 2_f * Pi * u[1];
+    const auto x = r * std::cos(t);
+    const auto y = r * std::sin(t);
+    return { x, y, z };
+}
+
+/*!
+    \brief PDF of uniform direction on a sphere in solid angle measure.
+    \return Evaluated density.
+*/
+static constexpr Float pdf_uniform_sphere() {
+    return 1_f / (4_f * Pi);
+}
+
+/*!
+    \brief Compute balance heuristics.
+    \param p1 Evalauted PDF for the first strategy.
+    \param p2 Evaluated PDF for the second strategy.
+    \return Evaluated weight.
+*/
+static Float balance_heuristic(Float p1, Float p2) {
+    if (p1 == 0_f && p2 == 0_f) {
+        return 0_f;
+    }
+    return p1 / (p1 + p2);
+}
+
+#pragma endregion
+
+/*!
     @}
 */
 
@@ -573,6 +708,8 @@ LM_NAMESPACE_END(math)
     \addtogroup math
     @{
 */
+
+#pragma region Transform
 
 /*!
     \brief Transform.
@@ -600,6 +737,8 @@ struct Transform {
         J = std::abs(glm::determinant(Mat3(M)));
     }
 };
+
+#pragma endregion
 
 /*!
     @}

@@ -30,6 +30,7 @@
 #include "medium.h"
 #include "light.h"
 #include "scene.h"
+#include "path.h"
 #include "accel.h"
 #include "film.h"
 #include "model.h"

@@ -9,35 +9,35 @@
 #include <lm/scene.h>
 #include <lm/film.h>
 #include <lm/scheduler.h>
+#include <lm/path.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-enum class PTMode {
-    Naive,
-    NEE,
-    MIS,
-};
-
-enum class ImageSampleMode {
-    Pixel,
-    Image,
-};
-
-// ------------------------------------------------------------------------------------------------
-
 class Renderer_PT : public Renderer {
 private:
-    Scene* scene_;
-    Film* film_;
-    int max_length_;
-    std::optional<unsigned int> seed_;
-    PTMode pt_mode_;
-    ImageSampleMode image_sample_mode_;
-    Component::Ptr<scheduler::Scheduler> sched_;
+    enum class SamplingMode {
+        Naive,
+        NEE,
+        MIS,
+    };
+
+    enum class PrimaryRaySampleMode {
+        Pixel,
+        Image,
+    };
+
+private:
+    Scene* scene_;                                      // Reference to scene asset
+    Film* film_;                                        // Reference to film asset for output
+    int max_verts_;                                     // Maximum number of path vertices
+    std::optional<unsigned int> seed_;                  // Random seed
+    SamplingMode sampling_mode_;                        // Sampling mode
+    PrimaryRaySampleMode primary_ray_sampling_mode_;    // Sampling mode of the primary ray
+    Component::Ptr<scheduler::Scheduler> sched_;        // Scheduler for parallel processing
 
 public:
     LM_SERIALIZE_IMPL(ar) {
-        ar(scene_, film_, max_length_, pt_mode_, sched_);
+        ar(scene_, film_, max_verts_, sampling_mode_, sched_);
     }
 
     virtual void foreach_underlying(const ComponentVisitor& visit) override {
@@ -50,44 +50,40 @@ public:
     virtual void construct(const Json& prop) override {
         scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
-        max_length_ = json::value<int>(prop, "max_length");
+        max_verts_ = json::value<int>(prop, "max_verts");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
         {
-            const auto s = json::value<std::string>(prop, "mode", "mis");
-            if (s == "naive") {
-                pt_mode_ = PTMode::Naive;
-            }
-            else if (s == "nee") {
-                pt_mode_ = PTMode::NEE;
-            }
-            else if (s == "mis") {
-                pt_mode_ = PTMode::MIS;
-            }
+            const auto s = json::value<std::string>(prop, "sampling_mode", "mis");
+            if (s == "naive")    sampling_mode_ = SamplingMode::Naive;
+            else if (s == "nee") sampling_mode_ = SamplingMode::NEE;
+            else if (s == "mis") sampling_mode_ = SamplingMode::MIS;
         }
         {
-            const auto schedName = json::value<std::string>(prop, "scheduler");
-            const auto s = json::value<std::string>(prop, "image_sample_mode", "pixel");
+
+            const auto name = json::value<std::string>(prop, "scheduler");
+            const auto s = json::value<std::string>(prop, "primary_ray_sampling_mode", "pixel");
             if (s == "pixel") {
-                image_sample_mode_ = ImageSampleMode::Pixel;
+                primary_ray_sampling_mode_ = PrimaryRaySampleMode::Pixel;
                 sched_ = comp::create<scheduler::Scheduler>(
-                    "scheduler::spp::" + schedName, make_loc("scheduler"), prop);
+                    "scheduler::spp::" + name, make_loc("scheduler"), prop);
             }
             else if (s == "image") {
-                image_sample_mode_ = ImageSampleMode::Image;
+                primary_ray_sampling_mode_ = PrimaryRaySampleMode::Image;
                 sched_ = comp::create<scheduler::Scheduler>(
-                    "scheduler::spi::" + schedName, make_loc("scheduler"), prop);
+                    "scheduler::spi::" + name, make_loc("scheduler"), prop);
             }
         }
     }
 
-    virtual void render() const override {
-		scene_->require_renderable();
+public:
+    virtual Json render() const override {
+        scene_->require_renderable();
 
         // Clear film
         film_->clear();
         const auto size = film_->size();
 
-        // Dispatch rendering
+        // Execute parallel process
         const auto processed = sched_->run([&](long long pixel_index, long long, int threadid) {
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
@@ -96,7 +92,7 @@ public:
 
             // Sample window
             const auto window = [&]() -> Vec4 {
-                if (image_sample_mode_ == ImageSampleMode::Pixel) {
+                if (primary_ray_sampling_mode_ == PrimaryRaySampleMode::Pixel) {
                     const int x = int(pixel_index % size.w);
                     const int y = int(pixel_index / size.w);
                     const auto dx = 1_f / size.w;
@@ -110,96 +106,117 @@ public:
 
             // ------------------------------------------------------------------------------------
 
-            // Path throughput
-            Vec3 throughput(1_f);
+            // Sample initial vertex
+            const auto sE = path::sample_position(rng, scene_, TransDir::EL);
+            const auto sE_comp = path::sample_component(rng, scene_, sE->sp);
+            auto sp = sE->sp;
+            int comp = sE_comp.comp;
+            auto throughput = sE->weight * sE_comp.weight;
 
-            // Incident direction and current surface point
-            Vec3 wi = {};
-            auto sp = SceneInteraction::make_camera_terminator(window, film_->aspect_ratio());
-
-            // Raster position
-            Vec2 raster_pos{};
+            // ------------------------------------------------------------------------------------
 
             // Perform random walk
-            for (int length = 0; length < max_length_; length++) {
-                // Sample a ray
-                const auto s = scene_->sample_ray(rng, sp, wi);
-                if (!s || math::is_zero(s->weight)) {
-                    break;
-                }
-                // Compute raster position for the primary ray
-                if (length == 0) {
-                    raster_pos = *scene_->raster_position(s->wo, film_->aspect_ratio());
-                }
+            Vec3 wi{};
+            Vec2 raster_pos{};
+            for (int num_verts = 1; num_verts < max_verts_; num_verts++) {
+                // Sample NEE edge
 
-                // --------------------------------------------------------------------------------
-
-                // Sample a NEE edge
-                const bool nee = [&]() {
-                    // Ignore NEE edge with naive direct sampling mode
-                    if (pt_mode_ == PTMode::Naive) {
+                // Flag indicating if the nee edge is samplable
+                const bool samplable_by_nee = [&]() {
+                    if (sampling_mode_ == SamplingMode::Naive) {
+                        // Skip if sampling mode is naive
                         return false;
                     }
-                    // NEE edge can be samplable if current direction sampler
-                    // (according to BSDF / phase) doesn't contain delta component.
-                    if (image_sample_mode_ == ImageSampleMode::Pixel) {
-                        // Primary ray is not samplable via NEE in the pixel space sample mode
-                        return length > 0 && !scene_->is_specular(s->sp, s->comp);
+                    const auto is_specular = path::is_specular_component(scene_, sp, comp);
+                    if (primary_ray_sampling_mode_ == PrimaryRaySampleMode::Pixel) {
+                        // In pixel sampling mode, the nee edge is only samplable when nv>1
+                        return num_verts > 1 && !is_specular;
                     }
                     else {
-                        // Primary ray is samplable via NEE in the image space sample mode
-                        return !scene_->is_specular(s->sp, s->comp);
+                        return !is_specular;
                     }
                 }();
-                if (nee) [&] {
+
+                if (samplable_by_nee) [&]{
                     // Sample a light
-                    const auto sL = scene_->sample_direct_light(rng, s->sp);
+                    const auto sL = path::sample_direct(rng, scene_, sp, TransDir::LE);
                     if (!sL) {
                         return;
                     }
-                    if (!scene_->visible(s->sp, sL->sp)) {
+                    if (!scene_->visible(sp, sL->sp)) {
                         return;
                     }
 
                     // Recompute raster position for the primary edge
-                    const auto rp = [&]() -> std::optional<Vec2> {
-                        if (length == 0)
-                            return scene_->raster_position(-sL->wo, film_->aspect_ratio());
-                        else
-                            return raster_pos;
-                    }();
-                    if (!rp) {
+                    Vec2 rp = raster_pos;
+                    if (num_verts == 1) {
+                        const auto rp_ = path::raster_position(scene_, -sL->wo);
+                        if (!rp_) { return; }
+                        rp = *rp_;
+                    }
+
+                    // Evaluate BSDF
+                    const auto wo = -sL->wo;
+                    const auto fs = path::eval_contrb_direction(scene_, sp, wi, wo, comp, TransDir::EL, true);
+                    if (math::is_zero(fs)) {
                         return;
                     }
 
-                    // This light is not samplable by direct strategy
-                    // if the light contain delta component or degenerated.
-                    const bool directL = !scene_->is_specular(sL->sp, sL->comp) && !sL->sp.geom.degenerated;
+                    // Evaluate MIS weight
+                    const auto mis_w = [&]() -> Float {
+                        // Skip if sampling mode is NEE
+                        if (sampling_mode_ == SamplingMode::NEE) {
+                            return 1_f;
+                        }
 
-                    // Evaluate and accumulate contribution
-                    const auto wo = -sL->wo;
-                    const auto fs = scene_->eval_contrb(s->sp, s->comp, wi, wo);
-                    const auto pdf_sel = scene_->pdf_comp(s->sp, s->comp, wi);
-                    const auto misw = [&]() -> Float {
-                        if (pt_mode_ == PTMode::NEE) {
+                        // When the light is not samplable by BSDF sampling, we will use only NEE.
+                        // This includes, for instance, the light sampling for
+                        // directional light, environment light, point light, etc.
+                        const bool is_specular_L = path::is_specular_component(scene_, sL->sp, {});
+                        const bool samplable_by_bsdf = !is_specular_L && !sL->sp.geom.degenerated;
+                        if (!samplable_by_bsdf) {
                             return 1_f;
                         }
-                        if (!directL) {
-                            return 1_f;
-                        }
-                        // Compute MIS weight only when wo can be sampled with both strategies.
-                        return math::balance_heuristic(
-                            scene_->pdf_direct_light(s->sp, sL->sp, sL->comp, sL->wo), 
-                            scene_->pdf(s->sp, s->comp, wi, wo));
+
+                        // MIS weight using balance heuristic
+                        const auto p_light = path::pdf_direct(scene_, sp, sL->sp, sL->wo, true);
+                        const auto p_bsdf = path::pdf_direction(scene_, sp, wi, wo, comp, true);
+                        return math::balance_heuristic(p_light, p_bsdf);
                     }();
-                    const auto C = throughput / pdf_sel * fs * sL->weight * misw;
-                    film_->splat(*rp, C);
+
+                    // Accumulate contribution
+                    const auto C = throughput * fs * sL->weight * mis_w;
+                    film_->splat(rp, C);
                 }();
 
                 // --------------------------------------------------------------------------------
 
+                // Sample direction
+                const auto s = [&]() -> std::optional<path::DirectionSample> {
+                    if (num_verts == 1) {
+                        const auto [x, y, w, h] = window.data.data;
+                        const auto ud = Vec2(x+w*rng.u(), y+h*rng.u());
+                        return path::sample_direction({ ud, rng.next<Vec2>() }, scene_, sp, wi, comp, TransDir::EL);
+                    }
+                    else {
+                        return path::sample_direction(rng, scene_, sp, wi, comp, TransDir::EL);
+                    }
+                }();
+                if (!s) {
+                    break;
+                }
+
+                // --------------------------------------------------------------------------------
+
+                // Compute and cache raster position
+                if (num_verts == 1) {
+                    raster_pos = *path::raster_position(scene_, s->wo);
+                }
+
+                // --------------------------------------------------------------------------------
+
                 // Intersection to next surface
-                const auto hit = scene_->intersect(s->ray());
+                const auto hit = scene_->intersect({ sp.geom.p, s->wo });
                 if (!hit) {
                     break;
                 }
@@ -211,40 +228,55 @@ public:
 
                 // --------------------------------------------------------------------------------
 
-                // Accumulate contribution from light
-                const bool direct = [&]() -> bool {
-                    // Direct strategy is samplable if the ray hit with light
-                    if (pt_mode_ == PTMode::NEE) {
-                        // In NEE mode, use direct strategy only when a NEE edge cannot be sampled.
-                        return !nee && scene_->is_light(*hit);
+                // Contribution from direct hit against a light
+
+                // Flag indicating if the light can be samplable by direct hit
+                const bool samplable_by_direct_hit = [&]() {
+                    if (sampling_mode_ == SamplingMode::NEE) {
+                        // Accumulate contribution from the direct hit only when a NEE edge is not samplable
+                        return !samplable_by_nee;
                     }
                     else {
-                        return scene_->is_light(*hit);
+                        return true;
                     }
                 }();
-                if (direct) {
-                    const auto woL = -s->wo;
-                    const auto fs = scene_->eval_contrb_endpoint(*hit, woL);
-                    const auto misw = [&]() -> Float {
-                        if (pt_mode_ == PTMode::Naive) {
-                            return 1_f;
-                        }
-                        if (!nee) {
-                            return 1_f;
-                        }
-                        // The continuation edge can be sampled via both direct and NEE
-                        return math::balance_heuristic(
-                            scene_->pdf(s->sp, s->comp, wi, s->wo),
-                            scene_->pdf_direct_light(s->sp, *hit, -1, woL));
-                    }();
-                    const auto C = throughput * fs * misw;
-                    film_->splat(raster_pos, C);
-                }
 
+                if (samplable_by_direct_hit && scene_->is_light(*hit)) [&]{
+                    // Compute contribution from the direct hit
+                    const auto spL = hit->as_type(SceneInteraction::LightEndpoint);
+                    const auto woL = -s->wo;
+                    const auto fs = path::eval_contrb_direction(scene_, spL, {}, woL, comp, TransDir::LE, true);
+                    const auto mis_w = [&]() -> Float {
+                        // Skip if sampling mode is naive
+                        if (sampling_mode_ == SamplingMode::Naive) {
+                            return 1_f;
+                        }
+
+                        // The weight is one if the hit cannot be sampled by nee
+                        if (!samplable_by_nee) {
+                            return 1_f;
+                        }
+
+                        // MIS weight using balance heuristic
+                        const auto pdf_bsdf = path::pdf_direction(scene_, sp, wi, s->wo, comp, true);
+                        const auto pdf_light = path::pdf_direct(scene_, sp, spL, woL, true);
+                        return math::balance_heuristic(pdf_bsdf, pdf_light);
+                    }();
+
+                    // Accumulate contribution
+                    const auto C = throughput * fs * mis_w;
+                    film_->splat(raster_pos, C);
+                }();
+                
                 // --------------------------------------------------------------------------------
 
+                // Termination on a hit with environment
+                if (hit->geom.infinite) {
+                    break;
+                }
+
                 // Russian roulette
-                if (length > 3) {
+                if (num_verts > 5) {
                     const auto q = glm::max(.2_f, 1_f - glm::compMax(throughput));
                     if (rng.u() < q) {
                         break;
@@ -254,21 +286,30 @@ public:
 
                 // --------------------------------------------------------------------------------
 
-                // Update
+                // Sample component
+                const auto s_comp = path::sample_component(rng, scene_, *hit);
+                throughput *= s_comp.weight;
+
+                // --------------------------------------------------------------------------------
+
+                // Update information
                 wi = -s->wo;
                 sp = *hit;
+                comp = s_comp.comp;
             }
         });
 
         // ----------------------------------------------------------------------------------------
         
         // Rescale film
-        if (image_sample_mode_ == ImageSampleMode::Pixel) {
+        if (primary_ray_sampling_mode_ == PrimaryRaySampleMode::Pixel) {
             film_->rescale(1_f / processed);
         }
         else {
             film_->rescale(Float(size.w * size.h) / processed);
         }
+
+        return { {"processed", processed} };
     }
 };
 

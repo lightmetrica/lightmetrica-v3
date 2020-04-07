@@ -1,4 +1,4 @@
-.. _managing_experimens:
+.. _managing_experiments:
 
 Managing experiments
 ######################
@@ -192,6 +192,8 @@ The recommended directory structure is almost same as what we saw in :ref:`use_c
         - .lmenv_debug              # (4)
         - ...
         - .gitignore
+
+.. _managing_build:
 
 Managing build
 --------------------------------

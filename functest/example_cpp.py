@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.3.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -65,7 +65,7 @@ out = os.path.join(outdir, 'pt.pfm')
 run_example('pt', [
     os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     out,
-    10, 20,
+    5, 20,
     width, height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,
@@ -77,7 +77,7 @@ out = os.path.join(outdir, 'pt2.pfm')
 run_example('pt', [
     os.path.join(env.scene_path, 'cornell_box/CornellBox-Sphere.obj'),
     out,
-    10, 20,
+    5, 20,
     width, height,
     0, 1, 5,
     0, 1, 0,
@@ -95,7 +95,7 @@ out = os.path.join(outdir, 'custom_renderer.pfm')
 run_example('custom_renderer', [
     os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
     out,
-    10,
+    5,
     width, height,
     5.101118, 1.083746, -2.756308,
     4.167568, 1.078925, -2.397892,

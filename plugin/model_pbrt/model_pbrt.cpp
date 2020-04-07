@@ -72,17 +72,18 @@ public:
         };
     }
 
-    virtual Point surface_point(int face, Vec2 uv) const override {
+    virtual InterpolatedPoint surface_point(int face, Vec2 uv) const override {
         const auto index = pbrt_mesh_->index[face];
         const auto p1 = convert_pbrt_vec3(pbrt_mesh_->vertex[index.x]);
         const auto p2 = convert_pbrt_vec3(pbrt_mesh_->vertex[index.y]);
         const auto p3 = convert_pbrt_vec3(pbrt_mesh_->vertex[index.z]);
-        Point p;
+        InterpolatedPoint p;
         // Position
         p.p = math::mix_barycentric(p1, p2, p3, uv);
         // Normal
+        p.gn = glm::normalize(glm::cross(p2 - p1, p3 - p1));
         p.n = pbrt_mesh_->normal.empty()
-            ? glm::normalize(glm::cross(p2 - p1, p3 - p1))
+            ? p.gn
             : glm::normalize(math::mix_barycentric(
                 convert_pbrt_vec3(pbrt_mesh_->normal[index.x]),
                 convert_pbrt_vec3(pbrt_mesh_->normal[index.y]),

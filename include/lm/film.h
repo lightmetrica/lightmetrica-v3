@@ -147,7 +147,7 @@ public:
         \brief Get aspect ratio.
         \return Aspect ratio.
     */
-    Float aspect_ratio() const {
+    Float aspect() const {
         const auto [w, h] = size();
         return Float(w) / h;
     }

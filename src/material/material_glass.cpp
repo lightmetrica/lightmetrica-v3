@@ -70,79 +70,12 @@ public:
         ar(Ni_);
     }
 
-public:
-    virtual void construct(const Json& prop) override {
-        Ni_ = json::value<Float>(prop, "Ni");
-    }
-
-    virtual bool is_specular(const PointGeometry&, int) const override {
-        return true;
-    }
-
-    virtual std::optional<MaterialDirectionSample> sample(Rng& rng, const PointGeometry& geom, Vec3 wi) const override {
-        const bool in = glm::dot(wi, geom.n) > 0_f;
-        const auto n = in ? geom.n : -geom.n;
-        const auto eta = in ? 1_f / Ni_ : Ni_;
-        const auto [wt, total] = math::refraction(wi, n, eta);
-        const auto Fr = total ? 1_f : fresnel(wi, wt, geom);
-        if (rng.u() < Fr) {
-            // Reflection
-            return MaterialDirectionSample{
-                math::reflection(wi, geom.n),
-                0,  
-                Vec3(1_f)   // Fr / p_sel = Fr
-            };
-        }
-        // Refraction
-        return MaterialDirectionSample{
-            wt,
-            1,
-            Vec3(eta*eta)   // eta*eta*(1-Fr) / p_sel = eta*eta
-        };
-    }
-
-    virtual std::optional<Vec3> sample_direction_given_comp(Rng&, const PointGeometry& geom, int comp, Vec3 wi) const override {
-        if (comp == 0) {
-            return math::reflection(wi, geom.n);
-        }
-        else if (comp == 1) {
-            const bool in = glm::dot(wi, geom.n) > 0_f;
-            const auto n = in ? geom.n : -geom.n;
-            const auto eta = in ? 1_f / Ni_ : Ni_;
-            const auto [wt, total] = math::refraction(wi, n, eta);
-            LM_UNUSED(total);
-            return wt;
-        }
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual Float pdf_comp(const PointGeometry& geom, int comp, Vec3 wi) const override {
-        const bool in = glm::dot(wi, geom.n) > 0_f;
-        const auto n = in ? geom.n : -geom.n;
-        const auto eta = in ? 1_f / Ni_ : Ni_;
-        const auto [wt, total] = math::refraction(wi, n, eta);
-        if (total) {
-            return 1_f;
-        }
-        const auto Fr = fresnel(wi, wt, geom);
-        if (comp == 0) {
-            return Fr;
-        }
-        else if (comp == 1) {
-            return 1_f;
-        }
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual Float pdf(const PointGeometry&, int, Vec3, Vec3) const override {
-        LM_UNREACHABLE_RETURN();
-    }
-
-    virtual Vec3 eval(const PointGeometry&, int, Vec3, Vec3) const override {
-        LM_UNREACHABLE_RETURN();
-    }
-
 private:
+    // Energy compensation for importance transport
+    Float refr_correction(Float eta, TransDir trans_dir) const {
+        return trans_dir == TransDir::EL ? eta * eta : 1_f;
+    }
+
     // Fresnel term
     Float fresnel(Vec3 wi, Vec3 wt, const PointGeometry& geom) const {
         const bool in = glm::dot(wi, geom.n) > 0_f;
@@ -152,6 +85,115 @@ private:
         const auto r = (1_f - Ni_) / (1_f + Ni_);
         const auto r2 = r * r;
         return r2 + (1_f - r2) * std::pow(1_f - cos, 5_f);
+    }
+
+    // Weight by Fresnel term
+    Float fresnel_weight(const PointGeometry& geom, Vec3 wi, Vec3 wo) const {
+        const bool in = glm::dot(wi, geom.n) > 0_f;
+        const auto n = in ? geom.n : -geom.n;
+        const auto eta = in ? 1_f / Ni_ : Ni_;
+        const auto [wt, total] = math::refraction(wi, n, eta);
+        const auto Fr = total ? 1_f : fresnel(wi, wt, geom);
+
+        // Choose delta component according to the relashionship of wi and wo
+        if (!geom.opposite(wi, wo)) {
+            // Reflection
+            return Fr;
+        }
+        else {
+            // Refraction
+            return 1_f - Fr;
+        }
+    }
+
+public:
+    virtual void construct(const Json& prop) override {
+        Ni_ = json::value<Float>(prop, "Ni");
+    }
+
+    virtual ComponentSample sample_component(const ComponentSampleU&, const PointGeometry&) const override {
+        return { 0, 1_f };
+    }
+
+    virtual Float pdf_component(int, const PointGeometry&) const override {
+        return 1_f;
+    }
+
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, int, TransDir trans_dir) const override {
+        const bool in = glm::dot(wi, geom.n) > 0_f;
+        const auto n = in ? geom.n : -geom.n;
+        const auto eta = in ? 1_f / Ni_ : Ni_;
+        const auto [wt, total] = math::refraction(wi, n, eta);
+        const auto Fr = total ? 1_f : fresnel(wi, wt, geom);
+        if (u.udc[0] < Fr) {
+            // Reflection
+            // Fr / p_sel = 1
+            const auto wo = math::reflection(wi, geom.n);
+            const auto C = Vec3(1_f);
+            return DirectionSample{
+                wo,
+                C
+            };
+        }
+        else {
+            // Refraction
+            // refr_correction*(1-Fr) / p_sel = refr_correction
+            const auto C = Vec3(refr_correction(eta, trans_dir));
+            return DirectionSample{
+                wt,
+                C
+            };
+        }
+    }
+
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, bool eval_delta) const override {
+        if (eval_delta) {
+            return 0_f;
+        }
+
+        const bool in = glm::dot(wi, geom.n) > 0_f;
+        const auto n = in ? geom.n : -geom.n;
+        const auto eta = in ? 1_f / Ni_ : Ni_;
+        const auto [wt, total] = math::refraction(wi, n, eta);
+        const auto Fr = total ? 1_f : fresnel(wi, wt, geom);
+
+        // Choose delta component according to the relashionship of wi and wo
+        if (!geom.opposite(wi, wo)) {
+            // Reflection
+            return Fr;
+        }
+        else {
+            // Refraction
+            return 1_f - Fr;
+        }
+    }
+
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, TransDir trans_dir, bool eval_delta) const override {
+        if (eval_delta) {
+            return Vec3(0_f);
+        }
+
+        const bool in = glm::dot(wi, geom.n) > 0_f;
+        const auto n = in ? geom.n : -geom.n;
+        const auto eta = in ? 1_f / Ni_ : Ni_;
+        const auto [wt, total] = math::refraction(wi, n, eta);
+        const auto Fr = total ? 1_f : fresnel(wi, wt, geom);
+
+        if (!geom.opposite(wi, wo)) {
+            return Vec3(Fr);
+        }
+        else {
+            const auto refr_corr = refr_correction(eta, trans_dir);
+            return Vec3((1_f - Fr) * refr_corr);
+        }
+    }
+
+    virtual Vec3 reflectance(const PointGeometry&) const override {
+        return Vec3(0_f);
+    }
+
+    virtual bool is_specular_component(int) const override {
+        return true;
     }
 };
 

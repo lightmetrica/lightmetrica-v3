@@ -17,24 +17,24 @@ LM_NAMESPACE_BEGIN(debug)
 */
 
 /*!
-    \brief Poll floating-point value.
+    \brief Poll JSON value.
     \param name Query name.
     \param val Value.
 */
-LM_PUBLIC_API void poll_float(const std::string& name, Float val);
+LM_PUBLIC_API void poll(const Json& val);
 
 /*!
-    \brief Function being called on polling floating-point values.
+    \brief Function being called on polling JSON value.
     \param name Query name.
     \param val Value.
 */
-using OnPollFloatFunc = std::function<void(const std::string& name, Float val)>;
+using OnPollFunc = std::function<void(const Json& val)>;
 
 /*!
     \brief Register polling function for floating-point values.
     \param on_poll_float Callback function.
 */
-LM_PUBLIC_API void reg_on_poll_float(const OnPollFloatFunc& on_poll_float);
+LM_PUBLIC_API void reg_on_poll(const OnPollFunc& func);
 
 /*!
     \brief Attach to debugger.
@@ -45,6 +45,17 @@ LM_PUBLIC_API void reg_on_poll_float(const OnPollFloatFunc& on_poll_float);
     \endrst
 */
 LM_PUBLIC_API void attach_to_debugger();
+
+/*!
+    \brief Prints assets managed by the framework.
+    \param visualize_weak_refs Visualize weak references if enabled.
+
+    \rst
+    This function visualizes a tree of assets managed by the framework.
+    If ``visualize_weak_refs`` flag enabled, weak references are also visualized.
+    \endrst
+*/
+LM_PUBLIC_API void print_asset_tree(bool visualize_weak_refs);
 
 /*!
     @}

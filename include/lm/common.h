@@ -119,6 +119,7 @@
         #define WIN32_LEAN_AND_MEAN
     #endif
     #pragma warning(disable:4505)  // unreferenced local function has been removed
+    #pragma warning(disable:4201)  // nonstandard extension used: nameless struct/union
 #endif
 
 // ------------------------------------------------------------------------------------------------
@@ -203,7 +204,7 @@
     TypeName() = delete; \
     LM_DISABLE_COPY_AND_MOVE(TypeName);
 
-#define LM_TBA() LM_PRAGMA(error ("TBA"))
+#define LM_TBA() static_assert(false, "TBA")
 
 // ------------------------------------------------------------------------------------------------
 
@@ -238,6 +239,13 @@ inline void unused(Args&&...) {}
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(LM_NAMESPACE)
 
+// Prevents the variable from optimized away
+#define LM_KEEP_UNUSED(x) \
+    LM_PRAGMA(warning(push)) \
+    LM_PRAGMA(warning(disable:4189)) \
+    { void* volatile dummy = &x; } \
+    LM_PRAGMA(warning(pop))
+
 // ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
@@ -245,7 +253,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 // Forward declarations
 struct ComponentDeleter;  // component.h
 class Component;
-class AssetGroup;             // assets.h
+class AssetGroup;         // assetgroup.h
 class Mesh;               // mesh.h
 class Texture;            // texture.h
 class Material;           // material.h
