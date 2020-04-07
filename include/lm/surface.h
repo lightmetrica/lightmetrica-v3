@@ -399,6 +399,12 @@ static Float convert_pdf_aggregated_to_area(Float pdf_in, const PointGeometry& g
     \param wi Incident direction.
     \param wo Outgoing direction.
     \param trans_dir Transform direction.
+
+    \rst
+    The energy correction term for shading normal [Veach 1998, Sec. 5.3.4].
+    Note that this implementation doesn't prevent "black patch" issue when the incoming direction lies in
+    the region :math:`(\omega_i\cdot N_g)(\omega_i\cdot N_s) < 0` [Veach 1998, Fig. 5.7(b)].
+    \endrst
 */
 static Float shading_normal_correction(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir) {
     const auto local_wi = geom.to_local * wi;

@@ -52,7 +52,7 @@ def render(scene, name, params = {}):
         'output': film.loc(),
         'max_verts': 20,
         'scheduler': 'time',
-        'render_time': 30,
+        'render_time': 10,
         **params
     })
     renderer.render()
@@ -85,7 +85,7 @@ mat = lm.load_material('mat_ut', 'glossy', {
 # ``light::area``
 
 scene.reset()
-lmscene.mitsuba_knob_with_area_light(scene, env.scene_path, mat_knob=mat.loc())
+lmscene.bunny_with_area_light(scene, env.scene_path, mat_knob=mat.loc())
 scene.build()
 img = render(scene, 'pt')
 display_image(img)
@@ -95,7 +95,7 @@ display_image(img)
 # `light::env` `light::envconst`
 
 scene.reset()
-lmscene.mitsuba_knob_with_env_light(
+lmscene.bunny_with_env_light(
     scene, env.scene_path,
     mat_knob=mat.loc(),
     path=os.path.join(env.scene_path, 'flower_road_1k.hdr'),
@@ -111,7 +111,7 @@ display_image(img)
 # `light::point`
 
 scene.reset()
-lmscene.mitsuba_knob_with_point_light(scene, env.scene_path, mat_knob=mat.loc())
+lmscene.bunny_with_point_light(scene, env.scene_path, mat_knob=mat.loc())
 scene.build()
 img = render(scene, 'pt')
 display_image(img)
@@ -121,7 +121,7 @@ display_image(img)
 # `light::directional`
 
 scene.reset()
-lmscene.mitsuba_knob_with_directional_light(scene, env.scene_path, mat_knob=mat.loc())
+lmscene.bunny_with_directional_light(scene, env.scene_path, mat_knob=mat.loc())
 scene.build()
 img = render(scene, 'pt')
 display_image(img)

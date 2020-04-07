@@ -76,7 +76,7 @@ scene = lm.load_scene('scene', 'default', {'accel': accel.loc()})
 mat = lm.load_material('mat_ut', 'diffuse', {
     'Kd': [1,1,1]
 })
-lmscene.mitsuba_knob_with_area_light(scene, env.scene_path, mat_knob=mat.loc())
+lmscene.bunny_with_area_light(scene, env.scene_path, mat_knob=mat.loc())
 scene.build()
 
 # ## Rendering

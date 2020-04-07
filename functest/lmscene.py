@@ -382,3 +382,93 @@ def mitsuba_knob_with_directional_light(scene, scene_path, **kwargs):
     scene.add_primitive({
         'light': light_directional.loc()
     })
+
+# -------------------------------------------------------------------------------------------------
+
+def bunny_base(scene, scene_path, **kwargs):
+    camera = lm.load_camera('camera_main', 'pinhole', {
+        'position': [-0.191925, 2.961061, 4.171464],
+        'center': [-0.185709, 2.478091, 3.295850],
+        'up': [0,1,0],
+        'vfov': 28.841546,
+        'aspect': 16/9
+    })
+    scene.add_primitive({
+        'camera': camera.loc()
+    })
+
+    model = lm.load_model('model_obj', 'wavefrontobj', {
+        'path': os.path.join(scene_path, 'bunny', 'bunny_with_planes.obj')
+    })
+    mat_diffuse_white = lm.load_material('mat_diffuse_white', 'diffuse', {
+        'Kd': [.8,.8,.8]
+    })
+    
+    # floor
+    tex = lm.load_texture('tex_floor', 'bitmap', {
+        'path': os.path.join(scene_path, 'bunny', 'default.png')
+    })
+    mat_floor = lm.load_material('mat_floor', 'diffuse', {
+        'mapKd': tex.loc()
+    })
+    scene.add_primitive({
+        'mesh': model.make_loc('mesh_2'),
+        'material': mat_floor.loc()
+    })
+    # bunny
+    if 'mat_knob' in kwargs:
+        scene.add_primitive({
+            'mesh': model.make_loc('mesh_1'),
+            'material': kwargs['mat_knob']
+        })
+
+def bunny_with_area_light(scene, scene_path, **kwargs):
+    bunny_base(scene, scene_path, **kwargs)
+
+    # Light source
+    Ke = 10
+    mat_black = lm.load_material('mat_black', 'diffuse', {'Kd': [0,0,0]})
+    light = lm.load_light('light', 'area', {
+        'Ke': [Ke,Ke,Ke],
+        'mesh': '$.assets.model_obj.mesh_3'
+    })
+    scene.add_primitive({
+        'mesh':  '$.assets.model_obj.mesh_3',
+        'material': mat_black.loc(),
+        'light': light.loc()
+    })
+
+def bunny_with_env_light(scene, scene_path, **kwargs):
+    bunny_base(scene, scene_path, **kwargs)
+
+    # Environment light
+    light_env = lm.load_light('light_env', 'env', kwargs)
+    scene.add_primitive({
+        'light': light_env.loc()
+    })
+
+def bunny_with_point_light(scene, scene_path, **kwargs):
+    bunny_base(scene, scene_path, **kwargs)
+
+    # Point light
+    Le = 100
+    light_point = lm.load_light('light_point', 'point', {
+        'Le': [Le,Le,Le],
+        'position': [5,5,5]
+    })
+    scene.add_primitive({
+        'light': light_point.loc()
+    })
+
+def bunny_with_directional_light(scene, scene_path, **kwargs):
+    bunny_base(scene, scene_path, **kwargs)
+
+    # Directional light
+    Le = 2
+    light_directional = lm.load_light('light_directional', 'directional', {
+        'Le': [Le,Le,Le],
+        'direction': [-1,-1,-1]
+    })
+    scene.add_primitive({
+        'light': light_directional.loc()
+    })
