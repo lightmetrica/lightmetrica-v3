@@ -59,6 +59,13 @@ Math
    :content-only:
    :members:
 
+OBJ loader
+======================
+
+.. doxygengroup:: objloader
+   :content-only:
+   :members:
+
 Component
 ======================
 

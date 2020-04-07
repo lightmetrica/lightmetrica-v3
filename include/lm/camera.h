@@ -34,7 +34,7 @@ public:
         \rst
         This function sets the aspect ratio of the film to be rendered.
         Note that this function overrides the aspect ratio given by a parameter of
-        :cpp:func:`lm::Component::construct`` function.
+        :cpp:func:`lm::Component::construct` function.
         \endrst
     */
     virtual void set_aspect_ratio(Float aspect) = 0;
@@ -49,7 +49,6 @@ public:
 
     /*!
         \brief Get projection matrix if available.
-        \param aspect Aspect ratio of the film.
         \return Projection matrix.
     */
     virtual Mat4 projection_matrix() const = 0;
@@ -59,7 +58,6 @@ public:
     /*!
         \brief Generate a primary ray with the corresponding raster position.
         \param rp Raster position.
-        \param aspect Aspect ratio of the film.
 
         \rst
         This function deterministically generates a ray from the given raster position in :math:`[0,1]^2`
@@ -205,7 +203,6 @@ public:
     /*!
         \brief Compute a raster position.
         \param wo Primary ray direction.
-        \param aspect Aspect ratio of the film.
         \return Raster position.
     */
     virtual std::optional<Vec2> raster_position(Vec3 wo) const = 0;
@@ -223,7 +220,6 @@ public:
     /*!
         \brief Evaluate sensitivity.
         \param wo Outgoing direction.
-        \param aspect Aspect ratio of the film.
 
         \rst
         Evaluates sensitivity function :math:`W_e(\mathbf{x},\omega_o)` of the sensor.

@@ -18,21 +18,19 @@ LM_NAMESPACE_BEGIN(debug)
 
 /*!
     \brief Poll JSON value.
-    \param name Query name.
     \param val Value.
 */
 LM_PUBLIC_API void poll(const Json& val);
 
 /*!
     \brief Function being called on polling JSON value.
-    \param name Query name.
     \param val Value.
 */
 using OnPollFunc = std::function<void(const Json& val)>;
 
 /*!
     \brief Register polling function for floating-point values.
-    \param on_poll_float Callback function.
+    \param func Callback function.
 */
 LM_PUBLIC_API void reg_on_poll(const OnPollFunc& func);
 

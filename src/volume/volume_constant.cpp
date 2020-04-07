@@ -9,6 +9,18 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: volume::constant
+
+    Constant volume.
+
+    :param color color: Stored color value.
+    :param float scalar: Stored scalar value.
+    :param float bound_min: Minimum bound of the volume.
+    :param float bound_max: Maximum bound of the volume.
+\endrst
+*/
 class Volume_Constant : public Volume {
 private:
 	Bound bound_;

@@ -44,8 +44,8 @@ struct RaySample {
 
 /*!
     \brief Generate a primary ray.
+    \param scene Scene.
     \param rp Raster position in [0,1]^2.
-    \param aspect Aspect ratio of the film.
     \return Generated primary ray.
 
     \rst
@@ -214,7 +214,7 @@ static ComponentSample sample_component(Rng& rng, const Scene* scene, const Scen
 }
 
 /*!
-    \param Evaluate PDF for component sampling.
+    \brief Evaluate PDF for component sampling.
     \param scene Scene.
     \param sp Scene interaction.
     \param comp Sampled component index.
@@ -422,7 +422,7 @@ static std::optional<DirectionSample> sample_direction(const DirectionSampleU& u
 
 /*!
     \brief Direction sampling.
-    \param u Random number generator. 
+    \param rng Random number generator. 
     \param scene Scene.
     \param sp Scene interaction.
     \param wi Incident direction.
@@ -440,10 +440,12 @@ static std::optional<DirectionSample> sample_direction(Rng& rng, const Scene* sc
 
 /*!
     \brief Evaluate pdf for direction sampling.
+    \param scene Scene.
     \param sp Scene interaction.
-	\param comp Component index.
     \param wi Incident ray direction.
     \param wo Sampled outgoing ray direction.
+	\param comp Component index.
+    \param eval_delta If true, evaluate delta function.
     \return Evaluated pdf.
 
     \rst
@@ -544,10 +546,11 @@ static std::optional<RaySample> sample_direct(Rng& rng, const Scene* scene, cons
 
 /*!
     \brief Evaluate pdf for endpoint sampling given a scene interaction.
+    \param scene Scene.
     \param sp Scene interaction.
     \param sp_endpoint Sampled scene interaction of the endpoint.
-	\param comp_endpoint Component index of the endpoint.
     \param wo Sampled outgoing ray directiom *from* the endpoint.
+    \param eval_delta If true, evaluate delta function.
 
     \rst
     This function evaluate pdf for the ray sampled via :cpp:func:`Scene::sample_direct_light`
@@ -593,6 +596,7 @@ struct DistanceSample {
 /*!
     \brief Sample a distance in a ray direction.
     \param rng Random number generator.
+    \param scene Scene.
     \param sp Scene interaction.
     \param wo Ray direction.
 
@@ -635,6 +639,7 @@ static std::optional<DistanceSample> sample_distance(Rng& rng, const Scene* scen
 /*!
     \brief Evaluate transmittance.
     \param rng Random number generator.
+    \param scene Scene.
     \param sp1 Scene interaction of the first point.
     \param sp2 Scene interaction of the second point.
 
@@ -675,7 +680,7 @@ static Vec3 eval_transmittance(Rng& rng, const Scene* scene, const SceneInteract
 #pragma region Evaluating contribution
 
 /*!
-    \param Check if the scene intersection is specular.
+    \brief Check if the scene intersection is specular.
     \param scene Scene.
     \param sp Scene interaction.
     \param comp Component index.
@@ -720,8 +725,8 @@ static bool is_connectable_endpoint(const Scene* scene, const SceneInteraction& 
 
 /*!
     \brief Compute a raster position.
+    \param scene Scene.
     \param wo Primary ray direction.
-    \param aspect Aspect ratio of the film.
     \return Raster position.
 */
 static std::optional<Vec2> raster_position(const Scene* scene, Vec3 wo) {
@@ -731,10 +736,13 @@ static std::optional<Vec2> raster_position(const Scene* scene, Vec3 wo) {
 
 /*!
     \brief Evaluate directional components.
+    \param scene Scene.
     \param sp Scene interaction.
-	\param comp Component index.
     \param wi Incident ray direction.
     \param wo Outgoing ray direction.
+	\param comp Component index.
+    \param trans_dir Transport direction.
+    \param eval_delta If true, evaluate delta function.
     \return Evaluated contribution.
 
     \rst
@@ -767,8 +775,8 @@ static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp
 
 /*!
     \brief Evaluate reflectance (if available).
+    \param scene Scene.
     \param sp Surface interaction.
-	\param comp Component index.
 
     \rst
     This function evaluate reflectance if ``sp`` is on a surface

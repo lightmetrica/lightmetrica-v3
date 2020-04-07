@@ -10,6 +10,17 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: material::constant_weight_mixture_rr
+
+    Mixture material with constant weights (using Russian roulette).
+
+    :param list entries: A list of tupels (``material``, ``weight``)
+                         where ``material`` is a locator to the underlying material
+                         and ``weight`` is the weight multiplied by the BSDF of the material.
+\endrst
+*/
 class Material_ConstantWeightMixture_RR final : public Material {
 private:
     struct Entry {
@@ -94,6 +105,17 @@ LM_COMP_REG_IMPL(Material_ConstantWeightMixture_RR, "material::constant_weight_m
 
 // ------------------------------------------------------------------------------------------------
 
+/*
+\rst2
+.. function:: material::constant_weight_mixture_marginalized
+
+    Mixture material with constant weights (using marginalization).
+
+    :param list entries: A list of tupels (``material``, ``weight``)
+                         where ``material`` is a locator to the underlying material
+                         and ``weight`` is the weight multiplied by the BSDF of the material.
+\endrst2
+*/
 class Material_ConstantWeightMixture_Marginalized final : public Material {
 private:
     struct MaterialGroup {

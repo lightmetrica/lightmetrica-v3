@@ -21,6 +21,15 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 using namespace objloader;
 class Mesh_WavefrontObj;
 
+/*
+\rst
+.. function:: model::wavefrontobj
+
+    Wavefront OBJ model.
+
+    :param str path: Path to ``.obj`` file.
+\endrst
+*/
 class Model_WavefrontObj final : public Model {
 private:
     friend class Mesh_WavefrontObj;
@@ -239,6 +248,15 @@ LM_COMP_REG_IMPL(Model_WavefrontObj, "model::wavefrontobj");
 
 // ------------------------------------------------------------------------------------------------
 
+/*
+\rst2
+.. function:: mesh::wavefrontobj
+
+    Mesh for Wavefront OBJ model.
+
+    This asset is internally used by the framework.
+\endrst2
+*/
 class Mesh_WavefrontObj final  : public Mesh {
 private:
     Model_WavefrontObj* model_;
@@ -309,6 +327,15 @@ LM_COMP_REG_IMPL(Mesh_WavefrontObj, "mesh::wavefrontobj");
 
 // ------------------------------------------------------------------------------------------------
 
+/*
+\rst3
+.. function:: material::mixture_wavefrontobj
+
+    Mixture material for Wavefront OBJ model.
+
+    This asset is internally used by the framework.
+\endrst3
+*/
 class Material_Mixture_WavefrontObj final : public Material {
 private:
     Component::Ptr<Material> diffuse_;

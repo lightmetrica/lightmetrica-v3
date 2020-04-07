@@ -15,19 +15,19 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \rst
 .. function:: material::diffuse
 
-   Lambertian diffuse model.
+    Lambertian diffuse model.
 
-   :param str mapKd: Diffuse reflectance as texture specified by
-                     asset name or locator.
-   :param color Kd:  Diffuse reflectance as color value.
-                     If both ``mapKd`` and ``Kd`` are specified,
-                     ``mapKd`` has priority. Default: ``[1,1,1]``.
+    :param str mapKd: Diffuse reflectance as texture specified by
+                        asset name or locator.
+    :param color Kd:  Diffuse reflectance as color value.
+                        If both ``mapKd`` and ``Kd`` are specified,
+                        ``mapKd`` has priority. Default: ``[1,1,1]``.
 
-   This component implements Lambertian diffuse BRDF defined as
+    This component implements Lambertian diffuse BRDF defined as
    
-   .. math:: f_r(\omega_i, \omega_o) = \frac{\rho}{\pi},
+    .. math:: f_r(\omega_i, \omega_o) = \frac{\rho}{\pi},
 
-   where :math:`\rho` is diffuse reflectance.
+    where :math:`\rho` is diffuse reflectance.
 \endrst
 */
 class Material_Diffuse final : public Material {

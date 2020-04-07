@@ -21,6 +21,7 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
    :param vec3 center: Look-at position.
    :param vec3 up: Up vector.
    :param float vfov: Vertical field of view.
+   :param aspect: Aspect ratio (height / width).
 
    This component implements pinhole camera where all the incoming lights pass through
    an small aperture and projected onto a film in the opposite side of the aperture.
@@ -38,6 +39,10 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
    In this implementation, the configuration is given by ``vfov`` parameter.
    Note that we adopted vertical FoV. Be careful if you want to convert from
    other tools that might adopt horizontal FoV.
+
+   The aspect ratio must be specified as a parameter of the film.
+   If the aspect ratio is different from that can be calculated from the film,
+   the skieed image will be recorded.
 \endrst
 */
 class Camera_Pinhole final : public Camera {

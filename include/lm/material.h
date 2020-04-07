@@ -106,7 +106,6 @@ public:
     /*!
         \brief Evaluate pdf in projected solid angle measure.
         \param geom Point geometry.
-        \param comp Component index.
         \param wi Incident ray direction.
         \param wo Sampled outgoing ray direction.
         \param comp Component index.
@@ -127,6 +126,8 @@ public:
         \param comp Component index.
         \param wi Incident ray direction.
         \param wo Outgoing ray direction.
+        \param trans_dir Transport direction.
+        \param eval_delta If true, evaluate delta function.
 
         \rst
         This function evaluates underlying BSDF :math:`f_{\mathrm{bsdf}\Omega}(\mathbf{x},j,\omega_i,\omega_o)`
@@ -151,7 +152,6 @@ public:
     /*!
         \brief Evaluate reflectance.
         \param geom Point geometry.
-        \param comp Component index.
 
         \rst
         This function evaluates the reflectance function of the underlying material if exists.

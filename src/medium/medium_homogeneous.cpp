@@ -10,7 +10,19 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// Assume the medium is non-emissive
+/*
+\rst
+.. function:: medium::homogeneous
+
+    Homogeneous medium.
+
+    :param float density: Density of the medium.
+    :param color albedo: Albedo of the medium.
+    :param str phase: Locator to ``phase`` asset.
+    :param vec3 bound_min: Minimum bound of the volume.
+    :param vec3 bound_max: Maximum bound of the volume.
+\endrst
+*/
 class Medium_Homogeneous final : public Medium {
 private:
     Float density_;         // Density of volume := extinction coefficient \mu_t

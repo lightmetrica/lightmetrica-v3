@@ -12,6 +12,17 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: medium::heterogeneous
+
+    Heterogeneous medium.
+
+    :param str density: Locator to ``volume`` asset representing density of the medium.
+    :param str albedo: Locator to ``volume`` asset representing albedo of the medium.
+    :param str phase: Locator to ``phase`` asset.
+\endrst
+*/
 class Medium_Heterogeneous final : public Medium {
 private:
     const Volume* volume_density_;  // Density volume. density := \mu_t = \mu_a + \mu_s

@@ -10,14 +10,15 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: phase::isotropic
+
+    Isotropic phase function.
+\endrst
+*/
 class Phase_Isotropic final : public Phase {
 public:
-#if 0
-    virtual bool is_specular(const PointGeometry&) const override {
-        return false;
-    }
-#endif
-
     virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry& geom, Vec3) const override {
         LM_UNUSED(geom);
         assert(geom.degenerated);
