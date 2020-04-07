@@ -936,13 +936,13 @@ static void bind_volume(pybind11::module& m) {
             PYBIND11_OVERLOAD_PURE(Float, Volume, has_scalar);
         }
         virtual Float eval_scalar(Vec3 p) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Volume, eval_scalar, p);
+            PYBIND11_OVERLOAD(Float, Volume, eval_scalar, p);
         }
         virtual bool has_color() const override {
             PYBIND11_OVERLOAD_PURE(bool, Volume, has_color);
         }
         virtual Vec3 eval_color(Vec3 p) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Volume, eval_color, p);
+            PYBIND11_OVERLOAD(Vec3, Volume, eval_color, p);
         }
     };
     pybind11::class_<Volume, Volume_Py, Component, Component::Ptr<Volume>>(m, "Volume")
