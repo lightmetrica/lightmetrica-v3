@@ -9,6 +9,15 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: phase::hg
+
+    Henyey-Greenstein phase function.
+
+    :param float g: Asymmetry parameter in [-1,1].
+\endrst
+*/
 class Phase_HenyeyGreenstein final : public Phase {
 private:
     Float g_;   // Asymmetry parameter in [-1,1]

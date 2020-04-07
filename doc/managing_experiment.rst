@@ -53,7 +53,7 @@ Directory structure
 
 In this option, we suggest to use the following directory structure:
 
-.. code-block:: plain
+.. code-block:: text
 
     - project_root/                 # (1)
         - your_experiment_1.ipynb   # (2)
@@ -176,7 +176,7 @@ Directory structure
 
 The recommended directory structure is almost same as what we saw in :ref:`use_case_for_framework_users`, yet we moved ``build`` directory (1) to just under the project root.
 
-.. code-block:: plain
+.. code-block:: text
 
     - project_root/
         - build/                    # (1)
@@ -310,14 +310,14 @@ Directory structure
 
 The recommended directory structure is same as :ref:`use_case_for_framework_users`. However, in this case, the code and directory structures under ``lightmetrica-v3`` direction can be also modified.
 
-When you are a contributer who wants to add a new feature to the framework, we recommend to follow this directory structure even if the most of modifications happens under ``lightmetrica-v3/src`` directory, because in the course of development you might (always) need to write experimental scripts (mostly one-shot scripts) that we don't want to include in the framework's repository.
+When you are a contributor who wants to add a new feature to the framework, we recommend to follow this directory structure even if the most of modifications happens under ``lightmetrica-v3/src`` directory, because in the course of development you might (always) need to write experimental scripts (mostly one-shot scripts) that we don't want to include in the framework's repository.
 
 Partially replacing dependencies
 --------------------------------
 
 Sometime you want to replace the dependencies automatically installed by ``environment.yml``. For instance, when you want to use patched version of `embree <https://github.com/embree/embree>`_ library, you need to replace default ``embree`` distribution by conda with your own version.
 
-We can achive this by providing additional argument ``<package name>_DIR`` to cmake command. For instance, in Windows environment:
+We can achieve this by providing additional argument ``<package name>_DIR`` to cmake command. For instance, in Windows environment:
 
 .. code-block:: console
 

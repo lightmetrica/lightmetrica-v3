@@ -65,7 +65,6 @@ public:
 
     /*!
         \brief Evaluate PDF for primary ray sampling.
-        \param geom Point geometry.
         \param geom Sampled point geometry.
         \param wo Sampled outgoing direction.
         \param transform Transformation of the light source.
@@ -154,7 +153,7 @@ public:
 
     /*!
         \brief Direct endpoint sampling.
-        \param rng Random number generator.
+        \param u Random number input.
         \param geom Point geometry on the scene surface.
         \param transform Transformation of the light source.
 
@@ -172,7 +171,6 @@ public:
         \brief Evaluate pdf for direct endpoint sampling.
         \param geom Point geometry on the scene surface.
         \param geomL Point geometry on the light source.
-        \param comp Component index.
         \param transform Transformation of the light source.
         \param wo Outgoing direction from the point of the light source.
         \param eval_delta If true, evaluate delta function.
@@ -200,7 +198,6 @@ public:
     /*!
         \brief Evaluate luminance.
         \param geom Point geometry on the light source.
-        \param comp Component index.
         \param wo Outgoing direction from the point of the light source.
         \param eval_delta If true, evaluate delta function.
 

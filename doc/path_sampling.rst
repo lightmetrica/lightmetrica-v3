@@ -292,7 +292,7 @@ Using this measure, we can define the aggregated PDF:
   \end{cases}
 
 Aggregated throughput measure for primary ray sampling
------------------------------------------------------
+-------------------------------------------------------
 
 The primary ray is sampled from the joint distribution. 
 Similarly to the previous case, we want to define the generalized measure to support various use-cases of the primary ray sampling. We categorize the measure by two types according to the type of the endpoint being sampled from the joint distribution.
@@ -827,15 +827,11 @@ For the strategy index :math:`(s,t)` where :math:`s+t\geq 1`, the subpaths are c
 - if :math:`t=1`, :math:`\mathbf{z}_0\in\mathcal{S}_{\mathrm{conn}}` and :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{0}) = 0`,
 - if :math:`s>0` and :math:`t>0`, :math:`\mathbf{y}_{s-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`\mathbf{z}_{t-1}\notin\mathcal{S}_{\mathrm{spec}}` and :math:`V(\mathbf{y}_{s-1}, \mathbf{z}_{t-1}) = 0`.
 
-.. _path_sampling_specular_vertex:
-
 The vertex :math:`\mathbf{x}` is *specular* if the directional component includes a delta function.
 We use the notation :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{spec}}` to denote the property of the vertex. 
 For instance, perfect specular reflection is specular. 
 A specular vertex needs special treatment since its support cannot be sampled without deterministic selection.
 This condition can be checked using :cpp:func:`lm::path::is_specular_component` function.
-
-.. _path_sampling_connectable_endpoint:
 
 The endpoint :math:`\mathbf{x}` is *connectable* if corresponding positional and directional PDFs can be evaluated independently. We use the notation :math:`\mathbf{x}\in\mathcal{S}_{\mathrm{conn}}`. For instance, the endpoint is connectable if the first two subpath vertices are independent. This condition can be checked using :cpp:func:`lm::path::connectable_endpoint` function.
 

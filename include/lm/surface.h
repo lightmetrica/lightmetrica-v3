@@ -258,8 +258,6 @@ struct SceneInteraction {
         \brief Make camera endpoint.
         \param primitive Primitive index.
         \param geom Point geometry.
-        \param window Window in raster coordinates.
-        \param aspect Aspect ratio.
         \return Created scene interaction.
     */
     static SceneInteraction make_camera_endpoint(int primitive, const PointGeometry& geom) {

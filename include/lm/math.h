@@ -354,7 +354,7 @@ struct Dist {
 
     /*!
         \brief Sample from the distribution.
-        \param rn Random number generator.
+        \param u Random number in [0,1].
         \return Sampled index.
     */
     int sample(Float u) const {
@@ -414,7 +414,7 @@ struct Dist2 {
 
     /*!
         \brief Sample from the distribution.
-        \param rn Random number generator.
+        \param u Random number in [0,1].
         \return Sampled position.
     */
     Vec2 sample(Vec4 u) const {

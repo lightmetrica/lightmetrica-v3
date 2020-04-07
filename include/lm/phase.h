@@ -33,7 +33,7 @@ public:
 
     /*!
         \brief Sample a direction.
-        \param rng Random number generator.
+        \param u Random number input.
         \param geom Point geometry.
         \param wi Incident ray direction.
         \return Sampled direction and associated information.

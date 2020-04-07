@@ -72,7 +72,7 @@ struct Path {
 
     /*!
         \brief Get a pointer to a path vertex (for fullpath).
-        \param Index of the subpath.
+        \param i Index of the subpath.
         \param trans_dir Transport direction.
 
         \rst
@@ -88,7 +88,7 @@ struct Path {
 
     /*!
         \brief Get a pointer to a path vertex (for subpath).
-        \param Index of the subpath.
+        \param i Index of the subpath.
         
         \rst
         This function returns a point to a path vertex inside a subpath.
@@ -102,7 +102,7 @@ struct Path {
 
     /*!
         \brief Get a pointer to a path vertex (for subpath).
-        \param Index of the subpath.
+        \param i Index of the subpath.
 
         \rst
         This function returns a point to a path vertex inside a subpath.
@@ -147,7 +147,7 @@ struct Path {
 
     /*!
         \brief Compute raster position.
-        \param Scene scene.
+        \param scene Scene.
 
         \rst
         This function computes the raster position using the primary ray from the eye vertex.
@@ -162,7 +162,7 @@ struct Path {
 
     /*!
         \brief Check if the path is samplable.
-        \param Scene scene.
+        \param scene Scene.
         \param s Strategy index.
         \return True if the path is samplable by the strategy.
 

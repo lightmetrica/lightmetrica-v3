@@ -9,6 +9,16 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: texture::constant
+
+    Texture with constant color.
+
+    :param color color: Color.
+    :param float alpha: Alpha value.
+\endrst
+*/
 class Texture_Constant final : public Texture {
 private:
 	Vec3 color_;

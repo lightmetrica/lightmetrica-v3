@@ -378,6 +378,7 @@ LM_PUBLIC_API Component* create_comp(const std::string& key);
 /*!
     \brief Register a component.
     \param key Implementation key.
+    \param alias Alias name.
     \param create_func Create function.
     \param release_func Release function.
 
@@ -396,6 +397,7 @@ LM_PUBLIC_API void reg(
 /*!
     \brief Unregister a component.
     \param key Implementation key.
+    \param alias Alias name.
 
     \rst
     This function unregisters a component implementation specified by the key.
@@ -770,8 +772,9 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 
 /*!
     \brief Register implementation with alias.
+    \param ImplT Component implemenation type.
+    \param key Name of implementation being referenced by the alias.
     \param alias Name of alias.
-    \param target Name of implementation being referenced by the alias.
 
     \rst
     This macro registers an implementation of a component object into the framework with its alias.
@@ -792,7 +795,7 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 /*!
     \brief Register implementation.
     \param ImplT Component implemenation type.
-    \param Key Name of the implementation.
+    \param key Name of the implementation.
 
     \rst
     This macro registers an implementation of a component object into the framework.

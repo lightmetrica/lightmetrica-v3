@@ -20,6 +20,20 @@ struct MeshFaceIndex {
     }
 };
 
+/*
+\rst
+.. function:: mesh::raw
+
+    Mesh from raw data.
+
+    :param list ps: Vertex positions of the mesh.
+    :param list ns: Vertex normals of the mesh.
+    :param list ts: Texture coordinates for the vertices.
+    :param dist fs: Index list. Indices for each vertex element are
+                    specified by ``p``, ``t``, and ``n`` respectively.
+
+\endrst
+*/
 class Mesh_Raw final : public Mesh {
 private:
     std::vector<Vec3> ps_;           // Positions

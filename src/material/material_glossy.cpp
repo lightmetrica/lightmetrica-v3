@@ -10,6 +10,17 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: material::glossy
+
+    Cook-Torrance BRDF with anisotropic GGX as NDF.
+
+    :param color Ks: Specular reflectance.
+    :param float ax: :math:`\alpha_x` parameter in anisotropic GGX.
+    :param float ay: :math:`\alpha_y` parameter in anisotropic GGX.
+\endrst
+*/
 class Material_Glossy final : public Material {
 private:
     Vec3 Ks_;        // Specular reflectance

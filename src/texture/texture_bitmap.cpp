@@ -19,6 +19,16 @@ std::string sanitize_directory_separator(std::string p) {
     return p;
 }
 
+/*
+\rst
+.. function:: texture::bitmap
+
+    Bitmap texture.
+
+    :param str path: Path to texture.
+    :param bool flip: Flip loaded texture if true.
+\endrst
+*/
 class Texture_Bitmap final : public Texture {
 private:
     int w_;     // Width of the image
