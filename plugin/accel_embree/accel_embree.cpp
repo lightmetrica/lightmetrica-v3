@@ -7,7 +7,7 @@
 #include <lm/scene.h>
 #include <lm/mesh.h>
 #include <lm/exception.h>
-#include "embree.h"
+#include "embree_params.h"
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -33,9 +33,25 @@ class Accel_Embree final : public Accel {
 private:
     RTCDevice device_ = nullptr;
     RTCScene scene_ = nullptr;
+    RTCBuildArguments settings_;
+    RTCSceneFlags sf_;
     std::vector<FlattenedPrimitiveNode> flattened_nodes_;
 
 public:
+
+     virtual void construct(const Json& prop) override {
+        settings_ = prop;
+        sf_ = prop;
+
+        //check actual values used for building
+        Json j;
+        j = settings_;
+        LM_INFO(j.dump());
+        j.clear();
+        j = sf_;
+        LM_INFO( j.dump() );
+        }
+
     Accel_Embree() {
         device_ = rtcNewDevice("");
         handle_embree_error(nullptr, rtcGetDeviceError(device_));
@@ -67,6 +83,9 @@ public:
         reset();
         scene_ = rtcNewScene(device_);
 
+        rtcSetSceneFlags(scene_, sf_);
+        rtcSetSceneBuildQuality(scene_, settings_.buildQuality);
+
         // Flatten the scene graph and setup geometries
         LM_INFO("Flattening scene");
         scene.traverse_primitive_nodes([&](const SceneNode& node, Mat4 global_transform) {
@@ -80,7 +99,6 @@ public:
             // Record flattened primitive
             const int flatten_node_index = int(flattened_nodes_.size());
             flattened_nodes_.push_back({ Transform(global_transform), node.index });
-
             // Create triangle mesh
             auto geom = rtcNewGeometry(device_, RTC_GEOMETRY_TYPE_TRIANGLE);
             const int num_triangles = node.primitive.mesh->num_triangles();
