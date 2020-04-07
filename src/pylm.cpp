@@ -1156,45 +1156,6 @@ static void bind_light(pybind11::module& m) {
 
 // ------------------------------------------------------------------------------------------------
 
-// Bind light.h
-static void bind_volume(pybind11::module& m) {
-
-    class Volume_Py final : public Volume {
-        virtual void construct(const Json& prop) override {
-            PYBIND11_OVERLOAD(void, Volume, construct, prop);
-        }
-        virtual Bound bound() const override {
-            PYBIND11_OVERLOAD_PURE(Bound, Volume, bound);
-        }
-        virtual bool has_scalar() const override {
-            PYBIND11_OVERLOAD_PURE(bool, Volume, has_scalar);
-        }
-        virtual Float max_scalar() const override {
-            PYBIND11_OVERLOAD_PURE(Float, Volume, has_scalar);
-        }
-        virtual Float eval_scalar(Vec3 p) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Volume, eval_scalar, p);
-        }
-        virtual bool has_color() const override {
-            PYBIND11_OVERLOAD_PURE(bool, Volume, has_color);
-        }
-        virtual Vec3 eval_color(Vec3 p) const override {
-            PYBIND11_OVERLOAD_PURE(Vec3, Volume, eval_color, p);
-        }
-    };
-    pybind11::class_<Volume, Volume_Py, Component, Component::Ptr<Volume>>(m, "Volume")
-        .def(pybind11::init<>())
-        .def("bound", &Volume::bound)
-        .def("has_scalar", &Volume::has_scalar)
-        .def("max_scalar", &Volume::max_scalar)
-        .def("eval_scalar", &Volume::eval_scalar)
-        .def("has_color", &Volume::has_color)
-        .def("eval_color", &Volume::eval_color)
-        .PYLM_DEF_COMP_BIND(Volume);
-}
-
-// ------------------------------------------------------------------------------------------------
-
 PYBIND11_MODULE(pylm, m) {
     m.doc() = R"x(
         pylm: Python binding of Lightmetrica.
@@ -1227,7 +1188,6 @@ PYBIND11_MODULE(pylm, m) {
     bind_model(m);
     bind_camera(m);
     bind_light(m);
-    bind_volume(m);
     bind_asset_group(m);
     bind_user(m);
 }
