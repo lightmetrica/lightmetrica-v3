@@ -10,7 +10,19 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// Assume the medium is non-emissive
+/*
+\rst
+.. function:: medium::homogeneous
+
+    Homogeneous medium.
+
+    :param float density: Density of the medium.
+    :param color albedo: Albedo of the medium.
+    :param str phase: Locator to ``phase`` asset.
+    :param vec3 bound_min: Minimum bound of the volume.
+    :param vec3 bound_max: Maximum bound of the volume.
+\endrst
+*/
 class Medium_Homogeneous final : public Medium {
 private:
     Float density_;         // Density of volume := extinction coefficient \mu_t
@@ -46,7 +58,7 @@ public:
         - Weight for medium interaction. \mu_s T(t)/p(t) = \mu_s/\mu_t
         - Weight for surface interaction. T(s)/P[t>s] = 1
     */
-    virtual std::optional<MediumDistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
+    virtual std::optional<DistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const override {
         // Compute overlapping range between volume and bound
         if (!bound_.isect_range(ray, tmin, tmax)) {
             // No intersection with volume, use surface interaction
@@ -58,7 +70,7 @@ public:
         
         if (t < tmax - tmin) {
             // Medium interaction
-            return MediumDistanceSample{
+            return DistanceSample{
                 ray.o + ray.d*(tmin+t),
                 albedo_,    // \mu_s / \mu_t
                 true
@@ -66,7 +78,7 @@ public:
         }
         else {
             // Surface interaction
-            return MediumDistanceSample{
+            return DistanceSample{
                 ray.o + ray.d*tmax,
                 Vec3(1_f),
                 false

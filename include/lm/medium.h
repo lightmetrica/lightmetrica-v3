@@ -16,19 +16,17 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-    \brief Result of distance sampling.
-*/
-struct MediumDistanceSample {
-    Vec3 p;         //!< Sampled point.
-    Vec3 weight;    //!< Contribution divided by probability.
-    bool medium;    //!< True if the point is is medium.
-};
-
-/*!
     \brief Participating medium.
 */
 class Medium : public Component {
 public:
+    //! Result of distance sampling.
+    struct DistanceSample {
+        Vec3 p;         //!< Sampled point.
+        Vec3 weight;    //!< Contribution divided by probability.
+        bool medium;    //!< True if the point is is medium.
+    };
+
     /*!
         \brief Sample a distance in a ray direction.
         \param rng Random number generator.
@@ -43,7 +41,7 @@ public:
         If it does not sample a scattering event, this function returns ``nullopt``.
         \endrst
     */
-    virtual std::optional<MediumDistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
+    virtual std::optional<DistanceSample> sample_distance(Rng& rng, Ray ray, Float tmin, Float tmax) const = 0;
 
     /*!
         \brief Evaluate transmittance.

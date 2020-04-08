@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.4
+#       format_version: '1.5'
+#       jupytext_version: 1.3.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -39,18 +39,18 @@ if not lm.Release:
 
 # ### Visualizing asset tree
 #
-# An asset can hold another assets in the instance. As a result, a created set of asset can constitute of an *asset tree*. We can visualize the structure of the tree using ``lm.print_asset_tree()`` function.
+# An asset can hold another assets in the instance. As a result, a created set of asset can constitute of an *asset tree*. We can visualize the structure of the tree using ``lm.debug.print_asset_tree()`` function.
 
 accel = lm.load_accel('accel', 'sahbvh', {})
 scene = lm.load_scene('scene', 'default', {
     'accel': accel.loc()
 })
 
-lm.print_asset_tree()
+lm.debug.print_asset_tree()
 
 # Clear the internal state
 lm.reset()
-lm.print_asset_tree()
+lm.debug.print_asset_tree()
 
 # ### Asset group
 #
@@ -64,7 +64,8 @@ camera = g.load_camera('camera1', 'pinhole', {
     'position': [5.101118, 1.083746, -2.756308],
     'center': [4.167568, 1.078925, -2.397892],
     'up': [0,1,0],
-    'vfov': 43.001194
+    'vfov': 43.001194,
+    'aspect': 16/9
 })
 model = g.load_model('model', 'wavefrontobj', {
     'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj')
@@ -81,7 +82,7 @@ scene.add_primitive({
 })
 scene.build()
 
-lm.print_asset_tree()
+lm.debug.print_asset_tree()
 
 # ### Serialization of asset
 
@@ -93,7 +94,7 @@ g.save_to_file('fireplace_room.serialized')
 
 # Reset the internal state
 lm.reset()
-lm.print_asset_tree()
+lm.debug.print_asset_tree()
 
 # Note that serializing aseet group means serializing a subtree of the entire asset tree. The serialization process can fail if an asset being serialized (incl. child assets) contains external reference out of the subtree. 
 
@@ -102,7 +103,7 @@ g = lm.load_asset_group('fireplace_room', 'default', {})
 scene = g.load_scene('scene', 'default', {
     'accel': accel.loc()
 })
-lm.print_asset_tree()
+lm.debug.print_asset_tree()
 
 # Serialization will fail because
 # accel is out of the subtree starting from g as a root.
@@ -113,7 +114,7 @@ except Exception:
 
 # Reset the internal state
 lm.reset()
-lm.print_asset_tree()
+lm.debug.print_asset_tree()
 
 # ### Loading serialized asset
 #
@@ -121,17 +122,17 @@ lm.print_asset_tree()
 
 lm.load_serialized('fireplace_room', 'fireplace_room.serialized')
 
-lm.print_asset_tree()
+lm.debug.print_asset_tree()
 
 # Reset the internal state
 lm.reset()
-lm.print_asset_tree()
+lm.debug.print_asset_tree()
 
 # Also note that the serialized asset can be loaded in a different location in the asset tree, for instance, as a child of the different asset group. 
 
 g = lm.load_asset_group('another_group', 'default', {})
 g.load_serialized('fireplace_room', 'fireplace_room.serialized')
-lm.print_asset_tree()
+lm.debug.print_asset_tree()
 
 # ### Rendering with serialized asset
 #
@@ -147,7 +148,7 @@ renderer = lm.load_renderer('renderer', 'pt', {
     'output': film.loc(),
     'scheduler': 'sample',
     'spp': 1,
-    'max_length': 20
+    'max_verts': 20
 })
 renderer.render()
 

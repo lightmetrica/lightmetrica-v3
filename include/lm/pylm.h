@@ -291,7 +291,7 @@ LM_NAMESPACE_BEGIN(detail)
 */
 template <typename InterfaceT>
 static void reg_comp_wrap(pybind11::object impl_class, const char* name) {
-    lm::comp::detail::reg(name,
+    lm::comp::detail::reg(name, "",
         [impl_class = impl_class]() -> lm::Component* {
             pybind11::gil_scoped_acquire gil;
 

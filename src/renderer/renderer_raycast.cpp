@@ -51,7 +51,6 @@ public:
         visualize_normal_ = json::value(prop, "visualize_normal", false);
         color_ = json::value_or_none<Vec3>(prop, "color");
         film_ = json::comp_ref<Film>(prop, "output");
-        scene_->camera()->set_aspect_ratio(film_->aspect());
         sched_ = comp::create<scheduler::Scheduler>(
             "scheduler::spp::sample", make_loc("scheduler"), {
                 {"spp", 1},

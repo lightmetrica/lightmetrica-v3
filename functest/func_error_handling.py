@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.4'
-#       jupytext_version: 1.2.4
+#       format_version: '1.5'
+#       jupytext_version: 1.3.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -83,7 +83,8 @@ try:
     lm.load_camera('camera1', 'pinhole', {
         'position': [0,0,5],
         'center': [0,0,0],
-        'up': [0,1,0]
+        'up': [0,1,0],
+        'aspect': 16/9
     })
 except Exception:
     traceback.print_exc()
@@ -94,6 +95,7 @@ try:
         'position': 5,
         'center': [0,0,0],
         'up': [0,1,0],
+        'aspect': 16/9,
         'fov': 30
     })
 except Exception:
@@ -105,6 +107,7 @@ lm.load_camera('camera1', 'pinhole', {
     'position': [0,0,5],
     'center': [0,0,0],
     'up': [0,1,0],
+    'aspect': 16/9,
     'vfov': 30
 })
 

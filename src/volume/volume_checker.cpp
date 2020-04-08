@@ -9,9 +9,17 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
-// Memo:
-// Currently we forget about muA. Assume muA=0
-// density = muT = muS
+
+/*
+\rst
+.. function:: volume::checker
+
+    Checker volume.
+
+    :param float bound_min: Minimum bound of the volume.
+    :param float bound_max: Maximum bound of the volume.
+\endrst
+*/
 class Volume_Checker : public Volume {
 private:
 	Bound bound_;           // Bound of volume

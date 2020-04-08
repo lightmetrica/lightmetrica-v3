@@ -378,6 +378,7 @@ LM_PUBLIC_API Component* create_comp(const std::string& key);
 /*!
     \brief Register a component.
     \param key Implementation key.
+    \param alias Alias name.
     \param create_func Create function.
     \param release_func Release function.
 
@@ -389,19 +390,21 @@ LM_PUBLIC_API Component* create_comp(const std::string& key);
 */
 LM_PUBLIC_API void reg(
     const std::string& key,
+    const std::string& alias,
     const Component::CreateFunction& create_func,
     const Component::ReleaseFunction& release_func);
 
 /*!
     \brief Unregister a component.
     \param key Implementation key.
+    \param alias Alias name.
 
     \rst
     This function unregisters a component implementation specified by the key.
     The users do not want to use it directly.
     \endrst
 */
-LM_PUBLIC_API void unreg(const std::string& key);
+LM_PUBLIC_API void unreg(const std::string& key, const std::string& alias);
 
 /*!
     \brief Load a plugin.
@@ -724,17 +727,21 @@ template <typename ImplType>
 class RegEntry {
 private:
     std::string key_;
+    std::string alias_;
 
 public:
-    static RegEntry<ImplType>& instance(std::string key) {
-        static RegEntry<ImplType> instance(KeyGen<ImplType>::gen(std::move(key)));
+    static RegEntry<ImplType>& instance(std::string key, std::string alias) {
+        static RegEntry<ImplType> instance(KeyGen<ImplType>::gen(std::move(key)), std::move(alias));
         return instance;
     }
 
 public:
-    RegEntry(std::string key) : key_(std::move(key)) {
+    RegEntry(std::string key, std::string alias)
+        : key_(std::move(key))
+        , alias_(std::move(alias))
+    {
         // Register factory function
-        reg(key_.c_str(),
+        reg(key_, alias_,
             []() -> Component* {
                 return new ImplType;
             },
@@ -744,7 +751,7 @@ public:
     }
     ~RegEntry() {
         // Unregister factory function
-        unreg(key_.c_str());
+        unreg(key_, alias_);
     }
 };
 
@@ -764,9 +771,31 @@ LM_NAMESPACE_END(LM_NAMESPACE)
 */
 
 /*!
+    \brief Register implementation with alias.
+    \param ImplT Component implemenation type.
+    \param key Name of implementation being referenced by the alias.
+    \param alias Name of alias.
+
+    \rst
+    This macro registers an implementation of a component object into the framework with its alias.
+    Note that `lm::Component::key()` refers to the original name of the implementation, not the name of the alias.
+    \endrst
+*/
+#define LM_COMP_REG_IMPL_ALIAS(ImplT, key, alias) \
+    namespace { \
+        template <typename T> class RegEntry_Init_; \
+        template <> class RegEntry_Init_<ImplT> { \
+            static const LM_NAMESPACE::comp::detail::RegEntry<ImplT>& reg_; \
+        }; \
+        const LM_NAMESPACE::comp::detail::RegEntry<ImplT>& \
+            RegEntry_Init_<ImplT>::reg_ = \
+                LM_NAMESPACE::comp::detail::RegEntry<ImplT>::instance(key, alias); \
+    }
+
+/*!
     \brief Register implementation.
     \param ImplT Component implemenation type.
-    \param Key Name of the implementation.
+    \param key Name of the implementation.
 
     \rst
     This macro registers an implementation of a component object into the framework.
@@ -784,16 +813,8 @@ LM_NAMESPACE_END(LM_NAMESPACE)
        .. _[basic.start.dynamic]/5: http://eel.is/c++draft/basic#start.dynamic-5
     \endrst
 */
-#define LM_COMP_REG_IMPL(ImplT, Key) \
-    namespace { \
-        template <typename T> class RegEntry_Init_; \
-        template <> class RegEntry_Init_<ImplT> { \
-            static const LM_NAMESPACE::comp::detail::RegEntry<ImplT>& reg_; \
-        }; \
-        const LM_NAMESPACE::comp::detail::RegEntry<ImplT>& \
-            RegEntry_Init_<ImplT>::reg_ = \
-                LM_NAMESPACE::comp::detail::RegEntry<ImplT>::instance(Key); \
-    }
+#define LM_COMP_REG_IMPL(ImplT, key) \
+    LM_COMP_REG_IMPL_ALIAS(ImplT, key, "")
 
 /*!
     @}

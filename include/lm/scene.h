@@ -18,27 +18,6 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 
 /*!
-*/
-struct LightSelectionSample {
-    int light_index;    // Sampled light index (note: this is not a node index).
-    Float p_sel;        // Selection probability
-};
-
-/*!
-*/
-struct LightPrimitiveIndex {
-    Transform global_transform;  // Global transform matrix
-    int index;                   // Primitive node index
-
-    template <typename Archive>
-    void serialize(Archive& ar) {
-        ar(global_transform, index);
-    }
-};
-
-// ------------------------------------------------------------------------------------------------
-
-/*!
     \brief Scene.
 
     \rst
@@ -233,35 +212,28 @@ public:
 	*/
 	virtual int num_nodes() const = 0;
 
-	/*!
-		\brief Get number of lights in the scene.
-	*/
+	//! Get number of lights in the scene.
 	virtual int num_lights() const = 0;
 
 	/*!
 		\brief Get camera node index.
-
-		\rst
-		This function returns -1 if there is camera in the scene.
-		\endrst
+        \return Camera node index. -1 if no camera is found in the scene.
 	*/
 	virtual int camera_node() const = 0;
 
     /*!
+        \brief Get medium node index.
+        \return Medium node index. -1 if no medium is found in the scene.
     */
     virtual int medium_node() const = 0;
 
 	/*!
 		\brief Get environment map node index.
-
-		\rst
-		This function returns -1 if there is no environment light in the scene.
-		\endrst
+        \return Environment light node index. -1 if no environment light is found in the scene.
 	*/
 	virtual int env_light_node() const = 0;
 
-    /*!
-    */
+    //! Get camera asset associated to the scene.
     Camera* camera() const {
         return node_at(camera_node()).primitive.camera;
     }
@@ -272,9 +244,7 @@ public:
 
     #pragma region Scene requirement checking
 
-	/*!
-		\brief Throws an exception if there is no primitive in the scene.
-	*/
+	//! Throws an exception if there is no primitive in the scene.
 	void require_primitive() const {
 		if (num_nodes() > 1) {
 			return;
@@ -283,9 +253,7 @@ public:
 			"Missing primitives. Use lm::primitive() function to add primitives.");
 	}
 
-	/*!
-		\brief Throws an exception if there is no camera in the scene.
-	*/
+	//! Throws an exception if there is no camera in the scene.
 	void require_camera() const {
 		if (camera_node() != -1) {
 			return;
@@ -294,9 +262,7 @@ public:
 			"Missing camera primitive. Use lm::primitive() function to add camera primitive.");
 	}
 
-	/*!
-		\brief Throws an exception if there is no light in the scene.
-	*/
+	//! Throws an exception if there is no light in the scene.
 	void require_light() const {
 		if (num_lights() > 0) {
 			return;
@@ -305,9 +271,7 @@ public:
 			"No light in the scene. Add at least one light sources to the scene.");
 	}
 
-	/*!
-		\brief Throws an exception if there is no accel created for the scene.
-	*/
+	//! Throws an exception if there is no accel created for the scene.
 	void require_accel() const {
 		if (accel()) {
 			return;
@@ -341,10 +305,7 @@ public:
 
     #pragma region Ray-scene intersection
 
-    /*!
-        \brief Get underlying acceleration structure.
-        \return Instance.
-    */
+    //! Get underlying acceleration structure.
     virtual Accel* accel() const = 0;
 
     /*!
@@ -353,9 +314,7 @@ public:
     */
     virtual void set_accel(const std::string& accel_loc) = 0;
 
-    /*!
-        \brief Build acceleration structure.
-    */
+    //! Build acceleration structure.
     virtual void build() = 0;
 
     /*!
@@ -410,15 +369,10 @@ public:
 
     #pragma region Primitive type checking
 
-    /*!
-        \brief Check if given surface point is light.
-        \param sp Scene interaction.
-        \return True if scene interaction is light.
-    */
+    //! Check if the surface point is a light.
     virtual bool is_light(const SceneInteraction& sp) const = 0;
 
-    /*!
-    */
+    //! Check if the surface point is a camera.
     virtual bool is_camera(const SceneInteraction& sp) const = 0;
 
     #pragma endregion
@@ -427,20 +381,43 @@ public:
 
     #pragma region Light sampling
 
+    //! Result of light sampling.
+    struct LightSelectionSample {
+        int light_index;    //!< Sampled light index (note: this is not a node index).
+        Float p_sel;        //!< Selection probability
+    };
+
+    //! Primitive index of the light and its transform.
+    struct LightPrimitiveIndex {
+        Transform global_transform;  //!< Global transform matrix
+        int index;                   //!< Primitive node index
+
+        //! \cond
+        template <typename Archive>
+        void serialize(Archive& ar) {
+            ar(global_transform, index);
+        }
+        //! \endcond
+    };
+
     /*!
+        \brief Light sampling.
+        \param u Random number input in [0,1].
+        return Sample light index.
     */
     virtual LightSelectionSample sample_light_selection(Float u) const = 0;
 
     /*!
+        \brief Evaluate the PDF for light sampling.
+        \param light_index Sampled light index.
+        \return Evaluated PDF.
     */
     virtual Float pdf_light_selection(int light_index) const = 0;
 
-    /*!
-    */
+    //! Get primitive node index from light index.
     virtual LightPrimitiveIndex light_primitive_index_at(int light_index) const = 0;
 
-    /*!
-    */
+    //! Get light index from node index.
     virtual int light_index_at(int node_index) const = 0;
 
     #pragma endregion

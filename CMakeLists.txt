@@ -58,12 +58,14 @@ endif()
 # -------------------------------------------------------------------------------------------------
 
 # Execute git command in the project root and check revision number
-find_package(Git REQUIRED)
-execute_process(
-	COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--short" "HEAD"
-	OUTPUT_VARIABLE LM_VERSION_REVISION
-	OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+find_package(Git)
+if (Git_FOUND)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--short" "HEAD"
+        OUTPUT_VARIABLE LM_VERSION_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif()
 
 # Current build timestamp
 string(TIMESTAMP LM_BUILD_TIMESTAMP "%Y-%m-%d %H.%M.%S")

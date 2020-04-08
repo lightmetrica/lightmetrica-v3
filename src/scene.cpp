@@ -105,7 +105,7 @@ public:
         }
 
         // Envlight
-        if (light && light->is_infinite()) {
+        if (light && light->is_env()) {
             if (env_light_) {
                 LM_ERROR("Environment light is already registered. "
                     "You can register only one environment light in the scene.");
@@ -282,6 +282,31 @@ public:
                 lights_.push_back({ Transform(global_transform), node.index });
             }
         });
+
+        // Compute scene bound
+        Bound bound;
+        traverse_primitive_nodes([&](const SceneNode& node, Mat4 global_transform) {
+            if (node.type != SceneNodeType::Primitive) {
+                return;
+            }
+            if (!node.primitive.mesh) {
+                return;
+            }
+            node.primitive.mesh->foreach_triangle([&](int, const Mesh::Tri& tri) {
+                const auto p1 = global_transform * Vec4(tri.p1.p, 1_f);
+                const auto p2 = global_transform * Vec4(tri.p2.p, 1_f);
+                const auto p3 = global_transform * Vec4(tri.p3.p, 1_f);
+                bound = merge(bound, p1);
+                bound = merge(bound, p2);
+                bound = merge(bound, p3);
+            });
+        });
+        
+        // Set scene bound to the lights
+        for (auto& l : lights_) {
+            auto* light = nodes_.at(l.index).primitive.light;
+            light->set_scene_bound(bound);
+        }
 
         // Build acceleration structure
         LM_INFO("Building acceleration structure [name='{}']", accel_->name());

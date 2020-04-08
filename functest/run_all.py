@@ -28,7 +28,6 @@ def run_functests(output_dir, lmenv_path):
         'example_raycast',
         'example_pt',
         'example_cpp',
-        'example_custom_material',
         'example_custom_renderer',
         'example_serialization',
         'func_render_all',
@@ -39,6 +38,9 @@ def run_functests(output_dir, lmenv_path):
         'func_serial_consistency',
         'func_update_asset',
         'func_scheduler',
+        'func_materials',
+        'func_lights',
+        'func_renderers',
         'perf_accel',
         'perf_obj_loader',
         'perf_serial'

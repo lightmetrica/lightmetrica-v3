@@ -10,6 +10,26 @@
 #include <lm/film.h>
 #include <lm/scheduler.h>
 #include <lm/bidir.h>
+#include <lm/debug.h>
+
+// Poll mutated paths
+#define BDPT_POLL_PATHS 0
+
+#if BDPT_POLL_PATHS
+LM_NAMESPACE_BEGIN(nlohmann)
+// Specialize adl_serializer for one-way automatic conversion from path to Json type
+template <>
+struct adl_serializer<lm::Path> {
+    static void to_json(lm::Json& j, const lm::Path& path) {
+        for (const auto& v : path.vs) {
+            j.push_back(v.sp.geom.p);
+        }
+    }
+};
+LM_NAMESPACE_END(nlohmann)
+#endif
+
+// ------------------------------------------------------------------------------------------------
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -27,8 +47,7 @@ public:
     virtual void construct(const Json& prop) override {
         scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
-        scene_->camera()->set_aspect_ratio(film_->aspect());
-        min_verts_ = json::value<int>(prop, "min_verts");
+        min_verts_ = json::value<int>(prop, "min_verts", 2);
         max_verts_ = json::value<int>(prop, "max_verts");
         seed_ = json::value_or_none<unsigned int>(prop, "seed");
         const auto sched_name = json::value<std::string>(prop, "scheduler");
@@ -48,7 +67,9 @@ public:
         const auto size = film_->size();
 
         // Execute parallel process
-        const auto processed = sched_->run([&](long long, long long, int threadid) {
+        const auto processed = sched_->run([&](long long, long long sample_index, int threadid) {
+            LM_KEEP_UNUSED(sample_index);
+
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
@@ -69,18 +90,23 @@ public:
                     continue;
                 }
 
-                // Evaluate contribution and probability
-                const auto f = path->eval_measurement_contrb_bidir(scene_, 0);
-                if (math::is_zero(f)) {
-                    continue;
+                #if BDPT_POLL_PATHS
+                if (threadid == 0) {
+                    debug::poll({
+                        {"id", "path"},
+                        {"sample_index", sample_index},
+                        {"path", *path}
+                    });
                 }
-                const auto p = path->pdf_bidir(scene_, 0);
-                if (p == 0_f) {
+                #endif
+
+                // Evaluate contribution
+                const auto C = path->eval_sampling_weight_bidir(scene_, 0);
+                if (math::is_zero(C)) {
                     continue;
                 }
 
                 // Accumulate contribution
-                const auto C = f / p;
                 const auto rp = path->raster_position(scene_);
                 film_->splat(rp, C);
             }
@@ -128,12 +154,17 @@ public:
                 // use (0,k) strategy instead.
                 int s = 1;
                 int t = n-1;
-                if (subpathE.vs[t-1].specular) {
-                    s = 0;
-                    t = n;
-                }
-
                 // Selected strategy is not sampled due to the early rejection
+                if (s > nL || t > nE) {
+                    continue;
+                }
+                {
+                    const auto& v = subpathE.vs[t-1];
+                    if (path::is_specular_component(scene_, v.sp, v.comp)) {
+                        s = 0;
+                        t = n;
+                    }
+                }
                 if (s > nL || t > nE) {
                     continue;
                 }
@@ -144,18 +175,13 @@ public:
                     continue;
                 }
 
-                // Evaluate contribution and probability
-                const auto f = path->eval_measurement_contrb_bidir(scene_, s);
-                if (math::is_zero(f)) {
-                    continue;
-                }
-                const auto p = path->pdf_bidir(scene_, s);
-                if (p == 0_f) {
+                // Evaluate contribution
+                const auto C = path->eval_sampling_weight_bidir(scene_, s);
+                if (math::is_zero(C)) {
                     continue;
                 }
 
                 // Accumulate contribution
-                const auto C = f / p;
                 const auto rp = path->raster_position(scene_);
                 film_->splat(rp, C);
             }
@@ -181,7 +207,9 @@ public:
         const auto size = film_->size();
 
         // Execute parallel process
-        const auto processed = sched_->run([&](long long, long long, int threadid) {
+        const auto processed = sched_->run([&](long long, long long sample_index, int threadid) {
+            LM_KEEP_UNUSED(sample_index);
+
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
@@ -201,6 +229,9 @@ public:
                 // Strategy index
                 const int s = n - 1;
                 const int t = 1;
+                if (s > nL || t > nE) {
+                    continue;
+                }
 
                 // Connect subpaths
                 const auto path = path::connect_subpaths(scene_, subpathL, subpathE, s, t);
@@ -208,6 +239,23 @@ public:
                     continue;
                 }
 
+                #if BDPT_POLL_PATHS
+                if (threadid == 0) {
+                    debug::poll({
+                        {"id", "path"},
+                        {"sample_index", sample_index},
+                        {"path", *path}
+                    });
+                }
+                #endif
+
+                #if 1
+                // Evaluate contribution
+                const auto C = path->eval_sampling_weight_bidir(scene_, s);
+                if (math::is_zero(C)) {
+                    continue;
+                }
+                #else
                 // Evaluate contribution and probability
                 const auto f = path->eval_measurement_contrb_bidir(scene_, s);
                 if (math::is_zero(f)) {
@@ -217,9 +265,10 @@ public:
                 if (p == 0_f) {
                     continue;
                 }
+                const auto C = f / p;
+                #endif
 
                 // Accumulate contribution
-                const auto C = f / p;
                 const auto rp = path->raster_position(scene_);
                 film_->splat(rp, C);
             }
@@ -280,7 +329,9 @@ public:
         const auto size = film_->size();
 
         // Execute parallel process
-        const auto processed = sched_->run([&](long long, long long, int threadid) {
+        const auto processed = sched_->run([&](long long, long long sample_index, int threadid) {
+            LM_KEEP_UNUSED(sample_index);
+
             // Per-thread random number generator
             thread_local Rng rng(seed_ ? *seed_ + threadid : math::rng_seed());
 
@@ -318,7 +369,7 @@ public:
                     const auto C_unweighted = f / p;
                     #else
                     // Unweighted contribution
-                    const auto C_unweighted = path->eval_unweighted_contrb_bidir(scene_, s);
+                    const auto C_unweighted = path->eval_sampling_weight_bidir(scene_, s);
                     if (math::is_zero(C_unweighted)) {
                         continue;
                     }

@@ -45,20 +45,6 @@ Debug
    :content-only:
    :members:
 
-Debug IO
-======================
-
-.. doxygengroup:: debugio
-   :content-only:
-   :members:
-
-Distributed
-======================
-
-.. doxygengroup:: distributed
-   :content-only:
-   :members:
-
 Json
 ======================
 
@@ -70,6 +56,13 @@ Math
 ======================
 
 .. doxygengroup:: math
+   :content-only:
+   :members:
+
+OBJ loader
+======================
+
+.. doxygengroup:: objloader
    :content-only:
    :members:
 
@@ -168,5 +161,12 @@ Model
 ======================
 
 .. doxygengroup:: model
+   :content-only:
+   :members:
+
+Path sampling
+======================
+
+.. doxygengroup:: path
    :content-only:
    :members:

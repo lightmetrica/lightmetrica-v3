@@ -14,49 +14,49 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \rst
 .. function:: material::glass
 
-   Fresnel reflection and refraction.
+    Fresnel reflection and refraction.
 
-   :param float Ni: Relative index of refraction.
+    :param float Ni: Relative index of refraction.
 
-   This component implement Fresnel reflection and refraction BSDF, which reads
+    This component implement Fresnel reflection and refraction BSDF, which reads
 
-   .. math::
-      f_s(\omega_i, \omega_o)
+    .. math::
+        f_s(\omega_i, \omega_o)
         = F\, \delta_\Omega(\omega_{\mathrm{refl}}, \omega_o)
         + (1-F)\, \delta_\Omega(\omega_{\mathrm{refr}}, \omega_o),
 
-   where :math:`F` is Fresnel term and :math:`\delta_\Omega` is
-   the Dirac delta function w.r.t. solid angle measure.
-   :math:`\omega_{\mathrm{refl}}` and :math:`\omega_{\mathrm{refr}}`
-   are reflected and refracted directions of :math:`\omega_i` respectively defined as
+    where :math:`F` is Fresnel term and :math:`\delta_\Omega` is
+    the Dirac delta function w.r.t. solid angle measure.
+    :math:`\omega_{\mathrm{refl}}` and :math:`\omega_{\mathrm{refr}}`
+    are reflected and refracted directions of :math:`\omega_i` respectively defined as
 
-   .. math::
-      \begin{eqnarray}
+    .. math::
+        \begin{eqnarray}
         \omega_{\mathrm{refl}}
-          &=& 2(\omega_i\cdot\mathbf{n})\mathbf{n} - \omega_i, \\
+            &=& 2(\omega_i\cdot\mathbf{n})\mathbf{n} - \omega_i, \\
         \omega_{\mathrm{refr}}
-          &=& -\eta\omega_i
+            &=& -\eta\omega_i
                 + \left[
                     \eta(\omega_i\cdot\mathbf{n})-\sqrt{1-\eta^2(1-(\omega_i\cdot\mathbf{n})^2)}
-                  \right] \mathbf{n},
-      \end{eqnarray}
+                    \right] \mathbf{n},
+        \end{eqnarray}
 
-   where :math:`\mathbf{n}` is the shading normal on a position of the scene surface
-   and :math:`\eta` is relative index of refraction: :math:`\eta\equiv\frac{n_i}{n_t}`
-   where :math:`n_i` and :math:`n_t` is the index of refraction of the media on
-   incident and transmitted sides of scene surface respectively.
+    where :math:`\mathbf{n}` is the shading normal on a position of the scene surface
+    and :math:`\eta` is relative index of refraction: :math:`\eta\equiv\frac{n_i}{n_t}`
+    where :math:`n_i` and :math:`n_t` is the index of refraction of the media on
+    incident and transmitted sides of scene surface respectively.
 
-   For Fresnel term, we used Schlick's approximation [Schlick1994]_:
+    For Fresnel term, we used Schlick's approximation [Schlick1994]_:
 
-   .. math::
-      \begin{eqnarray}
+    .. math::
+        \begin{eqnarray}
         F = R_0 + (1-R_0)(1-(\omega_i\cdot\mathbf{n})^2),\;
         R_0 = \left( \frac{1-\eta}{1+\eta} \right)^2.
-      \end{eqnarray}
+        \end{eqnarray}
 
-   Reflection or refraction is determined by sampling Fresnel term.
+    Reflection or refraction is determined by sampling Fresnel term.
 
-   .. [Schlick1994] C. Schlick.
+    .. [Schlick1994] C. Schlick.
                     An Inexpensive BRDF Model for Physically-based Rendering.
                     Computer Graphics Forum. 13 (3): 233. 1994.
 \endrst
@@ -111,7 +111,15 @@ public:
         Ni_ = json::value<Float>(prop, "Ni");
     }
 
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, TransDir trans_dir) const override {
+    virtual ComponentSample sample_component(const ComponentSampleU&, const PointGeometry&) const override {
+        return { 0, 1_f };
+    }
+
+    virtual Float pdf_component(int, const PointGeometry&) const override {
+        return 1_f;
+    }
+
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, int, TransDir trans_dir) const override {
         const bool in = glm::dot(wi, geom.n) > 0_f;
         const auto n = in ? geom.n : -geom.n;
         const auto eta = in ? 1_f / Ni_ : Ni_;
@@ -124,8 +132,7 @@ public:
             const auto C = Vec3(1_f);
             return DirectionSample{
                 wo,
-                C,
-                true
+                C
             };
         }
         else {
@@ -134,13 +141,12 @@ public:
             const auto C = Vec3(refr_correction(eta, trans_dir));
             return DirectionSample{
                 wt,
-                C,
-                true
+                C
             };
         }
     }
 
-    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, bool eval_delta) const override {
+    virtual Float pdf_direction(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, bool eval_delta) const override {
         if (eval_delta) {
             return 0_f;
         }
@@ -162,7 +168,7 @@ public:
         }
     }
 
-    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, TransDir trans_dir, bool eval_delta) const override {
+    virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int, TransDir trans_dir, bool eval_delta) const override {
         if (eval_delta) {
             return Vec3(0_f);
         }
@@ -182,11 +188,11 @@ public:
         }
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
+    virtual Vec3 reflectance(const PointGeometry&) const override {
         return Vec3(0_f);
     }
 
-    virtual bool is_specular_any() const override {
+    virtual bool is_specular_component(int) const override {
         return true;
     }
 };

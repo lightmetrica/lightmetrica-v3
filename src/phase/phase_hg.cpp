@@ -9,6 +9,15 @@
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
+/*
+\rst
+.. function:: phase::hg
+
+    Henyey-Greenstein phase function.
+
+    :param float g: Asymmetry parameter in [-1,1].
+\endrst
+*/
 class Phase_HenyeyGreenstein final : public Phase {
 private:
     Float g_;   // Asymmetry parameter in [-1,1]
@@ -23,12 +32,6 @@ public:
     }
 
 public:
-#if 0
-    virtual bool is_specular(const PointGeometry&) const override {
-        return false;
-    }
-#endif
-
     virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& us, const PointGeometry&, Vec3 wi) const override {
         const auto cosT = [&]() -> Float {
             if (std::abs(g_) < Eps) {
@@ -46,7 +49,7 @@ public:
         const auto local_wo = Vec3(sinT*cosP, sinT*sinP, cosT);
         const auto [u, v] = math::orthonormal_basis(-wi);
         const auto wo = Mat3(u, v, -wi) * local_wo;
-        return DirectionSample{ wo, Vec3(1_f), false };
+        return DirectionSample{ wo, Vec3(1_f) };
     }
 
     virtual Float pdf_direction(const PointGeometry&, Vec3 wi, Vec3 wo) const override {

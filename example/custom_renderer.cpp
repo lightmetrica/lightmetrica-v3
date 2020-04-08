@@ -8,45 +8,50 @@ using namespace lm::literals;
 
 // ------------------------------------------------------------------------------------------------
 
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
 // Simple ambient occlusion renderer
-class Renderer_AO final : public lm::Renderer {
+class Renderer_AO final : public Renderer {
 private:
-    lm::Scene* scene_;
-    lm::Film* film_;
+    Scene* scene_;
+    Film* film_;
     long long spp_;
     int rng_seed_ = 42;
 
 public:
-    virtual void construct(const lm::Json& prop) override {
-        scene_ = lm::json::comp_ref<lm::Scene>(prop, "scene");
-        film_ = lm::json::comp_ref<lm::Film>(prop, "output");
-        spp_ = lm::json::value<long long>(prop, "spp");
+    virtual void construct(const Json& prop) override {
+        scene_ = json::comp_ref<Scene>(prop, "scene");
+        film_ = json::comp_ref<Film>(prop, "output");
+        spp_ = json::value<long long>(prop, "spp");
     }
 
-    virtual void render() const override {
-        const auto [w, h] = film_->size();
-        lm::parallel::foreach(w*h, [&](long long index, int threadId) -> void {
-            thread_local lm::Rng rng(rng_seed_ + threadId);
-            const int x = int(index % w);
-            const int y = int(index / w);
-            const auto ray = scene_->primary_ray({(x+.5_f)/w, (y+.5_f)/h}, film_->aspect_ratio());
+    virtual Json render() const override {
+        const auto size = film_->size();
+        parallel::foreach(size.w*size.h, [&](long long index, int threadId) -> void {
+            thread_local Rng rng(rng_seed_ + threadId);
+            const int x = int(index % size.w);
+            const int y = int(index / size.w);
+            const auto ray = path::primary_ray(scene_, {(x+.5_f)/size.w, (y+.5_f)/size.h});
             const auto hit = scene_->intersect(ray);
             if (!hit) {
                 return;
             }
             auto V = 0_f;
             for (long long i = 0; i < spp_; i++) {
-                const auto [n, u, v] = hit->geom.orthonormal_basis(-ray.d);
-                const auto d = lm::math::sample_cosine_weighted(rng);
-                V += scene_->intersect({hit->geom.p, u*d.x+v*d.y+n*d.z}, lm::Eps, .2_f) ? 0_f : 1_f;
+                const auto [n, u, v] = hit->geom.orthonormal_basis_twosided(-ray.d);
+                const auto d = math::sample_cosine_weighted(rng.next<Vec2>());
+                V += scene_->intersect({hit->geom.p, u*d.x+v*d.y+n*d.z}, Eps, .2_f) ? 0_f : 1_f;
             }
             V /= spp_;
-            film_->set_pixel(x, y, lm::Vec3(V));
+            film_->set_pixel(x, y, Vec3(V));
         });
+        return {};
     }
 };
 
 LM_COMP_REG_IMPL(Renderer_AO, "renderer::ao");
+
+LM_NAMESPACE_END(LM_NAMESPACE)
 
 // ------------------------------------------------------------------------------------------------
 
@@ -87,12 +92,15 @@ int main(int argc, char** argv) {
         });
 
         // Pinhole camera
+        const lm::Float w = opt["w"];
+        const lm::Float h = opt["h"];
         const auto* camera = lm::load<lm::Camera>("camera1", "camera::pinhole", {
             {"film", film->loc()},
             {"position", opt["eye"]},
             {"center", opt["lookat"]},
             {"up", {0,1,0}},
-            {"vfov", opt["vfov"]}
+            {"vfov", opt["vfov"]},
+            {"aspect", w / h}
         });
 
         // OBJ model

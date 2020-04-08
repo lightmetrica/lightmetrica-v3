@@ -20,24 +20,20 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Phase : public Component {
 public:
-    /*!
-        \brief Result of direction sampling.
-    */
+    //! Result of direction sampling.
     struct DirectionSample {
         Vec3 wo;            //!< Sampled direction.
         Vec3 weight;        //!< Contribution divided by probability.
-        bool specular;      //!< Sampled component is specular.
     };
 
-    /*!
-    */
+    //! Random number input for direction sampling.
     struct DirectionSampleU {
         Vec2 ud;
     };
 
     /*!
         \brief Sample a direction.
-        \param rng Random number generator.
+        \param u Random number input.
         \param geom Point geometry.
         \param wi Incident ray direction.
         \return Sampled direction and associated information.

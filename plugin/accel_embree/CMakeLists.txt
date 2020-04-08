@@ -7,6 +7,7 @@ include(LmAddPlugin)
 
 # embree
 # https://github.com/embree/embree
+
 find_package(embree 3.0)
 if (embree_FOUND)
     # Create embree target
@@ -20,7 +21,7 @@ if (embree_FOUND)
         INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
         LIBRARIES embree
         SOURCES
-            "embree.h"
+            "embree_params.h"
             "accel_embree.cpp"
             "accel_embree_instanced.cpp")
 

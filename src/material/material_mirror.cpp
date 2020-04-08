@@ -29,28 +29,35 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 \endrst
 */
 class Material_Mirror final : public Material {
-private:
-    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU&, const PointGeometry& geom, Vec3 wi, TransDir) const override {
+public:
+    virtual ComponentSample sample_component(const ComponentSampleU&, const PointGeometry&) const override {
+        return { 0, 1_f };
+    }
+
+    virtual Float pdf_component(int, const PointGeometry&) const override {
+        return 1_f;
+    }
+
+    virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU&, const PointGeometry& geom, Vec3 wi, int, TransDir) const override {
         return DirectionSample{
             math::reflection(wi, geom.n),
-            Vec3(1_f),
-            true
+            Vec3(1_f)
         };
     }
 
-    virtual Float pdf_direction(const PointGeometry&, Vec3, Vec3, bool eval_delta) const override {
+    virtual Float pdf_direction(const PointGeometry&, Vec3, Vec3, int, bool eval_delta) const override {
         return eval_delta ? 0_f : 1_f;
     }
 
-    virtual Vec3 eval(const PointGeometry&, Vec3, Vec3, TransDir, bool eval_delta) const override {
+    virtual Vec3 eval(const PointGeometry&, Vec3, Vec3, int, TransDir, bool eval_delta) const override {
         return eval_delta ? Vec3(0_f) : Vec3(1_f);
     }
 
-    virtual std::optional<Vec3> reflectance(const PointGeometry&) const override {
+    virtual Vec3 reflectance(const PointGeometry&) const override {
         return Vec3(0_f);
     }
 
-    virtual bool is_specular_any() const override {
+    virtual bool is_specular_component(int) const override {
         return true;
     }
 };

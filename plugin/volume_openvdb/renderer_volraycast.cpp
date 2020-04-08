@@ -35,7 +35,6 @@ public:
     virtual void construct(const Json& prop) override {
         scene_ = json::comp_ref<Scene>(prop, "scene");
         film_ = json::comp_ref<Film>(prop, "output");
-        scene_->camera()->set_aspect_ratio(film_->aspect());
         volume_ = json::comp_ref<Volume>(prop, "volume");
         march_step_ = json::value<Float>(prop, "march_step", .5_f);
         march_step_shadow_ = json::value<Float>(prop, "march_step_shadow", 1_f);
