@@ -79,7 +79,7 @@ Supported compilers
 Short history
 ===================
 
-We started the development of Lightmetrica in 2014. The initial version was rather an experimental prototype. In 2015, we extended this prototype to `Lightmetrica Version 2 <https://github.com/hi2p-perim/lightmetrica-v2>`_. Fort unately, the development of Version 2 could be affiliated by `MITOU Program <https://www.ipa.go.jp/english/humandev/third.html>`_, a goverment-funded program by Ministry of Economy, Trade and Industry, Japan. The basic design of the renderer is fixed in this version. Successfully, we could use Version 2 in various research projects including several SIGGRAPH/SIGGRAPH Asia paper projects. In 2019, we decided to reimplement the whole renderer and we call this version as Version 3.
+We started the development of Lightmetrica in 2014. The initial version was rather an experimental prototype. In 2015, we extended this prototype to `Lightmetrica Version 2 <https://github.com/hi2p-perim/lightmetrica-v2>`_. Fortunately, the development of Version 2 could be affiliated by `MITOU Program <https://www.ipa.go.jp/english/humandev/third.html>`_, a goverment-funded program by Ministry of Economy, Trade and Industry, Japan. The basic design of the renderer is fixed in this version. Successfully, we could use Version 2 in various research projects including several SIGGRAPH/SIGGRAPH Asia paper projects. In 2019, we decided to reimplement the whole renderer and we call this version as Version 3.
 
 About Version 3
 ===================
