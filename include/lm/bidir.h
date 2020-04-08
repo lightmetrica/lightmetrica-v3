@@ -24,6 +24,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 struct Vert {
     SceneInteraction sp;    //!< Surface interaction.
     int comp;               //!< Component index.
+
+    //! Check if the vertex is specular.
+    bool is_specular(const Scene* scene) const {
+        return path::is_specular_component(scene, sp, comp);
+    }
 };
 
 /*!
