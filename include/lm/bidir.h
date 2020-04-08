@@ -513,7 +513,7 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
             // Sample primary ray
             const auto s = path::sample_primary_ray(rng, scene, trans_dir);
             if (!s) {
-                return;
+                break;;
             }
             path.vs.push_back({ s->sp, 0 });
             ray = { s->sp.geom.p, s->wo };
