@@ -27,11 +27,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 */
 class Material_Mask final : public Material {
 public:
-    virtual ComponentSample sample_component(const ComponentSampleU&, const PointGeometry&) const override {
+    virtual ComponentSample sample_component(const ComponentSampleU&, const PointGeometry&, Vec3) const override {
         return { 0, 1_f };
     }
 
-    virtual Float pdf_component(int, const PointGeometry&) const override {
+    virtual Float pdf_component(int, const PointGeometry&, Vec3) const override {
         return 1_f;
     }
 

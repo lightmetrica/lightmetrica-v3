@@ -410,7 +410,7 @@ public:
         }
     }
 
-    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom) const override {
+    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom, Vec3) const override {
         // Sample component group index
         const auto alpha = eval_alpha(geom);
         if (u.uc[0] < alpha) {
@@ -419,7 +419,7 @@ public:
         return { 1, 1_f / (1_f - alpha) };
     }
 
-    virtual Float pdf_component(int comp, const PointGeometry& geom) const override {
+    virtual Float pdf_component(int comp, const PointGeometry& geom, Vec3) const override {
         const auto alpha = eval_alpha(geom);
         return comp == 0 ? alpha : (1_f - alpha);
     }

@@ -76,7 +76,7 @@ public:
             Vec3 throughput = s_primary->weight;
 
             // Current component
-            const auto s_comp_primary_hit = path::sample_component(rng, scene_, *hit_primary);
+            const auto s_comp_primary_hit = path::sample_component(rng, scene_, *hit_primary, -s_primary->wo);
             throughput *= s_comp_primary_hit.weight;
 
             // Current scene interaction and incident ray direction
@@ -152,7 +152,7 @@ public:
                 // --------------------------------------------------------------------------------
 
                 // Sample component
-                const auto s_comp = path::sample_component(rng, scene_, *hit);
+                const auto s_comp = path::sample_component(rng, scene_, *hit, -s->wo);
                 throughput *= s_comp.weight;
 
                 // --------------------------------------------------------------------------------

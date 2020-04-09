@@ -54,24 +54,26 @@ public:
         \brief Component sampling.
         \param u Random number input.
         \param geom Point geometry.
+        \param wi Incident direction.
 
         \rst
         This function samples a component of the material
         :math:`j \sim p_{c,\mathrm{bsdf}}(\cdot\mid\mathbf{x})`.
         \endrst
     */
-    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom) const = 0;
+    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom, Vec3 wi) const = 0;
     
     /*!
         \brief Evaluate PDF for component sampling.
         \param comp Sampled component index.
         \param geom Point geometry.
+        \param wi Incident direction.
        
         \rst
         This function evaluats :math:`p_{c,\mathrm{bsdf}}(j\mid\mathbf{x})`.
         \endrst
     */
-    virtual Float pdf_component(int comp, const PointGeometry& geom) const = 0;
+    virtual Float pdf_component(int comp, const PointGeometry& geom, Vec3 wi) const = 0;
 
     // --------------------------------------------------------------------------------------------
 

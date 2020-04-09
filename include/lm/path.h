@@ -183,16 +183,17 @@ struct ComponentSampleU {
     \param u Random number input.
     \param scene Scene.
     \param sp Scene interaction.
+    \param wi Incident direction.
     
     \rst
     This function samples a component of the scene interaction accroding to its type.
     For detail, please refer to :ref:`path_sampling_component_sampling`.
     \endrst
 */
-static ComponentSample sample_component(const ComponentSampleU& u, const Scene* scene, const SceneInteraction& sp) {
+static ComponentSample sample_component(const ComponentSampleU& u, const Scene* scene, const SceneInteraction& sp, Vec3 wi) {
     if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
         const auto* material = scene->node_at(sp.primitive).primitive.material;
-        const auto s = material->sample_component({u.uc}, sp.geom);
+        const auto s = material->sample_component({u.uc}, sp.geom, wi);
         return { s.comp, s.weight };
     }
     return { 0, 1_f };
@@ -209,8 +210,8 @@ static ComponentSample sample_component(const ComponentSampleU& u, const Scene* 
     This version takes random number generator instead of arbitrary random numbers.
     \endrst
 */
-static ComponentSample sample_component(Rng& rng, const Scene* scene, const SceneInteraction& sp) {
-    return sample_component(rng.next<ComponentSampleU>(), scene, sp);
+static ComponentSample sample_component(Rng& rng, const Scene* scene, const SceneInteraction& sp, Vec3 wi) {
+    return sample_component(rng.next<ComponentSampleU>(), scene, sp, wi);
 }
 
 /*!
@@ -224,10 +225,10 @@ static ComponentSample sample_component(Rng& rng, const Scene* scene, const Scen
     For detail, please refer to :ref:`path_sampling_component_sampling`.
     \endrst
 */
-static Float pdf_component(const Scene* scene, const SceneInteraction& sp, int comp) {
+static Float pdf_component(const Scene* scene, const SceneInteraction& sp, Vec3 wi, int comp) {
     if (sp.is_type(SceneInteraction::SurfaceInteraction)) {
         const auto* material = scene->node_at(sp.primitive).primitive.material;
-        return material->pdf_component(comp, sp.geom);
+        return material->pdf_component(comp, sp.geom, wi);
     }
     return 1_f;
 }

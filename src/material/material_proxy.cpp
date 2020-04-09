@@ -40,12 +40,12 @@ public:
         ref_ = json::comp_ref<Material>(prop, "ref");
     }
 
-    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom) const override {
-        return ref_->sample_component(u, geom);
+    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom, Vec3 wi) const override {
+        return ref_->sample_component(u, geom, wi);
     }
 
-    virtual Float pdf_component(int comp, const PointGeometry& geom) const override {
-        return ref_->pdf_component(comp, geom);
+    virtual Float pdf_component(int comp, const PointGeometry& geom, Vec3 wi) const override {
+        return ref_->pdf_component(comp, geom, wi);
     }
 
     virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, int comp, TransDir trans_dir) const override {

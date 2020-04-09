@@ -822,11 +822,11 @@ static void bind_material(pybind11::module& m) {
         virtual void construct(const Json& prop) override {
             PYBIND11_OVERLOAD(void, Material, construct, prop);
         }
-        virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom) const override {
-            PYBIND11_OVERLOAD_PURE(ComponentSample, Material, sample_component, u, geom);
+        virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry& geom, Vec3 wi) const override {
+            PYBIND11_OVERLOAD_PURE(ComponentSample, Material, sample_component, u, geom, wi);
         }
-        virtual Float pdf_component(int comp, const PointGeometry& geom) const override {
-            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_component, comp, geom);
+        virtual Float pdf_component(int comp, const PointGeometry& geom, Vec3 wi) const override {
+            PYBIND11_OVERLOAD_PURE(Float, Material, pdf_component, comp, geom, wi);
         }
         virtual std::optional<DirectionSample> sample_direction(const DirectionSampleU& u, const PointGeometry& geom, Vec3 wi, int comp, TransDir trans_dir) const override {
             PYBIND11_OVERLOAD_PURE(std::optional<DirectionSample>, Material, sample_direction, u, geom, wi, comp, trans_dir);
