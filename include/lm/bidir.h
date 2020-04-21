@@ -413,7 +413,7 @@ struct Path {
                 const auto p_ray = path::pdf_primary_ray(scene, v0->sp, d01, false);
                 const auto p_comp_v0 = path::pdf_component(scene, v0->sp, v0->comp);
                 const auto p_comp_v1 = path::pdf_component(scene, v1->sp, v1->comp);
-                p = surface::convert_pdf_aggregated_to_area(p_ray, v0->sp.geom, v1->sp.geom) * p_comp_v0 * p_comp_v1;
+                p = surface::convert_pdf_to_area(p_ray, v0->sp.geom, v1->sp.geom) * p_comp_v0 * p_comp_v1;
                 i++;
             }
 
@@ -425,7 +425,7 @@ struct Path {
                 const auto wo = direction(v, v_next);
                 const auto p_comp = path::pdf_component(scene, v_next->sp, v_next->comp);
                 const auto p_projSA = path::pdf_direction(scene, v->sp, wi, wo, v->comp, false);
-                p *= (p_comp * surface::convert_pdf_aggregated_to_area(p_projSA, v->sp.geom, v_next->sp.geom));
+                p *= (p_comp * surface::convert_pdf_to_area(p_projSA, v->sp.geom, v_next->sp.geom));
             }
             return p;
         };

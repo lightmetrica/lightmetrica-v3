@@ -113,7 +113,7 @@ static std::optional<RaySample> sample_primary_ray(const RaySampleU& u, const Sc
                 s->geom
             ),
             s->wo,
-            s->weight
+            s->weight / p_sel
         };
     }
     LM_UNREACHABLE_RETURN();
@@ -761,9 +761,9 @@ static Vec3 eval_contrb_direction(const Scene* scene, const SceneInteraction& sp
     const auto& primitive = scene->node_at(sp.primitive).primitive;
     switch (sp.type) {
         case SceneInteraction::CameraEndpoint:
-            return primitive.camera->eval(wo);
+            return primitive.camera ? primitive.camera->eval(wo) : Vec3(0_f);
         case SceneInteraction::LightEndpoint:
-            return primitive.light->eval(sp.geom, wo, eval_delta);
+            return primitive.light ? primitive.light->eval(sp.geom, wo, eval_delta) : Vec3(0_f);
         case SceneInteraction::MediumInteraction:
             return primitive.medium->phase()->eval(sp.geom, wi, wo);
         case SceneInteraction::SurfaceInteraction:
