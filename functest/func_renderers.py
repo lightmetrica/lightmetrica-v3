@@ -122,4 +122,7 @@ display_image(img)
 img = render(scene, 'bdpt')
 display_image(img)
 
+# `renderer::bdptopt` (optimized)
 
+img = render(scene, 'bdptopt')
+display_image(img)

@@ -327,7 +327,10 @@ LM_NAMESPACE_BEGIN(surface)
     \endrst
 */
 static Float geometry_term(const PointGeometry& s1, const PointGeometry& s2) {
-    assert(!(s1.infinite && s2.infinite));
+    if (s1.infinite && s2.infinite) {
+        // Undefined
+        return 0_f;
+    }
     Vec3 d;
     Float L2;
     if (s1.infinite || s2.infinite) {
@@ -400,7 +403,7 @@ static Float convert_pdf_SA_to_projSA(Float pdf_SA, const PointGeometry& geom, V
     and :ref:`path_sampling_aggregated_throughput`.
     \endrst
 */
-static Float convert_pdf_aggregated_to_area(Float pdf_in, const PointGeometry& geom1, const PointGeometry& geom2) {
+static Float convert_pdf_to_area(Float pdf_in, const PointGeometry& geom1, const PointGeometry& geom2) {
     const auto G = geometry_term(geom1, geom2);
     return pdf_in * G;
 }

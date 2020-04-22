@@ -92,6 +92,7 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/renderer/renderer_pt.cpp"
     "${_SOURCE_DIR}/renderer/renderer_lt.cpp"
     "${_SOURCE_DIR}/renderer/renderer_bdpt.cpp"
+    "${_SOURCE_DIR}/renderer/renderer_bdptopt.cpp"
     "${_SOURCE_DIR}/renderer/renderer_volpt.cpp"
     "${_SOURCE_DIR}/medium/medium_homogeneous.cpp"
     "${_SOURCE_DIR}/medium/medium_heterogeneous.cpp"
