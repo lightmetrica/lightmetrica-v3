@@ -24,6 +24,11 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 struct Vert {
     SceneInteraction sp;    //!< Surface interaction.
     int comp;               //!< Component index.
+
+    //! Check if the vertex is specular.
+    bool is_specular(const Scene* scene) const {
+        return path::is_specular_component(scene, sp, comp);
+    }
 };
 
 /*!
@@ -230,7 +235,7 @@ struct Path {
         const auto v0 = vertex_at(0, trans_dir);
         if (path::is_connectable_endpoint(scene, v0->sp)) {
             const auto pA = path::pdf_position(scene, v0->sp);
-            const auto p_comp = path::pdf_component(scene, v0->sp, v0->comp);
+            const auto p_comp = path::pdf_component(scene, v0->sp, {}, v0->comp);
             alpha = Vec3(1_f) / (pA * p_comp);
         }
         else {
@@ -241,8 +246,8 @@ struct Path {
             if (math::is_zero(f)) {
                 return Vec3(0_f);
             }
-            const auto p_comp_v0 = path::pdf_component(scene, v0->sp, v0->comp);
-            const auto p_comp_v1 = path::pdf_component(scene, v1->sp, v1->comp);
+            const auto p_comp_v0 = path::pdf_component(scene, v0->sp, {}, v0->comp);
+            const auto p_comp_v1 = path::pdf_component(scene, v1->sp, -d01, v1->comp);
             const auto p_ray = path::pdf_primary_ray(scene, v0->sp, d01, false);
             alpha = f / (p_ray * p_comp_v0 * p_comp_v1);
             i++;
@@ -258,7 +263,7 @@ struct Path {
             if (math::is_zero(f)) {
                 return Vec3(0_f);
             }
-            const auto p_comp = path::pdf_component(scene, v_next->sp, v_next->comp);
+            const auto p_comp = path::pdf_component(scene, v_next->sp, -wo, v_next->comp);
             const auto p_projSA = path::pdf_direction(scene, v->sp, wi, wo, v->comp, false);
             alpha *= f / p_projSA / p_comp;
         }
@@ -404,15 +409,15 @@ struct Path {
             const auto* v0 = vertex_at(0, trans_dir);
             if (path::is_connectable_endpoint(scene, v0->sp)) {
                 const auto pA = path::pdf_position(scene, v0->sp);
-                const auto p_comp = path::pdf_component(scene, v0->sp, v0->comp);
+                const auto p_comp = path::pdf_component(scene, v0->sp, {}, v0->comp);
                 p = pA * p_comp;
             }
             else {
                 const auto* v1 = vertex_at(1, trans_dir);
                 const auto d01 = direction(v0, v1);
                 const auto p_ray = path::pdf_primary_ray(scene, v0->sp, d01, false);
-                const auto p_comp_v0 = path::pdf_component(scene, v0->sp, v0->comp);
-                const auto p_comp_v1 = path::pdf_component(scene, v1->sp, v1->comp);
+                const auto p_comp_v0 = path::pdf_component(scene, v0->sp, {}, v0->comp);
+                const auto p_comp_v1 = path::pdf_component(scene, v1->sp, -d01, v1->comp);
                 p = surface::convert_pdf_to_area(p_ray, v0->sp.geom, v1->sp.geom) * p_comp_v0 * p_comp_v1;
                 i++;
             }
@@ -423,7 +428,7 @@ struct Path {
                 const auto* v_next = vertex_at(i+1, trans_dir);
                 const auto wi = direction(v, v_prev);
                 const auto wo = direction(v, v_next);
-                const auto p_comp = path::pdf_component(scene, v_next->sp, v_next->comp);
+                const auto p_comp = path::pdf_component(scene, v_next->sp, -wo, v_next->comp);
                 const auto p_projSA = path::pdf_direction(scene, v->sp, wi, wo, v->comp, false);
                 p *= (p_comp * surface::convert_pdf_to_area(p_projSA, v->sp.geom, v_next->sp.geom));
             }
@@ -508,7 +513,7 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
             // Sample primary ray
             const auto s = path::sample_primary_ray(rng, scene, trans_dir);
             if (!s) {
-                return;
+                break;;
             }
             path.vs.push_back({ s->sp, 0 });
             ray = { s->sp.geom.p, s->wo };
@@ -533,7 +538,7 @@ static void sample_subpath_from_endpoint(Rng& rng, Path& path, const Scene* scen
         }
 
         // Sample component
-        const auto s_comp = path::sample_component(rng, scene, *hit);
+        const auto s_comp = path::sample_component(rng, scene, *hit, -ray.d);
 
         // Add a vertex
         path.vs.push_back({ *hit, s_comp.comp });

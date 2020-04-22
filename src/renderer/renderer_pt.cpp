@@ -108,7 +108,7 @@ public:
 
             // Sample initial vertex
             const auto sE = path::sample_position(rng, scene_, TransDir::EL);
-            const auto sE_comp = path::sample_component(rng, scene_, sE->sp);
+            const auto sE_comp = path::sample_component(rng, scene_, sE->sp, {});
             auto sp = sE->sp;
             int comp = sE_comp.comp;
             auto throughput = sE->weight * sE_comp.weight;
@@ -287,7 +287,7 @@ public:
                 // --------------------------------------------------------------------------------
 
                 // Sample component
-                const auto s_comp = path::sample_component(rng, scene_, *hit);
+                const auto s_comp = path::sample_component(rng, scene_, *hit, -s->wo);
                 throughput *= s_comp.weight;
 
                 // --------------------------------------------------------------------------------

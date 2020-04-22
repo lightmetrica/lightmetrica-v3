@@ -177,7 +177,7 @@ void sample_subpath(Path& path, Rng& rng, const Scene* scene, int max_verts, Tra
         }
 
         // Sample component
-        const auto s_comp = path::sample_component(rng, scene, *hit);
+        const auto s_comp = path::sample_component(rng, scene, *hit, -v.w_fwd);
         throughput *= s_comp.weight;
 
         // Create a vertex

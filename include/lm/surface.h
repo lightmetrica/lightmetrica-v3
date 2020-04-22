@@ -151,6 +151,20 @@ struct PointGeometry {
     }
 
     /*!
+        \brief Make a point on surface.
+        \param p Position.
+        \param gn Geometry normal.
+
+        \rst
+        A static function to generate a point on the scene surface
+        from the specified surface geometry information.
+        \endrst
+    */
+    static PointGeometry make_on_surface(Vec3 p, Vec3 gn) {
+        return make_on_surface(p, gn, gn, {});
+    }
+
+    /*!
         \brief Checks if two directions lies in the same half-space.
         \param w1 First direction.
         \param w2 Second direction.

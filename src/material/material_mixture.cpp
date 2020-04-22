@@ -57,13 +57,13 @@ public:
         dist_.norm();
     }
     
-    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry&) const override {
+    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry&, Vec3) const override {
         const int comp = dist_.sample(u.uc[0]);
         const auto p = dist_.pmf(comp);
         return { comp, 1_f / p };
     }
 
-    virtual Float pdf_component(int comp, const PointGeometry&) const override {
+    virtual Float pdf_component(int comp, const PointGeometry&, Vec3) const override {
         return dist_.pmf(comp);
     }
 
@@ -185,13 +185,13 @@ public:
         dist_.norm();
     }
 
-    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry&) const override {
+    virtual ComponentSample sample_component(const ComponentSampleU& u, const PointGeometry&, Vec3) const override {
         const int comp = dist_.sample(u.uc[0]);
         const auto p = dist_.pmf(comp);
         return { comp, 1_f / p };
     }
 
-    virtual Float pdf_component(int comp, const PointGeometry&) const override {
+    virtual Float pdf_component(int comp, const PointGeometry&, Vec3) const override {
         return dist_.pmf(comp);
     }
 
