@@ -12,6 +12,7 @@
 #include <lm/phase.h>
 #include <lm/scheduler.h>
 #include <lm/path.h>
+#include <lm/timer.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -56,7 +57,7 @@ public:
     virtual Json render() const override {
         film_->clear();
         const auto size = film_->size();
-
+        timer::ScopedTimer st;
         // Compute colors for each pixel
         sched_->run([&](long long pixelIndex, long long, int) {
             const int x = int(pixelIndex % size.w);
@@ -106,7 +107,7 @@ public:
             film_->set_pixel(x, y, L);
         });
 
-        return {};
+        return { {"elapsed", st.now()} };
     }
 };
 

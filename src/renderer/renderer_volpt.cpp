@@ -10,6 +10,7 @@
 #include <lm/film.h>
 #include <lm/scheduler.h>
 #include <lm/path.h>
+#include <lm/timer.h>
 
 #define VOLPT_IMAGE_SAMPLING 0
 
@@ -62,6 +63,7 @@ public:
 
         film_->clear();
         const auto size = film_->size();
+        timer::ScopedTimer st;
         const auto processed = sched_->run([&](long long pixel_index, long long sample_index, int threadid) {
             LM_KEEP_UNUSED(sample_index);
 
@@ -183,7 +185,7 @@ public:
         film_->rescale(1_f / processed);
         #endif
 
-        return { {"processed", processed} };
+        return { {"processed", processed}, {"elapsed", st.now()} };
     }
 };
 
@@ -198,6 +200,7 @@ public:
 
         film_->clear();
         const auto size = film_->size();
+        timer::ScopedTimer st;
         const auto processed = sched_->run([&](long long pixel_index, long long sample_index, int threadid) {
             LM_KEEP_UNUSED(sample_index);
 
@@ -360,7 +363,7 @@ public:
         film_->rescale(1_f / processed);
         #endif
 
-        return { {"processed", processed} };
+        return { {"processed", processed}, {"elapsed", st.now()} };
     }
 };
 

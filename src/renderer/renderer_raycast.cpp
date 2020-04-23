@@ -12,6 +12,7 @@
 #include <lm/parallel.h>
 #include <lm/scheduler.h>
 #include <lm/path.h>
+#include <lm/timer.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -65,6 +66,7 @@ public:
 
         film_->clear();
         const auto size = film_->size();
+        timer::ScopedTimer st;
         sched_->run([&](long long index, long long, int) {
             const int x = int(index % size.w);
             const int y = int(index / size.w);
@@ -87,7 +89,7 @@ public:
             }
         });
 
-        return {};
+        return { {"elapsed", st.now()} };
     }
 };
 
