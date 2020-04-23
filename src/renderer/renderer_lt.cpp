@@ -10,6 +10,7 @@
 #include <lm/film.h>
 #include <lm/scheduler.h>
 #include <lm/path.h>
+#include <lm/timer.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -50,6 +51,7 @@ public:
         scene_->require_renderable();
         film_->clear();
         const auto size = film_->size();
+        timer::ScopedTimer st;
 
         // Execute parallel process
         const auto processed = sched_->run([&](long long, long long, int threadid) {
@@ -167,7 +169,7 @@ public:
         // Rescale film
         film_->rescale(Float(size.w * size.h) / processed);
 
-        return { {"processed", processed} };
+        return { {"processed", processed}, {"elapsed", st.now()} };
     }
 };
 

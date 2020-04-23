@@ -52,6 +52,7 @@ set(_HEADER_FILES
     "${_INCLUDE_DIR}/volume.h"
     "${_INCLUDE_DIR}/path.h"
     "${_INCLUDE_DIR}/bidir.h"
+    "${_INCLUDE_DIR}/timer.h"
     )
 set(_SOURCE_FILES 
     "${_SOURCE_DIR}/component.cpp"
