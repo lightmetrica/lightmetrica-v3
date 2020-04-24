@@ -41,7 +41,7 @@ To install the framework, you just need the following commands:
 
     $ conda create -n lm3 python=3.7
     $ conda activate lm3
-    $ conda install lightmetrica -c conda-forge -c hi2p-perim
+    $ conda install lightmetrica -c hi2p-perim -c conda-forge
 
 The first line create a new conda environment with Python 3.7.
 Currently, the pre-built package only supports Python 3.7 and other Python versions are not supported.
@@ -55,6 +55,11 @@ If you could successfully install the framework, executing the following command
     >>> import lightmetrica as lm
     >>> lm.init()
     >>> lm.info()
+
+.. note::
+
+    ``-c hi2p-perim`` option must precedes `-c conda-forge` option, since ``conda install`` prioritizes the first channel specified when the packages with the same name are found in both channels.
+
 
 Building plugins
 --------------------------

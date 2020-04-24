@@ -1,0 +1,43 @@
+package:
+  name: lightmetrica
+  version: 3.0.0
+
+source:
+  path: ../
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake
+  host:
+    - pip
+    - python
+    - doctest-cpp
+    - embree3
+    - glm
+    - nlohmann_json
+    - pybind11
+    - cereal
+    - fmt
+    - stb
+    - vdbloader
+    - tbb-devel
+    - pbrt-parser
+  run:
+    - zeromq
+    - embree3
+    - glm
+    - nlohmann_json
+    - cereal
+    - fmt
+    - numpy
+
+about:
+  home: https://github.com/hi2p-perim/lightmetrica-v3
+  summary: A research-oriented renderer
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE

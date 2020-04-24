@@ -56,9 +56,37 @@ jobs:
       - cat .lmenv
       - python run_tests.py --lmenv .lmenv
 
+    - name: Conda build on Linux environment
+      os: linux
+      dist: bionic
+      before_install:
+      - sudo apt-get update
+      - curl -OJLs https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+      - bash Miniconda3-latest-Linux-x86_64.sh -p $HOME/miniconda -b
+      - source $HOME/miniconda/etc/profile.d/conda.sh
+      - conda config --set always_yes yes
+      script:
+      - cd ${TRAVIS_BUILD_DIR}/conda
+      - conda build -c hi2p-perim -c conda-forge .
+      - export CONDA_BLD_OUTPUT=`conda build -c hi2p-perim -c conda-forge . --output`
+      - anaconda -t $CONDA_UPLOAD_TOKEN upload -u hi2p-perim $CONDA_BLD_OUTPUT --force
+
+    - name: Conda build on Windows environment
+      os: windows
+      dist: 1803-containers
+      before_install:
+      - choco install miniconda3
+      - export PATH="/c/Tools/miniconda3:/c/Tools/miniconda3/Library/bin:/c/Tools/miniconda3/Scripts:$PATH"
+      - conda install conda-build anaconda-client
+      script:
+      - cd ${TRAVIS_BUILD_DIR}/conda
+      - conda build -c hi2p-perim -c conda-forge .
+      - export CONDA_BLD_OUTPUT=`conda build -c hi2p-perim -c conda-forge . --output`
+      - anaconda -t $CONDA_UPLOAD_TOKEN upload -u hi2p-perim $CONDA_BLD_OUTPUT --force
+
     # ---------------------------------------------------------------------------------------------
 
-    # Stages only for push to master branche
+    # Stages only for push to master branch
 
     # Build docker container 
     - stage: Docker build

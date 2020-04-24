@@ -19,7 +19,7 @@ Install [miniconda](https://docs.conda.io/en/latest/miniconda.html) and type the
 ```bash
 $ conda create -n lm3 python=3.7
 $ conda activate lm3
-$ conda install lightmetrica -c conda-forge -c hi2p-perim
+$ conda install lightmetrica -c hi2p-perim -c conda-forge
 $ python
 >>> import lightmetrica as lm
 >>> lm.init()
