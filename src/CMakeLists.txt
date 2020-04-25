@@ -99,6 +99,9 @@ set(_SOURCE_FILES
     "${_SOURCE_DIR}/medium/medium_heterogeneous.cpp"
     "${_SOURCE_DIR}/volume/volume_checker.cpp"
     "${_SOURCE_DIR}/volume/volume_constant.cpp"
+    "${_SOURCE_DIR}/volume/volume_gaussian.cpp"
+    "${_SOURCE_DIR}/volume/volume_multi.cpp"
+    "${_SOURCE_DIR}/volume/volume_sphere.cpp"
     "${_SOURCE_DIR}/phase/phase_hg.cpp"
     "${_SOURCE_DIR}/phase/phase_isotropic.cpp"
     "${_SOURCE_DIR}/ext/rang.hpp")
