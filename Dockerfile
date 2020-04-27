@@ -4,7 +4,10 @@ MAINTAINER Hisanari Otsu <hi2p.perim@gmail.com>
 # Change default shell to bash
 SHELL ["/bin/bash", "-c"]
 
+
+
 # System packages
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt install -y \
     tmux \
     vim \
