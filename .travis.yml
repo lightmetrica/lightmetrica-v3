@@ -62,7 +62,7 @@ jobs:
     # Stages only for push to master branch
 
     - name: Conda build on Linux environment
-      if: (branch = master) AND (type = push)
+      #if: (branch = master) AND (type = push)
       os: linux
       dist: bionic
       before_install:
@@ -81,7 +81,7 @@ jobs:
       - anaconda -t $CONDA_UPLOAD_TOKEN upload -u hi2p-perim $CONDA_BLD_OUTPUT --force
 
     - name: Conda build on Windows environment
-      if: (branch = master) AND (type = push)
+      #if: (branch = master) AND (type = push)
       os: windows
       dist: 1803-containers
       before_install:
