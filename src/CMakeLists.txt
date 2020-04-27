@@ -207,8 +207,6 @@ if (CONDA_BUILD)
     # Output extension modules to the module directory
     set(_PYTHON_MODULE_DIR "${PROJECT_SOURCE_DIR}/lightmetrica")
     set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${_PYTHON_MODULE_DIR}")
-    set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE "${_PYTHON_MODULE_DIR}")
-    set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG "${_PYTHON_MODULE_DIR}")
 else()
     set_target_properties(${_PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 endif()
