@@ -71,6 +71,8 @@ jobs:
       - cd ${TRAVIS_BUILD_DIR}/conda
       - conda build -c hi2p-perim -c conda-forge .
       - export CONDA_BLD_OUTPUT=`conda build -c hi2p-perim -c conda-forge . --output`
+      # cf. https://stackoverflow.com/questions/59904826/anaconda-client-cli-installed-but-anaconda-command-not-found
+      - conda activate base
       - anaconda -t $CONDA_UPLOAD_TOKEN upload -u hi2p-perim $CONDA_BLD_OUTPUT --force
 
     - name: Conda build on Windows environment
