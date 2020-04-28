@@ -42,9 +42,9 @@ public:
             LM_THROW_EXCEPTION(Error::InvalidArgument,
                 "volumes_alb and/or volumes_den have an invalid size. They need to be of same size.");
 
-        size_ = vol_ref_alb.size();
+        size_ = static_cast<unsigned int>(vol_ref_alb.size());
         // Load all components
-        for( int i = 0; i < size_; i++ ){
+        for( unsigned int i = 0; i < size_; i++ ){
             volumes_alb_.push_back( comp::get<Volume>(vol_ref_alb[i]) );
             volumes_den_.push_back( comp::get<Volume>(vol_ref_den[i]) );
 
@@ -57,7 +57,7 @@ public:
         // Computes the bounding box of all volumes
         Vec3 min = Vec3(Inf);
         Vec3 max = Vec3(-Inf);
-        for( auto* v : volumes_den_ ){
+        for(auto* v : volumes_den_) {
             const Bound b = v->bound();
 
             min.x = std::min(min.x,b.min.x);
@@ -93,7 +93,7 @@ public:
     // Computes the sum over all Volumes of eval_scalar
     virtual Float eval_scalar(Vec3 p) const override {
         Float sum = 0._f;
-        for( auto* v : volumes_den_ )
+        for(auto* v : volumes_den_)
             sum += v->eval_scalar(p);
        return sum;
     }
@@ -111,7 +111,7 @@ public:
         scalars.reserve(size_);
 
         // Perform a prefix sum of scalar evaluations
-        for( auto* v : volumes_den_ ){
+        for(auto* v : volumes_den_){
             Float sc = v->eval_scalar(p);
             scalars.push_back(sc);
             sum+=sc;
@@ -119,7 +119,7 @@ public:
 
         // Normalize the scalars to use as ratios and compute the resulting color directly
         Vec3 resulting_color(0._f);
-        for( int i = 0; i < size_; i++ )
+        for( unsigned int i = 0; i < size_; i++ )
             resulting_color += (scalars[i]/sum)*volumes_alb_[i]->eval_color(p);
         scalars.clear();
         return resulting_color;
