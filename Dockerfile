@@ -1,10 +1,8 @@
-FROM ubuntu:latest
+FROM ubuntu:bionic
 MAINTAINER Hisanari Otsu <hi2p.perim@gmail.com>
 
 # Change default shell to bash
 SHELL ["/bin/bash", "-c"]
-
-
 
 # System packages
 ENV DEBIAN_FRONTEND=noninteractive
