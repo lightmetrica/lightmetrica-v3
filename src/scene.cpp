@@ -91,12 +91,18 @@ public:
 
         // Check validity
         if (!mesh && !material && !light && !camera && !medium) {
-            LM_ERROR("Invalid primitive node. Given assets are invalid.");
-            return false;
+            LM_THROW_EXCEPTION(Error::InvalidArgument, "Invalid primitive node. Given assets are invalid.");
+            return -1;
         }
         if (camera && light) {
-            LM_ERROR("Primitive cannot be both camera and light");
-            return false;
+            LM_THROW_EXCEPTION(Error::InvalidArgument, "Primitive cannot be both camera and light.");
+            return -1;
+        }
+
+        // If you specify the mesh, you also need to specify the material
+        if ((!mesh && material) || (mesh && !material)) {
+            LM_THROW_EXCEPTION(Error::InvalidArgument, "You must specify both mesh and material.");
+            return -1;
         }
 
         // Camera
@@ -107,9 +113,9 @@ public:
         // Envlight
         if (light && light->is_env()) {
             if (env_light_) {
-                LM_ERROR("Environment light is already registered. "
+                LM_THROW_EXCEPTION(Error::InvalidArgument, "Environment light is already registered. "
                     "You can register only one environment light in the scene.");
-                return false;
+                return -1;
             }
             env_light_ = index;
         }
