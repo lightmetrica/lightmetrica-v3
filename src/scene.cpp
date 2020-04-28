@@ -102,6 +102,7 @@ public:
         // If you specify the mesh, you also need to specify the material
         if ((!mesh && material) || (mesh && !material)) {
             LM_THROW_EXCEPTION(Error::InvalidArgument, "You must specify both mesh and material.");
+            return -1;
         }
 
         // Camera
