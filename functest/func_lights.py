@@ -38,23 +38,22 @@ lm.progress.init('jupyter')
 lm.info()
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 if not lm.Release:
-    lm.parallel.init('openmp', {'num_threads': 1})
+    lm.parallel.init('openmp', num_threads=1)
     lm.debug.attach_to_debugger()
 
 
 # +
-def render(scene, name, params = {}):
+def render(scene, name, **kwargs):
     w = 854
     h = 480
-    film = lm.load_film('film', 'bitmap', {'w': w, 'h': h})
-    renderer = lm.load_renderer('renderer', name, {
-        'scene': scene.loc(),
-        'output': film.loc(),
-        'max_verts': 20,
-        'scheduler': 'time',
-        'render_time': 10,
-        **params
-    })
+    film = lm.load_film('film', 'bitmap', w=w, h=h)
+    renderer = lm.load_renderer('renderer', name,
+        scene=scene,
+        output=film,
+        max_verts=20,
+        scheduler='time',
+        render_time=10,
+        **kwargs)
     renderer.render()
     return np.copy(film.buffer())
 
@@ -70,13 +69,9 @@ def display_image(img, fig_size=15, scale=1):
 
 # ## Scene setup
 
-accel = lm.load_accel('accel', 'embree', {})
-scene = lm.load_scene('scene', 'default', {'accel': accel.loc()})
-mat = lm.load_material('mat_ut', 'glossy', {
-    'Ks': [.8,.2,.2],
-    'ax': 0.1,
-    'ay': 0.1
-})
+accel = lm.load_accel('accel', 'embree')
+scene = lm.load_scene('scene', 'default', accel=accel)
+mat = lm.load_material('mat_ut', 'glossy', Ks=[.8,.2,.2], ax=0.1, ay=0.1)
 
 # ## Rendering
 
@@ -125,5 +120,3 @@ lmscene.bunny_with_directional_light(scene, env.scene_path, mat_knob=mat.loc())
 scene.build()
 img = render(scene, 'pt')
 display_image(img)
-
-

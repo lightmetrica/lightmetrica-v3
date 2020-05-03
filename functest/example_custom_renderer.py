@@ -64,47 +64,35 @@ lm.comp.load_plugin(os.path.join(env.bin_path, 'functest_renderer_ao'))
 
 # +
 # Film for the rendered image
-film = lm.load_film('film1', 'bitmap', {
-    'w': 1920,
-    'h': 1080
-})
+film = lm.load_film('film1', 'bitmap', w=1920, h=1080)
 
 # Pinhole camera
-camera = lm.load_camera('camera1', 'pinhole', {
-    'position': [5.101118, 1.083746, -2.756308],
-    'center': [4.167568, 1.078925, -2.397892],
-    'up': [0,1,0],
-    'vfov': 43.001194,
-    'aspect': 16/9
-})
+camera = lm.load_camera('camera1', 'pinhole',
+    position=[5.101118, 1.083746, -2.756308],
+    center=[4.167568, 1.078925, -2.397892],
+    up=[0,1,0],
+    vfov=43.001194,
+    aspect=16/9)
 
 # OBJ model
-model = lm.load_model('obj1', 'wavefrontobj', {
-    'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj')
-})
+model = lm.load_model('obj1', 'wavefrontobj',
+    path=os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'))
 
 # Scene
-accel = lm.load_accel('accel', 'sahbvh', {})
-scene = lm.load_scene('scene', 'default', {
-    'accel': accel.loc()
-})
-scene.add_primitive({
-    'camera': camera.loc()
-})
-scene.add_primitive({
-    'model': model.loc()
-})
+accel = lm.load_accel('accel', 'sahbvh')
+scene = lm.load_scene('scene', 'default', accel=accel)
+scene.add_primitive(camera=camera)
+scene.add_primitive(model=model)
 scene.build()
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # We can use the loaded extension in the same way as build-in assets using ``lm::load_*`` function. Here we load the renderer ``renderer::io`` and process rendering.
 # -
 
-renderer = lm.load_renderer('renderer', 'ao', {
-    'scene': scene.loc(),
-    'output': film.loc(),
-    'spp': 5
-})
+renderer = lm.load_renderer('renderer', 'ao',
+    scene=scene,
+    output=film,
+    spp=5)
 renderer.render()
 
 img = np.copy(film.buffer())

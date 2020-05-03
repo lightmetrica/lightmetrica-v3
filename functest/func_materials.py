@@ -38,23 +38,22 @@ lm.progress.init('jupyter')
 lm.info()
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 if not lm.Release:
-    lm.parallel.init('openmp', {'num_threads': 1})
+    lm.parallel.init('openmp', num_threads=1)
     lm.debug.attach_to_debugger()
 
 
 # +
-def render(scene, name, params = {}):
+def render(scene, name, **kwargs):
     w = 854
     h = 480
-    film = lm.load_film('film', 'bitmap', {'w': w, 'h': h})
-    renderer = lm.load_renderer('renderer', name, {
-        'scene': scene.loc(),
-        'output': film.loc(),
-        'max_verts': 20,
-        'scheduler': 'time',
-        'render_time': 30,
-        **params
-    })
+    film = lm.load_film('film', 'bitmap', w=w, h=h)
+    renderer = lm.load_renderer('renderer', name,
+        scene=scene,
+        output=film,
+        max_verts=20,
+        scheduler='time',
+        render_time=30,
+        **kwargs)
     renderer.render()
     return np.copy(film.buffer())
 
@@ -71,12 +70,10 @@ def display_image(img, fig_size=15, scale=1):
 # ## Scene setup
 
 # Create scene
-accel = lm.load_accel('accel', 'embree', {})
-scene = lm.load_scene('scene', 'default', {'accel': accel.loc()})
-mat = lm.load_material('mat_ut', 'diffuse', {
-    'Kd': [1,1,1]
-})
-lmscene.bunny_with_area_light(scene, env.scene_path, mat_knob=mat.loc())
+accel = lm.load_accel('accel', 'embree')
+scene = lm.load_scene('scene', 'default', accel=accel)
+mat = lm.load_material('mat_ut', 'diffuse', Kd=[1,1,1])
+lmscene.bunny_with_area_light(scene, env.scene_path, mat_knob=mat)
 scene.build()
 
 # ## Rendering
@@ -85,9 +82,7 @@ scene.build()
 #
 # `material::diffuse`
 
-lm.load_material('mat_ut', 'diffuse', {
-    'Kd': [.8,.2,.2]
-})
+lm.load_material('mat_ut', 'diffuse', Kd=[.8,.2,.2])
 img = render(scene, 'pt')
 display_image(img)
 
@@ -95,11 +90,7 @@ display_image(img)
 #
 # `material::glossy`
 
-lm.load_material('mat_ut', 'glossy', {
-    'Ks': [.8,.2,.2],
-    'ax': 0.2,
-    'ay': 0.2
-})
+lm.load_material('mat_ut', 'glossy', Ks=[.8,.2,.2], ax=0.2, ay=0.2)
 img = render(scene, 'pt')
 display_image(img)
 
@@ -107,7 +98,7 @@ display_image(img)
 #
 # `material::mirror`
 
-lm.load_material('mat_ut', 'mirror', {})
+lm.load_material('mat_ut', 'mirror')
 img = render(scene, 'pt')
 display_image(img)
 
@@ -115,9 +106,7 @@ display_image(img)
 #
 # `material::fresnel`
 
-lm.load_material('mat_ut', 'glass', {
-    'Ni': 1.5
-})
+lm.load_material('mat_ut', 'glass', Ni=1.5)
 img = render(scene, 'pt')
 display_image(img)
 
@@ -125,15 +114,9 @@ display_image(img)
 #
 # `material::constant_weight_mixture_rr`
 
-mat_diffuse = lm.load_material('mat_diffuse', 'diffuse', {
-    'Kd': [.1,.8,.1]
-})
-mat_glossy = lm.load_material('mat_glossy', 'glossy', {
-    'Ks': [.8,.1,.1],
-    'ax': 0.2,
-    'ay': 0.2
-})
-mat_mirror = lm.load_material('mat_mirror', 'mirror', {})
+mat_diffuse = lm.load_material('mat_diffuse', 'diffuse', Kd=[.1,.8,.1])
+mat_glossy = lm.load_material('mat_glossy', 'glossy', Ks=[.8,.1,.1], ax=0.2, ay=0.2)
+mat_mirror = lm.load_material('mat_mirror', 'mirror')
 mat = lm.load_material('mat_ut', 'constant_weight_mixture_rr', [
     {'material': mat_diffuse.loc(), 'weight': 0.2},
     {'material': mat_glossy.loc(), 'weight': 0.4},
@@ -160,18 +143,14 @@ display_image(img)
 #
 # This material is the default material converted from MTL format of Wavefront OBJ.
 
-tex = lm.load_texture('tex', 'bitmap', {
-    'path': os.path.join(env.scene_path, 'fireplace_room', 'textures', 'leaf.png')
-})
-lm.load_material('mat_ut', 'mixture_wavefrontobj', {
-    'Kd': [.8,.8,.8],
-    'mapKd': tex.loc(),
-    'Ks': [0,0,0],
-    'ax': 0.2,
-    'ay': 0.2,
-    'no_alpha_mask': False
-})
+tex = lm.load_texture('tex', 'bitmap',
+    path=os.path.join(env.scene_path, 'fireplace_room', 'textures', 'leaf.png'))
+lm.load_material('mat_ut', 'mixture_wavefrontobj',
+    Kd=[.8,.8,.8],
+    mapKd=tex,
+    Ks=[0,0,0],
+    ax=0.2,
+    ay=0.2,
+    no_alpha_mask=False)
 img = render(scene, 'pt')
 display_image(img)
-
-

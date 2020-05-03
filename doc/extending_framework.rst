@@ -111,10 +111,7 @@ In the case of :cpp:class:`lm::Renderer` class, the instance creation of the cla
 
 .. code-block:: python
 
-    renderer = lm.load_renderer('renderer', 'blank', {
-        'color': [0,1,0],
-        'output': film.loc(),
-    })
+    renderer = lm.load_renderer('renderer', 'blank', color=[0,1,0], output=film)
 
 .. note::
 

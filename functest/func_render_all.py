@@ -56,22 +56,14 @@ for scene_name in scene_names:
     lm.reset()
     
     # Load scene
-    accel = lm.load_accel('accel', 'embree', {})
-    scene = lm.load_scene('scene', 'default', {
-        'accel': accel.loc()
-    })
+    accel = lm.load_accel('accel', 'embree')
+    scene = lm.load_scene('scene', 'default', accel=accel)
     lmscene.load(scene, env.scene_path, scene_name)
     scene.build()
     
     # Render
-    film = lm.load_film('film_output', 'bitmap', {
-        'w': 1920,
-        'h': 1080
-    })
-    renderer = lm.load_renderer('renderer', 'raycast', {
-        'scene': scene.loc(),
-        'output': film.loc()
-    })
+    film = lm.load_film('film_output', 'bitmap', w=1920, h=1080)
+    renderer = lm.load_renderer('renderer', 'raycast', scene=scene, output=film)
     renderer.render()
     
     # Visualize
@@ -81,5 +73,3 @@ for scene_name in scene_names:
     ax.imshow(np.clip(np.power(img,1/2.2),0,1), origin='lower')
     ax.set_title(scene)
     plt.show()
-
-

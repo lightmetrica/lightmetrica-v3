@@ -167,9 +167,15 @@ static void bind_component(pybind11::module& m) {
 // ------------------------------------------------------------------------------------------------
 
 // Generate a function for the built-in interface
-#define PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, InterfaceType, interface_name) \
+#define PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, InterfaceType, interface_name) \
     m.def(fmt::format("load_{}", #interface_name).c_str(), \
         [](const std::string& name, const std::string& impl_key, const Json& prop) -> InterfaceType* { \
+            auto* p = assets()->load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+            return dynamic_cast<InterfaceType*>(p); \
+        }, pybind11::return_value_policy::reference); \
+    m.def(fmt::format("load_{}", #interface_name).c_str(), \
+        [](const std::string& name, const std::string& impl_key, pybind11::kwargs kwargs) -> InterfaceType* { \
+            Json prop = pybind11::cast<Json>(kwargs); \
             auto* p = assets()->load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
             return dynamic_cast<InterfaceType*>(p); \
         }, pybind11::return_value_policy::reference); \
@@ -181,6 +187,9 @@ static void bind_component(pybind11::module& m) {
 // Bind user.h
 static void bind_user(pybind11::module& m) {
     m.def("init", &init, "prop"_a = Json{});
+    m.def("init", [](pybind11::kwargs kwargs) {
+        init(pybind11::cast<Json>(kwargs));
+    });
     m.def("shutdown", &shutdown);
     m.def("reset", &reset);
     m.def("info", &info);
@@ -201,27 +210,33 @@ static void bind_user(pybind11::module& m) {
     m.def("load_plugin", &comp::load_plugin);
 
     // Bind load and get functions for each asset interface
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Mesh, mesh);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Texture, texture);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Material, material);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Camera, camera);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Light, light);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Medium, medium);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Phase, phase);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Volume, volume);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Film, film);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Model, model);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, AssetGroup, asset_group);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Accel, accel);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Scene, scene);
-    PYLM_DEF_ASSET_CREATE_AND_GET_FUNC(m, Renderer, renderer);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Mesh, mesh);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Texture, texture);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Material, material);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Camera, camera);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Light, light);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Medium, medium);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Phase, phase);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Volume, volume);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Film, film);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Model, model);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, AssetGroup, asset_group);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Accel, accel);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Scene, scene);
+    PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, Renderer, renderer);
 }
 
 // ------------------------------------------------------------------------------------------------
 
-#define PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(InterfaceType, interface_name) \
+#define PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(InterfaceType, interface_name) \
     def(fmt::format("load_{}", #interface_name).c_str(), \
         [](AssetGroup& self, const std::string& name, const std::string& impl_key, const Json& prop) -> InterfaceType* { \
+            auto* p = self.load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+            return dynamic_cast<InterfaceType*>(p); \
+        }, pybind11::return_value_policy::reference) \
+    .def(fmt::format("load_{}", #interface_name).c_str(), \
+        [](AssetGroup& self, const std::string& name, const std::string& impl_key, pybind11::kwargs kwargs) -> InterfaceType* { \
+            Json prop = pybind11::cast<Json>(kwargs); \
             auto* p = self.load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
             return dynamic_cast<InterfaceType*>(p); \
         }, pybind11::return_value_policy::reference)
@@ -243,20 +258,20 @@ static void bind_asset_group(pybind11::module& m) {
         .def(pybind11::init<>())
         .def("load_asset", &AssetGroup::load_asset, pybind11::return_value_policy::reference)
         .def("load_serialized", &AssetGroup::load_serialized, pybind11::return_value_policy::reference)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Mesh, mesh)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Texture, texture)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Material, material)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Camera, camera)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Light, light)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Medium, medium)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Phase, phase)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Volume, volume)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Film, film)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Model, model)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(AssetGroup, asset_group)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Accel, accel)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Scene, scene)
-        .PYLM_DEF_ASSET_CREATE_MEMBER_FUNC(Renderer, renderer);
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Mesh, mesh)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Texture, texture)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Material, material)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Camera, camera)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Light, light)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Medium, medium)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Phase, phase)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Volume, volume)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Film, film)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Model, model)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(AssetGroup, asset_group)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Accel, accel)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Scene, scene)
+        .PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(Renderer, renderer);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -274,6 +289,9 @@ static void bind_logger(pybind11::module& m) {
         .value("ProgressEnd", log::LogLevel::ProgressEnd);
 
     sm.def("init", &log::init, "type"_a = log::DefaultType, "prop"_a = Json{});
+    sm.def("init", [](const std::string& type, pybind11::kwargs kwargs) {
+        log::init(type, pybind11::cast<Json>(kwargs));
+    });
     sm.def("shutdown", &log::shutdown);
     using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
     sm.def("log", (logFuncPtr)&log::log);
@@ -313,6 +331,9 @@ static void bind_logger(pybind11::module& m) {
 static void bind_parallel(pybind11::module& m) {    
     auto sm = m.def_submodule("parallel");
     sm.def("init", &parallel::init, "type"_a = parallel::DefaultType, "prop"_a = Json{});
+    sm.def("init", [](const std::string& type, pybind11::kwargs kwargs) {
+        parallel::init(type, pybind11::cast<Json>(kwargs));
+    });
     sm.def("shutdown", &parallel::shutdown);
     sm.def("num_threads", &parallel::num_threads);
     sm.def("foreach", [](long long numSamples, const parallel::ParallelProcessFunc& processFunc) {
@@ -332,6 +353,9 @@ static void bind_parallel(pybind11::module& m) {
 static void bind_objloader(pybind11::module& m) {
     auto sm = m.def_submodule("objloader");
     sm.def("init", &objloader::init, "type"_a = objloader::DefaultType, "prop"_a = Json{});
+    sm.def("init", [](const std::string& type, pybind11::kwargs kwargs) {
+        objloader::init(type, pybind11::cast<Json>(kwargs));
+    });
     sm.def("shutdown", &objloader::shutdown);
 }
 
@@ -346,6 +370,9 @@ static void bind_progress(pybind11::module& m) {
         .value("Time", progress::ProgressMode::Time);
 
     sm.def("init", &progress::init, "type"_a = progress::DefaultType, "prop"_a = Json{});
+    sm.def("init", [](const std::string& type, pybind11::kwargs kwargs) {
+        progress::init(type, pybind11::cast<Json>(kwargs));
+    });
     sm.def("shutdown", &progress::shutdown);
     sm.def("start", &progress::start);
     sm.def("end", &progress::end);
@@ -647,13 +674,22 @@ static void bind_scene(pybind11::module& m) {
         //
         .def("root_node", &Scene::root_node)
         .def("create_primitive_node", &Scene::create_primitive_node)
+        .def("create_primitive_node", [](Scene& scene, pybind11::kwargs kwargs) {
+            return scene.create_primitive_node(pybind11::cast<Json>(kwargs));
+        })
         .def("create_group_node", &Scene::create_group_node)
         .def("create_instance_group_node", &Scene::create_instance_group_node)
         .def("add_child", &Scene::add_child)
         .def("add_child_from_model", &Scene::add_child_from_model)
         .def("create_group_from_model", &Scene::create_group_from_model)
         .def("add_primitive", &Scene::add_primitive)
+        .def("add_primitive", [](Scene& scene, pybind11::kwargs kwargs) {
+            scene.add_primitive(pybind11::cast<Json>(kwargs));
+        })
         .def("add_transformed_primitive", &Scene::add_transformed_primitive)
+        .def("add_transformed_primitive", [](Scene& scene, Mat4 transform, pybind11::kwargs kwargs) {
+            scene.add_transformed_primitive(transform, pybind11::cast<Json>(kwargs));
+        })
         .def("traverse_primitive_nodes", &Scene::traverse_primitive_nodes)
         .def("visit_node", &Scene::visit_node)
         .def("node_at", &Scene::node_at, pybind11::return_value_policy::reference)

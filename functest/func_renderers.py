@@ -38,23 +38,22 @@ lm.progress.init('jupyter')
 lm.info()
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 if not lm.Release:
-    lm.parallel.init('openmp', {'num_threads': 1})
+    lm.parallel.init('openmp', num_threads=1)
     lm.debug.attach_to_debugger()
 
 
 # +
-def render(scene, name, params = {}):
+def render(scene, name, **kwargs):
     w = 854
     h = 480
-    film = lm.load_film('film', 'bitmap', {'w': w, 'h': h})
-    renderer = lm.load_renderer('renderer', name, {
-        'scene': scene.loc(),
-        'output': film.loc(),
-        'max_verts': 10,
-        'scheduler': 'time',
-        'render_time': 30,
-        **params
-    })
+    film = lm.load_film('film', 'bitmap', w=w, h=h)
+    renderer = lm.load_renderer('renderer', name,
+        scene=scene,
+        output=film,
+        max_verts=10,
+        scheduler='time',
+        render_time=30,
+        **kwargs)
     renderer.render()
     return np.copy(film.buffer())
 
@@ -71,8 +70,8 @@ def display_image(img, fig_size=15, scale=1):
 # ## Scene setup
 
 # Create scene
-accel = lm.load_accel('accel', 'embree', {})
-scene = lm.load_scene('scene', 'default', {'accel': accel.loc()})
+accel = lm.load_accel('accel', 'embree')
+scene = lm.load_scene('scene', 'default', accel=accel)
 lmscene.cornell_box_sphere(scene, env.scene_path)
 scene.build()
 
@@ -82,30 +81,27 @@ scene.build()
 #
 # `renderer::pt` with `sampling_mode = naive`. For comparison, the primary rays are sampling from the entire image (`primary_ray_sampling_mode = image`).
 
-img = render(scene, 'pt', {
-    'sampling_mode': 'naive',
-    'primary_ray_sampling_mode': 'image'
-})
+img = render(scene, 'pt',
+    sampling_mode='naive',
+    primary_ray_sampling_mode='image')
 display_image(img)
 
 # ### Path tracing (next event estimation)
 #
 # `renderer::pt` with `sampling_mode = nee`
 
-img = render(scene, 'pt', {
-    'sampling_mode': 'nee',
-    'primary_ray_sampling_mode': 'image'
-})
+img = render(scene, 'pt',
+    sampling_mode='nee',
+    primary_ray_sampling_mode='image')
 display_image(img)
 
 # ### Path tracing (multiple importance sampling)
 #
 # `renderer::pt` with `sampling_mode = mis`
 
-img = render(scene, 'pt', {
-    'sampling_mode': 'mis',
-    'primary_ray_sampling_mode': 'image'
-})
+img = render(scene, 'pt',
+    sampling_mode='mis',
+    primary_ray_sampling_mode='image')
 display_image(img)
 
 # ### Light tracing

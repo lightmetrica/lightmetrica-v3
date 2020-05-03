@@ -70,17 +70,14 @@ lm.info()
 # Next we define `assets` necessary to execute renderer, like materials, meshes, etc. In this example, we only need a `film` to which the renderer outputs the image. We can define assets by ``lm::load_*`` function, where ``*`` represents the name of the asset. In this example, we want to make ``film`` asset. So we use :cpp:func:`lm::load_film` function.
 #
 # The first argument (``film``) specifies id of the asset to be referenced. The second argument (``bitmap``) is given as the type of the assets.
-# The last argument (``{...}``) specifies the parameters passed to the instance.
+# The optional keyword arguments specify the parameters passed to the instance.
 #
 # For convenicence, we will refer to the asset of the specific type in ``<asset type>::<name>`` format. For instance, ``film::bitmap`` represents a `bitmap film` asset.  ``film::bitmap`` takes two parameters ``w`` and ``h`` which respectively specify width and height of the film.
 #
 # This function returns a reference to the asset. You can access the underlying member functions. You can find details in :ref:`api_ref`.
 # -
 
-film = lm.load_film('film', 'bitmap', {
-    'w': 1920,
-    'h': 1080
-})
+film = lm.load_film('film', 'bitmap', w=1920, h=1080)
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # The created instance of the asset is internally managed by the framework.
@@ -94,13 +91,13 @@ film.loc()
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # To rendering an image, we need to create `renderer` asset. Here, we will create ``renderer::blank`` renderer.  ``renderer::blank`` is a toy renderer that only produces a blank image to the film. The renderer takes ``film`` parameter to specify the film to output the image, and ``color`` parameter for the background color.
 #
-# A reference to the other asset as a parameter can be passed using component locator. Here we use ``film.loc()`` to get a locator of the film.
+# A reference to the other asset as a parameter can be passed using component locator. Here we use ``film.loc()`` to get a locator of the film. Althernaively, you can directly pass the instance of the asset directly as a parameter. 
 # -
 
-renderer = lm.load_renderer('renderer', 'blank', {
-    'output': film.loc(),
-    'color': [1,1,1]
-})
+renderer = lm.load_renderer('renderer', 'blank',
+    output=film,  # or alternatively, film.loc()
+    color=[1,1,1]
+)
 
 # + {"raw_mimetype": "text/restructuredtext", "active": ""}
 # :cpp:func:`lm::Renderer::render` function executes rendering.

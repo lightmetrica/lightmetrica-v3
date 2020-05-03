@@ -53,7 +53,7 @@ lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_nanort'))
 
 if not lm.Release:
-    lm.parallel.init('openmp', {'num_threads': 1})
+    lm.parallel.init('openmp', num_threads=1)
     lm.debug.attach_to_debugger()
 
 # + {"code_folding": []}
@@ -92,56 +92,41 @@ for i in range(1,numTheta+1):
             idx += 1
 
 # + {"code_folding": []}
-accel = lm.load_accel('accel', 'nanort', {})
-scene = lm.load_scene('scene', 'default', {
-    'accel': accel.loc()
-})
-mesh = lm.load_mesh('mesh_sphere', 'raw', {
-    'ps': vs.flatten().tolist(),
-    'ns': ns.flatten().tolist(),
-    'ts': ts.flatten().tolist(),
-    'fs': {
+accel = lm.load_accel('accel', 'nanort')
+scene = lm.load_scene('scene', 'default', accel=accel)
+mesh = lm.load_mesh('mesh_sphere', 'raw',
+    ps=vs.flatten().tolist(),
+    ns=ns.flatten().tolist(),
+    ts=ts.flatten().tolist(),
+    fs={
         'p': fs.flatten().tolist(),
         't': fs.flatten().tolist(),
         'n': fs.flatten().tolist()
-    }
-})
-camera = lm.load_camera('camera_main', 'pinhole', {
-    'position': [0,0,50],
-    'center': [0,0,0],
-    'up': [0,1,0],
-    'vfov': 30,
-    'aspect': 16/9
-})
-material = lm.load_material('material_white', 'diffuse', {
-    'Kd': [1,1,1]
-})
-film = lm.load_film('film_output', 'bitmap', {
-    'w': 1920,
-    'h': 1080
-})
-renderer = lm.load_renderer('renderer', 'raycast', {
-    'scene': scene.loc(),
-    'output': film.loc(),
-    'visualize_normal': True,
-    'bg_color': [1,1,1]
-})
+    })
+camera = lm.load_camera('camera_main', 'pinhole',
+    position=[0,0,50],
+    center=[0,0,0],
+    up=[0,1,0],
+    vfov=30,
+    aspect=16/9)
+material = lm.load_material('material_white', 'diffuse', Kd=[1,1,1])
+film = lm.load_film('film_output', 'bitmap', w=1920, h=1080)
+renderer = lm.load_renderer('renderer', 'raycast',
+    scene=scene,
+    output=film,
+    visualize_normal=True,
+    bg_color=[1,1,1])
 # -
 
 # ### Without instancing
 
 # +
 scene.reset()
-scene.add_primitive({
-    'camera': camera.loc()
-})
+scene.add_primitive(camera=camera)
 
 for y in np.linspace(-10,10,10):
     for x in np.linspace(-10,10,10):
-        p = scene.create_primitive_node({
-            'mesh': mesh.loc(),
-            'material': material.loc()
-        })
+        p = scene.create_primitive_node(mesh=mesh, material=material)
         t = scene.create_group_node(lm.translate(np.array([x,y,0])))
         scene.add_child(t, p)
         scene.add_child(scene.root_node(), t)
@@ -161,16 +146,11 @@ plt.show()
 
 # +
 scene.reset()
-scene.add_primitive({
-    'camera': camera.loc()
-})
+scene.add_primitive(camera=camera)
 
 # Instance group
 g = scene.create_instance_group_node()
-scene.add_child(g, scene.create_primitive_node({
-    'mesh': mesh.loc(),
-    'material': material.loc()
-}))
+scene.add_child(g, scene.create_primitive_node(mesh=mesh, material=material))
 
 # Transformed instanced group
 for y in np.linspace(-10,10,10):
@@ -193,16 +173,11 @@ plt.show()
 
 # +
 scene.reset()
-scene.add_primitive({
-    'camera': camera.loc()
-})
+scene.add_primitive(camera=camera)
 
 # Initial group
 g1 = scene.create_instance_group_node()
-scene.add_child(g1, scene.create_primitive_node({
-    'mesh': mesh.loc(),
-    'material': material.loc()
-}))
+scene.add_child(g1, scene.create_primitive_node(mesh=mesh, material=material))
 
 # Second group using initial group as chilren
 g2 = scene.create_instance_group_node()
