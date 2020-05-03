@@ -56,7 +56,7 @@ lm.init()
 lm.info()
 
 # Initialize the logger with logger::jupyter
-lm.log.init('jupyter', {})
+lm.log.init('jupyter')
 
 lm.info()
 
@@ -66,12 +66,12 @@ lm.info()
 
 try:
     # Wrong: bitmapp
-    lm.load_film('film1', 'bitmapp', {'w': 1920, 'h': 1080})
+    lm.load_film('film1', 'bitmapp', w=1920, h=1080)
 except Exception:
     traceback.print_exc()
 
 # Correct: bitmap
-lm.load_film('film1', 'bitmap', {'w': 1920, 'h': 1080})
+lm.load_film('film1', 'bitmap', w=1920, h=1080)
 
 # ### Invalid parameter
 #
@@ -80,91 +80,73 @@ lm.load_film('film1', 'bitmap', {'w': 1920, 'h': 1080})
 
 try:
     # vfov is missing
-    lm.load_camera('camera1', 'pinhole', {
-        'position': [0,0,5],
-        'center': [0,0,0],
-        'up': [0,1,0],
-        'aspect': 16/9
-    })
+    lm.load_camera('camera1', 'pinhole',
+        position=[0,0,5],
+        center=[0,0,0],
+        up=[0,1,0],
+        aspect=16/9)
 except Exception:
     traceback.print_exc()
 
 try:
-    lm.load_camera('camera1', 'pinhole', {
+    lm.load_camera('camera1', 'pinhole',
         # Parameter type is wrong. position must be an array.
-        'position': 5,
-        'center': [0,0,0],
-        'up': [0,1,0],
-        'aspect': 16/9,
-        'fov': 30
-    })
+        position=5,
+        center=[0,0,0],
+        up=[0,1,0],
+        aspect=16/9,
+        fov=30)
 except Exception:
     traceback.print_exc()
 
 # This is correct
-lm.load_camera('camera1', 'pinhole', {
+lm.load_camera('camera1', 'pinhole',
     # Parameter type is wrong. position must be an array.
-    'position': [0,0,5],
-    'center': [0,0,0],
-    'up': [0,1,0],
-    'aspect': 16/9,
-    'vfov': 30
-})
+    position=[0,0,5],
+    center=[0,0,0],
+    up=[0,1,0],
+    aspect=16/9,
+    vfov=30)
 
 # ### Missing reference
 
-lm.load_mesh('mesh1', 'raw', {
-    'ps': [-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1],
-    'ns': [0,0,1],
-    'ts': [0,0,1,0,1,1,0,1],
-    'fs': {
+lm.load_mesh('mesh1', 'raw',
+    ps=[-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1],
+    ns=[0,0,1],
+    ts=[0,0,1,0,1,1,0,1],
+    fs={
         'p': [0,1,2,0,2,3],
         'n': [0,0,0,0,0,0],
         't': [0,1,2,0,2,3]
-    }
-})
+    })
 
-accel = lm.load_accel('accel', 'sahbvh', {})
-scene = lm.load_scene('scene', 'default', {
-    'accel': accel.loc()
-})
+accel = lm.load_accel('accel', 'sahbvh')
+scene = lm.load_scene('scene', 'default', accel=accel)
 
 try:
     # material1 is undefined
-    scene.add_primitive({
-        'mesh': '$.assets.mesh1',
-        'material': '$.assets.material1'
-    })
+    scene.add_primitive(mesh='$.assets.mesh1', material='$.assets.material1')
 except Exception:
     traceback.print_exc()
 
 # Define a missing asset
-lm.load_material('material1', 'diffuse', {
-    'Kd': [1,1,1]
-})
+lm.load_material('material1', 'diffuse', Kd=[1,1,1])
 
 try:
     # 'material1' is not a valid locator
-    scene.add_primitive({
-        'mesh': '$.assets.mesh1',
-        'material': 'material1'
-    })
+    scene.add_primitive(mesh='$.assets.mesh1', material='material1')
 except Exception:
     traceback.print_exc()
 
 # This is correct
-scene.add_primitive({
-    'mesh': '$.assets.mesh1',
-    'material': '$.assets.material1'
-})
+scene.add_primitive(mesh='$.assets.mesh1', material='$.assets.material1')
 
 # ### Rendering with invalid scene
 
-renderer = lm.load_renderer('renderer', 'raycast', {
-    'scene': scene.loc(),
-    'output': '$.assets.film1',
-    'color': [0,0,0]
-})
+renderer = lm.load_renderer('renderer', 'raycast',
+    scene=scene,
+    output='$.assets.film1',
+    color=[0,0,0])
 
 try:
     # Without camera
@@ -173,9 +155,7 @@ except Exception:
     traceback.print_exc()
 
 # Add camera primitive
-scene.add_primitive({
-    'camera': '$.assets.camera1'
-})
+scene.add_primitive(camera='$.assets.camera1')
 
 try:
     # With camera, but without build()

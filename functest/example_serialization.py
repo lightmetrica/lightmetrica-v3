@@ -41,10 +41,8 @@ if not lm.Release:
 #
 # An asset can hold another assets in the instance. As a result, a created set of asset can constitute of an *asset tree*. We can visualize the structure of the tree using ``lm.debug.print_asset_tree()`` function.
 
-accel = lm.load_accel('accel', 'sahbvh', {})
-scene = lm.load_scene('scene', 'default', {
-    'accel': accel.loc()
-})
+accel = lm.load_accel('accel', 'sahbvh')
+scene = lm.load_scene('scene', 'default', accel=accel)
 
 lm.debug.print_asset_tree()
 
@@ -56,30 +54,22 @@ lm.debug.print_asset_tree()
 #
 # *Asset group* is a special type of asset that can hold multiple instance of assets. By means of the asset group, we can hierarchcally manage the assets. Asset group can be created by ``lm.load_asset_group()`` function.
 
-g = lm.load_asset_group('fireplace_room', 'default', {})
+g = lm.load_asset_group('fireplace_room', 'default')
 
 # An another asset can be loaded as a child of the asset group by calling ``lm.AssetGroup.load_*()`` member functions. The arguments are same as ``lm.load_*()`` functions. Note that the locator of the asset includes the id of the group.
 
-camera = g.load_camera('camera1', 'pinhole', {
-    'position': [5.101118, 1.083746, -2.756308],
-    'center': [4.167568, 1.078925, -2.397892],
-    'up': [0,1,0],
-    'vfov': 43.001194,
-    'aspect': 16/9
-})
-model = g.load_model('model', 'wavefrontobj', {
-    'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj')
-})
-accel = g.load_accel('accel', 'sahbvh', {})
-scene = g.load_scene('scene', 'default', {
-    'accel': accel.loc()
-})
-scene.add_primitive({
-    'camera': camera.loc()
-})
-scene.add_primitive({
-    'model': model.loc()
-})
+camera = g.load_camera('camera1', 'pinhole', 
+    position=[5.101118, 1.083746, -2.756308],
+    center=[4.167568, 1.078925, -2.397892],
+    up=[0,1,0],
+    vfov=43.001194,
+    aspect=16/9)
+model = g.load_model('model', 'wavefrontobj',
+    path=os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'))
+accel = g.load_accel('accel', 'sahbvh')
+scene = g.load_scene('scene', 'default', accel=accel)
+scene.add_primitive(camera=camera)
+scene.add_primitive(model=model)
 scene.build()
 
 lm.debug.print_asset_tree()
@@ -98,11 +88,9 @@ lm.debug.print_asset_tree()
 
 # Note that serializing aseet group means serializing a subtree of the entire asset tree. The serialization process can fail if an asset being serialized (incl. child assets) contains external reference out of the subtree. 
 
-accel = lm.load_accel('accel', 'sahbvh', {})
-g = lm.load_asset_group('fireplace_room', 'default', {})
-scene = g.load_scene('scene', 'default', {
-    'accel': accel.loc()
-})
+accel = lm.load_accel('accel', 'sahbvh')
+g = lm.load_asset_group('fireplace_room', 'default')
+scene = g.load_scene('scene', 'default', accel=accel)
 lm.debug.print_asset_tree()
 
 # Serialization will fail because
@@ -130,26 +118,22 @@ lm.debug.print_asset_tree()
 
 # Also note that the serialized asset can be loaded in a different location in the asset tree, for instance, as a child of the different asset group. 
 
-g = lm.load_asset_group('another_group', 'default', {})
+g = lm.load_asset_group('another_group', 'default')
 g.load_serialized('fireplace_room', 'fireplace_room.serialized')
 lm.debug.print_asset_tree()
 
 # ### Rendering with serialized asset
 #
-# We can render the image using the serializaed asset. Here we are using a locator directly instead of ``.loc()`` function, since the previously obtained reference (``scene``) became invalid.
+# We can render the image using the serializaed asset. Here we are using a locator directly instead of passing the instance, since the previously obtained reference (``scene``) became invalid.
 
 # Rendering
-film = lm.load_film('film', 'bitmap', {
-    'w': 1920,
-    'h': 1080
-})
-renderer = lm.load_renderer('renderer', 'pt', {
-    'scene': '$.assets.another_group.fireplace_room.scene',
-    'output': film.loc(),
-    'scheduler': 'sample',
-    'spp': 1,
-    'max_verts': 20
-})
+film = lm.load_film('film', 'bitmap', w=1920, h=1080)
+renderer = lm.load_renderer('renderer', 'pt',
+    scene='$.assets.another_group.fireplace_room.scene',
+    output=film,
+    scheduler='sample',
+    spp=1,
+    max_verts=20)
 renderer.render()
 
 img = np.copy(film.buffer())

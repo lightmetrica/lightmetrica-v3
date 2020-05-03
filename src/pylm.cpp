@@ -188,8 +188,7 @@ static void bind_component(pybind11::module& m) {
 static void bind_user(pybind11::module& m) {
     m.def("init", &init, "prop"_a = Json{});
     m.def("init", [](pybind11::kwargs kwargs) {
-        Json prop = pybind11::cast<Json>(kwargs);
-        init(prop);
+        init(pybind11::cast<Json>(kwargs));
     });
     m.def("shutdown", &shutdown);
     m.def("reset", &reset);
@@ -291,8 +290,7 @@ static void bind_logger(pybind11::module& m) {
 
     sm.def("init", &log::init, "type"_a = log::DefaultType, "prop"_a = Json{});
     sm.def("init", [](const std::string& type, pybind11::kwargs kwargs) {
-        Json prop = pybind11::cast<Json>(kwargs);
-        log::init(type, prop);
+        log::init(type, pybind11::cast<Json>(kwargs));
     });
     sm.def("shutdown", &log::shutdown);
     using logFuncPtr = void(*)(log::LogLevel, int, const char*, int, const char*);
@@ -334,8 +332,7 @@ static void bind_parallel(pybind11::module& m) {
     auto sm = m.def_submodule("parallel");
     sm.def("init", &parallel::init, "type"_a = parallel::DefaultType, "prop"_a = Json{});
     sm.def("init", [](const std::string& type, pybind11::kwargs kwargs) {
-        Json prop = pybind11::cast<Json>(kwargs);
-        parallel::init(type, prop);
+        parallel::init(type, pybind11::cast<Json>(kwargs));
     });
     sm.def("shutdown", &parallel::shutdown);
     sm.def("num_threads", &parallel::num_threads);
@@ -357,8 +354,7 @@ static void bind_objloader(pybind11::module& m) {
     auto sm = m.def_submodule("objloader");
     sm.def("init", &objloader::init, "type"_a = objloader::DefaultType, "prop"_a = Json{});
     sm.def("init", [](const std::string& type, pybind11::kwargs kwargs) {
-        Json prop = pybind11::cast<Json>(kwargs);
-        objloader::init(type, prop);
+        objloader::init(type, pybind11::cast<Json>(kwargs));
     });
     sm.def("shutdown", &objloader::shutdown);
 }
@@ -375,8 +371,7 @@ static void bind_progress(pybind11::module& m) {
 
     sm.def("init", &progress::init, "type"_a = progress::DefaultType, "prop"_a = Json{});
     sm.def("init", [](const std::string& type, pybind11::kwargs kwargs) {
-        Json prop = pybind11::cast<Json>(kwargs);
-        progress::init(type, prop);
+        progress::init(type, pybind11::cast<Json>(kwargs));
     });
     sm.def("shutdown", &progress::shutdown);
     sm.def("start", &progress::start);
@@ -679,6 +674,9 @@ static void bind_scene(pybind11::module& m) {
         //
         .def("root_node", &Scene::root_node)
         .def("create_primitive_node", &Scene::create_primitive_node)
+        .def("create_primitive_node", [](Scene& scene, pybind11::kwargs kwargs) {
+            return scene.create_primitive_node(pybind11::cast<Json>(kwargs));
+        })
         .def("create_group_node", &Scene::create_group_node)
         .def("create_instance_group_node", &Scene::create_instance_group_node)
         .def("add_child", &Scene::add_child)
@@ -686,10 +684,12 @@ static void bind_scene(pybind11::module& m) {
         .def("create_group_from_model", &Scene::create_group_from_model)
         .def("add_primitive", &Scene::add_primitive)
         .def("add_primitive", [](Scene& scene, pybind11::kwargs kwargs) {
-            Json prop = pybind11::cast<Json>(kwargs);
-            scene.add_primitive(prop);
+            scene.add_primitive(pybind11::cast<Json>(kwargs));
         })
         .def("add_transformed_primitive", &Scene::add_transformed_primitive)
+        .def("add_transformed_primitive", [](Scene& scene, Mat4 transform, pybind11::kwargs kwargs) {
+            scene.add_transformed_primitive(transform, pybind11::cast<Json>(kwargs));
+        })
         .def("traverse_primitive_nodes", &Scene::traverse_primitive_nodes)
         .def("visit_node", &Scene::visit_node)
         .def("node_at", &Scene::node_at, pybind11::return_value_policy::reference)

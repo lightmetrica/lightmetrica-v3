@@ -44,20 +44,12 @@ lm.comp.load_plugin(os.path.join(env.bin_path, 'objloader_tinyobjloader'))
 
 def build_and_render(scene_name):
     lm.reset()
-    accel = lm.load_accel('accel', 'embree', {})
-    scene = lm.load_scene('scene', 'default', {
-        'accel': accel.loc()
-    })
+    accel = lm.load_accel('accel', 'embree')
+    scene = lm.load_scene('scene', 'default', accel=accel)
     lmscene.load(scene, env.scene_path, scene_name)
     scene.build()
-    film = lm.load_film('film_output', 'bitmap', {
-        'w': 1920,
-        'h': 1080
-    })
-    renderer = lm.load_renderer('renderer', 'raycast', {
-        'scene': scene.loc(),
-        'output': film.loc()
-    })
+    film = lm.load_film('film_output', 'bitmap', w=1920, h=1080)
+    renderer = lm.load_renderer('renderer', 'raycast', scene=scene, output=film)
     renderer.render()
     return np.copy(film.buffer())
 
@@ -72,7 +64,7 @@ def rmse_pixelwised(img1, img2):
 
 for scene_name in scene_names:
     # Reference
-    lm.objloader.init('simple', {})
+    lm.objloader.init('simple')
     ref = build_and_render(scene_name)
     
     # Visualize reference

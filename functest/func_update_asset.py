@@ -38,37 +38,25 @@ lm.log.init('jupyter')
 lm.progress.init('jupyter')
 lm.info()
 
-camera = lm.load_camera('camera_main', 'pinhole', {
-    'position': [5.101118, 1.083746, -2.756308],
-    'center': [4.167568, 1.078925, -2.397892],
-    'up': [0,1,0],
-    'vfov': 43.001194,
-    'aspect': 16/9
-})
-material = lm.load_material('obj_base_mat', 'diffuse', {
-    'Kd': [.8,.2,.2]
-})
-model = lm.load_model('model_obj', 'wavefrontobj', {
-    'path': os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
-    'base_material': material.loc()
-})
-accel = lm.load_accel('accel', 'sahbvh', {})
-scene = lm.load_scene('scene', 'default', {
-    'accel': accel.loc()
-})
-scene.add_primitive({
-    'camera': camera.loc()
-})
-scene.add_primitive({
-    'model': model.loc()
-})
+camera = lm.load_camera('camera_main', 'pinhole',
+    position=[5.101118, 1.083746, -2.756308],
+    center=[4.167568, 1.078925, -2.397892],
+    up=[0,1,0],
+    vfov=43.001194,
+    aspect=16/9)
+material = lm.load_material('obj_base_mat', 'diffuse',
+    Kd=[.8,.2,.2])
+model = lm.load_model('model_obj', 'wavefrontobj',
+    path=os.path.join(env.scene_path, 'fireplace_room/fireplace_room.obj'),
+    base_material=material)
+accel = lm.load_accel('accel', 'sahbvh')
+scene = lm.load_scene('scene', 'default', accel=accel)
+scene.add_primitive(camera=camera)
+scene.add_primitive(model=model)
 scene.build()
 
-film = lm.load_film('film_output', 'bitmap', {'w': 1920, 'h': 1080})
-renderer = lm.load_renderer('renderer', 'raycast', {
-    'scene': scene.loc(),
-    'output': film.loc()
-})
+film = lm.load_film('film_output', 'bitmap', w=1920, h=1080)
+renderer = lm.load_renderer('renderer', 'raycast', scene=scene, output=film)
 renderer.render()
 
 img = np.copy(film.buffer())
@@ -80,9 +68,7 @@ ax.set_title('orig')
 # Replace `obj_base_mat` with different color
 # Note that this is not trivial, because `model::wavefrontobj`
 # already holds a reference to the original material.
-lm.load_material('obj_base_mat', 'diffuse', {
-    'Kd': [.2,.8,.2]
-})
+lm.load_material('obj_base_mat', 'diffuse', Kd=[.2,.8,.2])
 
 renderer.render()
 

@@ -33,23 +33,18 @@ if not lm.Release:
 
 lm.init()
 if not lm.Release:
-    lm.parallel.init('openmp', {'num_threads': 1})
+    lm.parallel.init('openmp', num_threads=1)
 lm.log.init('jupyter')
 lm.progress.init('jupyter')
 lm.info()
 
 lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 
-accel = lm.load_accel('accel', 'embree', {})
-scene = lm.load_scene('scene', 'default', {
-    'accel': accel.loc()
-})
+accel = lm.load_accel('accel', 'embree')
+scene = lm.load_scene('scene', 'default', accel=accel)
 lmscene.load(scene, env.scene_path, 'fireplace_room')
 scene.build()
-film = lm.load_film('film_output', 'bitmap', {
-    'w': 1920,
-    'h': 1080
-})
+film = lm.load_film('film_output', 'bitmap', w=1920, h=1080)
 
 shared_renderer_params = {
     'scene': scene.loc(),
@@ -60,12 +55,11 @@ shared_renderer_params = {
 
 # ### w/ sample-based scheduler
 
-renderer = lm.load_renderer('renderer', 'pt', {
+renderer = lm.load_renderer('renderer', 'pt',
     **shared_renderer_params,
-    'scheduler': 'sample',
-    'spp': 1,
-    'num_samples': 10000000
-})
+    scheduler='sample',
+    spp=1,
+    num_samples=10000000)
 renderer.render()
 
 img1 = np.copy(film.buffer())
@@ -76,11 +70,10 @@ plt.show()
 
 # ### w/ time-based scheduler
 
-renderer = lm.load_renderer('renderer', 'pt', {
+renderer = lm.load_renderer('renderer', 'pt',
     **shared_renderer_params,
-    'scheduler': 'time',
-    'render_time': 5,
-})
+    scheduler='time',
+    render_time=5)
 renderer.render()
 
 img2 = np.copy(film.buffer())

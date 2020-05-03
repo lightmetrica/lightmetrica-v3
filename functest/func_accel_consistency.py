@@ -52,17 +52,11 @@ lm.comp.load_plugin(os.path.join(env.bin_path, 'accel_embree'))
 # + {"code_folding": [0]}
 # Function to build and render the image
 def build_and_render(scene, accel_name):
-    accel = lm.load_accel('accel', accel_name, {})
+    accel = lm.load_accel('accel', accel_name)
     scene.set_accel(accel.loc())
     scene.build()
-    film = lm.load_film('film_output', 'bitmap', {
-        'w': 1920,
-        'h': 1080
-    })
-    renderer = lm.load_renderer('renderer', 'raycast', {
-        'scene': scene.loc(),
-        'output': film.loc()
-    })
+    film = lm.load_film('film_output', 'bitmap', w=1920, h=1080)
+    renderer = lm.load_renderer('renderer', 'raycast', scene=scene, output=film)
     renderer.render()
     return np.copy(film.buffer())
 
@@ -89,7 +83,7 @@ for scene_name in scene_names:
     print("Rendering [scene='{}']".format(scene_name))
     
     # Load scene
-    scene = lm.load_scene('scene', 'default', {})
+    scene = lm.load_scene('scene', 'default')
     lmscene.load(scene, env.scene_path, scene_name)
     
     # Use the image for 'accel::sahbvh' as reference

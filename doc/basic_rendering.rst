@@ -93,12 +93,9 @@ To load an asset, you can use ``lm.load_<asset_type>()`` function, where ``<asse
 
 .. code-block:: python
 
-    film = lm.load_film('film1', 'bitmap', {
-        'w', 1920,
-        'h', 1080
-    });
+    film = lm.load_film('film1', 'bitmap', w=1920, h=1080)
 
-``lm.load_<asset_type>()`` function takes three arguments. The first argument specifies the identifier of the asset, which is used to reference the asset internally. The second argument is the detailed name of the asset of the interface creating interface. The third argument is the parameter to initialize the asset.
+``lm.load_<asset_type>()`` function takes three arguments. The first argument specifies the identifier of the asset, which is used to reference the asset internally. The second argument is the detailed name of the asset of the interface creating interface. The following arguments are the optional parameters to initialize the asset. 
 
 In this example, we want to make ``film`` asset. This function takes the name of the asset (``film1``) and the type of the asset (``bitmap``) of the creating interface.
 
@@ -114,10 +111,7 @@ Alternatively, we can use a general ``lm.load()`` function to load an asset. The
 
 .. code-block:: python
 
-    film_base = lm.asset('film1', 'film::bitmap', {
-        'w': 1920,
-        'h': 1080
-    })
+    film_base = lm.asset('film1', 'film::bitmap', w=1920, h=1080)
 
 Note that ``lm.asset()`` function returns an instance of :cpp:class:`lm::Component` class, not the interface type of the asset (e.g., :cpp:class:`lm::Film`). 
 :cpp:class:`lm::Component` is a base type of all assets. If you want to access the members of the specific type, you want to use ``.cast()`` function of the target interface.
@@ -164,18 +158,19 @@ Similarly, the general ``lm.get()`` function returns an instance of :cpp:class:`
 Passing instance as a parameter
 ===============================
 
-When we create an asset by ``lm.load_<asset_type>()`` function, we can pass an reference to the other asset as a parameter. For instance, ``material::diffuse`` takes a reference to a texture representing the diffuse reflectance of the material. You can pass the reference to the asset with the locator. 
+When we create an asset by ``lm.load_<asset_type>()`` function, we can pass an reference to the other asset as a parameter. For instance, ``material::diffuse`` takes a reference to a texture representing the diffuse reflectance of the material. You can pass the reference to the asset with the locator or the instance of the asset directly.
 
 .. code-block:: python
 
-    texture = lm.load_texture('texture_constant', 'constant', {
-        'color': [1,1,1]
-    })
-    material = lm.load_material('material_diffuse', 'diffuse', {
-        'mapKd': texture.loc()
+    texture = lm.load_texture('texture_constant', 'constant',
+        color=[1,1,1])
+    material = lm.load_material('material_diffuse', 'diffuse',
+        mapKd=texture
+        # or by locator
+        # mapKd=texture.loc()
         # or directly
-        # 'mapKd': '$.assets.texture_constant'
-    })
+        # mapKd='$.assets.texture_constant'
+    )
 
 .. _making_scene:
 
@@ -191,16 +186,14 @@ A scene is a special asset. We can thus create the asset by ``lm.load_scene()`` 
 
 .. code-block:: python
 
-    scene = lm.load_scene('scene', 'default', {})
+    scene = lm.load_scene('scene', 'default')
 
 Practically, a scene requires *acceleration structure* (interface type: ``accel``). Since ``accel`` is also an asset, it can be created by ``lm.load_accel()`` function.
 
 .. code-block:: python
 
-    accel = lm.load_accel('accel', 'sahbvh', {})
-    scene = lm.load_scene('scene', 'default', {
-        'accel': accel.loc()
-    })
+    accel = lm.load_accel('accel', 'sahbvh')
+    scene = lm.load_scene('scene', 'default', accel=accel)
 
 Creating a primitive
 --------------------------------------
@@ -210,10 +203,7 @@ For instance, the following code creates a primitive associating ``mesh1`` and `
 
 .. code-block:: python
 
-    scene.add_primitive({
-        'mesh': mesh.loc(),
-        'material': material.loc()
-    })
+    scene.add_primitive(mesh=mesh, material=material)
 
 Creating a primitive with transformation
 -----------------------------------------
@@ -223,18 +213,13 @@ Specifically, by setting the transformation being identity matrix, the following
 
 .. code-block:: python
 
-    scene.add_transformed_primitive(lm.identity(), {
-        'mesh': mesh.loc(),
-        'material': material.loc()
-    })
+    scene.add_transformed_primitive(lm.identity(), mesh=mesh, material=material)
 
 We can also create a primitive not being associated with ``mesh``, like ``camera``:
 
 .. code-block:: python
 
-    scene.add_primitive({
-        'camera': camera.loc()
-    })
+    scene.add_primitive(camera=camera)
 
 Using primitive generator
 --------------------------------------
@@ -245,9 +230,7 @@ If a transformation is specified in this case, the same transformation is applie
 
 .. code-block:: python
 
-    scene.add_primitive({
-        'model': model.loc()
-    })
+    scene.add_primitive(model=model)
     
 Scene setup using scene graph
 ======================================
@@ -287,10 +270,7 @@ We can add a child node to the existing node in the scene graph with :cpp:func:`
 
 .. code-block:: python
 
-    p = scene.create_primitive_node({
-        'mesh': mesh.loc(),
-        'material': material.loc()
-    })
+    p = scene.create_primitive_node(mesh=mesh, material=material)
     t = scene.create_group_node(<transformation_matrix>)
     scene.add_child(t, p)                   # (1)
     scene.add_child(scene.root_node(), t)   # (2)
@@ -320,11 +300,11 @@ For instance, if you want to load ``renderer::raycast`` asset, you will write:
 
 .. code-block:: python
 
-    renderer = lm.load_renderer('renderer', 'raycast', {
-        'scene': scene.loc(),
-        'output': film.loc(),
-        # additional option to configure renderer::raycast
-    })
+    renderer = lm.load_renderer('renderer', 'raycast',
+        scene=scene,
+        output=film,
+        # additional parameters to configure renderer::raycast
+    )
 
 You can execute the rendering process by calling :cpp:func:`lm::Renderer::render` function. 
 Once finished, the rendered image will be written into the specified ``film``.

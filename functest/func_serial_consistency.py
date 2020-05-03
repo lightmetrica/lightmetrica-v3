@@ -56,20 +56,14 @@ for scene_name in scene_names:
     # Load scene and render
     print('w/o serialization')
     lm.reset()
-    lm.load_film('film_output', 'bitmap', {
-        'w': 1920,
-        'h': 1080
-    })
-    lm.load_accel('accel', 'sahbvh', {})
-    scene = lm.load_scene('scene', 'default', {
-        'accel': '$.assets.accel'
-    })
+    lm.load_film('film_output', 'bitmap', w=1920, h=1080)
+    lm.load_accel('accel', 'sahbvh')
+    scene = lm.load_scene('scene', 'default', accel='$.assets.accel')
     lmscene.load(scene, env.scene_path, scene_name)
     scene.build()
-    lm.load_renderer('renderer', 'raycast', {
-        'scene': '$.assets.scene',
-        'output': '$.assets.film_output',
-    })
+    lm.load_renderer('renderer', 'raycast',
+        scene='$.assets.scene',
+        output='$.assets.film_output')
     
     renderer = lm.get_renderer('$.assets.renderer')
     renderer.render()
