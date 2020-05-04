@@ -52,7 +52,7 @@ using namespace literals;
 
 // Math constants
 constexpr Float Inf = 1e+10_f;                  //!< Big number 
-constexpr Float Eps = 1e-4_f;                   //!< Error tolerance 
+constexpr Float Eps = 1e-3_f;                   //!< Error tolerance 
 constexpr Float Pi  = 3.14159265358979323846_f; //!< Value of Pi
 
 #pragma endregion

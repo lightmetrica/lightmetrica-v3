@@ -19,7 +19,7 @@
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 using namespace objloader;
-class Mesh_WavefrontObj;
+class Mesh_WavefrontObjRef;
 
 /*
 \rst
@@ -32,7 +32,7 @@ class Mesh_WavefrontObj;
 */
 class Model_WavefrontObj final : public Model {
 private:
-    friend class Mesh_WavefrontObj;
+    friend class Mesh_WavefrontObjRef;
 
 private:
     // Surface geometry
@@ -73,13 +73,13 @@ public:
 
 	virtual void construct(const Json& prop) override {
         const std::string path = json::value<std::string>(prop, "path");
-        bool result = objloader::load(path, geo_,
+        const bool result = objloader::load(path, geo_,
             // Process mesh
             [&](const OBJMeshFace& fs, const MTLMatParams& m) -> bool {
                 // Create mesh
                 const std::string mesh_name = fmt::format("mesh_{}", assets_.size());
                 auto mesh = comp::create<Mesh>(
-                    "mesh::wavefrontobj", make_loc(mesh_name),
+                    "mesh::wavefrontobj_ref", make_loc(mesh_name),
                     json::merge(prop, {
                         {"model_", this},
                         {"fs_", (const OBJMeshFace*)&fs}
@@ -250,14 +250,14 @@ LM_COMP_REG_IMPL(Model_WavefrontObj, "model::wavefrontobj");
 
 /*
 \rst2
-.. function:: mesh::wavefrontobj
+.. function:: mesh::wavefrontobj_ref
 
     Mesh for Wavefront OBJ model.
 
     This asset is internally used by the framework.
 \endrst2
 */
-class Mesh_WavefrontObj final  : public Mesh {
+class Mesh_WavefrontObjRef final  : public Mesh {
 private:
     Model_WavefrontObj* model_;
     OBJMeshFace fs_;
@@ -277,9 +277,9 @@ public:
         fs_ = *prop["fs_"].get<const OBJMeshFace*>();
     }
 
-    virtual void foreach_triangle(const ProcessTriangleFunc& processTriangle) const override {
+    virtual void foreach_triangle(const ProcessTriangleFunc& process_triangle) const override {
         for (int fi = 0; fi < int(fs_.size())/3; fi++) {
-            processTriangle(fi, triangle_at(fi));
+            process_triangle(fi, triangle_at(fi));
         }
     }
 
@@ -323,7 +323,7 @@ public:
     }
 };
 
-LM_COMP_REG_IMPL(Mesh_WavefrontObj, "mesh::wavefrontobj");
+LM_COMP_REG_IMPL(Mesh_WavefrontObjRef, "mesh::wavefrontobj_ref");
 
 // ------------------------------------------------------------------------------------------------
 
