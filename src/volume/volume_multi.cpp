@@ -11,9 +11,9 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*
 \rst
-.. function:: volume::multigaussian
+.. function:: volume::multi
 
-    Multiple Gaussian volumes.
+    Multiple volumes.
 
     :param volumes_alb: Array of references to volume albedos
     :param volumes_den: Array of references to volume densities
@@ -25,7 +25,7 @@ private:
     std::vector<Volume*> volumes_den_;
     std::vector<Volume*> volumes_alb_;
     unsigned int size_;     // Size of volume arrays
-    Float max_scalar_ = 0;   // Sum of maxScalar() of all Volumes in volumes_den_
+    Float max_scalar_ = 0;  // Sum of maxScalar() of all Volumes in volumes_den_
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -90,11 +90,25 @@ public:
         return max_scalar_;
     }
 
+    bool isInBound(const Vec3& p, const Bound& b) const {
+        auto isBetween=[](float a, float low, float high)->bool{
+            return (low<=a && high>=a);
+        };
+
+        return isBetween(p.x,b.min.x,b.max.x) &&
+               isBetween(p.y,b.min.y,b.max.y) &&
+               isBetween(p.z,b.min.z,b.max.z);
+    }
+    
     // Computes the sum over all Volumes of eval_scalar
     virtual Float eval_scalar(Vec3 p) const override {
         Float sum = 0._f;
         for(auto* v : volumes_den_)
+        {
+            if(!isInBound(p,v->bound()))
+                continue;
             sum += v->eval_scalar(p);
+        }
        return sum;
     }
 
@@ -103,26 +117,21 @@ public:
         return true;
     }
 
-    // Compute the color by randomly selecting within the different gaussians
-    // depending on scalar value at position
+    // Accumulate contribution of the volumes (bounds check)
     virtual Vec3 eval_color(Vec3 p) const override {
-        thread_local std::vector<Float> scalars;
         Float sum = 0;
-        scalars.reserve(size_);
-
-        // Perform a prefix sum of scalar evaluations
-        for(auto* v : volumes_den_){
-            Float sc = v->eval_scalar(p);
-            scalars.push_back(sc);
+        Vec3 resulting_color(0._f);
+        
+        for(unsigned int i = 0; i < size_; i++){
+            if( !isInBound(p,volumes_den_[i]->bound()) )
+                continue;
+            //accumulate separately scalar and scalar times color
+            Float sc = volumes_den_[i]->eval_scalar(p);
+            resulting_color+= sc * volumes_alb_[i]->eval_color(p);
             sum+=sc;
         }
-
-        // Normalize the scalars to use as ratios and compute the resulting color directly
-        Vec3 resulting_color(0._f);
-        for( unsigned int i = 0; i < size_; i++ )
-            resulting_color += (scalars[i]/sum)*volumes_alb_[i]->eval_color(p);
-        scalars.clear();
-        return resulting_color;
+        //perform the scalar ratio
+        return resulting_color/sum;
     }
 };
 
