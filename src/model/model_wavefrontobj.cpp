@@ -465,8 +465,12 @@ public:
         }
         else {
             // Alpha mask
+            const auto wo = -wi;
+            const auto f = eval(geom, wi, wo, comp, trans_dir, false);
+            const auto p = pdf_direction(geom, wi, wo, comp, false);
+            const auto C = f / p;
             return DirectionSample{
-                -wi,
+                wo,
                 Vec3(1_f)
             };
         }
@@ -491,14 +495,15 @@ public:
     }
 
     virtual Vec3 eval(const PointGeometry& geom, Vec3 wi, Vec3 wo, int comp, TransDir trans_dir, bool eval_delta) const override {
+        const auto alpha = eval_alpha(geom);
         if (comp == 0) {
             Vec3 sum(0_f);
             sum += diffuse_->eval(geom, wi, wo, {}, trans_dir, eval_delta);
             sum += glossy_->eval(geom, wi, wo, {}, trans_dir, eval_delta);
-            return sum;
+            return sum * alpha;
         }
         else {
-            return eval_delta ? Vec3(0_f) : Vec3(1_f);
+            return eval_delta ? Vec3(0_f) : Vec3(1_f - alpha);
         }
     }
 
