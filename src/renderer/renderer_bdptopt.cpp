@@ -11,6 +11,8 @@
 #include <lm/scheduler.h>
 #include <lm/path.h>
 #include <lm/timer.h>
+#include <lm/parallel.h>
+#include <lm/debug.h>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
@@ -85,6 +87,28 @@ struct Path {
     }
 };
 
+}
+
+LM_NAMESPACE_END(LM_NAMESPACE)
+
+#if BDPTOPT_POLL_PATHS
+LM_NAMESPACE_BEGIN(nlohmann)
+// Specialize adl_serializer for one-way automatic conversion from path to Json type
+template <>
+struct adl_serializer<lm::Path> {
+    static void to_json(lm::Json& j, const lm::Path& path) {
+        for (const auto& v : path.vs) {
+            j.push_back(v.sp.geom.p);
+        }
+    }
+};
+LM_NAMESPACE_END(nlohmann)
+#endif
+
+LM_NAMESPACE_BEGIN(LM_NAMESPACE)
+
+namespace {
+
 // Direction from v_from to v_to
 Vec3 direction(const Vert* v_from, const Vert* v_to) {
     if (v_from == nullptr || v_to == nullptr) {
@@ -130,7 +154,7 @@ void sample_subpath(Path& path, Rng& rng, const Scene* scene, int max_verts, Tra
                     return 1_f;
                 }
             }();
-            v.alpha = Vec3(1_f/v.pdf_fwd);
+            v.alpha = Vec3(1_f / v.pdf_fwd);
             v.w_rev = {};
             v.w_fwd = s->wo;
 
@@ -149,7 +173,7 @@ void sample_subpath(Path& path, Rng& rng, const Scene* scene, int max_verts, Tra
         }
         else {
             // Sample direction
-            auto& v = path.vs[path.num_verts()-1];
+            auto& v = path.vs[path.num_verts() - 1];
             const auto s = path::sample_direction(rng, scene, v.sp, v.w_rev, v.comp, trans_dir);
             if (!s) {
                 break;
@@ -157,7 +181,7 @@ void sample_subpath(Path& path, Rng& rng, const Scene* scene, int max_verts, Tra
 
             // Update cached information
             v.w_fwd = s->wo;
-            auto& v_prev = path.vs[path.num_verts()-2];
+            auto& v_prev = path.vs[path.num_verts() - 2];
             v_prev.pdf_rev = v_prev.sp.geom.degenerated ? 1_f /*undefined*/ :
                 surface::convert_pdf_to_area(
                     path::pdf_direction(scene, v.sp, v.w_fwd, v.w_rev, v.comp, false),
@@ -169,7 +193,7 @@ void sample_subpath(Path& path, Rng& rng, const Scene* scene, int max_verts, Tra
         }
 
         // Current vertex
-        auto& v = path.vs[path.num_verts()-1];
+        auto& v = path.vs[path.num_verts() - 1];
 
         // Intersection to next surface
         const auto hit = scene->intersect({ v.sp.geom.p, v.w_fwd });
