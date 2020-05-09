@@ -11,9 +11,9 @@ LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 
 /*
 \rst
-.. function:: volume::multigaussian
+.. function:: volume::multi
 
-    Multiple Gaussian volumes.
+    Multiple volumes.
 
     :param volumes_alb: Array of references to volume albedos
     :param volumes_den: Array of references to volume densities
@@ -25,7 +25,7 @@ private:
     std::vector<Volume*> volumes_den_;
     std::vector<Volume*> volumes_alb_;
     unsigned int size_;     // Size of volume arrays
-    Float max_scalar_ = 0;   // Sum of maxScalar() of all Volumes in volumes_den_
+    Float max_scalar_ = 0;  // Sum of maxScalar() of all Volumes in volumes_den_
 
 public:
     LM_SERIALIZE_IMPL(ar) {
@@ -36,9 +36,9 @@ public:
     virtual void construct(const Json& prop) override {
         // Currently no straightforward way to use json::comp_ref<Volume>() on an array
         // Store all the ref strings
-        auto vol_ref_alb = json::value< std::vector<std::string> >(prop,"volumes_alb");
-        auto vol_ref_den = json::value< std::vector<std::string> >(prop,"volumes_den");
-        if(!vol_ref_alb.size() || !vol_ref_den.size() || vol_ref_den.size()!=vol_ref_alb.size())
+        auto vol_ref_alb = json::value<std::vector<std::string> >(prop,"volumes_alb");
+        auto vol_ref_den = json::value<std::vector<std::string> >(prop,"volumes_den");
+        if (!vol_ref_alb.size() || !vol_ref_den.size() || vol_ref_den.size()!=vol_ref_alb.size())
             LM_THROW_EXCEPTION(Error::InvalidArgument,
                 "volumes_alb and/or volumes_den have an invalid size. They need to be of same size.");
 
@@ -48,9 +48,9 @@ public:
             volumes_alb_.push_back( comp::get<Volume>(vol_ref_alb[i]) );
             volumes_den_.push_back( comp::get<Volume>(vol_ref_den[i]) );
 
-            if( !volumes_alb_.back()->has_color() )
+            if (!volumes_alb_.back()->has_color())
                 LM_THROW_EXCEPTION(Error::InvalidArgument, "volumes_alb[{}] has no albedo/color", i);
-            if( !volumes_den_.back()->has_scalar() )
+            if (!volumes_den_.back()->has_scalar())
                 LM_THROW_EXCEPTION(Error::InvalidArgument, "volumes_den[{}] has no density", i);
         }
 
@@ -90,11 +90,24 @@ public:
         return max_scalar_;
     }
 
+    bool is_in_bound(const Vec3& p, const Bound& b) const {
+        auto is_between=[](Float a, Float low, Float high)->bool{
+            return (low <= a && high >= a);
+        };
+
+        return is_between(p.x, b.min.x, b.max.x) &&
+               is_between(p.y, b.min.y, b.max.y) &&
+               is_between(p.z, b.min.z, b.max.z);
+    }
+    
     // Computes the sum over all Volumes of eval_scalar
     virtual Float eval_scalar(Vec3 p) const override {
         Float sum = 0._f;
-        for(auto* v : volumes_den_)
+        for( auto* v : volumes_den_ ) {
+            if (!is_in_bound(p, v->bound()))
+                continue;
             sum += v->eval_scalar(p);
+        }
        return sum;
     }
 
@@ -103,26 +116,22 @@ public:
         return true;
     }
 
-    // Compute the color by randomly selecting within the different gaussians
-    // depending on scalar value at position
+    // Accumulate contribution of the volumes (bounds check)
     virtual Vec3 eval_color(Vec3 p) const override {
-        thread_local std::vector<Float> scalars;
         Float sum = 0;
-        scalars.reserve(size_);
-
-        // Perform a prefix sum of scalar evaluations
-        for(auto* v : volumes_den_){
-            Float sc = v->eval_scalar(p);
-            scalars.push_back(sc);
-            sum+=sc;
-        }
-
-        // Normalize the scalars to use as ratios and compute the resulting color directly
         Vec3 resulting_color(0._f);
-        for( unsigned int i = 0; i < size_; i++ )
-            resulting_color += (scalars[i]/sum)*volumes_alb_[i]->eval_color(p);
-        scalars.clear();
-        return resulting_color;
+        
+        for( unsigned int i = 0; i < size_; i++ ) {
+            if (!is_in_bound(p, volumes_den_[i]->bound()))
+                continue;
+
+            //accumulate separately scalar and scalar times color
+            Float sc = volumes_den_[i]->eval_scalar(p);
+            resulting_color += sc * volumes_alb_[i]->eval_color(p);
+            sum += sc;
+        }
+        //perform the scalar ratio
+        return resulting_color/sum;
     }
 };
 
