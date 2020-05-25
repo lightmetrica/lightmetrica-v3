@@ -113,7 +113,12 @@ public:
                 }
 
                 // Set material index
-                curr_material_index = msmap_.at(name);
+                auto it = msmap_.find(name);
+                if (it == msmap_.end()) {
+                    LM_ERROR("Invalid material [name='{}']", name);
+                    return false;
+                }
+                curr_material_index = it->second;
                 primitives.back().material_index = curr_material_index;
             }
             
