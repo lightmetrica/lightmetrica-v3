@@ -29,6 +29,11 @@ struct Vert {
     bool is_specular(const Scene* scene) const {
         return path::is_specular_component(scene, sp, comp);
     }
+
+    //! Check if the vertex is connectable endpoint.
+    bool is_connectable_endpoint(const Scene* scene) const {
+        return path::is_connectable_endpoint(scene, sp);
+    }
 };
 
 /*!
