@@ -11,9 +11,11 @@ include(LmAddPlugin)
 find_package(embree 3.0)
 if (embree_FOUND)
     # Create embree target
-    add_library(embree INTERFACE)
-    target_link_libraries(embree INTERFACE "${EMBREE_LIBRARIES}")
-    target_include_directories(embree INTERFACE "${EMBREE_INCLUDE_DIRS}")
+    if (WIN32)
+        add_library(embree INTERFACE)
+        target_link_libraries(embree INTERFACE "${EMBREE_LIBRARIES}")
+        target_include_directories(embree INTERFACE "${EMBREE_INCLUDE_DIRS}")
+    endif()
 
     # Create plugin
     lm_add_plugin(
