@@ -326,6 +326,13 @@ struct Dist {
     }
 
     /*!
+        \brief Check if the distribution is empty.
+    */
+    bool empty() const {
+        return c.size() == 1;
+    }
+
+    /*!
         \brief Add a value to the distribution.
         \param v Value to be added.
     */
