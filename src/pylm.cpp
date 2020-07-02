@@ -39,6 +39,9 @@ static void bind_common(pybind11::module& m) {
 // Bind exception.h
 static void bind_exception(pybind11::module& m) {
     pybind11::register_exception<lm::Exception>(m, "Exception");
+    auto sm = m.def_submodule("exception");
+    sm.def("disable_fpex", &exception::disable_fpex);
+    sm.def("enable_fpex", &exception::enable_fpex);
 }
 
 // ------------------------------------------------------------------------------------------------
