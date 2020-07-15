@@ -11,17 +11,15 @@ include(LmAddPlugin)
 find_package(embree 3.0)
 if (embree_FOUND)
     # Create embree target
-    if (WIN32)
-        add_library(embree INTERFACE)
-        target_link_libraries(embree INTERFACE "${EMBREE_LIBRARIES}")
-        target_include_directories(embree INTERFACE "${EMBREE_INCLUDE_DIRS}")
-    endif()
+    add_library(embree_interface INTERFACE)
+    target_link_libraries(embree_interface INTERFACE "${EMBREE_LIBRARIES}")
+    target_include_directories(embree_interface INTERFACE "${EMBREE_INCLUDE_DIRS}")
 
     # Create plugin
     lm_add_plugin(
         NAME accel_embree
         INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
-        LIBRARIES embree
+        LIBRARIES embree_interface
         SOURCES
             "embree_params.h"
             "accel_embree.cpp"

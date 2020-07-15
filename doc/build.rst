@@ -64,9 +64,9 @@ If you could successfully install the framework, executing the following command
 Building plugins
 --------------------------
 
-We can also easily build Lightmetrica plugins using the pre-built binaries. To do this, you need CMake (>=3.10) and build environments according to the platform: Visual Studio 2017 (Windows) and GCC 7 (Linux).
+We can also easily build Lightmetrica plugins using the pre-built binaries. To do this, you need CMake (>=3.10) and build environments according to the platform: Visual Studio 2017 or 2019 (Windows) and GCC 7 (Linux).
 
-The package is shipped with development files for the plugin development. The distributed binaries are built with Visual Studio 2017 (Windows) and GCC 7 (Linux).
+The package is shipped with development files for the plugin development. The distributed binaries are built with Visual Studio 2017 or 2019 (Windows) and GCC 7 (Linux).
 Although you can develop plugins as long as the ABI compatibility allows,
 we highly recommend to use the compiler with the same version in which the framework is built.
 If you want to use compilers that might break ABI compatibility for instance due to the change of compiler versions, consider to build the framework by yourself.
@@ -97,6 +97,7 @@ In Windows:
     $ mkdir build
     $ cd build
     $ cmake -G "Visual Studio 15 2017 Win64" ..
+    // or $ cmake -G "Visual Studio 16 2019" -T v141 ..
     $ start test_plugin.sln
 
 In Linux:
@@ -116,6 +117,11 @@ In Linux:
 .. note::
     The option ``-DCMAKE_BUILD_TYPE=Release`` is necessary because
     CMake's default is ``Debug`` in Linux environment.
+
+
+.. note::
+    Visual Studio 2019 is supported by ``v141`` toolset. You need to install it from the VS installer. 
+    The newer toolsets might not work due to the binary incompatibilities.
 
 .. ----------------------------------------------------------------------------
 
