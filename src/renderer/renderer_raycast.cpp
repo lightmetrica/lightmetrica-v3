@@ -80,12 +80,20 @@ public:
                 film_->set_pixel(x, y, glm::abs(sp->geom.n));
             }
             else {
-                const auto R = color_ ? *color_ : path::reflectance(scene_ , *sp);
-                auto C = R ? *R : Vec3();
-                if (!use_constant_color_) {
-                    C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));
+                if (sp->geom.infinite) {
+                    // Hit against environment light
+                    const auto& primitive = scene_->node_at(sp->primitive).primitive;
+                    const auto Le =  primitive.light->eval(sp->geom, sp->geom.wo, false);
+                    film_->set_pixel(x, y, Le);
                 }
-                film_->set_pixel(x, y, C);
+                else {
+                    const auto R = color_ ? *color_ : path::reflectance(scene_ , *sp);
+                    auto C = R ? *R : Vec3();
+                    if (!use_constant_color_) {
+                        C *= .2_f + .8_f*glm::abs(glm::dot(sp->geom.n, -ray.d));
+                    }
+                    film_->set_pixel(x, y, C);
+                }
             }
         });
 

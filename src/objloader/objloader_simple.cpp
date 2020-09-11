@@ -70,7 +70,11 @@ public:
             // ----- Parse group
             else if (command(t, "g", 1)) {
                 t += 1;
-                primitives.emplace_back();
+                // Create a new primitive
+                // If 'g' is defined immediately after 'usemtl', use the last primitive.
+                if (primitives.empty() || !primitives.back().fs.empty()) {
+                    primitives.emplace_back();
+                }
                 primitives.back().material_index = curr_material_index;
             }
 
