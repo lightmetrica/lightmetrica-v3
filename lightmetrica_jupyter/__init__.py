@@ -28,12 +28,18 @@ def skip_if_not(line, cell=None):
         return
     get_ipython().ex(cell)
 
+def exec_if(line, cell=None):
+    """Execute a cell by condition"""
+    if eval(line):
+        get_ipython().ex(cell)
+
 def load_ipython_extension(ip):
     """Register as IPython extension"""
     # Register line magic functions
     ip.register_magic_function(widen)
     ip.register_magic_function(skip_if, 'line_cell')
     ip.register_magic_function(skip_if_not, 'line_cell')
+    ip.register_magic_function(exec_if, 'line_cell')
 
     # Register some components
     @lm.pylm_component('logger::jupyter')
