@@ -8,7 +8,7 @@
 #include "common.h"
 #include "jsontype.h"
 #include <exception>
-#include <fmt/format.h>
+#include <format>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(exception)
@@ -196,11 +196,11 @@ private:
             LM_UNREACHABLE_RETURN();
         }();
         if (file_.empty()) {
-            what_ = fmt::format("{} [err='{}']",
+            what_ = std::format("{} [err='{}']",
                 message_, errorCodeStr);
         }
         else {
-            what_ = fmt::format("{} [err='{}', file='{}', line='{}']",
+            what_ = std::format("{} [err='{}', file='{}', line='{}']",
                 message_, errorCodeStr, file_, line_);
         }
     }
@@ -246,7 +246,7 @@ public:
         : error_(error)
         , file_(file)
         , line_(line)
-        , message_(fmt::format(message, args...))
+        , message_(std::format(message, args...))
     {
         generante_error_message();
     }

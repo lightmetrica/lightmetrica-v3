@@ -125,7 +125,7 @@ target_link_libraries(${_PROJECT_NAME}
     PUBLIC  cereal
             glm
             nlohmann_json
-            fmt::fmt-header-only
+            # fmt::fmt-header-only
     PRIVATE lm_version
             stb::stb_image
             OpenMP::OpenMP_CXX
@@ -150,7 +150,7 @@ target_compile_definitions(${_PROJECT_NAME} PUBLIC
     $<$<CONFIG:Release>:LM_USE_CONFIG_RELEASE>
     $<$<CONFIG:RelWithDebInfo>:LM_USE_CONFIG_RELWITHDEBINFO>)
 # Use C++17
-target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_20)
 # Enable warning level 4, treat warning as errors, enable SEH
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHa>)
 # Enable parallel build

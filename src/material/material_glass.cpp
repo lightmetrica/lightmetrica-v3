@@ -8,7 +8,7 @@
 #include <lm/material.h>
 #include <lm/surface.h>
 
-#define MATERIAL_GLASS_USE_COMPONENT_SAMPLING 0
+#define MATERIAL_GLASS_USE_COMPONENT_SAMPLING 1
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 

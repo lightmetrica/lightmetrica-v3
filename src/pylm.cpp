@@ -171,18 +171,18 @@ static void bind_component(pybind11::module& m) {
 
 // Generate a function for the built-in interface
 #define PYLM_DEF_ASSET_LOAD_AND_GET_FUNC(m, InterfaceType, interface_name) \
-    m.def(fmt::format("load_{}", #interface_name).c_str(), \
+    m.def(std::format("load_{}", #interface_name).c_str(), \
         [](const std::string& name, const std::string& impl_key, const Json& prop) -> InterfaceType* { \
-            auto* p = assets()->load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+            auto* p = assets()->load_asset(name, std::format("{}::{}", #interface_name, impl_key), prop); \
             return dynamic_cast<InterfaceType*>(p); \
         }, pybind11::return_value_policy::reference); \
-    m.def(fmt::format("load_{}", #interface_name).c_str(), \
+    m.def(std::format("load_{}", #interface_name).c_str(), \
         [](const std::string& name, const std::string& impl_key, pybind11::kwargs kwargs) -> InterfaceType* { \
             Json prop = pybind11::cast<Json>(kwargs); \
-            auto* p = assets()->load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+            auto* p = assets()->load_asset(name, std::format("{}::{}", #interface_name, impl_key), prop); \
             return dynamic_cast<InterfaceType*>(p); \
         }, pybind11::return_value_policy::reference); \
-    m.def(fmt::format("get_{}", #interface_name).c_str(), \
+    m.def(std::format("get_{}", #interface_name).c_str(), \
         [](const std::string& loc) -> InterfaceType* { \
             return comp::get<InterfaceType>(loc); \
         }, pybind11::return_value_policy::reference)
@@ -232,15 +232,15 @@ static void bind_user(pybind11::module& m) {
 // ------------------------------------------------------------------------------------------------
 
 #define PYLM_DEF_ASSET_LOAD_MEMBER_FUNC(InterfaceType, interface_name) \
-    def(fmt::format("load_{}", #interface_name).c_str(), \
+    def(std::format("load_{}", #interface_name).c_str(), \
         [](AssetGroup& self, const std::string& name, const std::string& impl_key, const Json& prop) -> InterfaceType* { \
-            auto* p = self.load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+            auto* p = self.load_asset(name, std::format("{}::{}", #interface_name, impl_key), prop); \
             return dynamic_cast<InterfaceType*>(p); \
         }, pybind11::return_value_policy::reference) \
-    .def(fmt::format("load_{}", #interface_name).c_str(), \
+    .def(std::format("load_{}", #interface_name).c_str(), \
         [](AssetGroup& self, const std::string& name, const std::string& impl_key, pybind11::kwargs kwargs) -> InterfaceType* { \
             Json prop = pybind11::cast<Json>(kwargs); \
-            auto* p = self.load_asset(name, fmt::format("{}::{}", #interface_name, impl_key), prop); \
+            auto* p = self.load_asset(name, std::format("{}::{}", #interface_name, impl_key), prop); \
             return dynamic_cast<InterfaceType*>(p); \
         }, pybind11::return_value_policy::reference)
 
