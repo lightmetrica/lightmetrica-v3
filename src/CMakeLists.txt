@@ -150,7 +150,7 @@ target_compile_definitions(${_PROJECT_NAME} PUBLIC
     $<$<CONFIG:Release>:LM_USE_CONFIG_RELEASE>
     $<$<CONFIG:RelWithDebInfo>:LM_USE_CONFIG_RELWITHDEBINFO>)
 # Use C++17
-target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_20)
+target_compile_features(${_PROJECT_NAME} PUBLIC cxx_std_23)
 # Enable warning level 4, treat warning as errors, enable SEH
 target_compile_options(${_PROJECT_NAME} PUBLIC $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHa>)
 # Enable parallel build

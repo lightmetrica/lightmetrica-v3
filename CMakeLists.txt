@@ -49,7 +49,7 @@ find_package(OpenMP REQUIRED)
 # which introduces duplicated -std flags in the g++ commands.
 # This causes a problem since some compiler versions (e.g., GCC 7.3)
 # prioritize -std=c++14 rather than -std=C++17.
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 find_package(pybind11 REQUIRED)
 find_package(cereal REQUIRED)
 find_package(glm REQUIRED)
