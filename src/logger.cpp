@@ -60,7 +60,7 @@ public:
         const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_);
 
         // Line and filename
-        const auto line_and_filename = fmt::format("{}@{}",
+        const auto line_and_filename = std::format("{}@{}",
             line,
             fs::path(filename).stem().string());
 
@@ -73,12 +73,12 @@ public:
         // <body>    = <indentations><message>
         std::string header;
         if (show_line_and_file_) {
-            header = fmt::format("[{}|{:.3f}|{:<10}] ",
+            header = std::format("[{}|{:.3f}|{:<10}] ",
                 style.name, elapsed.count() / 1000.0,
                 line_and_filename.substr(0, 10));
         }
         else {
-            header = fmt::format("[{}|{:.3f}] ",
+            header = std::format("[{}|{:.3f}] ",
                 style.name, elapsed.count() / 1000.0,
                 line_and_filename.substr(0, 10));
         }
@@ -87,7 +87,7 @@ public:
         // Progress message does not support multiline message.
         if (level == LogLevel::Progress || level == LogLevel::ProgressEnd) {
             // Message with indentation
-            const auto body = fmt::format("{}{}",
+            const auto body = std::format("{}{}",
                 indentation_string_,
                 message);
 
@@ -129,7 +129,7 @@ public:
             // Process one line
             const auto process_line = [&](const std::string& message) {
                 // Message with indentation
-                const auto body = fmt::format("{}{}",
+                const auto body = std::format("{}{}",
                     indentation_string_,
                     message);
 

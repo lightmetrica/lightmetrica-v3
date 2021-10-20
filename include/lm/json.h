@@ -121,7 +121,7 @@ LM_NAMESPACE_BEGIN(detail)
 // https://stackoverflow.com/questions/48875467/how-to-pass-not-variadic-values-to-fmtformat
 template <std::size_t ... Is>
 std::string format_with_string_vector(const std::string& format, const std::vector<std::string>& v, std::index_sequence<Is...>) {
-    return fmt::format(format, v[Is]...);
+    return std::format(format, v[Is]...);
 }
 
 template <std::size_t N>

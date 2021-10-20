@@ -38,10 +38,10 @@ static void handle_embree_error(void*, RTCError code, const char* str = nullptr)
     LM_THROW_EXCEPTION(Error::None, codestr);
 }
 
-
+#if 0
 inline std::string RTCtoStr(const RTCBuildArguments& rtc, const RTCSceneFlags& sf)
 {
-        std::string str = fmt::format(
+        std::string str = std::format(
         "\nbuildQuality:\t{}\n"
         "maxBranchingFactor:\t{}\n"
         "maxDepth:\t{}\n"
@@ -57,11 +57,9 @@ inline std::string RTCtoStr(const RTCBuildArguments& rtc, const RTCSceneFlags& s
         rtc.buildQuality, rtc.maxBranchingFactor, rtc.maxDepth, rtc.sahBlockSize, rtc.minLeafSize,
         rtc.maxLeafSize, rtc.traversalCost, rtc.intersectionCost,
         sf & (1<<0),sf &(1<<1),sf&(1<<2),sf&(1<<3));
-        
-       
-        
         return str;
     }
+#endif
 LM_NAMESPACE_END(LM_NAMESPACE)
 
 LM_NAMESPACE_BEGIN(nlohmann)

@@ -1,8 +1,5 @@
 name: lm3_dev
 channels:
-  # hi2p-perim channel must have higher priority
-  # because some packages might have the same names.
-  - hi2p-perim
   - conda-forge
 dependencies:
   - python=3.7
@@ -21,15 +18,16 @@ dependencies:
   - pybind11
   - embree3
   - glm
-  - nlohmann_json
+  # Temporarily downgraded
+  - nlohmann_json=3.10.2
   - glew
-  - doctest-cpp
-  - fmt
-  - stb
+  - doctest
   - cereal
-  - vdbloader
   - tbb-devel
-  - pbrt-parser
+  - hi2p-perim::stb
+  - hi2p-perim::vdbloader
+  - hi2p-perim::pbrt-parser
+  - pip
   - pip:
     - sphinx-autobuild
     - breathe

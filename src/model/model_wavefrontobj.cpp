@@ -77,7 +77,7 @@ public:
             // Process mesh
             [&](const OBJMeshFace& fs, const MTLMatParams& m) -> bool {
                 // Create mesh
-                const std::string mesh_name = fmt::format("mesh_{}", assets_.size());
+                const std::string mesh_name = std::format("mesh_{}", assets_.size());
                 auto mesh = comp::create<Mesh>(
                     "mesh::wavefrontobj_ref", make_loc(mesh_name),
                     json::merge(prop, {

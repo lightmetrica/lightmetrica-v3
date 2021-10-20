@@ -131,7 +131,7 @@ public:
                     return "";
                 }
                 const auto eta = duration_cast<milliseconds>(now - start_) * (total_ - processed) / processed;
-                return fmt::format(", ETA={:.1f}s", eta.count() / 1000.0);
+                return std::format(", ETA={:.1f}s", eta.count() / 1000.0);
 
             }();
             LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
@@ -151,7 +151,7 @@ public:
         const auto elapsed_from_last_update = duration_cast<milliseconds>(now - last_updated_);
         if (elapsed_from_last_update > .5s) {
             const auto eta = total_time_ - elapsed;
-            const auto eta_str = fmt::format(", ETA={:.1f}s", eta);
+            const auto eta_str = std::format(", ETA={:.1f}s", eta);
             LM_PROGRESS("Processing [iter={}/{}, progress={:.1f}%{}]",
                 elapsed,
                 total_time_,

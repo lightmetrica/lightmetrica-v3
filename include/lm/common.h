@@ -228,16 +228,23 @@
 // ------------------------------------------------------------------------------------------------
 
 // Unused macro
+
+// This solution generates the warning in VS2019 16.10.
+#if 0
 // Only use this macro to specify variables being used.
 // Using this macro for expressions might lead unexpected behavior.
 // https://stackoverflow.com/questions/1486904/how-do-i-best-silence-a-warning-about-unused-variables/44106902
 #define LM_UNUSED(...) { (decltype(LM_NAMESPACE::detail::unused(__VA_ARGS__)))0; }
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(detail)
+LM_PRAGMA(warning(push))
 template <typename... Args>
 inline void unused(Args&&...) {}
 LM_NAMESPACE_END(detail)
 LM_NAMESPACE_END(LM_NAMESPACE)
+#else
+#define LM_UNUSED(...) (void)sizeof(__VA_ARGS__)
+#endif
 
 // Prevents the variable from optimized away
 #define LM_KEEP_UNUSED(x) \

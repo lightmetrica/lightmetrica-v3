@@ -48,7 +48,7 @@ LM_PUBLIC_API std::string architecture() {
 }
 
 LM_PUBLIC_API std::string formatted() {
-    return fmt::format("{}.{}.{} (rev. {})",
+    return std::format("{}.{}.{} (rev. {})",
         major_version(), minor_version(), patch_version(), revision());
 }
 

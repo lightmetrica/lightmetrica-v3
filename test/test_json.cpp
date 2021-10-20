@@ -42,10 +42,10 @@ TEST_CASE("Json") {
             }
         }
         SUBCASE("Invalid type") {
-            CHECK_THROWS(lm::Vec3 v = "1"_lmJson);
-            CHECK_THROWS(lm::Vec3 v = "{}"_lmJson);
-            CHECK_THROWS(lm::Vec3 v = "[1,2]"_lmJson);
-            CHECK_THROWS(lm::Vec3 v = "[1,2,3,4]"_lmJson);
+            CHECK_THROWS_WITH(lm::Vec3 v = "1"_lmJson);
+            CHECK_THROWS_WITH(lm::Vec3 v = "{}"_lmJson);
+            CHECK_THROWS_WITH(lm::Vec3 v = "[1,2]"_lmJson);
+            CHECK_THROWS_WITH(lm::Vec3 v = "[1,2,3,4]"_lmJson);
         }
     }
 

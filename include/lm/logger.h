@@ -7,7 +7,7 @@
 
 #include "common.h"
 #include "json.h"
-#include <fmt/format.h>
+#include <format>
 
 LM_NAMESPACE_BEGIN(LM_NAMESPACE)
 LM_NAMESPACE_BEGIN(log)
@@ -159,11 +159,11 @@ LM_PUBLIC_API void log(LogLevel level, int severity, const char* filename, int l
 template <typename... Args>
 void log(LogLevel level, int severity, const char* filename, int line, const std::string& message, Args&&... args) {
     if constexpr (sizeof...(Args) == 0) {
-        // Avoid application of fmt::format() with no additional argument
+        // Avoid application of std::format() with no additional argument
         log(level, severity, filename, line, message.c_str());
     }
     else {
-        log(level, severity, filename, line, fmt::format(message, std::forward<Args>(args)...).c_str());
+        log(level, severity, filename, line, std::format(message, std::forward<Args>(args)...).c_str());
     }
 }
 
