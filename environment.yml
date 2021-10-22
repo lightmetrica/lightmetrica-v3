@@ -15,10 +15,10 @@ dependencies:
   - colorama
   - imageio
   - pytest
-  - pybind11
   - embree3
   - glm
   # Temporarily downgraded
+  - pybind11=2.7.1
   - nlohmann_json=3.10.2
   - glew
   - tbb-devel
