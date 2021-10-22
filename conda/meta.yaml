@@ -15,11 +15,11 @@ requirements:
   host:
     - pip
     - python
-    - doctest-cpp
+    - doctest
     - embree3
     - glm
-    - nlohmann_json
-    - pybind11
+    - nlohmann_json=3.10.2
+    - pybind11=2.7.1
     - cereal
     - fmt
     - stb
@@ -30,7 +30,7 @@ requirements:
     - zeromq
     - embree3
     - glm
-    - nlohmann_json
+    - nlohmann_json=3.10.2
     - cereal
     - fmt
     - numpy
